@@ -23,7 +23,7 @@ const Index = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-8 w-8" />
-              <span className="text-xl font-bold text-gray-900">RiskBlocs</span>
+              <span className="text-xl font-bold text-gray-900 font-poppins">RiskBlocs</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
@@ -257,7 +257,7 @@ const Index = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-6 w-6" />
-                <span className="text-lg font-bold">RiskBlocs</span>
+                <span className="text-lg font-bold font-poppins">RiskBlocs</span>
               </div>
               <p className="text-gray-400 text-sm">
                 Enterprise risk management platform trusted by organizations worldwide.
