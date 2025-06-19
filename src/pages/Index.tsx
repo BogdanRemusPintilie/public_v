@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle } from 'lucide-react';
+import { BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle, Shield } from 'lucide-react';
 
 const Index = () => {
   const [email, setEmail] = useState('');
