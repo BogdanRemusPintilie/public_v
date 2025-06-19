@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle } from 'lucide-react';
+import { BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle } from 'lucide-react';
 
 const Index = () => {
   const [email, setEmail] = useState('');
@@ -23,7 +22,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <Shield className="h-8 w-8 text-blue-600" />
+              <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-8 w-8" />
               <span className="text-xl font-bold text-gray-900">RiskBlocs</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
@@ -257,7 +256,7 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Shield className="h-6 w-6 text-blue-400" />
+                <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-6 w-6" />
                 <span className="text-lg font-bold">RiskBlocs</span>
               </div>
               <p className="text-gray-400 text-sm">
