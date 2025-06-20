@@ -1,0 +1,248 @@
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+
+const Dashboard = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out",
+    });
+    navigate('/');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-2">
+              <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-8 w-8" />
+              <span className="text-xl font-bold text-gray-900 font-poppins">RiskBlocs</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome back, {user?.email}</span>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Risk Management Dashboard</h1>
+          <p className="text-gray-600">Monitor and manage your organization's risk profile</p>
+        </div>
+
+        {/* Dashboard Panels */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Pre-trade Panel */}
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Upload className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900">Pre-trade</CardTitle>
+                    <CardDescription>Upload and access transaction data, manage Silent RiskData vault, transaction preparation and analytics</CardDescription>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">45</div>
+                  <div className="text-sm text-blue-700">Data Files</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">12</div>
+                  <div className="text-sm text-green-700">Analytics Ready</div>
+                </div>
+              </div>
+              <div className="pt-2">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  Access Pre-trade Tools
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Matched Market Panel */}
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900">Matched Market</CardTitle>
+                    <CardDescription>Share or access transactions in progress, manage pricing and ready transaction for execution</CardDescription>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Active Transactions</span>
+                  <div className="flex items-center space-x-2">
+                    <Activity className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-green-600">8 In Progress</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Pricing Updates</span>
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-blue-600">3 Pending</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Ready for Execution</span>
+                  <div className="flex items-center space-x-2">
+                    <FileCheck className="h-4 w-4 text-orange-500" />
+                    <span className="text-sm text-orange-600">5 Ready</span>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-2">
+                <Button className="w-full bg-green-600 hover:bg-green-700">
+                  Manage Market Transactions
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Marketplace Panel */}
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900">Marketplace</CardTitle>
+                    <CardDescription>Undertake or review transactions and related data</CardDescription>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">New transaction review available</p>
+                    <p className="text-xs text-gray-500">2 hours ago • Portfolio A</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">Transaction completed successfully</p>
+                    <p className="text-xs text-gray-500">4 hours ago • Portfolio B</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">Data review requested</p>
+                    <p className="text-xs text-gray-500">6 hours ago • Portfolio C</p>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-2">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                  Enter Marketplace
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Post-trade Panel */}
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900">Post-trade</CardTitle>
+                    <CardDescription>Replenishments, reporting, pricing and performance analytics</CardDescription>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-orange-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">23</div>
+                  <div className="text-sm text-orange-700">Reports Generated</div>
+                </div>
+                <div className="text-center p-3 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">89%</div>
+                  <div className="text-sm text-purple-700">Performance Score</div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Last Analytics Run:</span>
+                <span className="text-gray-900 font-medium">1 hour ago</span>
+              </div>
+              <div className="pt-2">
+                <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                  View Post-trade Analytics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" className="flex items-center space-x-2">
+              <Upload className="h-4 w-4" />
+              <span>Upload Data</span>
+            </Button>
+            <Button variant="outline" className="flex items-center space-x-2">
+              <Database className="h-4 w-4" />
+              <span>Access Vault</span>
+            </Button>
+            <Button variant="outline" className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Update Pricing</span>
+            </Button>
+            <Button variant="outline" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Generate Report</span>
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;

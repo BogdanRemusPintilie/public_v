@@ -4,16 +4,74 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle } from 'lucide-react';
+import { BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { loginSchema, sanitizeInput } from '@/utils/validation';
 
 const Index = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login logic would go here
-    console.log('Login attempt:', { email, password });
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeInput(email);
+      const sanitizedPassword = sanitizeInput(password);
+
+      // Validate inputs
+      const validationResult = loginSchema.safeParse({
+        email: sanitizedEmail,
+        password: sanitizedPassword
+      });
+
+      if (!validationResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        validationResult.error.errors.forEach((error) => {
+          if (error.path[0]) {
+            fieldErrors[error.path[0] as string] = error.message;
+          }
+        });
+        setErrors(fieldErrors);
+        setIsLoading(false);
+        return;
+      }
+
+      // Attempt login
+      const success = await login(sanitizedEmail, sanitizedPassword);
+      
+      if (success) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome to RiskBlocs Platform",
+        });
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Please check your credentials and try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -23,8 +81,8 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <Shield className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">RiskBlocs</span>
+              <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-8 w-8" />
+              <span className="text-xl font-bold text-gray-900 font-poppins">RiskBlocs</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
@@ -106,9 +164,13 @@ const Index = () => {
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-11"
+                        className={`h-11 ${errors.email ? 'border-red-500' : ''}`}
                         required
+                        disabled={isLoading}
                       />
+                      {errors.email && (
+                        <p className="text-sm text-red-600">{errors.email}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password" className="text-sm font-medium text-gray-700">
@@ -120,16 +182,30 @@ const Index = () => {
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-11"
+                        className={`h-11 ${errors.password ? 'border-red-500' : ''}`}
                         required
+                        disabled={isLoading}
                       />
+                      {errors.password && (
+                        <p className="text-sm text-red-600">{errors.password}</p>
+                      )}
                     </div>
                     <Button 
                       type="submit" 
                       className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                      disabled={isLoading}
                     >
-                      Sign In to Platform
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Signing In...
+                        </>
+                      ) : (
+                        <>
+                          Sign In to Platform
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
                     </Button>
                   </form>
                   
@@ -257,8 +333,8 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Shield className="h-6 w-6 text-blue-400" />
-                <span className="text-lg font-bold">RiskBlocs</span>
+                <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-6 w-6" />
+                <span className="text-lg font-bold font-poppins">RiskBlocs</span>
               </div>
               <p className="text-gray-400 text-sm">
                 Enterprise risk management platform trusted by organizations worldwide.
