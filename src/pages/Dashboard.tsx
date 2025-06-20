@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, Shield, TrendingUp, AlertTriangle, CheckCircle, Clock, FileText } from 'lucide-react';
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity } from 'lucide-react';
 
 const Dashboard = () => {
   return (
@@ -32,51 +32,51 @@ const Dashboard = () => {
 
         {/* Dashboard Panels */}
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Risk Analytics Panel */}
+          {/* Pre-trade Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-6 w-6 text-blue-600" />
+                    <Upload className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold text-gray-900">Risk Analytics</CardTitle>
-                    <CardDescription>Real-time risk assessment overview</CardDescription>
+                    <CardTitle className="text-xl font-bold text-gray-900">Pre-trade</CardTitle>
+                    <CardDescription>Upload and access transaction data, manage Silent RiskData vault, transaction preparation and analytics</CardDescription>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-red-50 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">12</div>
-                  <div className="text-sm text-red-700">High Risk</div>
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">45</div>
+                  <div className="text-sm text-blue-700">Data Files</div>
                 </div>
-                <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">28</div>
-                  <div className="text-sm text-yellow-700">Medium Risk</div>
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">12</div>
+                  <div className="text-sm text-green-700">Analytics Ready</div>
                 </div>
               </div>
               <div className="pt-2">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  View Full Analytics
+                  Access Pre-trade Tools
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Compliance Monitoring Panel */}
+          {/* Matched Market Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-green-600" />
+                    <Users className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold text-gray-900">Compliance Status</CardTitle>
-                    <CardDescription>Regulatory compliance overview</CardDescription>
+                    <CardTitle className="text-xl font-bold text-gray-900">Matched Market</CardTitle>
+                    <CardDescription>Share or access transactions in progress, manage pricing and ready transaction for execution</CardDescription>
                   </div>
                 </div>
               </div>
@@ -84,46 +84,46 @@ const Dashboard = () => {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">ISO 27001</span>
+                  <span className="text-sm text-gray-600">Active Transactions</span>
                   <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-green-600">Compliant</span>
+                    <Activity className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-green-600">8 In Progress</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">SOC 2 Type II</span>
+                  <span className="text-sm text-gray-600">Pricing Updates</span>
                   <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-green-600">Compliant</span>
+                    <DollarSign className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-blue-600">3 Pending</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">GDPR</span>
+                  <span className="text-sm text-gray-600">Ready for Execution</span>
                   <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm text-yellow-600">Review Due</span>
+                    <FileCheck className="h-4 w-4 text-orange-500" />
+                    <span className="text-sm text-orange-600">5 Ready</span>
                   </div>
                 </div>
               </div>
               <div className="pt-2">
                 <Button className="w-full bg-green-600 hover:bg-green-700">
-                  Manage Compliance
+                  Manage Market Transactions
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Team Activity Panel */}
+          {/* Marketplace Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Users className="h-6 w-6 text-purple-600" />
+                    <TrendingUp className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold text-gray-900">Team Activity</CardTitle>
-                    <CardDescription>Recent team actions and updates</CardDescription>
+                    <CardTitle className="text-xl font-bold text-gray-900">Marketplace</CardTitle>
+                    <CardDescription>Undertake or review transactions and related data</CardDescription>
                   </div>
                 </div>
               </div>
@@ -133,66 +133,66 @@ const Dashboard = () => {
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">Risk assessment completed for IT Infrastructure</p>
-                    <p className="text-xs text-gray-500">2 hours ago • Sarah Johnson</p>
+                    <p className="text-sm text-gray-900">New transaction review available</p>
+                    <p className="text-xs text-gray-500">2 hours ago • Portfolio A</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">Compliance report submitted</p>
-                    <p className="text-xs text-gray-500">4 hours ago • Mike Chen</p>
+                    <p className="text-sm text-gray-900">Transaction completed successfully</p>
+                    <p className="text-xs text-gray-500">4 hours ago • Portfolio B</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">New risk identified in vendor management</p>
-                    <p className="text-xs text-gray-500">6 hours ago • Alex Rivera</p>
+                    <p className="text-sm text-gray-900">Data review requested</p>
+                    <p className="text-xs text-gray-500">6 hours ago • Portfolio C</p>
                   </div>
                 </div>
               </div>
               <div className="pt-2">
                 <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  View All Activity
+                  Enter Marketplace
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Reports & Insights Panel */}
+          {/* Post-trade Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <FileText className="h-6 w-6 text-orange-600" />
+                    <BarChart3 className="h-6 w-6 text-orange-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold text-gray-900">Reports & Insights</CardTitle>
-                    <CardDescription>Generated reports and analytics</CardDescription>
+                    <CardTitle className="text-xl font-bold text-gray-900">Post-trade</CardTitle>
+                    <CardDescription>Replenishments, reporting, pricing and performance analytics</CardDescription>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">15</div>
-                  <div className="text-sm text-blue-700">Monthly Reports</div>
+                <div className="text-center p-3 bg-orange-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">23</div>
+                  <div className="text-sm text-orange-700">Reports Generated</div>
                 </div>
-                <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">8</div>
-                  <div className="text-sm text-green-700">Insights Generated</div>
+                <div className="text-center p-3 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">89%</div>
+                  <div className="text-sm text-purple-700">Performance Score</div>
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Last Report Generated:</span>
-                <span className="text-gray-900 font-medium">2 days ago</span>
+                <span className="text-gray-600">Last Analytics Run:</span>
+                <span className="text-gray-900 font-medium">1 hour ago</span>
               </div>
               <div className="pt-2">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">
-                  Generate New Report
+                  View Post-trade Analytics
                 </Button>
               </div>
             </CardContent>
@@ -204,20 +204,20 @@ const Dashboard = () => {
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" className="flex items-center space-x-2">
-              <AlertTriangle className="h-4 w-4" />
-              <span>Report New Risk</span>
+              <Upload className="h-4 w-4" />
+              <span>Upload Data</span>
             </Button>
             <Button variant="outline" className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4" />
-              <span>View Trends</span>
+              <Database className="h-4 w-4" />
+              <span>Access Vault</span>
             </Button>
             <Button variant="outline" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>Manage Team</span>
+              <DollarSign className="h-4 w-4" />
+              <span>Update Pricing</span>
             </Button>
             <Button variant="outline" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>Export Data</span>
+              <BarChart3 className="h-4 w-4" />
+              <span>Generate Report</span>
             </Button>
           </div>
         </div>
