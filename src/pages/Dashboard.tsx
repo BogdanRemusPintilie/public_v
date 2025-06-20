@@ -1,7 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,13 @@ const Dashboard = () => {
       description: "You have been successfully logged out",
     });
     navigate('/');
+  };
+
+  const handlePreTradeAction = (action: string) => {
+    toast({
+      title: "Pre-trade Action",
+      description: `Selected: ${action}`,
+    });
   };
 
   return (
@@ -78,9 +85,62 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="pt-2">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  Access Pre-trade Tools
-                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      Access Pre-trade Tools
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0" align="center">
+                    <div className="bg-white rounded-lg shadow-lg border">
+                      <div className="p-2">
+                        <h3 className="font-semibold text-gray-900 px-2 py-1 text-sm">Pre-trade Tools</h3>
+                        <div className="space-y-1">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start h-auto p-2 text-left"
+                            onClick={() => handlePreTradeAction('Upload Data Tape')}
+                          >
+                            <Upload className="h-4 w-4 mr-2 text-blue-600" />
+                            <span className="text-sm">Upload Data Tape</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start h-auto p-2 text-left"
+                            onClick={() => handlePreTradeAction('Access Existing Data')}
+                          >
+                            <FolderOpen className="h-4 w-4 mr-2 text-green-600" />
+                            <span className="text-sm">Access Existing Data</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start h-auto p-2 text-left"
+                            onClick={() => handlePreTradeAction('Manage Silent RiskData Vault')}
+                          >
+                            <Shield className="h-4 w-4 mr-2 text-purple-600" />
+                            <span className="text-sm">Manage Silent RiskData Vault</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start h-auto p-2 text-left"
+                            onClick={() => handlePreTradeAction('Prepare Data Sets')}
+                          >
+                            <Settings className="h-4 w-4 mr-2 text-orange-600" />
+                            <span className="text-sm">Prepare Data Sets</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start h-auto p-2 text-left"
+                            onClick={() => handlePreTradeAction('Tranche and Analyse Data')}
+                          >
+                            <BarChart className="h-4 w-4 mr-2 text-indigo-600" />
+                            <span className="text-sm">Tranche and Analyse Data</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </CardContent>
           </Card>
