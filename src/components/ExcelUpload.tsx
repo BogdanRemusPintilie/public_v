@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -34,12 +33,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
 
-  // Mock loan tape data generator
+  // Mock loan tape data generator - generates realistic European loan data
   const generateMockLoanData = (): LoanData[] => {
     const loanTypes = ['Conventional', 'FHA', 'VA', 'USDA', 'Jumbo'];
-    return Array.from({ length: 50 }, (_, i) => ({
-      loanAmount: Math.floor(Math.random() * 800000) + 100000,
-      interestRate: parseFloat((Math.random() * 3 + 3).toFixed(2)),
+    // Generate a realistic number of loans for a typical bank portfolio
+    return Array.from({ length: 1247 }, (_, i) => ({
+      loanAmount: Math.floor(Math.random() * 600000) + 50000, // €50k to €650k
+      interestRate: parseFloat((Math.random() * 3 + 2.5).toFixed(2)), // 2.5% to 5.5%
       term: [15, 20, 25, 30][Math.floor(Math.random() * 4)],
       loanType: loanTypes[Math.floor(Math.random() * loanTypes.length)],
       creditScore: Math.floor(Math.random() * 300) + 500,
@@ -250,8 +250,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                     <CardTitle className="text-sm">Total Loans</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">{summaryStats.totalLoans}</div>
-                    <div className="text-xs text-gray-500">Portfolio Size</div>
+                    <div className="text-2xl font-bold text-blue-600">{summaryStats.totalLoans.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Individual Loan Records</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -260,7 +260,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      ${(summaryStats.totalPortfolioValue / 1000000).toFixed(1)}M
+                      €{(summaryStats.totalPortfolioValue / 1000000).toFixed(1)}M
                     </div>
                     <div className="text-xs text-gray-500">Total Outstanding</div>
                   </CardContent>
@@ -282,7 +282,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-red-600">
-                      {summaryStats.highRiskLoans}
+                      {summaryStats.highRiskLoans.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-500">Credit Score &lt;650 or LTV &gt;90%</div>
                   </CardContent>
@@ -296,7 +296,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold text-purple-600">
-                      ${(summaryStats.avgLoanAmount / 1000).toFixed(0)}K
+                      €{(summaryStats.avgLoanAmount / 1000).toFixed(0)}K
                     </div>
                   </CardContent>
                 </Card>
@@ -380,7 +380,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                   <Card>
                     <CardHeader>
                       <CardTitle>Loan Data Preview</CardTitle>
-                      <CardDescription>First 10 records from the {showExistingData ? 'existing' : 'uploaded'} data</CardDescription>
+                      <CardDescription>First 10 records from the {showExistingData ? 'existing' : 'uploaded'} data ({summaryStats.totalLoans.toLocaleString()} total loans)</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="max-h-[300px] overflow-y-auto">
@@ -398,7 +398,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                           <TableBody>
                             {previewData.slice(0, 10).map((loan, index) => (
                               <TableRow key={index}>
-                                <TableCell>${loan.loanAmount.toLocaleString()}</TableCell>
+                                <TableCell>€{loan.loanAmount.toLocaleString()}</TableCell>
                                 <TableCell>{loan.interestRate}%</TableCell>
                                 <TableCell>{loan.term}</TableCell>
                                 <TableCell>{loan.loanType}</TableCell>
