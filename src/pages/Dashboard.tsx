@@ -13,6 +13,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showExcelUpload, setShowExcelUpload] = useState(false);
+  const [showExistingData, setShowExistingData] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -26,6 +27,8 @@ const Dashboard = () => {
   const handlePreTradeAction = (action: string) => {
     if (action === 'Upload Data Tape') {
       setShowExcelUpload(true);
+    } else if (action === 'Access Existing Data') {
+      setShowExistingData(true);
     } else {
       toast({
         title: "Pre-trade Action",
@@ -36,7 +39,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* ... keep existing code (header section) */}
       <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -55,17 +57,13 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Risk Management Dashboard</h1>
           <p className="text-gray-600">Monitor and manage your organization's risk profile</p>
         </div>
 
-        {/* Dashboard Panels */}
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Pre-trade Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -81,7 +79,6 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* ... keep existing code (stats section) */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">45</div>
@@ -153,8 +150,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* ... keep existing code (all other panels and sections) */}
-          {/* Matched Market Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -201,7 +196,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Marketplace Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -248,7 +242,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Post-trade Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -287,7 +280,6 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Quick Actions */}
         <div className="mt-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
           <div className="flex flex-wrap gap-3">
@@ -311,10 +303,17 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* Excel Upload Dialog */}
+      {/* Excel Upload Dialog for new uploads */}
       <ExcelUpload
         isOpen={showExcelUpload}
         onClose={() => setShowExcelUpload(false)}
+      />
+
+      {/* Excel Upload Dialog for existing data preview */}
+      <ExcelUpload
+        isOpen={showExistingData}
+        onClose={() => setShowExistingData(false)}
+        showExistingData={true}
       />
     </div>
   );

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell }
 interface ExcelUploadProps {
   isOpen: boolean;
   onClose: () => void;
+  showExistingData?: boolean;
 }
 
 interface LoanData {
@@ -25,7 +25,7 @@ interface LoanData {
   ltv: number;
 }
 
-const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
+const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExistingData = false }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [worksheets, setWorksheets] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -45,6 +45,27 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
       ltv: parseFloat((Math.random() * 40 + 60).toFixed(1))
     }));
   };
+
+  // Load existing data when showExistingData is true
+  useEffect(() => {
+    if (showExistingData && isOpen) {
+      const mockData = generateMockLoanData();
+      setPreviewData(mockData);
+      setShowPreview(true);
+      setWorksheets(['Historical_Portfolio_2024', 'Q4_Originations', 'Risk_Assessment', 'Performance_Metrics']);
+      
+      // Simulate an existing file
+      const mockFile = new File([''], 'existing_loan_portfolio_2024.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      setSelectedFile(mockFile);
+      
+      toast({
+        title: "Existing Data Loaded",
+        description: `Displaying ${mockData.length} loan records from historical data`,
+      });
+    }
+  }, [showExistingData, isOpen, toast]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -133,34 +154,39 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <FileSpreadsheet className="h-5 w-5 text-green-600" />
-            <span>Upload Loan Tape Data</span>
+            <span>{showExistingData ? 'View Existing Loan Data' : 'Upload Loan Tape Data'}</span>
           </DialogTitle>
           <DialogDescription>
-            Select an Excel file containing your loan portfolio data. Multiple worksheets are supported.
+            {showExistingData 
+              ? 'Viewing existing loan portfolio data with analytics and charts.' 
+              : 'Select an Excel file containing your loan portfolio data. Multiple worksheets are supported.'
+            }
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <Input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileSelect}
-              className="hidden"
-              id="excel-upload"
-            />
-            <label htmlFor="excel-upload" className="cursor-pointer">
-              <div className="flex flex-col items-center space-y-2">
-                <Upload className="h-8 w-8 text-gray-400" />
-                <span className="text-sm text-gray-600">
-                  Click to select Excel file
-                </span>
-                <span className="text-xs text-gray-400">
-                  Supports .xlsx and .xls formats
-                </span>
-              </div>
-            </label>
-          </div>
+          {!showExistingData && (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <Input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="excel-upload"
+              />
+              <label htmlFor="excel-upload" className="cursor-pointer">
+                <div className="flex flex-col items-center space-y-2">
+                  <Upload className="h-8 w-8 text-gray-400" />
+                  <span className="text-sm text-gray-600">
+                    Click to select Excel file
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Supports .xlsx and .xls formats
+                  </span>
+                </div>
+              </label>
+            </div>
+          )}
 
           {selectedFile && (
             <div className="bg-gray-50 rounded-lg p-4">
@@ -168,29 +194,34 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
                 <div className="flex items-center space-x-2">
                   <FileSpreadsheet className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">{selectedFile.name}</span>
+                  {showExistingData && (
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Existing Data</span>
+                  )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedFile(null);
-                    setWorksheets([]);
-                    setPreviewData([]);
-                    setShowPreview(false);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {!showExistingData && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setWorksheets([]);
+                      setPreviewData([]);
+                      setShowPreview(false);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               
               <div className="text-xs text-gray-600 mb-2">
-                Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                {showExistingData ? 'Historical Data' : `Size: ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`}
               </div>
               
               {worksheets.length > 0 && (
                 <div>
                   <div className="text-xs font-medium text-gray-700 mb-1">
-                    Detected Worksheets ({worksheets.length}):
+                    {showExistingData ? 'Available Worksheets' : 'Detected Worksheets'} ({worksheets.length}):
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {worksheets.map((sheet, index) => (
@@ -318,7 +349,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
                   <Card>
                     <CardHeader>
                       <CardTitle>Loan Data Preview</CardTitle>
-                      <CardDescription>First 10 records from the uploaded data</CardDescription>
+                      <CardDescription>First 10 records from the {showExistingData ? 'existing' : 'uploaded'} data</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="max-h-[300px] overflow-y-auto">
@@ -361,15 +392,17 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
               className="flex-1"
               disabled={isProcessing}
             >
-              Cancel
+              {showExistingData ? 'Close' : 'Cancel'}
             </Button>
-            <Button
-              onClick={handleUpload}
-              disabled={!selectedFile || isProcessing}
-              className="flex-1"
-            >
-              {isProcessing ? 'Processing...' : 'Upload & Process'}
-            </Button>
+            {!showExistingData && (
+              <Button
+                onClick={handleUpload}
+                disabled={!selectedFile || isProcessing}
+                className="flex-1"
+              >
+                {isProcessing ? 'Processing...' : 'Upload & Process'}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
