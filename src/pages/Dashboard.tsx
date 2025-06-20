@@ -1,9 +1,25 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity } from 'lucide-react';
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out",
+    });
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -15,8 +31,11 @@ const Dashboard = () => {
               <span className="text-xl font-bold text-gray-900 font-poppins">RiskBlocs</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome back, Admin</span>
-              <Button variant="outline" size="sm">Logout</Button>
+              <span className="text-sm text-gray-600">Welcome back, {user?.email}</span>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>

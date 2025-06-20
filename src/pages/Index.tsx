@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,18 +6,72 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { loginSchema, sanitizeInput } from '@/utils/validation';
 
 const Index = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login logic would go here
-    console.log('Login attempt:', { email, password });
-    // For demo purposes, navigate to dashboard after login
-    navigate('/dashboard');
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeInput(email);
+      const sanitizedPassword = sanitizeInput(password);
+
+      // Validate inputs
+      const validationResult = loginSchema.safeParse({
+        email: sanitizedEmail,
+        password: sanitizedPassword
+      });
+
+      if (!validationResult.success) {
+        const fieldErrors: Record<string, string> = {};
+        validationResult.error.errors.forEach((error) => {
+          if (error.path[0]) {
+            fieldErrors[error.path[0] as string] = error.message;
+          }
+        });
+        setErrors(fieldErrors);
+        setIsLoading(false);
+        return;
+      }
+
+      // Attempt login
+      const success = await login(sanitizedEmail, sanitizedPassword);
+      
+      if (success) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome to RiskBlocs Platform",
+        });
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Please check your credentials and try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -109,9 +164,13 @@ const Index = () => {
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-11"
+                        className={`h-11 ${errors.email ? 'border-red-500' : ''}`}
                         required
+                        disabled={isLoading}
                       />
+                      {errors.email && (
+                        <p className="text-sm text-red-600">{errors.email}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password" className="text-sm font-medium text-gray-700">
@@ -123,16 +182,30 @@ const Index = () => {
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-11"
+                        className={`h-11 ${errors.password ? 'border-red-500' : ''}`}
                         required
+                        disabled={isLoading}
                       />
+                      {errors.password && (
+                        <p className="text-sm text-red-600">{errors.password}</p>
+                      )}
                     </div>
                     <Button 
                       type="submit" 
                       className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                      disabled={isLoading}
                     >
-                      Sign In to Platform
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Signing In...
+                        </>
+                      ) : (
+                        <>
+                          Sign In to Platform
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
                     </Button>
                   </form>
                   
