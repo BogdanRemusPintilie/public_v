@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -120,12 +121,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     onClose();
   };
 
-  // Summary statistics
+  // Calculate real summary statistics from the loan data
   const summaryStats = {
     totalLoans: previewData.length,
+    totalPortfolioValue: previewData.reduce((sum, loan) => sum + loan.loanAmount, 0),
     avgLoanAmount: previewData.reduce((sum, loan) => sum + loan.loanAmount, 0) / previewData.length || 0,
     avgInterestRate: previewData.reduce((sum, loan) => sum + loan.interestRate, 0) / previewData.length || 0,
     avgCreditScore: previewData.reduce((sum, loan) => sum + loan.creditScore, 0) / previewData.length || 0,
+    avgLTV: previewData.reduce((sum, loan) => sum + loan.ltv, 0) / previewData.length || 0,
+    highRiskLoans: previewData.filter(loan => loan.creditScore < 650 || loan.ltv > 90).length,
   };
 
   // Chart data
@@ -247,16 +251,18 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-600">{summaryStats.totalLoans}</div>
+                    <div className="text-xs text-gray-500">Portfolio Size</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Avg Loan Amount</CardTitle>
+                    <CardTitle className="text-sm">Portfolio Value</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      ${(summaryStats.avgLoanAmount / 1000).toFixed(0)}K
+                      ${(summaryStats.totalPortfolioValue / 1000000).toFixed(1)}M
                     </div>
+                    <div className="text-xs text-gray-500">Total Outstanding</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -267,14 +273,39 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                     <div className="text-2xl font-bold text-orange-600">
                       {summaryStats.avgInterestRate.toFixed(2)}%
                     </div>
+                    <div className="text-xs text-gray-500">Weighted Average</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Avg Credit Score</CardTitle>
+                    <CardTitle className="text-sm">High Risk Loans</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-2xl font-bold text-red-600">
+                      {summaryStats.highRiskLoans}
+                    </div>
+                    <div className="text-xs text-gray-500">Credit Score &lt;650 or LTV &gt;90%</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Average Loan Amount</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-xl font-bold text-purple-600">
+                      ${(summaryStats.avgLoanAmount / 1000).toFixed(0)}K
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Average Credit Score</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-xl font-bold text-indigo-600">
                       {summaryStats.avgCreditScore.toFixed(0)}
                     </div>
                   </CardContent>
