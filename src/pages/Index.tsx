@@ -4,15 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Login logic would go here
     console.log('Login attempt:', { email, password });
+    // For demo purposes, navigate to dashboard after login
+    navigate('/dashboard');
   };
 
   return (
