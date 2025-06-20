@@ -5,11 +5,14 @@ import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import ExcelUpload from '@/components/ExcelUpload';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -21,15 +24,19 @@ const Dashboard = () => {
   };
 
   const handlePreTradeAction = (action: string) => {
-    toast({
-      title: "Pre-trade Action",
-      description: `Selected: ${action}`,
-    });
+    if (action === 'Upload Data Tape') {
+      setShowExcelUpload(true);
+    } else {
+      toast({
+        title: "Pre-trade Action",
+        description: `Selected: ${action}`,
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
+      {/* ... keep existing code (header section) */}
       <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -74,6 +81,7 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* ... keep existing code (stats section) */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">45</div>
@@ -145,6 +153,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          {/* ... keep existing code (all other panels and sections) */}
           {/* Matched Market Panel */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
@@ -301,6 +310,12 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Excel Upload Dialog */}
+      <ExcelUpload
+        isOpen={showExcelUpload}
+        onClose={() => setShowExcelUpload(false)}
+      />
     </div>
   );
 };
