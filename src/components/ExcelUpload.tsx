@@ -3,19 +3,48 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Upload, FileSpreadsheet, X } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Upload, FileSpreadsheet, X, BarChart3, Table as TableIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface ExcelUploadProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface LoanData {
+  loanAmount: number;
+  interestRate: number;
+  term: number;
+  loanType: string;
+  creditScore: number;
+  ltv: number;
+}
+
 const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [worksheets, setWorksheets] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewData, setPreviewData] = useState<LoanData[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
+
+  // Mock loan tape data generator
+  const generateMockLoanData = (): LoanData[] => {
+    const loanTypes = ['Conventional', 'FHA', 'VA', 'USDA', 'Jumbo'];
+    return Array.from({ length: 50 }, (_, i) => ({
+      loanAmount: Math.floor(Math.random() * 800000) + 100000,
+      interestRate: parseFloat((Math.random() * 3 + 3).toFixed(2)),
+      term: [15, 20, 25, 30][Math.floor(Math.random() * 4)],
+      loanType: loanTypes[Math.floor(Math.random() * loanTypes.length)],
+      creditScore: Math.floor(Math.random() * 300) + 500,
+      ltv: parseFloat((Math.random() * 40 + 60).toFixed(1))
+    }));
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -25,11 +54,16 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
           file.name.endsWith('.xlsx') || 
           file.name.endsWith('.xls')) {
         setSelectedFile(file);
-        // Simulate worksheet detection
-        setWorksheets(['Sheet1', 'Data', 'Summary', 'Transactions']);
+        setWorksheets(['Loan_Portfolio', 'Credit_Analysis', 'Risk_Metrics', 'Origination_Data']);
+        
+        // Generate mock preview data
+        const mockData = generateMockLoanData();
+        setPreviewData(mockData);
+        setShowPreview(true);
+        
         toast({
           title: "File Selected",
-          description: `${file.name} ready for upload`,
+          description: `${file.name} ready for upload with data preview available`,
         });
       } else {
         toast({
@@ -46,11 +80,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
     
     setIsProcessing(true);
     
-    // Simulate upload process
     setTimeout(() => {
       toast({
         title: "Upload Successful",
-        description: `${selectedFile.name} has been uploaded with ${worksheets.length} worksheets`,
+        description: `${selectedFile.name} has been processed with ${previewData.length} loan records`,
       });
       setIsProcessing(false);
       handleClose();
@@ -61,19 +94,49 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
     setSelectedFile(null);
     setWorksheets([]);
     setIsProcessing(false);
+    setPreviewData([]);
+    setShowPreview(false);
     onClose();
+  };
+
+  // Summary statistics
+  const summaryStats = {
+    totalLoans: previewData.length,
+    avgLoanAmount: previewData.reduce((sum, loan) => sum + loan.loanAmount, 0) / previewData.length || 0,
+    avgInterestRate: previewData.reduce((sum, loan) => sum + loan.interestRate, 0) / previewData.length || 0,
+    avgCreditScore: previewData.reduce((sum, loan) => sum + loan.creditScore, 0) / previewData.length || 0,
+  };
+
+  // Chart data
+  const loanTypeData = previewData.reduce((acc, loan) => {
+    acc[loan.loanType] = (acc[loan.loanType] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const chartData = Object.entries(loanTypeData).map(([type, count]) => ({
+    loanType: type,
+    count,
+  }));
+
+  const pieColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
+
+  const chartConfig = {
+    count: {
+      label: "Loan Count",
+      color: "#8884d8",
+    },
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={`${showPreview ? 'max-w-6xl' : 'max-w-md'} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <FileSpreadsheet className="h-5 w-5 text-green-600" />
-            <span>Upload Data Tape</span>
+            <span>Upload Loan Tape Data</span>
           </DialogTitle>
           <DialogDescription>
-            Select an Excel file containing your trading data. Multiple worksheets are supported.
+            Select an Excel file containing your loan portfolio data. Multiple worksheets are supported.
           </DialogDescription>
         </DialogHeader>
         
@@ -112,6 +175,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
                   onClick={() => {
                     setSelectedFile(null);
                     setWorksheets([]);
+                    setPreviewData([]);
+                    setShowPreview(false);
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -142,6 +207,153 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
             </div>
           )}
 
+          {showPreview && previewData.length > 0 && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Total Loans</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-600">{summaryStats.totalLoans}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Avg Loan Amount</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      ${(summaryStats.avgLoanAmount / 1000).toFixed(0)}K
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Avg Interest Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {summaryStats.avgInterestRate.toFixed(2)}%
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Avg Credit Score</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {summaryStats.avgCreditScore.toFixed(0)}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Tabs defaultValue="chart" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="chart" className="flex items-center space-x-2">
+                    <BarChart3 className="h-4 w-4" />
+                    <span>Chart View</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="table" className="flex items-center space-x-2">
+                    <TableIcon className="h-4 w-4" />
+                    <span>Table View</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="chart" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Loan Distribution by Type</CardTitle>
+                        <CardDescription>Number of loans by loan type</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ChartContainer config={chartConfig} className="h-[200px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData}>
+                              <XAxis dataKey="loanType" tick={{ fontSize: 12 }} />
+                              <YAxis />
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                              <Bar dataKey="count" fill="#8884d8" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Portfolio Composition</CardTitle>
+                        <CardDescription>Loan type distribution</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ChartContainer config={chartConfig} className="h-[200px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={chartData}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={60}
+                                fill="#8884d8"
+                                dataKey="count"
+                                label={({ loanType, percent }) => `${loanType} ${(percent * 100).toFixed(0)}%`}
+                              >
+                                {chartData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                                ))}
+                              </Pie>
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="table">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Loan Data Preview</CardTitle>
+                      <CardDescription>First 10 records from the uploaded data</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="max-h-[300px] overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Loan Amount</TableHead>
+                              <TableHead>Interest Rate</TableHead>
+                              <TableHead>Term (Years)</TableHead>
+                              <TableHead>Loan Type</TableHead>
+                              <TableHead>Credit Score</TableHead>
+                              <TableHead>LTV %</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {previewData.slice(0, 10).map((loan, index) => (
+                              <TableRow key={index}>
+                                <TableCell>${loan.loanAmount.toLocaleString()}</TableCell>
+                                <TableCell>{loan.interestRate}%</TableCell>
+                                <TableCell>{loan.term}</TableCell>
+                                <TableCell>{loan.loanType}</TableCell>
+                                <TableCell>{loan.creditScore}</TableCell>
+                                <TableCell>{loan.ltv}%</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
           <div className="flex space-x-2">
             <Button
               variant="outline"
@@ -156,7 +368,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose }) => {
               disabled={!selectedFile || isProcessing}
               className="flex-1"
             >
-              {isProcessing ? 'Uploading...' : 'Upload'}
+              {isProcessing ? 'Processing...' : 'Upload & Process'}
             </Button>
           </div>
         </div>
