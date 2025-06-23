@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +24,7 @@ interface LoanData {
   loanType: string;
   creditScore: number;
   ltv: number;
+  openingBalance: number;
 }
 
 const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExistingData = false }) => {
@@ -37,14 +39,19 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   const generateMockLoanData = (): LoanData[] => {
     const loanTypes = ['Conventional', 'FHA', 'VA', 'USDA', 'Jumbo'];
     // Generate a realistic number of loans for a typical bank portfolio
-    return Array.from({ length: 1247 }, (_, i) => ({
-      loanAmount: Math.floor(Math.random() * 600000) + 50000, // €50k to €650k
-      interestRate: parseFloat((Math.random() * 3 + 2.5).toFixed(2)), // 2.5% to 5.5%
-      term: [15, 20, 25, 30][Math.floor(Math.random() * 4)],
-      loanType: loanTypes[Math.floor(Math.random() * loanTypes.length)],
-      creditScore: Math.floor(Math.random() * 300) + 500,
-      ltv: parseFloat((Math.random() * 40 + 60).toFixed(1))
-    }));
+    return Array.from({ length: 1247 }, (_, i) => {
+      const loanAmount = Math.floor(Math.random() * 600000) + 50000; // €50k to €650k
+      const openingBalance = Math.floor(loanAmount * (0.7 + Math.random() * 0.3)); // 70%-100% of loan amount
+      return {
+        loanAmount,
+        interestRate: parseFloat((Math.random() * 3 + 2.5).toFixed(2)), // 2.5% to 5.5%
+        term: [15, 20, 25, 30][Math.floor(Math.random() * 4)],
+        loanType: loanTypes[Math.floor(Math.random() * loanTypes.length)],
+        creditScore: Math.floor(Math.random() * 300) + 500,
+        ltv: parseFloat((Math.random() * 40 + 60).toFixed(1)),
+        openingBalance
+      };
+    });
   };
 
   // Load existing data when showExistingData is true
@@ -121,12 +128,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     onClose();
   };
 
-  // Calculate real summary statistics from the loan data
+  // Calculate summary statistics with weighted average interest rate
   const summaryStats = {
     totalLoans: previewData.length,
-    totalPortfolioValue: previewData.reduce((sum, loan) => sum + loan.loanAmount, 0),
+    totalPortfolioValue: previewData.reduce((sum, loan) => sum + loan.openingBalance, 0),
     avgLoanAmount: previewData.reduce((sum, loan) => sum + loan.loanAmount, 0) / previewData.length || 0,
-    avgInterestRate: previewData.reduce((sum, loan) => sum + loan.interestRate, 0) / previewData.length || 0,
+    // Weighted average interest rate by opening balance
+    avgInterestRate: previewData.length > 0 ? 
+      previewData.reduce((sum, loan) => sum + (loan.interestRate * loan.openingBalance), 0) / 
+      previewData.reduce((sum, loan) => sum + loan.openingBalance, 0) : 0,
     avgCreditScore: previewData.reduce((sum, loan) => sum + loan.creditScore, 0) / previewData.length || 0,
     avgLTV: previewData.reduce((sum, loan) => sum + loan.ltv, 0) / previewData.length || 0,
     highRiskLoans: previewData.filter(loan => loan.creditScore < 650 || loan.ltv > 90).length,
@@ -262,7 +272,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                     <div className="text-2xl font-bold text-green-600">
                       €{(summaryStats.totalPortfolioValue / 1000000).toFixed(1)}M
                     </div>
-                    <div className="text-xs text-gray-500">Total Outstanding</div>
+                    <div className="text-xs text-gray-500">Total Opening Balance</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -273,7 +283,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                     <div className="text-2xl font-bold text-orange-600">
                       {summaryStats.avgInterestRate.toFixed(2)}%
                     </div>
-                    <div className="text-xs text-gray-500">Weighted Average</div>
+                    <div className="text-xs text-gray-500">Weighted by Opening Balance</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -388,6 +398,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                           <TableHeader>
                             <TableRow>
                               <TableHead>Loan Amount</TableHead>
+                              <TableHead>Opening Balance</TableHead>
                               <TableHead>Interest Rate</TableHead>
                               <TableHead>Term (Years)</TableHead>
                               <TableHead>Loan Type</TableHead>
@@ -399,6 +410,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                             {previewData.slice(0, 10).map((loan, index) => (
                               <TableRow key={index}>
                                 <TableCell>€{loan.loanAmount.toLocaleString()}</TableCell>
+                                <TableCell>€{loan.openingBalance.toLocaleString()}</TableCell>
                                 <TableCell>{loan.interestRate}%</TableCell>
                                 <TableCell>{loan.term}</TableCell>
                                 <TableCell>{loan.loanType}</TableCell>
