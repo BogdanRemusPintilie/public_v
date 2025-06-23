@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoanRecord, insertLoanData, getLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getLoanData, supabase } from '@/utils/supabase';
 import { parseExcelFile } from '@/utils/excelParser';
 
 interface ExcelUploadProps {
@@ -26,7 +26,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
-  const { user, supabase } = useAuth();
+  const { user } = useAuth();
 
   // Load existing data when showExistingData is true
   useEffect(() => {
