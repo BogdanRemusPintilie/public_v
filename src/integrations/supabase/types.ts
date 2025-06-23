@@ -9,13 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      loan_data: {
+        Row: {
+          created_at: string
+          credit_score: number
+          file_name: string | null
+          id: string
+          interest_rate: number
+          loan_amount: number
+          loan_type: string
+          ltv: number
+          opening_balance: number
+          pd: number | null
+          term: number
+          updated_at: string
+          user_id: string | null
+          worksheet_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          credit_score: number
+          file_name?: string | null
+          id?: string
+          interest_rate: number
+          loan_amount: number
+          loan_type: string
+          ltv: number
+          opening_balance: number
+          pd?: number | null
+          term: number
+          updated_at?: string
+          user_id?: string | null
+          worksheet_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          credit_score?: number
+          file_name?: string | null
+          id?: string
+          interest_rate?: number
+          loan_amount?: number
+          loan_type?: string
+          ltv?: number
+          opening_balance?: number
+          pd?: number | null
+          term?: number
+          updated_at?: string
+          user_id?: string | null
+          worksheet_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_loan_data_table: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
