@@ -86,6 +86,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('File selected:', file.name, file.type, file.size);
+
     if (!(file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
           file.type === 'application/vnd.ms-excel' ||
           file.name.endsWith('.xlsx') || 
@@ -102,7 +104,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     setIsProcessing(true);
     
     try {
+      console.log('Starting to parse file...');
       const parsedData = await parseExcelFile(file);
+      console.log('File parsed successfully:', {
+        worksheets: parsedData.worksheets,
+        dataLength: parsedData.data.length,
+        firstRecord: parsedData.data[0]
+      });
+      
       setWorksheets(parsedData.worksheets);
       setPreviewData(parsedData.data);
       setShowPreview(true);
@@ -128,6 +137,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   };
 
   const handleUpload = async () => {
+    console.log('Upload button clicked', {
+      selectedFile: !!selectedFile,
+      user: !!user,
+      previewDataLength: previewData.length,
+      supabase: !!supabase
+    });
+
     if (!selectedFile || !user || previewData.length === 0 || !supabase) {
       if (!supabase) {
         toast({
@@ -137,6 +153,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
         });
         return;
       }
+      console.log('Upload conditions not met:', {
+        selectedFile: !!selectedFile,
+        user: !!user,
+        previewDataLength: previewData.length,
+        supabase: !!supabase
+      });
       return;
     }
     
@@ -149,6 +171,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
         user_id: user.id
       }));
       
+      console.log('Inserting data to database:', dataWithUserId.length, 'records');
       await insertLoanData(dataWithUserId);
       
       toast({
@@ -211,6 +234,16 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
       color: "#8884d8",
     },
   };
+
+  // Debug button state
+  const isButtonDisabled = !selectedFile || isProcessing || previewData.length === 0 || !user;
+  console.log('Button state:', {
+    isButtonDisabled,
+    selectedFile: !!selectedFile,
+    isProcessing,
+    previewDataLength: previewData.length,
+    user: !!user
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -493,10 +526,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
             {!showExistingData && (
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFile || isProcessing || previewData.length === 0 || !user}
+                disabled={isButtonDisabled}
                 className="flex-1"
               >
-                {isProcessing ? 'Processing...' : 'Upload & Save to Database'}
+                {isProcessing ? 'Processing...' : `Upload & Save to Database ${previewData.length > 0 ? `(${previewData.length} records)` : ''}`}
               </Button>
             )}
           </div>
