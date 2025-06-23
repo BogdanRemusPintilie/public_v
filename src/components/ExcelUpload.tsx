@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -128,15 +127,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     onClose();
   };
 
-  // Calculate summary statistics with weighted average interest rate
+  // Calculate summary statistics with unweighted average interest rate
   const summaryStats = {
     totalLoans: previewData.length,
     totalPortfolioValue: previewData.reduce((sum, loan) => sum + loan.openingBalance, 0),
     avgLoanAmount: previewData.reduce((sum, loan) => sum + loan.loanAmount, 0) / previewData.length || 0,
-    // Weighted average interest rate by opening balance
-    avgInterestRate: previewData.length > 0 ? 
-      previewData.reduce((sum, loan) => sum + (loan.interestRate * loan.openingBalance), 0) / 
-      previewData.reduce((sum, loan) => sum + loan.openingBalance, 0) : 0,
+    // Simple unweighted average interest rate
+    avgInterestRate: previewData.reduce((sum, loan) => sum + loan.interestRate, 0) / previewData.length || 0,
     avgCreditScore: previewData.reduce((sum, loan) => sum + loan.creditScore, 0) / previewData.length || 0,
     avgLTV: previewData.reduce((sum, loan) => sum + loan.ltv, 0) / previewData.length || 0,
     highRiskLoans: previewData.filter(loan => loan.creditScore < 650 || loan.ltv > 90).length,
@@ -283,7 +280,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                     <div className="text-2xl font-bold text-orange-600">
                       {summaryStats.avgInterestRate.toFixed(2)}%
                     </div>
-                    <div className="text-xs text-gray-500">Weighted by Opening Balance</div>
+                    <div className="text-xs text-gray-500">Unweighted Average</div>
                   </CardContent>
                 </Card>
                 <Card>
