@@ -225,17 +225,17 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     let bucket = '';
     
     if (termMonths <= 12) {
-      bucket = '0-12 months';
+      bucket = 'Up to 1 year';
     } else if (termMonths <= 24) {
-      bucket = '13-24 months';
+      bucket = 'Up to 2 years';
     } else if (termMonths <= 36) {
-      bucket = '25-36 months';
+      bucket = 'Up to 3 years';
+    } else if (termMonths <= 48) {
+      bucket = 'Up to 4 years';
     } else if (termMonths <= 60) {
-      bucket = '37-60 months';
-    } else if (termMonths <= 120) {
-      bucket = '61-120 months';
+      bucket = 'Up to 5 years';
     } else {
-      bucket = '120+ months';
+      bucket = 'More than 5 years';
     }
     
     acc[bucket] = (acc[bucket] || 0) + 1;
