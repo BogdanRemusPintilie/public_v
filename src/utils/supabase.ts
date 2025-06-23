@@ -1,10 +1,20 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl) {
+  console.error('VITE_SUPABASE_URL is not set. Please check your Supabase integration.');
+}
+
+if (!supabaseKey) {
+  console.error('VITE_SUPABASE_ANON_KEY is not set. Please check your Supabase integration.');
+}
+
+// Only create client if both URL and key are available
+export const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 export interface LoanRecord {
   id?: string;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -27,7 +26,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, supabase } = useAuth();
 
   // Load existing data when showExistingData is true
   useEffect(() => {
@@ -37,7 +36,16 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   }, [showExistingData, isOpen, user]);
 
   const loadExistingData = async () => {
-    if (!user) return;
+    if (!user || !supabase) {
+      if (!supabase) {
+        toast({
+          title: "Database Not Connected",
+          description: "Please check your Supabase integration configuration",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
     
     try {
       setIsProcessing(true);
@@ -120,7 +128,17 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !user || previewData.length === 0) return;
+    if (!selectedFile || !user || previewData.length === 0 || !supabase) {
+      if (!supabase) {
+        toast({
+          title: "Database Not Connected",
+          description: "Please check your Supabase integration configuration",
+          variant: "destructive",
+        });
+        return;
+      }
+      return;
+    }
     
     setIsProcessing(true);
     
