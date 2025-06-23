@@ -484,11 +484,18 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                         <CardDescription>Number of loans by maturity period</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <ChartContainer config={chartConfig} className="h-[200px]">
+                        <ChartContainer config={chartConfig} className="h-[250px]">
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={maturityChartData}>
-                              <XAxis dataKey="maturity" tick={{ fontSize: 12 }} />
-                              <YAxis />
+                            <BarChart data={maturityChartData} margin={{ bottom: 60, left: 20, right: 20, top: 20 }}>
+                              <XAxis 
+                                dataKey="maturity" 
+                                tick={{ fontSize: 11, fill: '#374151' }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={80}
+                                interval={0}
+                              />
+                              <YAxis tick={{ fontSize: 12, fill: '#374151' }} />
                               <ChartTooltip content={<ChartTooltipContent />} />
                               <Bar dataKey="count" fill="#8884d8" />
                             </BarChart>
@@ -503,17 +510,21 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                         <CardDescription>Distribution by opening balance</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <ChartContainer config={chartConfig} className="h-[200px]">
+                        <ChartContainer config={chartConfig} className="h-[250px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
                                 data={sizeChartData}
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={60}
+                                outerRadius={70}
                                 fill="#8884d8"
                                 dataKey="count"
-                                label={({ size, percent }) => `${size} ${(percent * 100).toFixed(0)}%`}
+                                label={({ size, percent }) => 
+                                  percent > 0.05 ? `${size} ${(percent * 100).toFixed(0)}%` : ''
+                                }
+                                labelLine={false}
+                                fontSize={10}
                               >
                                 {sizeChartData.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
