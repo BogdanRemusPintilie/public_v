@@ -224,18 +224,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     const termMonths = loan.term;
     let bucket = '';
     
-    if (termMonths <= 12) {
-      bucket = 'Up to 1 year';
-    } else if (termMonths <= 24) {
-      bucket = 'Up to 2 years';
-    } else if (termMonths <= 36) {
-      bucket = 'Up to 3 years';
-    } else if (termMonths <= 48) {
-      bucket = 'Up to 4 years';
+    if (termMonths <= 36) {
+      bucket = 'Up to 36 months';
     } else if (termMonths <= 60) {
-      bucket = 'Up to 5 years';
+      bucket = '37-60 months';
+    } else if (termMonths <= 84) {
+      bucket = '61-84 months';
     } else {
-      bucket = 'More than 5 years';
+      bucket = 'More than 84 months';
     }
     
     acc[bucket] = (acc[bucket] || 0) + 1;
@@ -244,12 +240,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
 
   // Define the correct order for maturity buckets
   const maturityOrder = [
-    'Up to 1 year',
-    'Up to 2 years', 
-    'Up to 3 years',
-    'Up to 4 years',
-    'Up to 5 years',
-    'More than 5 years'
+    'Up to 36 months',
+    '37-60 months',
+    '61-84 months',
+    'More than 84 months'
   ];
 
   const maturityChartData = maturityOrder.map(maturity => ({
