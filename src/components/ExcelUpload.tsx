@@ -28,6 +28,35 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Helper function to validate UUID format
+  const isValidUUID = (str: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
+  // Generate a valid UUID v4 if the user ID is not a valid UUID
+  const generateValidUserId = (userId: string) => {
+    if (isValidUUID(userId)) {
+      return userId;
+    }
+    
+    // Create a deterministic UUID based on the user ID
+    // This ensures the same user always gets the same UUID
+    const crypto = window.crypto;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(userId);
+    
+    // Create a simple hash-based UUID (not cryptographically secure but works for this purpose)
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      hash = ((hash << 5) - hash + data[i]) & 0xffffffff;
+    }
+    
+    // Convert to a UUID-like format
+    const hex = Math.abs(hash).toString(16).padStart(8, '0');
+    return `${hex.slice(0, 8)}-${hex.slice(0, 4)}-4${hex.slice(0, 3)}-8${hex.slice(0, 3)}-${hex.slice(0, 12).padStart(12, '0')}`;
+  };
+
   // Load existing data when showExistingData is true
   useEffect(() => {
     if (showExistingData && isOpen && user) {
@@ -49,7 +78,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     
     try {
       setIsProcessing(true);
-      const existingData = await getLoanData(user.id);
+      const validUserId = generateValidUserId(user.id);
+      const existingData = await getLoanData(validUserId);
       
       if (existingData.length > 0) {
         setPreviewData(existingData);
@@ -141,7 +171,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
       selectedFile: !!selectedFile,
       user: !!user,
       previewDataLength: previewData.length,
-      supabase: !!supabase
+      supabase: !!supabase,
+      userId: user?.id
     });
 
     if (!selectedFile || !user || previewData.length === 0 || !supabase) {
@@ -165,13 +196,17 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     setIsProcessing(true);
     
     try {
+      // Generate a valid UUID for the user
+      const validUserId = generateValidUserId(user.id);
+      console.log('Original user ID:', user.id, 'Generated valid UUID:', validUserId);
+      
       // Add user_id to all records
       const dataWithUserId = previewData.map(loan => ({
         ...loan,
-        user_id: user.id
+        user_id: validUserId
       }));
       
-      console.log('Inserting data to database:', dataWithUserId.length, 'records');
+      console.log('Inserting data to database:', dataWithUserId.length, 'records with user_id:', validUserId);
       await insertLoanData(dataWithUserId);
       
       toast({
@@ -182,9 +217,20 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
       handleClose();
     } catch (error) {
       console.error('Error uploading data:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to save data to database. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes('uuid')) {
+          errorMessage = "Invalid user ID format. Please contact support.";
+        } else if (error.message.includes('permission')) {
+          errorMessage = "Permission denied. Please check your account permissions.";
+        }
+      }
+      
       toast({
         title: "Upload Failed",
-        description: "Failed to save data to database. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
