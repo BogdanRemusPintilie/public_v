@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -253,8 +252,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     const openingBalance = loan.opening_balance;
     let bucket = '';
     
-    if (openingBalance < 50000) {
-      bucket = '< €50K';
+    if (openingBalance < 10000) {
+      bucket = '< €10K';
+    } else if (openingBalance < 25000) {
+      bucket = '€10K - €25K';
+    } else if (openingBalance < 50000) {
+      bucket = '€25K - €50K';
     } else if (openingBalance < 100000) {
       bucket = '€50K - €100K';
     } else if (openingBalance < 250000) {
@@ -276,7 +279,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     count,
   }));
 
-  const pieColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
+  const pieColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0', '#a4de6c', '#ffc0cb'];
 
   const chartConfig = {
     count: {
