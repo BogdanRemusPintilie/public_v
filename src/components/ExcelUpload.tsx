@@ -212,7 +212,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
       previewData.reduce((sum, loan) => sum + loan.opening_balance, 0) : 0,
     avgCreditScore: previewData.reduce((sum, loan) => sum + loan.credit_score, 0) / previewData.length || 0,
     avgLTV: previewData.reduce((sum, loan) => sum + loan.ltv, 0) / previewData.length || 0,
-    highRiskLoans: previewData.filter(loan => loan.credit_score < 650 || loan.ltv > 90).length,
+    // Updated to use PD > 0.05 instead of credit score and LTV
+    higherRiskLoans: previewData.filter(loan => (loan.pd || 0) > 0.05).length,
   };
 
   // Chart data
@@ -372,13 +373,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">High Risk Loans</CardTitle>
+                    <CardTitle className="text-sm">Higher Risk Loans</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-red-600">
-                      {summaryStats.highRiskLoans.toLocaleString()}
+                      {summaryStats.higherRiskLoans.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">Credit Score &lt;650 or LTV &gt;90%</div>
+                    <div className="text-xs text-gray-500">PD &gt; 5%</div>
                   </CardContent>
                 </Card>
               </div>

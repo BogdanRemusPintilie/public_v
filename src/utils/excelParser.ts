@@ -17,130 +17,105 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
         const workbook = XLSX.read(data, { type: 'array' });
         
         const worksheets = workbook.SheetNames;
-        const allData: LoanRecord[] = [];
-        
         console.log('Available worksheets:', worksheets);
         
-        // Process all worksheets
-        worksheets.forEach(sheetName => {
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        // Focus specifically on the loan_tape sheet
+        const loanTapeSheet = worksheets.find(name => 
+          name.toLowerCase().includes('loan_tape') || 
+          name.toLowerCase().includes('loantape') ||
+          name.toLowerCase() === 'loan_tape'
+        );
+        
+        if (!loanTapeSheet) {
+          console.error('loan_tape sheet not found. Available sheets:', worksheets);
+          throw new Error('loan_tape sheet not found in the Excel file');
+        }
+        
+        console.log(`Processing loan_tape sheet: "${loanTapeSheet}"`);
+        
+        const worksheet = workbook.Sheets[loanTapeSheet];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        console.log(`loan_tape sheet data:`, {
+          totalRows: jsonData.length,
+          headers: jsonData[0],
+          sampleDataRow: jsonData[1]
+        });
+        
+        if (jsonData.length < 2) {
+          throw new Error('loan_tape sheet appears to be empty or has no data rows');
+        }
+        
+        // Get headers from row 1 (index 0)
+        const headers = jsonData[0] as string[];
+        console.log('Headers found:', headers);
+        
+        // Process data rows (skip header row)
+        const dataRows = jsonData.slice(1);
+        
+        const mappedData = dataRows.map((row: any[], index: number) => {
+          // Column mapping based on your specifications:
+          // Column A: Loan ID
+          // Column B: Opening Balance  
+          // Column C: Interest Rate
+          // Column J: PD (Probability of Default)
           
-          console.log(`Processing sheet "${sheetName}":`, {
-            rowCount: jsonData.length,
-            sampleRow: jsonData[0]
-          });
+          const loanId = row[0]; // Column A
+          const openingBalance = parseFloat(row[1]) || 0; // Column B
+          const interestRate = parseFloat(row[2]) || 0; // Column C
+          const pd = parseFloat(row[9]) || 0; // Column J (0-indexed, so J = 9)
           
-          if (jsonData.length === 0) {
-            console.log(`Sheet "${sheetName}" is empty, skipping`);
-            return;
+          const loanRecord = {
+            loan_amount: openingBalance, // Using opening balance as loan amount for now
+            interest_rate: interestRate,
+            term: 0, // Not specified in your mapping
+            loan_type: 'Standard', // Default value
+            credit_score: 0, // Not specified in your mapping
+            ltv: 0, // Not specified in your mapping
+            opening_balance: openingBalance,
+            pd: pd, // Adding PD for risk calculation
+            file_name: file.name,
+            worksheet_name: loanTapeSheet
+          };
+
+          // Log first few records for debugging
+          if (index < 5) {
+            console.log(`Sample record ${index + 1}:`, {
+              loanId,
+              openingBalance,
+              interestRate,
+              pd,
+              fullRecord: loanRecord
+            });
+          }
+
+          return loanRecord;
+        }).filter((record: any) => {
+          // Filter out records with invalid opening balance
+          const isValid = record.opening_balance > 0;
+          
+          if (!isValid && dataRows.length < 10) {
+            console.log('Filtered out invalid record:', record);
           }
           
-          // Get all available column names from the first row
-          const availableColumns = Object.keys(jsonData[0] || {});
-          console.log(`Available columns in "${sheetName}":`, availableColumns);
-          
-          // Map Excel columns to our loan record structure with more flexible matching
-          const mappedData = jsonData.map((row: any, index: number) => {
-            // Helper function to find column value with flexible matching
-            const findColumnValue = (possibleNames: string[], defaultValue: any = 0) => {
-              for (const name of possibleNames) {
-                // Try exact match first
-                if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
-                  return row[name];
-                }
-                // Try case-insensitive match
-                const lowerName = name.toLowerCase();
-                for (const [key, value] of Object.entries(row)) {
-                  if (key.toLowerCase() === lowerName && value !== undefined && value !== null && value !== '') {
-                    return value;
-                  }
-                }
-                // Try partial match
-                for (const [key, value] of Object.entries(row)) {
-                  if (key.toLowerCase().includes(lowerName) && value !== undefined && value !== null && value !== '') {
-                    return value;
-                  }
-                }
-              }
-              return defaultValue;
-            };
-
-            const loanRecord = {
-              loan_amount: parseFloat(findColumnValue([
-                'Loan Amount', 'loan_amount', 'LoanAmount', 'Loan_Amount',
-                'Original Loan Amount', 'Principal', 'Balance', 'Loan Balance'
-              ], 0)) || 0,
-              
-              interest_rate: parseFloat(findColumnValue([
-                'Interest Rate', 'interest_rate', 'InterestRate', 'Interest_Rate',
-                'Rate', 'Coupon', 'Note Rate', 'Current Rate'
-              ], 0)) || 0,
-              
-              term: parseInt(findColumnValue([
-                'Term', 'term', 'Term (Years)', 'Maturity', 'Original Term',
-                'Term Years', 'Loan Term', 'Years'
-              ], 0)) || 0,
-              
-              loan_type: String(findColumnValue([
-                'Loan Type', 'loan_type', 'LoanType', 'Loan_Type',
-                'Type', 'Product', 'Product Type', 'Loan Product'
-              ], 'Unknown')),
-              
-              credit_score: parseInt(findColumnValue([
-                'Credit Score', 'credit_score', 'CreditScore', 'Credit_Score',
-                'FICO', 'Score', 'Borrower Score'
-              ], 0)) || 0,
-              
-              ltv: parseFloat(findColumnValue([
-                'LTV', 'ltv', 'LTV %', 'LTV Ratio', 'Loan to Value',
-                'Current LTV', 'Original LTV', 'LoanToValue'
-              ], 0)) || 0,
-              
-              opening_balance: parseFloat(findColumnValue([
-                'Opening Balance', 'opening_balance', 'OpeningBalance', 'Opening_Balance',
-                'Current Balance', 'Outstanding Balance', 'Principal Balance',
-                'Balance', 'Current Principal', 'Remaining Balance'
-              ], 0)) || 0,
-              
-              file_name: file.name,
-              worksheet_name: sheetName
-            };
-
-            // Log first few records for debugging
-            if (index < 3) {
-              console.log(`Sample record ${index + 1} from "${sheetName}":`, loanRecord);
-            }
-
-            return loanRecord;
-          }).filter((record: LoanRecord) => {
-            // More lenient validation - at least one meaningful field should be present
-            const hasLoanAmount = record.loan_amount > 0;
-            const hasBalance = record.opening_balance > 0;
-            const hasInterestRate = record.interest_rate > 0;
-            
-            const isValid = hasLoanAmount || hasBalance || hasInterestRate;
-            
-            if (!isValid && allData.length < 5) {
-              console.log('Filtered out invalid record:', record);
-            }
-            
-            return isValid;
-          });
-          
-          console.log(`Sheet "${sheetName}" processed: ${mappedData.length} valid records out of ${jsonData.length} total rows`);
-          allData.push(...mappedData);
+          return isValid;
         });
         
         console.log('Final parsing result:', {
           totalWorksheets: worksheets.length,
-          totalValidRecords: allData.length,
-          sampleRecord: allData[0]
+          targetWorksheet: loanTapeSheet,
+          totalDataRows: dataRows.length,
+          validRecords: mappedData.length,
+          portfolioValue: mappedData.reduce((sum, loan) => sum + loan.opening_balance, 0),
+          avgInterestRate: mappedData.length > 0 ? 
+            mappedData.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / 
+            mappedData.reduce((sum, loan) => sum + loan.opening_balance, 0) : 0,
+          higherRiskLoans: mappedData.filter(loan => loan.pd > 0.05).length
         });
         
         resolve({
-          worksheets,
-          data: allData
+          worksheets: [loanTapeSheet],
+          data: mappedData
         });
       } catch (error) {
         console.error('Error in parseExcelFile:', error);

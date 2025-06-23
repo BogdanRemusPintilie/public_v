@@ -26,6 +26,7 @@ export interface LoanRecord {
   credit_score: number;
   ltv: number;
   opening_balance: number;
+  pd?: number; // Adding PD field for risk calculation
   file_name?: string;
   worksheet_name?: string;
   created_at?: string;
