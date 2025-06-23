@@ -517,14 +517,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                                 data={sizeChartData}
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={70}
+                                outerRadius={60}
                                 fill="#8884d8"
                                 dataKey="count"
-                                label={({ size, percent }) => 
-                                  percent > 0.05 ? `${size} ${(percent * 100).toFixed(0)}%` : ''
-                                }
-                                labelLine={false}
-                                fontSize={10}
+                                label={({ size, percent }) => `${size} ${(percent * 100).toFixed(0)}%`}
                               >
                                 {sizeChartData.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
