@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +10,9 @@ import { Upload, FileSpreadsheet, X, BarChart3, Table as TableIcon } from 'lucid
 import { useToast } from '@/hooks/use-toast';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoanRecord, insertLoanData, getLoanData } from '@/utils/supabase';
+import { parseExcelFile } from '@/utils/excelParser';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -16,106 +20,135 @@ interface ExcelUploadProps {
   showExistingData?: boolean;
 }
 
-interface LoanData {
-  loanAmount: number;
-  interestRate: number;
-  term: number;
-  loanType: string;
-  creditScore: number;
-  ltv: number;
-  openingBalance: number;
-}
-
 const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExistingData = false }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [worksheets, setWorksheets] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [previewData, setPreviewData] = useState<LoanData[]>([]);
+  const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
-
-  // Mock loan tape data generator - generates realistic European loan data
-  const generateMockLoanData = (): LoanData[] => {
-    const loanTypes = ['Conventional', 'FHA', 'VA', 'USDA', 'Jumbo'];
-    // Generate a realistic number of loans for a typical bank portfolio
-    return Array.from({ length: 1247 }, (_, i) => {
-      const loanAmount = Math.floor(Math.random() * 600000) + 50000; // €50k to €650k
-      const openingBalance = Math.floor(loanAmount * (0.7 + Math.random() * 0.3)); // 70%-100% of loan amount
-      return {
-        loanAmount,
-        interestRate: parseFloat((Math.random() * 3 + 2.5).toFixed(2)), // 2.5% to 5.5%
-        term: [15, 20, 25, 30][Math.floor(Math.random() * 4)],
-        loanType: loanTypes[Math.floor(Math.random() * loanTypes.length)],
-        creditScore: Math.floor(Math.random() * 300) + 500,
-        ltv: parseFloat((Math.random() * 40 + 60).toFixed(1)),
-        openingBalance
-      };
-    });
-  };
+  const { user } = useAuth();
 
   // Load existing data when showExistingData is true
   useEffect(() => {
-    if (showExistingData && isOpen) {
-      const mockData = generateMockLoanData();
-      setPreviewData(mockData);
-      setShowPreview(true);
-      setWorksheets(['Historical_Portfolio_2024', 'Q4_Originations', 'Risk_Assessment', 'Performance_Metrics']);
-      
-      // Simulate an existing file
-      const mockFile = new File([''], 'existing_loan_portfolio_2024.xlsx', {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      setSelectedFile(mockFile);
-      
-      toast({
-        title: "Existing Data Loaded",
-        description: `Displaying ${mockData.length} loan records from historical data`,
-      });
+    if (showExistingData && isOpen && user) {
+      loadExistingData();
     }
-  }, [showExistingData, isOpen, toast]);
+  }, [showExistingData, isOpen, user]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-          file.type === 'application/vnd.ms-excel' ||
-          file.name.endsWith('.xlsx') || 
-          file.name.endsWith('.xls')) {
-        setSelectedFile(file);
-        setWorksheets(['Loan_Portfolio', 'Credit_Analysis', 'Risk_Metrics', 'Origination_Data']);
-        
-        // Generate mock preview data
-        const mockData = generateMockLoanData();
-        setPreviewData(mockData);
+  const loadExistingData = async () => {
+    if (!user) return;
+    
+    try {
+      setIsProcessing(true);
+      const existingData = await getLoanData(user.id);
+      
+      if (existingData.length > 0) {
+        setPreviewData(existingData);
         setShowPreview(true);
         
+        // Get unique worksheets from existing data
+        const uniqueWorksheets = [...new Set(existingData.map(loan => loan.worksheet_name).filter(Boolean))];
+        setWorksheets(uniqueWorksheets.length > 0 ? uniqueWorksheets : ['Historical_Portfolio_2024']);
+        
         toast({
-          title: "File Selected",
-          description: `${file.name} ready for upload with data preview available`,
+          title: "Existing Data Loaded",
+          description: `Displaying ${existingData.length} loan records from database`,
         });
       } else {
         toast({
-          title: "Invalid File Type",
-          description: "Please select an Excel file (.xlsx or .xls)",
+          title: "No Data Found",
+          description: "No existing loan data found in database",
           variant: "destructive",
         });
       }
+    } catch (error) {
+      console.error('Error loading existing data:', error);
+      toast({
+        title: "Error Loading Data",
+        description: "Failed to load existing data from database",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!(file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+          file.type === 'application/vnd.ms-excel' ||
+          file.name.endsWith('.xlsx') || 
+          file.name.endsWith('.xls'))) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an Excel file (.xlsx or .xls)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    setIsProcessing(true);
+    
+    try {
+      const parsedData = await parseExcelFile(file);
+      setWorksheets(parsedData.worksheets);
+      setPreviewData(parsedData.data);
+      setShowPreview(true);
+      
+      toast({
+        title: "File Parsed Successfully",
+        description: `${file.name} parsed with ${parsedData.data.length} loan records from ${parsedData.worksheets.length} worksheets`,
+      });
+    } catch (error) {
+      console.error('Error parsing Excel file:', error);
+      toast({
+        title: "Parsing Error",
+        description: "Failed to parse Excel file. Please check the file format and column headers.",
+        variant: "destructive",
+      });
+      setSelectedFile(null);
+      setWorksheets([]);
+      setPreviewData([]);
+      setShowPreview(false);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !user || previewData.length === 0) return;
     
     setIsProcessing(true);
     
-    setTimeout(() => {
+    try {
+      // Add user_id to all records
+      const dataWithUserId = previewData.map(loan => ({
+        ...loan,
+        user_id: user.id
+      }));
+      
+      await insertLoanData(dataWithUserId);
+      
       toast({
         title: "Upload Successful",
-        description: `${selectedFile.name} has been processed with ${previewData.length} loan records`,
+        description: `${selectedFile.name} has been processed and ${previewData.length} loan records saved to database`,
       });
-      setIsProcessing(false);
+      
       handleClose();
-    }, 2000);
+    } catch (error) {
+      console.error('Error uploading data:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to save data to database. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleClose = () => {
@@ -130,20 +163,20 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
   // Calculate summary statistics with weighted average interest rate
   const summaryStats = {
     totalLoans: previewData.length,
-    totalPortfolioValue: previewData.reduce((sum, loan) => sum + loan.openingBalance, 0),
-    avgLoanAmount: previewData.reduce((sum, loan) => sum + loan.loanAmount, 0) / previewData.length || 0,
+    totalPortfolioValue: previewData.reduce((sum, loan) => sum + loan.opening_balance, 0),
+    avgLoanAmount: previewData.reduce((sum, loan) => sum + loan.loan_amount, 0) / previewData.length || 0,
     // Weighted average interest rate by opening balance
     avgInterestRate: previewData.length > 0 ? 
-      previewData.reduce((sum, loan) => sum + (loan.interestRate * loan.openingBalance), 0) / 
-      previewData.reduce((sum, loan) => sum + loan.openingBalance, 0) : 0,
-    avgCreditScore: previewData.reduce((sum, loan) => sum + loan.creditScore, 0) / previewData.length || 0,
+      previewData.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / 
+      previewData.reduce((sum, loan) => sum + loan.opening_balance, 0) : 0,
+    avgCreditScore: previewData.reduce((sum, loan) => sum + loan.credit_score, 0) / previewData.length || 0,
     avgLTV: previewData.reduce((sum, loan) => sum + loan.ltv, 0) / previewData.length || 0,
-    highRiskLoans: previewData.filter(loan => loan.creditScore < 650 || loan.ltv > 90).length,
+    highRiskLoans: previewData.filter(loan => loan.credit_score < 650 || loan.ltv > 90).length,
   };
 
   // Chart data
   const loanTypeData = previewData.reduce((acc, loan) => {
-    acc[loan.loanType] = (acc[loan.loanType] || 0) + 1;
+    acc[loan.loan_type] = (acc[loan.loan_type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -171,8 +204,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
           </DialogTitle>
           <DialogDescription>
             {showExistingData 
-              ? 'Viewing existing loan portfolio data with analytics and charts.' 
-              : 'Select an Excel file containing your loan portfolio data. Multiple worksheets are supported.'
+              ? 'Viewing existing loan portfolio data from your database with analytics and charts.' 
+              : 'Select an Excel file containing your loan portfolio data. Data will be parsed and saved to your secure database.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -186,12 +219,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                 onChange={handleFileSelect}
                 className="hidden"
                 id="excel-upload"
+                disabled={isProcessing}
               />
-              <label htmlFor="excel-upload" className="cursor-pointer">
+              <label htmlFor="excel-upload" className={`cursor-pointer ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
                 <div className="flex flex-col items-center space-y-2">
                   <Upload className="h-8 w-8 text-gray-400" />
                   <span className="text-sm text-gray-600">
-                    Click to select Excel file
+                    {isProcessing ? 'Processing file...' : 'Click to select Excel file'}
                   </span>
                   <span className="text-xs text-gray-400">
                     Supports .xlsx and .xls formats
@@ -389,7 +423,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                   <Card>
                     <CardHeader>
                       <CardTitle>Loan Data Preview</CardTitle>
-                      <CardDescription>First 10 records from the {showExistingData ? 'existing' : 'uploaded'} data ({summaryStats.totalLoans.toLocaleString()} total loans)</CardDescription>
+                      <CardDescription>First 10 records from the {showExistingData ? 'database' : 'uploaded'} data ({summaryStats.totalLoans.toLocaleString()} total loans)</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="max-h-[300px] overflow-y-auto">
@@ -403,18 +437,20 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                               <TableHead>Loan Type</TableHead>
                               <TableHead>Credit Score</TableHead>
                               <TableHead>LTV %</TableHead>
+                              {showExistingData && <TableHead>Worksheet</TableHead>}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {previewData.slice(0, 10).map((loan, index) => (
                               <TableRow key={index}>
-                                <TableCell>€{loan.loanAmount.toLocaleString()}</TableCell>
-                                <TableCell>€{loan.openingBalance.toLocaleString()}</TableCell>
-                                <TableCell>{loan.interestRate}%</TableCell>
+                                <TableCell>€{loan.loan_amount.toLocaleString()}</TableCell>
+                                <TableCell>€{loan.opening_balance.toLocaleString()}</TableCell>
+                                <TableCell>{loan.interest_rate}%</TableCell>
                                 <TableCell>{loan.term}</TableCell>
-                                <TableCell>{loan.loanType}</TableCell>
-                                <TableCell>{loan.creditScore}</TableCell>
+                                <TableCell>{loan.loan_type}</TableCell>
+                                <TableCell>{loan.credit_score}</TableCell>
                                 <TableCell>{loan.ltv}%</TableCell>
+                                {showExistingData && <TableCell>{loan.worksheet_name}</TableCell>}
                               </TableRow>
                             ))}
                           </TableBody>
@@ -439,10 +475,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
             {!showExistingData && (
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFile || isProcessing}
+                disabled={!selectedFile || isProcessing || previewData.length === 0 || !user}
                 className="flex-1"
               >
-                {isProcessing ? 'Processing...' : 'Upload & Process'}
+                {isProcessing ? 'Processing...' : 'Upload & Save to Database'}
               </Button>
             )}
           </div>
