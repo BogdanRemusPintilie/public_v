@@ -57,17 +57,18 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
           // Column mapping based on your specifications:
           // Column A: Loan ID
           // Column B: Opening Balance  
-          // Column C: Interest Rate
+          // Column C: Interest Rate (decimal format, convert to percentage)
           // Column J: PD (Probability of Default)
           
           const loanId = row[0]; // Column A
           const openingBalance = parseFloat(row[1]) || 0; // Column B
-          const interestRate = parseFloat(row[2]) || 0; // Column C
+          const interestRateDecimal = parseFloat(row[2]) || 0; // Column C (decimal)
+          const interestRate = interestRateDecimal * 100; // Convert to percentage
           const pd = parseFloat(row[9]) || 0; // Column J (0-indexed, so J = 9)
           
           const loanRecord = {
             loan_amount: openingBalance, // Using opening balance as loan amount for now
-            interest_rate: interestRate,
+            interest_rate: interestRate, // Now properly converted to percentage
             term: 0, // Not specified in your mapping
             loan_type: 'Standard', // Default value
             credit_score: 0, // Not specified in your mapping
@@ -83,7 +84,8 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
             console.log(`Sample record ${index + 1}:`, {
               loanId,
               openingBalance,
-              interestRate,
+              interestRateDecimal,
+              interestRatePercentage: interestRate,
               pd,
               fullRecord: loanRecord
             });
