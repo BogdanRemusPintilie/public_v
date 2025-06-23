@@ -201,7 +201,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     onClose();
   };
 
-  // Calculate summary statistics with weighted average interest rate
+  // Calculate summary statistics with weighted average interest rate and average PD
   const summaryStats = {
     totalLoans: previewData.length,
     totalPortfolioValue: previewData.reduce((sum, loan) => sum + loan.opening_balance, 0),
@@ -210,7 +210,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     avgInterestRate: previewData.length > 0 ? 
       previewData.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / 
       previewData.reduce((sum, loan) => sum + loan.opening_balance, 0) : 0,
-    avgCreditScore: previewData.reduce((sum, loan) => sum + loan.credit_score, 0) / previewData.length || 0,
+    // Weighted average PD by opening balance, expressed as percentage
+    avgPD: previewData.length > 0 ? 
+      (previewData.reduce((sum, loan) => sum + ((loan.pd || 0) * loan.opening_balance), 0) / 
+      previewData.reduce((sum, loan) => sum + loan.opening_balance, 0)) * 100 : 0,
     avgLTV: previewData.reduce((sum, loan) => sum + loan.ltv, 0) / previewData.length || 0,
     // Updated to use PD > 0.05 instead of credit score and LTV
     higherRiskLoans: previewData.filter(loan => (loan.pd || 0) > 0.05).length,
@@ -397,12 +400,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Average Credit Score</CardTitle>
+                    <CardTitle className="text-sm">Average PD</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold text-indigo-600">
-                      {summaryStats.avgCreditScore.toFixed(0)}
+                      {summaryStats.avgPD.toFixed(2)}%
                     </div>
+                    <div className="text-xs text-gray-500">Weighted by Opening Balance</div>
                   </CardContent>
                 </Card>
               </div>
