@@ -219,14 +219,31 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     higherRiskLoans: previewData.filter(loan => (loan.pd || 0) > 0.05).length,
   };
 
-  // Chart data
-  const loanTypeData = previewData.reduce((acc, loan) => {
-    acc[loan.loan_type] = (acc[loan.loan_type] || 0) + 1;
+  // Chart data - Group loans by maturity buckets
+  const maturityBuckets = previewData.reduce((acc, loan) => {
+    const termMonths = loan.term;
+    let bucket = '';
+    
+    if (termMonths <= 12) {
+      bucket = '0-12 months';
+    } else if (termMonths <= 24) {
+      bucket = '13-24 months';
+    } else if (termMonths <= 36) {
+      bucket = '25-36 months';
+    } else if (termMonths <= 60) {
+      bucket = '37-60 months';
+    } else if (termMonths <= 120) {
+      bucket = '61-120 months';
+    } else {
+      bucket = '120+ months';
+    }
+    
+    acc[bucket] = (acc[bucket] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const chartData = Object.entries(loanTypeData).map(([type, count]) => ({
-    loanType: type,
+  const chartData = Object.entries(maturityBuckets).map(([maturity, count]) => ({
+    maturity,
     count,
   }));
 
@@ -427,14 +444,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                   <div className="grid grid-cols-2 gap-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Loan Distribution by Type</CardTitle>
-                        <CardDescription>Number of loans by loan type</CardDescription>
+                        <CardTitle className="text-lg">Loan Distribution by Maturity</CardTitle>
+                        <CardDescription>Number of loans by maturity period</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ChartContainer config={chartConfig} className="h-[200px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData}>
-                              <XAxis dataKey="loanType" tick={{ fontSize: 12 }} />
+                              <XAxis dataKey="maturity" tick={{ fontSize: 12 }} />
                               <YAxis />
                               <ChartTooltip content={<ChartTooltipContent />} />
                               <Bar dataKey="count" fill="#8884d8" />
@@ -447,7 +464,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-lg">Portfolio Composition</CardTitle>
-                        <CardDescription>Loan type distribution</CardDescription>
+                        <CardDescription>Maturity distribution</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ChartContainer config={chartConfig} className="h-[200px]">
@@ -460,7 +477,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                                 outerRadius={60}
                                 fill="#8884d8"
                                 dataKey="count"
-                                label={({ loanType, percent }) => `${loanType} ${(percent * 100).toFixed(0)}%`}
+                                label={({ maturity, percent }) => `${maturity} ${(percent * 100).toFixed(0)}%`}
                               >
                                 {chartData.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
