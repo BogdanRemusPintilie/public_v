@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -242,12 +243,40 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     return acc;
   }, {} as Record<string, number>);
 
-  const chartData = Object.entries(maturityBuckets).map(([maturity, count]) => ({
+  const maturityChartData = Object.entries(maturityBuckets).map(([maturity, count]) => ({
     maturity,
     count,
   }));
 
-  const pieColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
+  // New chart data - Group loans by size buckets based on opening balance
+  const sizeBuckets = previewData.reduce((acc, loan) => {
+    const openingBalance = loan.opening_balance;
+    let bucket = '';
+    
+    if (openingBalance < 50000) {
+      bucket = '< €50K';
+    } else if (openingBalance < 100000) {
+      bucket = '€50K - €100K';
+    } else if (openingBalance < 250000) {
+      bucket = '€100K - €250K';
+    } else if (openingBalance < 500000) {
+      bucket = '€250K - €500K';
+    } else if (openingBalance < 1000000) {
+      bucket = '€500K - €1M';
+    } else {
+      bucket = '€1M+';
+    }
+    
+    acc[bucket] = (acc[bucket] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const sizeChartData = Object.entries(sizeBuckets).map(([size, count]) => ({
+    size,
+    count,
+  }));
+
+  const pieColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
 
   const chartConfig = {
     count: {
@@ -450,7 +479,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                       <CardContent>
                         <ChartContainer config={chartConfig} className="h-[200px]">
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
+                            <BarChart data={maturityChartData}>
                               <XAxis dataKey="maturity" tick={{ fontSize: 12 }} />
                               <YAxis />
                               <ChartTooltip content={<ChartTooltipContent />} />
@@ -463,23 +492,23 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
                     
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Portfolio Composition</CardTitle>
-                        <CardDescription>Maturity distribution</CardDescription>
+                        <CardTitle className="text-lg">Portfolio Composition by Loan Size</CardTitle>
+                        <CardDescription>Distribution by opening balance</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ChartContainer config={chartConfig} className="h-[200px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
-                                data={chartData}
+                                data={sizeChartData}
                                 cx="50%"
                                 cy="50%"
                                 outerRadius={60}
                                 fill="#8884d8"
                                 dataKey="count"
-                                label={({ maturity, percent }) => `${maturity} ${(percent * 100).toFixed(0)}%`}
+                                label={({ size, percent }) => `${size} ${(percent * 100).toFixed(0)}%`}
                               >
-                                {chartData.map((entry, index) => (
+                                {sizeChartData.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
                                 ))}
                               </Pie>
