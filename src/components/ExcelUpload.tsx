@@ -242,9 +242,19 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ isOpen, onClose, showExisting
     return acc;
   }, {} as Record<string, number>);
 
-  const maturityChartData = Object.entries(maturityBuckets).map(([maturity, count]) => ({
+  // Define the correct order for maturity buckets
+  const maturityOrder = [
+    'Up to 1 year',
+    'Up to 2 years', 
+    'Up to 3 years',
+    'Up to 4 years',
+    'Up to 5 years',
+    'More than 5 years'
+  ];
+
+  const maturityChartData = maturityOrder.map(maturity => ({
     maturity,
-    count,
+    count: maturityBuckets[maturity] || 0,
   }));
 
   // New chart data - Group loans by size buckets based on opening balance
