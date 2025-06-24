@@ -111,7 +111,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: '.xlsx, .xls' });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop, 
+    accept: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls']
+    }
+  });
 
   const handleDeleteSelected = () => {
     setPreviewData([]);
