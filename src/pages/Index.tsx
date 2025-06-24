@@ -26,6 +26,10 @@ const Index = () => {
     navigate('/auth');
   };
 
+  const handleAccessSrtPlatform = () => {
+    navigate('/srt-platform');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
@@ -40,6 +44,13 @@ const Index = () => {
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
               <a href="#security" className="text-gray-600 hover:text-blue-600 transition-colors">Security</a>
               <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
+              <Button 
+                onClick={handleAccessSrtPlatform}
+                variant="outline"
+                className="mr-2"
+              >
+                SRT Platform
+              </Button>
               <Button 
                 onClick={handleGetStarted}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -108,12 +119,12 @@ const Index = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button 
+                  onClick={handleAccessSrtPlatform}
                   variant="outline"
                   size="lg"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 text-lg"
-                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3 text-lg"
                 >
-                  Learn More
+                  Access SRT Platform
                 </Button>
               </div>
             </div>
@@ -136,6 +147,14 @@ const Index = () => {
                   >
                     Access Platform
                     <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleAccessSrtPlatform}
+                    variant="outline"
+                    className="w-full h-11 border-blue-600 text-blue-600 hover:bg-blue-50 font-medium"
+                  >
+                    Try SRT Platform
                   </Button>
                   
                   <div className="text-center">
