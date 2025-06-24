@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,11 @@ const Index = () => {
     navigate('/auth');
   };
 
+  const handleBlocsTransfer = () => {
+    // This will open your Blocs Transfer microsite - you'll need to replace with your actual URL
+    window.open('https://your-blocs-transfer-url.com', '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
@@ -38,6 +43,7 @@ const Index = () => {
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
+              <a href="#apps" className="text-gray-600 hover:text-blue-600 transition-colors">Apps</a>
               <a href="#security" className="text-gray-600 hover:text-blue-600 transition-colors">Security</a>
               <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
               <Button 
@@ -215,6 +221,72 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Access Apps Section */}
+      <section id="apps" className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
+              Access Apps
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Explore our suite of specialized applications designed to enhance your risk management capabilities
+            </p>
+          </div>
+          
+          <div className="max-w-2xl mx-auto">
+            <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 bg-white/95 backdrop-blur-sm">
+              <CardHeader className="text-center pb-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 text-white">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <path d="M12 18v-6"/>
+                    <path d="m9 15 3 3 3-3"/>
+                  </svg>
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-900 mb-2">Blocs Transfer</CardTitle>
+                <CardDescription className="text-gray-600 text-lg">
+                  Secure file transfer and document management system for enterprise risk operations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center space-y-6">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Secure Transfer</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Document Management</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Real-time Sync</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-600">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span>Enterprise Ready</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleBlocsTransfer}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-medium"
+                >
+                  Access Blocs Transfer
+                  <ExternalLink className="ml-2 h-5 w-5" />
+                </Button>
+                
+                <p className="text-sm text-gray-500">
+                  Opens in a new window for seamless workflow integration
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Security Section */}
       <section id="security" className="py-20 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -272,7 +344,7 @@ const Index = () => {
               <h3 className="font-semibold text-white">Product</h3>
               <div className="space-y-2 text-sm">
                 <a href="#" className="text-gray-400 hover:text-white block transition-colors">Features</a>
-                <a href="#" className="text-gray-400 hover:text-white block transition-colors">Security</a>
+                <a href="#" className="text-gray-400 hover:text-white block transition-colors">Apps</a>
                 <a href="#" className="text-gray-400 hover:text-white block transition-colors">Integrations</a>
               </div>
             </div>
