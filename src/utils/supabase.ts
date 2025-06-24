@@ -1,5 +1,4 @@
 
-
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -14,7 +13,7 @@ export interface LoanRecord {
   credit_score: number;
   ltv: number;
   opening_balance: number;
-  pd?: number; // Adding PD field for risk calculation
+  pd?: number;
   file_name?: string;
   worksheet_name?: string;
   created_at?: string;
@@ -30,7 +29,7 @@ export const createLoanDataTable = async () => {
 };
 
 export const insertLoanData = async (loanData: LoanRecord[]) => {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('loan_data')
     .insert(loanData)
     .select();
@@ -44,7 +43,7 @@ export const insertLoanData = async (loanData: LoanRecord[]) => {
 };
 
 export const getLoanData = async (userId?: string) => {
-  let query = (supabase as any).from('loan_data').select('*');
+  let query = supabase.from('loan_data').select('*');
   
   if (userId) {
     query = query.eq('user_id', userId);
@@ -61,7 +60,7 @@ export const getLoanData = async (userId?: string) => {
 };
 
 export const deleteLoanData = async (ids: string[]) => {
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('loan_data')
     .delete()
     .in('id', ids);

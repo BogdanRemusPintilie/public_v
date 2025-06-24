@@ -1,14 +1,10 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { BarChart3, Users, ArrowRight, Lock, TrendingUp, CheckCircle, Shield } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { loginSchema, sanitizeInput } from '@/utils/validation';
 
 const Index = () => {
   const [email, setEmail] = useState('');
@@ -16,62 +12,18 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({});
-
-    try {
-      // Sanitize inputs
-      const sanitizedEmail = sanitizeInput(email);
-      const sanitizedPassword = sanitizeInput(password);
-
-      // Validate inputs
-      const validationResult = loginSchema.safeParse({
-        email: sanitizedEmail,
-        password: sanitizedPassword
-      });
-
-      if (!validationResult.success) {
-        const fieldErrors: Record<string, string> = {};
-        validationResult.error.errors.forEach((error) => {
-          if (error.path[0]) {
-            fieldErrors[error.path[0] as string] = error.message;
-          }
-        });
-        setErrors(fieldErrors);
-        setIsLoading(false);
-        return;
-      }
-
-      // Attempt login
-      const success = await login(sanitizedEmail, sanitizedPassword);
-      
-      if (success) {
-        toast({
-          title: "Login Successful",
-          description: "Welcome to RiskBlocs Platform",
-        });
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Please check your credentials and try again",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
     }
+  }, [isAuthenticated, navigate]);
+
+  const handleGetStarted = () => {
+    navigate('/auth');
   };
 
   return (
@@ -88,6 +40,12 @@ const Index = () => {
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
               <a href="#security" className="text-gray-600 hover:text-blue-600 transition-colors">Security</a>
               <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
+              <Button 
+                onClick={handleGetStarted}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Get Started
+              </Button>
             </div>
           </div>
         </div>
@@ -139,85 +97,62 @@ const Index = () => {
                   <div className="text-sm text-gray-600">Support</div>
                 </div>
               </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  onClick={handleGetStarted}
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+                >
+                  Get Started Today
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="lg"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 text-lg"
+                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Learn More
+                </Button>
+              </div>
             </div>
 
-            {/* Right Column - Login Form */}
+            {/* Right Column - Call to Action */}
             <div className="flex justify-center lg:justify-end">
               <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
                 <CardHeader className="text-center space-y-2">
                   <CardTitle className="text-2xl font-bold text-gray-900">
-                    Access Platform
+                    Ready to Get Started?
                   </CardTitle>
                   <CardDescription className="text-gray-600">
-                    Sign in to your RiskBlocs dashboard
+                    Join hundreds of enterprises using RiskBlocs for comprehensive risk management.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                        Email Address
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={`h-11 ${errors.email ? 'border-red-500' : ''}`}
-                        required
-                        disabled={isLoading}
-                      />
-                      {errors.email && (
-                        <p className="text-sm text-red-600">{errors.email}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                        Password
-                      </Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className={`h-11 ${errors.password ? 'border-red-500' : ''}`}
-                        required
-                        disabled={isLoading}
-                      />
-                      {errors.password && (
-                        <p className="text-sm text-red-600">{errors.password}</p>
-                      )}
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Signing In...
-                        </>
-                      ) : (
-                        <>
-                          Sign In to Platform
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </form>
+                <CardContent className="space-y-4">
+                  <Button 
+                    onClick={handleGetStarted}
+                    className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                  >
+                    Access Platform
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                   
-                  <div className="mt-6 text-center">
-                    <a href="#" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">
-                      Forgot your password?
-                    </a>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600">
+                      Already have an account?{' '}
+                      <button 
+                        onClick={handleGetStarted}
+                        className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                      >
+                        Sign In
+                      </button>
+                    </p>
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+                  <div className="pt-4 border-t border-gray-200 text-center">
                     <p className="text-sm text-gray-600">
-                      Need access?{' '}
+                      Need enterprise access?{' '}
                       <a href="#contact" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">
                         Contact Sales
                       </a>
@@ -246,7 +181,7 @@ const Index = () => {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="h-8 w-8 text-blue-600" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3 h-8 w-8 text-blue-600"><path d="M3 3v18h18"/><path d="M7 17V7"/><path d="M11 17V3"/><path d="M15 17v-7"/></svg>
                 </div>
                 <CardTitle className="text-xl font-bold text-gray-900">Risk Analytics</CardTitle>
               </CardHeader>
@@ -260,7 +195,7 @@ const Index = () => {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="h-8 w-8 text-green-600" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-8 w-8 text-green-600"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
                 </div>
                 <CardTitle className="text-xl font-bold text-gray-900">Compliance Monitoring</CardTitle>
               </CardHeader>
@@ -274,7 +209,7 @@ const Index = () => {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-purple-600" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users h-8 w-8 text-purple-600"><path d="M15.9 16.3c.2-.7.4-1.4.4-2.1 0-4.1-2.7-6.8-6.8-6.8S2.7 10.1 2.7 14.2c0 .7.2 1.4.4 2.1"/><circle cx="5" cy="7" r="2"/><path d="M22 16.6c-.6-.9-1.3-1.7-2.1-2.3-2.7-2-5.9-3.1-9.1-3.1-3.2 0-6.3 1.1-9 3.1-.8.6-1.5 1.4-2.1 2.3"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="7" r="2"/></svg>
                 </div>
                 <CardTitle className="text-xl font-bold text-gray-900">Team Collaboration</CardTitle>
               </CardHeader>
@@ -301,15 +236,15 @@ const Index = () => {
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
-                  <Lock className="h-5 w-5 text-blue-400" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock h-5 w-5 text-blue-400"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                   <span className="text-blue-100">End-to-end encryption</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-blue-400" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-5 w-5 text-blue-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
                   <span className="text-blue-100">Multi-factor authentication</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <TrendingUp className="h-5 w-5 text-blue-400" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trending-up h-5 w-5 text-blue-400"><path d="M3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
                   <span className="text-blue-100">Continuous monitoring</span>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -320,7 +255,7 @@ const Index = () => {
             </div>
             <div className="flex justify-center">
               <div className="w-64 h-64 bg-blue-800/30 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <Shield className="h-32 w-32 text-blue-400" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-32 w-32 text-blue-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
               </div>
             </div>
           </div>

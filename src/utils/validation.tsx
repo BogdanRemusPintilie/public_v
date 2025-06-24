@@ -16,10 +16,29 @@ export const loginSchema = z.object({
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 
-// Input sanitization helper
+// Enhanced input sanitization helper
 export const sanitizeInput = (input: string): string => {
   return input
-    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/[<>'"&]/g, '') // Remove potential XSS characters
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
     .trim()
     .slice(0, 1000); // Limit length
+};
+
+// Additional validation for Excel content
+export const sanitizeExcelContent = (content: any): any => {
+  if (typeof content === 'string') {
+    return sanitizeInput(content);
+  }
+  if (typeof content === 'object' && content !== null) {
+    const sanitized: any = {};
+    for (const key in content) {
+      if (content.hasOwnProperty(key)) {
+        sanitized[sanitizeInput(key)] = sanitizeExcelContent(content[key]);
+      }
+    }
+    return sanitized;
+  }
+  return content;
 };
