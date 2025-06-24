@@ -25,12 +25,14 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
+      console.log('User is authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent, isSignup: boolean = false) => {
     e.preventDefault();
+    console.log('Form submitted:', { isSignup, email });
     setIsLoading(true);
     setErrors({});
 
@@ -39,6 +41,8 @@ const Auth = () => {
       const sanitizedEmail = sanitizeInput(email);
       const sanitizedPassword = sanitizeInput(password);
 
+      console.log('Sanitized inputs:', { email: sanitizedEmail, passwordLength: sanitizedPassword.length });
+
       // Validate inputs
       const validationResult = loginSchema.safeParse({
         email: sanitizedEmail,
@@ -46,6 +50,7 @@ const Auth = () => {
       });
 
       if (!validationResult.success) {
+        console.log('Validation failed:', validationResult.error.errors);
         const fieldErrors: Record<string, string> = {};
         validationResult.error.errors.forEach((error) => {
           if (error.path[0]) {
@@ -57,12 +62,15 @@ const Auth = () => {
         return;
       }
 
+      console.log('Validation passed, attempting auth...');
+
       // Attempt login or signup
       const { error } = isSignup 
         ? await signup(sanitizedEmail, sanitizedPassword)
         : await login(sanitizedEmail, sanitizedPassword);
       
       if (error) {
+        console.error('Auth error:', error);
         if (error.message?.includes('Invalid login credentials')) {
           toast({
             title: "Authentication Failed",
@@ -90,6 +98,7 @@ const Auth = () => {
           });
         }
       } else {
+        console.log('Auth successful');
         if (isSignup) {
           toast({
             title: "Account Created",
@@ -105,6 +114,7 @@ const Auth = () => {
         }
       }
     } catch (error) {
+      console.error('Unexpected error:', error);
       toast({
         title: "Authentication Error",
         description: "An unexpected error occurred. Please try again.",
