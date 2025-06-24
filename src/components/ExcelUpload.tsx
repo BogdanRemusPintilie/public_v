@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ import { LoanRecord, insertLoanData, getLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { parseExcelFile } from '@/utils/excelParser';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -94,6 +95,50 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       highRiskLoans,
       totalRecords: data.length
     });
+  };
+
+  const getInterestRateDistribution = () => {
+    if (previewData.length === 0) return [];
+    
+    const ranges = [
+      { range: '0-2%', min: 0, max: 2 },
+      { range: '2-4%', min: 2, max: 4 },
+      { range: '4-6%', min: 4, max: 6 },
+      { range: '6-8%', min: 6, max: 8 },
+      { range: '8%+', min: 8, max: 100 }
+    ];
+    
+    return ranges.map(r => ({
+      range: r.range,
+      count: previewData.filter(loan => 
+        loan.interest_rate >= r.min && loan.interest_rate < r.max
+      ).length
+    }));
+  };
+
+  const getLoanTypeDistribution = () => {
+    if (previewData.length === 0) return [];
+    
+    const distribution = previewData.reduce((acc, loan) => {
+      const type = loan.loan_type || 'Standard';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1'];
+    
+    return Object.entries(distribution).map(([type, count], index) => ({
+      name: type,
+      value: count,
+      fill: colors[index % colors.length]
+    }));
+  };
+
+  const chartConfig = {
+    count: {
+      label: "Count",
+      color: "#2563eb",
+    },
   };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -280,34 +325,84 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
             )}
 
             {previewData.length > 0 && (
-              <div className="mt-6 overflow-x-auto">
-                <h3 className="text-xl font-semibold mb-4">Data Preview ({previewData.length} records)</h3>
-                <table className="min-w-full leading-normal">
-                  <thead>
-                    <tr>
-                      <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Opening Balance</th>
-                      <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Interest Rate</th>
-                      <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Term (Months)</th>
-                      <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PD</th>
-                      <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Loan Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewData.slice(0, 10).map((row, index) => (
-                      <tr key={index}>
-                        <td className="px-5 py-5 border-b text-sm">${row.opening_balance.toLocaleString()}</td>
-                        <td className="px-5 py-5 border-b text-sm">{row.interest_rate.toFixed(2)}%</td>
-                        <td className="px-5 py-5 border-b text-sm">{row.term}</td>
-                        <td className="px-5 py-5 border-b text-sm">{((row.pd || 0) * 100).toFixed(2)}%</td>
-                        <td className="px-5 py-5 border-b text-sm">{row.loan_type}</td>
+              <>
+                {/* Charts Section */}
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Interest Rate Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer config={chartConfig} className="h-[300px]">
+                        <BarChart data={getInterestRateDistribution()}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="range" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="count" fill="#2563eb" />
+                        </BarChart>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Loan Type Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer config={chartConfig} className="h-[300px]">
+                        <PieChart>
+                          <Pie
+                            data={getLoanTypeDistribution()}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {getLoanTypeDistribution().map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                        </PieChart>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Data Preview Table */}
+                <div className="mt-6 overflow-x-auto">
+                  <h3 className="text-xl font-semibold mb-4">Data Preview ({previewData.length} records)</h3>
+                  <table className="min-w-full leading-normal">
+                    <thead>
+                      <tr>
+                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Opening Balance</th>
+                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Interest Rate</th>
+                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Term (Months)</th>
+                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PD</th>
+                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Loan Type</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {previewData.length > 10 && (
-                  <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records</p>
-                )}
-              </div>
+                    </thead>
+                    <tbody>
+                      {previewData.slice(0, 10).map((row, index) => (
+                        <tr key={index}>
+                          <td className="px-5 py-5 border-b text-sm">${row.opening_balance.toLocaleString()}</td>
+                          <td className="px-5 py-5 border-b text-sm">{row.interest_rate.toFixed(2)}%</td>
+                          <td className="px-5 py-5 border-b text-sm">{row.term}</td>
+                          <td className="px-5 py-5 border-b text-sm">{((row.pd || 0) * 100).toFixed(2)}%</td>
+                          <td className="px-5 py-5 border-b text-sm">{row.loan_type}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {previewData.length > 10 && (
+                    <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records</p>
+                  )}
+                </div>
+              </>
             )}
           </CardContent>
           <CardFooter className="flex justify-end gap-4">
