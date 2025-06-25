@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRT Demo App - Interactive Risk Transfer Calculator</title>
+    <meta name="description" content="Interactive demo app for exploring Significant Risk Transfer scenarios, calculating capital relief, and optimizing transaction structures.">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/demo.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-chart-line"></i>
+                <span>BlocsTransfer</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="example.html" class="nav-link">Worked Example</a></li>
+                <li><a href="demo.html" class="nav-link active">Demo</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Demo Hero -->
+    <section class="demo-hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Interactive SRT Calculator</h1>
+                <p>Explore Significant Risk Transfer scenarios, calculate capital relief, and optimize transaction structures with our comprehensive demo tool.</p>
+                
+                <div class="demo-features">
+                    <div class="feature-item">
+                        <i class="fas fa-calculator"></i>
+                        <span>Capital Relief Calculator</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Portfolio Analysis</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-cogs"></i>
+                        <span>Structure Optimizer</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-analytics"></i>
+                        <span>Scenario Analysis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Application -->
+    <section class="demo-app">
+        <div class="container">
+            <div class="app-container">
+                <!-- Sidebar Controls -->
+                <div class="app-sidebar">
+                    <div class="sidebar-section">
+                        <h3>Portfolio Parameters</h3>
+                        
+                        <div class="input-group">
+                            <label for="portfolioSize">Portfolio Size (€M)</label>
+                            <input type="number" id="portfolioSize" value="2500" min="100" max="50000" step="100">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="avgPD">Average PD (%)</label>
+                            <input type="number" id="avgPD" value="1.85" min="0.1" max="10" step="0.1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="avgLGD">Average LGD (%)</label>
+                            <input type="number" id="avgLGD" value="42" min="10" max="80" step="1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="riskWeight">Risk Weight (%)</label>
+                            <input type="number" id="riskWeight" value="72" min="20" max="150" step="1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="currentCET1">Current CET1 Ratio (%)</label>
+                            <input type="number" id="currentCET1" value="12.8" min="8" max="20" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h3>Capital Savings Calculator</h3>
+                        <div class="input-group">
+                            <label for="calcPortfolioSize">Portfolio Size (£m)</label>
+                            <input type="number" id="calcPortfolioSize" value="1000" min="1" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="calcRiskTransferred">% Risk Transferred</label>
+                            <input type="number" id="calcRiskTransferred" value="50" min="0" max="100" step="1">
+                        </div>
+                        <div class="calculator-results mt-4">
+                            <p><strong>Capital Required Before:</strong> <span id="capitalBefore">£0.0m</span></p>
+                            <p><strong>Capital Required After:</strong> <span id="capitalAfter">£0.0m</span></p>
+                            <p class="text-green-600 font-bold">Capital Freed: <span id="capitalFreed">£0.0m</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h3>SRT Structure</h3>
+                        
+                        <div class="input-group">
+                            <label for="firstLoss">First Loss Piece (%)</label>
+                            <input type="number" id="firstLoss" value="3.5" min="1" max="10" step="0.1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="mezzanineSize">Mezzanine Size (%)</label>
+                            <input type="number" id="mezzanineSize" value="5.0" min="2" max="15" step="0.1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="seniorSpread">Senior Spread (bps)</label>
+                            <input type="number" id="seniorSpread" value="65" min="20" max="200" step="5">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="mezzanineSpread">Mezzanine Spread (bps)</label>
+                            <input type="number" id="mezzanineSpread" value="285" min="100" max="800" step="10">
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="sidebar-section">
+                        <button class="calculate-btn" id="calculateBtn">
+                            <i class="fas fa-calculator"></i>
+                            Calculate SRT Impact
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Main Content Area -->
+                <div class="app-main">
+                    <div class="app-tabs">
+                        <button class="tab-btn active" data-tab="overview">Overview</button>
+                        <button class="tab-btn" data-tab="structure">Structure</button>
+                        <button class="tab-btn" data-tab="capital">Capital Impact</button>
+                        <button class="tab-btn" data-tab="economics">Economics</button>
+                        <button class="tab-btn" data-tab="sensitivity">Sensitivity</button>
+                    </div>
+                    
+                    <!-- Overview Tab -->
+                    <div class="tab-content active" id="overview">
+                        <div class="overview-dashboard">
+                            <div class="dashboard-grid">
+                                <div class="metric-card primary">
+                                    <div class="metric-icon">
+                                        <i class="fas fa-percentage"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">Risk Transfer</div>
+                                        <div class="metric-value" id="riskTransferPct">72%</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-icon">
+                                        <i class="fas fa-weight"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">RWA Reduction</div>
+                                        <div class="metric-value" id="rwaReduction">€1.8B</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">CET1 Improvement</div>
+                                        <div class="metric-value" id="cet1Improvement">+70 bps</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-icon">
+                                        <i class="fas fa-euro-sign"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">Annual Cost</div>
+                                        <div class="metric-value" id="annualCost">€18.5M</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metric-card primary">
+                                    <div class="metric-icon">
+                                        <i class="fas fa-hand-holding-usd"></i>
+                                    </div>
+                                    <div class="metric-content">
+                                        <div class="metric-label">Capital Relief</div>
+                                        <div class="metric-value" id="capitalRelief">€0.0M</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="charts-grid">
+                                <div class="chart-card">
+                                    <h4>Portfolio Risk Profile</h4>
+                                    <canvas id="riskProfileChart" width="400" height="300"></canvas>
+                                </div>
+                                
+                                <div class="chart-card">
+                                    <h4>Capital Impact Breakdown</h4>
+                                    <canvas id="capitalImpactChart" width="400" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Structure Tab -->
+                    <div class="tab-content" id="structure">
+                        <div class="structure-analysis">
+                            <div class="structure-visual">
+                                <h4>Transaction Structure</h4>
+                                <div class="tranche-stack">
+                                    <div class="tranche senior-tranche">
+                                        <div class="tranche-info">
+                                            <span class="tranche-name">Senior Tranche</span>
+                                            <span class="tranche-size" id="seniorSize">€2.29B</span>
+                                        </div>
+                                        <div class="tranche-details">
+                                            <span id="seniorAttachment">8.5%</span> - <span>100%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="tranche mezzanine-tranche">
+                                        <div class="tranche-info">
+                                            <span class="tranche-name">Mezzanine Tranche</span>
+                                            <span class="tranche-size" id="mezzanineSize">€125M</span>
+                                        </div>
+                                        <div class="tranche-details">
+                                            <span id="mezzanineAttachment">3.5%</span> - <span id="mezzanineDetachment">8.5%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="tranche junior-tranche">
+                                        <div class="tranche-info">
+                                            <span class="tranche-name">First Loss Piece</span>
+                                            <span class="tranche-size" id="juniorSize">€87.5M</span>
+                                        </div>
+                                        <div class="tranche-details">
+                                            <span>0%</span> - <span id="juniorDetachment">3.5%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="structure-table">
+                                <h4>Tranche Details</h4>
+                                <table id="structureTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Tranche</th>
+                                            <th>Size</th>
+                                            <th>Attachment</th>
+                                            <th>Detachment</th>
+                                            <th>Spread</th>
+                                            <th>Annual Premium</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Senior</td>
+                                            <td id="seniorSizeTable">€2.29B</td>
+                                            <td id="seniorAttachmentTable">8.5%</td>
+                                            <td>100%</td>
+                                            <td id="seniorSpreadTable">65 bps</td>
+                                            <td id="seniorPremiumTable">€14.9M</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Mezzanine</td>
+                                            <td id="mezzanineSizeTable">€125M</td>
+                                            <td id="mezzanineAttachmentTable">3.5%</td>
+                                            <td id="mezzanineDetachmentTable">8.5%</td>
+                                            <td id="mezzanineSpreadTable">285 bps</td>
+                                            <td id="mezzaninePremiumTable">€3.6M</td>
+                                        </tr>
+                                        <tr>
+                                            <td>First Loss</td>
+                                            <td id="juniorSizeTable">€87.5M</td>
+                                            <td>0%</td>
+                                            <td id="juniorDetachmentTable">3.5%</td>
+                                            <td>Retained</td>
+                                            <td>-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Capital Impact Tab -->
+                    <div class="tab-content" id="capital">
+                        <div class="capital-analysis">
+                            <div class="before-after-comparison">
+                                <div class="comparison-card before">
+                                    <h4>Before SRT</h4>
+                                    <div class="capital-metrics">
+                                        <div class="metric-row">
+                                            <span class="label">Portfolio RWA:</span>
+                                            <span class="value" id="beforeRWA">€1.8B</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="label">Total RWA:</span>
+                                            <span class="value" id="beforeTotalRWA">€32.5B</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="label">CET1 Ratio:</span>
+                                            <span class="value" id="beforeCET1">12.8%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="label">Excess Capital:</span>
+                                            <span class="value" id="beforeExcess">€0.85B</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="comparison-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                    <span>SRT Transaction</span>
+                                </div>
+                                
+                                <div class="comparison-card after">
+                                    <h4>After SRT</h4>
+                                    <div class="capital-metrics">
+                                        <div class="metric-row">
+                                            <span class="label">Portfolio RWA:</span>
+                                            <span class="value" id="afterRWA">€0.5B</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="label">Total RWA:</span>
+                                            <span class="value" id="afterTotalRWA">€31.2B</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="label">CET1 Ratio:</span>
+                                            <span class="value" id="afterCET1">13.3%</span>
+                                        </div>
+                                        <div class="metric-row">
+                                            <span class="label">Excess Capital:</span>
+                                            <span class="value" id="afterExcess">€1.08B</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="capital-chart">
+                                <h4>Capital Ratio Evolution</h4>
+                                <canvas id="capitalEvolutionChart" width="600" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Economics Tab -->
+                    <div class="tab-content" id="economics">
+                        <div class="economics-analysis">
+                            <div class="economics-summary">
+                                <h4>5-Year Economic Analysis</h4>
+                                <div class="economics-grid">
+                                    <div class="economics-card costs">
+                                        <h5>Total Costs</h5>
+                                        <div class="cost-breakdown">
+                                            <div class="cost-item">
+                                                <span class="label">Protection Premiums:</span>
+                                                <span class="value" id="totalPremiums">€92.5M</span>
+                                            </div>
+                                            <div class="cost-item">
+                                                <span class="label">Transaction Costs:</span>
+                                                <span class="value">€8.2M</span>
+                                            </div>
+                                            <div class="cost-item">
+                                                <span class="label">Ongoing Costs:</span>
+                                                <span class="value">€3.5M</span>
+                                            </div>
+                                            <div class="cost-item total">
+                                                <span class="label">Total:</span>
+                                                <span class="value" id="totalCosts">€104.2M</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="economics-card benefits">
+                                        <h5>Total Benefits</h5>
+                                        <div class="benefit-breakdown">
+                                            <div class="benefit-item">
+                                                <span class="label">Capital Savings:</span>
+                                                <span class="value" id="capitalSavings">€115.0M</span>
+                                            </div>
+                                            <div class="benefit-item">
+                                                <span class="label">Funding Cost Reduction:</span>
+                                                <span class="value">€28.5M</span>
+                                            </div>
+                                            <div class="benefit-item">
+                                                <span class="label">New Business ROE:</span>
+                                                <span class="value">€45.2M</span>
+                                            </div>
+                                            <div class="benefit-item total">
+                                                <span class="label">Total:</span>
+                                                <span class="value" id="totalBenefits">€188.7M</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="net-benefit">
+                                    <h4>Net Economic Benefit</h4>
+                                    <div class="net-value" id="netBenefit">€84.5M</div>
+                                    <div class="net-description">Over 5-year transaction term</div>
+                                    <div class="roi-metric">
+                                        <span class="label">Return on Investment:</span>
+                                        <span class="value" id="roiValue">181%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="economics-chart">
+                                <h4>Annual Cash Flow Analysis</h4>
+                                <canvas id="cashFlowChart" width="600" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sensitivity Tab -->
+                    <div class="tab-content" id="sensitivity">
+                        <div class="sensitivity-analysis">
+                            <div class="sensitivity-controls">
+                                <h4>Sensitivity Analysis</h4>
+                                <div class="sensitivity-inputs">
+                                    <div class="input-group">
+                                        <label for="stressDefaultRate">Stress Default Rate (%)</label>
+                                        <input type="range" id="stressDefaultRate" min="1" max="8" step="0.1" value="3.5">
+                                        <span class="range-value" id="stressDefaultValue">3.5%</span>
+                                    </div>
+                                    
+                                    <div class="input-group">
+                                        <label for="stressRecoveryRate">Stress Recovery Rate (%)</label>
+                                        <input type="range" id="stressRecoveryRate" min="20" max="80" step="1" value="45">
+                                        <span class="range-value" id="stressRecoveryValue">45%</span>
+                                    </div>
+                                    
+                                    <div class="input-group">
+                                        <label for="spreadWidening">Spread Widening (bps)</label>
+                                        <input type="range" id="spreadWidening" min="0" max="200" step="10" value="50">
+                                        <span class="range-value" id="spreadWideningValue">50 bps</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="sensitivity-results">
+                                <div class="scenario-grid">
+                                    <div class="scenario-card base">
+                                        <h5>Base Case</h5>
+                                        <div class="scenario-metrics">
+                                            <div class="metric">
+                                                <span class="label">Net Benefit:</span>
+                                                <span class="value" id="baseNetBenefit">€84.5M</span>
+                                            </div>
+                                            <div class="metric">
+                                                <span class="label">IRR:</span>
+                                                <span class="value">18.2%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="scenario-card stress">
+                                        <h5>Stress Case</h5>
+                                        <div class="scenario-metrics">
+                                            <div class="metric">
+                                                <span class="label">Net Benefit:</span>
+                                                <span class="value" id="stressNetBenefit">€52.1M</span>
+                                            </div>
+                                            <div class="metric">
+                                                <span class="label">IRR:</span>
+                                                <span class="value" id="stressIRR">12.8%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="scenario-card severe">
+                                        <h5>Severe Stress</h5>
+                                        <div class="scenario-metrics">
+                                            <div class="metric">
+                                                <span class="label">Net Benefit:</span>
+                                                <span class="value" id="severeNetBenefit">€18.7M</span>
+                                            </div>
+                                            <div class="metric">
+                                                <span class="label">IRR:</span>
+                                                <span class="value" id="severeIRR">6.4%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="sensitivity-chart">
+                                    <h4>Sensitivity to Key Parameters</h4>
+                                    <canvas id="sensitivityChart" width="600" height="400"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Export Section -->
+    <section class="export-section">
+        <div class="container">
+            <div class="export-content">
+                <h3>Export Your Analysis</h3>
+                <p>Download your SRT analysis results in various formats for further review and presentation.</p>
+                
+                <div class="export-buttons">
+                    <button class="export-btn" id="exportPDF">
+                        <i class="fas fa-file-pdf"></i>
+                        Export PDF Report
+                    </button>
+                    <button class="export-btn" id="exportExcel">
+                        <i class="fas fa-file-excel"></i>
+                        Export Excel Model
+                    </button>
+                    <button class="export-btn" id="exportJSON">
+                        <i class="fas fa-file-code"></i>
+                        Export JSON Data
+                    </button>
+                    <button class="export-btn" id="shareLink">
+                        <i class="fas fa-share-alt"></i>
+                        Share Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-chart-line"></i>
+                        <span>BlocsTransfer</span>
+                    </div>
+                    <p>Advanced Significant Risk Transfer solutions for modern banking.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Platform</h4>
+                    <ul>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="demo.html">Demo</a></li>
+                        <li><a href="example.html">Examples</a></li>
+                        <li><a href="#">API Documentation</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">White Papers</a></li>
+                        <li><a href="#">Case Studies</a></li>
+                        <li><a href="#">Regulatory Updates</a></li>
+                        <li><a href="#">Support</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 BlocsTransfer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/demo.js"></script>
+</body>
+</html>
+
