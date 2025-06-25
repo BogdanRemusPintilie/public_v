@@ -1,9 +1,25 @@
-
 import React from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { ChevronDown } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart';
+import { PieChart, Pie, Cell } from 'recharts';
 
 const WorkedExample = () => {
+  // Portfolio composition data for the sector distribution chart
+  const sectorData = [
+    { name: 'Manufacturing', value: 28, color: '#667eea' },
+    { name: 'Services', value: 24, color: '#764ba2' },
+    { name: 'Real Estate', value: 18, color: '#f093fb' },
+    { name: 'Technology', value: 15, color: '#4ecdc4' },
+    { name: 'Other', value: 15, color: '#45b7d1' }
+  ];
+
+  const chartConfig = {
+    sector: {
+      label: "Sector Distribution",
+    },
+  };
+
   return (
     <div className="worked-example-container">
       <Collapsible defaultOpen={false}>
@@ -161,47 +177,66 @@ const WorkedExample = () => {
                   <div className="portfolio-composition">
                     <h3 className="text-2xl font-semibold mb-6">Portfolio Composition</h3>
                     <div className="composition-chart bg-white p-6 rounded-lg shadow-md">
-                      <div className="chart-placeholder bg-gradient-to-br from-blue-100 to-purple-100 h-64 rounded-lg flex items-center justify-center mb-6">
-                        <div className="text-center">
-                          <i className="fas fa-chart-pie text-4xl text-blue-500 mb-2"></i>
-                          <div className="text-lg font-medium">Sector Distribution</div>
-                        </div>
-                      </div>
-                      <div className="composition-breakdown space-y-3">
-                        <div className="breakdown-item flex justify-between items-center">
-                          <div className="flex items-center">
-                            <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
-                            <span>Manufacturing</span>
+                      <div className="flex items-start gap-6">
+                        <div className="flex-1">
+                          <h4 className="text-lg font-medium mb-4">Sector Distribution</h4>
+                          <div className="composition-breakdown space-y-3">
+                            <div className="breakdown-item flex justify-between items-center">
+                              <div className="flex items-center">
+                                <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
+                                <span>Manufacturing</span>
+                              </div>
+                              <span className="font-semibold">28%</span>
+                            </div>
+                            <div className="breakdown-item flex justify-between items-center">
+                              <div className="flex items-center">
+                                <div className="w-4 h-4 bg-green-500 rounded mr-3"></div>
+                                <span>Services</span>
+                              </div>
+                              <span className="font-semibold">24%</span>
+                            </div>
+                            <div className="breakdown-item flex justify-between items-center">
+                              <div className="flex items-center">
+                                <div className="w-4 h-4 bg-purple-500 rounded mr-3"></div>
+                                <span>Real Estate</span>
+                              </div>
+                              <span className="font-semibold">18%</span>
+                            </div>
+                            <div className="breakdown-item flex justify-between items-center">
+                              <div className="flex items-center">
+                                <div className="w-4 h-4 bg-orange-500 rounded mr-3"></div>
+                                <span>Technology</span>
+                              </div>
+                              <span className="font-semibold">15%</span>
+                            </div>
+                            <div className="breakdown-item flex justify-between items-center">
+                              <div className="flex items-center">
+                                <div className="w-4 h-4 bg-red-500 rounded mr-3"></div>
+                                <span>Other</span>
+                              </div>
+                              <span className="font-semibold">15%</span>
+                            </div>
                           </div>
-                          <span className="font-semibold">28%</span>
                         </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <div className="flex items-center">
-                            <div className="w-4 h-4 bg-green-500 rounded mr-3"></div>
-                            <span>Services</span>
-                          </div>
-                          <span className="font-semibold">24%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <div className="flex items-center">
-                            <div className="w-4 h-4 bg-purple-500 rounded mr-3"></div>
-                            <span>Real Estate</span>
-                          </div>
-                          <span className="font-semibold">18%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <div className="flex items-center">
-                            <div className="w-4 h-4 bg-orange-500 rounded mr-3"></div>
-                            <span>Technology</span>
-                          </div>
-                          <span className="font-semibold">15%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <div className="flex items-center">
-                            <div className="w-4 h-4 bg-red-500 rounded mr-3"></div>
-                            <span>Other</span>
-                          </div>
-                          <span className="font-semibold">15%</span>
+                        <div className="w-48">
+                          <ChartContainer config={chartConfig} className="h-48">
+                            <PieChart>
+                              <Pie
+                                data={sectorData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={30}
+                                outerRadius={80}
+                                paddingAngle={2}
+                                dataKey="value"
+                              >
+                                {sectorData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                            </PieChart>
+                          </ChartContainer>
                         </div>
                       </div>
                     </div>
