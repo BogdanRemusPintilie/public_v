@@ -9,14 +9,27 @@ const WorkedExample = () => {
   const sectorData = [
     { name: 'Manufacturing', value: 28, color: '#3b82f6' },
     { name: 'Services', value: 24, color: '#10b981' },
-    { name: 'Real Estate', value: 18, color: '#8b5cf6' },
-    { name: 'Technology', value: 15, color: '#f59e0b' },
+    { name: 'Technology', value: 18, color: '#8b5cf6' },
+    { name: 'Real Estate', value: 15, color: '#f59e0b' },
     { name: 'Other', value: 15, color: '#ef4444' }
+  ];
+
+  // Geographic distribution data for the geographic chart
+  const geographicData = [
+    { name: 'Germany', value: 32, color: '#3b82f6' },
+    { name: 'France', value: 22, color: '#10b981' },
+    { name: 'Italy', value: 18, color: '#8b5cf6' },
+    { name: 'Spain', value: 14, color: '#f59e0b' },
+    { name: 'Netherlands', value: 8, color: '#ef4444' },
+    { name: 'Other EU', value: 6, color: '#6b7280' }
   ];
 
   const chartConfig = {
     sector: {
       label: "Sector Distribution",
+    },
+    geographic: {
+      label: "Geographic Distribution",
     },
   };
 
@@ -269,38 +282,94 @@ const WorkedExample = () => {
                   </div>
                   
                   <div className="geographic-distribution">
-                    <h3 className="text-2xl font-semibold mb-6">Geographic Distribution</h3>
-                    <div className="geo-chart bg-white p-6 rounded-lg shadow-md">
-                      <div className="chart-placeholder bg-gradient-to-br from-green-100 to-blue-100 h-64 rounded-lg flex items-center justify-center mb-6">
-                        <div className="text-center">
-                          <i className="fas fa-globe-europe text-4xl text-green-500 mb-2"></i>
-                          <div className="text-lg font-medium">European Exposure</div>
-                        </div>
+                    <h3 className="text-2xl font-semibold mb-8 text-gray-900">Geographic Distribution</h3>
+                    
+                    {/* Enhanced Geographic Distribution Section */}
+                    <div className="geographic-distribution-container bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-8 py-6 border-b border-gray-100">
+                        <h4 className="text-xl font-bold text-gray-900 mb-2">European Exposure</h4>
+                        <p className="text-sm text-gray-600">Reference portfolio breakdown by geographic region</p>
                       </div>
-                      <div className="geo-breakdown space-y-3">
-                        <div className="breakdown-item flex justify-between items-center">
-                          <span>Germany</span>
-                          <span className="font-semibold">32%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <span>France</span>
-                          <span className="font-semibold">22%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <span>Italy</span>
-                          <span className="font-semibold">18%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <span>Spain</span>
-                          <span className="font-semibold">14%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <span>Netherlands</span>
-                          <span className="font-semibold">8%</span>
-                        </div>
-                        <div className="breakdown-item flex justify-between items-center">
-                          <span>Other EU</span>
-                          <span className="font-semibold">6%</span>
+                      
+                      <div className="p-8">
+                        <div className="flex items-center justify-between gap-12">
+                          {/* Chart Section */}
+                          <div className="flex-shrink-0">
+                            <div className="relative">
+                              <ChartContainer config={chartConfig} className="h-64 w-64">
+                                <PieChart>
+                                  <Pie
+                                    data={geographicData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={45}
+                                    outerRadius={110}
+                                    paddingAngle={3}
+                                    dataKey="value"
+                                    strokeWidth={2}
+                                    stroke="#ffffff"
+                                  >
+                                    {geographicData.map((entry, index) => (
+                                      <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={entry.color}
+                                        className="hover:opacity-80 transition-opacity duration-200"
+                                      />
+                                    ))}
+                                  </Pie>
+                                  <ChartTooltip 
+                                    content={<ChartTooltipContent />}
+                                    cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+                                  />
+                                </PieChart>
+                              </ChartContainer>
+                              
+                              {/* Center label */}
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-gray-900">15</div>
+                                  <div className="text-xs text-gray-500 uppercase tracking-wide">Countries</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Legend Section */}
+                          <div className="flex-1 min-w-0">
+                            <div className="space-y-4">
+                              {geographicData.map((country, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                                  <div className="flex items-center space-x-3">
+                                    <div 
+                                      className="w-4 h-4 rounded-full shadow-sm ring-2 ring-white"
+                                      style={{ backgroundColor: country.color }}
+                                    ></div>
+                                    <span className="font-medium text-gray-900">{country.name}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-lg font-bold text-gray-900">{country.value}%</div>
+                                    <div className="text-xs text-gray-500">
+                                      €{((country.value / 100) * 1200).toFixed(0)}M
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Summary Stats */}
+                            <div className="mt-6 pt-6 border-t border-gray-200">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="text-center p-3 bg-green-50 rounded-lg">
+                                  <div className="text-sm font-medium text-green-900">Top Market</div>
+                                  <div className="text-lg font-bold text-green-700">Germany</div>
+                                </div>
+                                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                  <div className="text-sm font-medium text-blue-900">EU Coverage</div>
+                                  <div className="text-lg font-bold text-blue-700">100%</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
