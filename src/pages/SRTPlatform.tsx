@@ -15,7 +15,14 @@ const SRTPlatform = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center justify-between">
-            <div className="text-2xl font-bold text-blue-600">SRT Platform</div>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" 
+                alt="RiskBlocs Logo" 
+                className="h-6 w-6" 
+              />
+              <span className="text-2xl font-bold text-blue-600">RiskBlocs</span>
+            </div>
             <div className="hidden md:flex space-x-8">
               <a href="#hero" className="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
               <a href="#market-context" className="text-gray-600 hover:text-blue-600 transition-colors">Market Context</a>
