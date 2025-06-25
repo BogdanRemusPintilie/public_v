@@ -50,7 +50,7 @@ const SRTPlatform = () => {
                 Our platform empowers banks to optimize their balance sheets through synthetic securitization, reducing RWA and enhancing ROE.
               </p>
               <div className="flex space-x-4">
-                <a href="#platform-overview" className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
+                <a href="/apps" className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
                   Explore the Platform
                 </a>
                 <a href="#contact" className="inline-block bg-transparent border-2 border-blue-600 text-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700 transition-colors">
