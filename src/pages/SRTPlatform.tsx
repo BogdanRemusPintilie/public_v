@@ -3,6 +3,7 @@ import React from 'react';
 import WorkedExample from '../components/WorkedExample';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { TrendingUp, PiggyBank, Target } from 'lucide-react';
 
 const SRTPlatform = () => {
   const scrollToWorkedExample = () => {
@@ -213,42 +214,74 @@ const SRTPlatform = () => {
       </section>
 
       {/* Market Context Section */}
-      <section id="market-context" className="py-16 bg-white">
+      <section id="market-context" className="py-20 bg-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4 font-poppins">Market Context</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6 font-poppins">Market Context</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins leading-relaxed">
               The global SRT market is experiencing unprecedented growth as financial institutions seek innovative solutions for capital optimization.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div className="market-item text-center p-6 rounded-lg bg-gradient-to-b from-blue-50 to-white border border-blue-100">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-chart-line text-2xl text-white"></i>
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <TrendingUp className="text-2xl text-white" size={28} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">RWA Optimization</h3>
+                <p className="text-gray-700 font-poppins text-center leading-relaxed">
+                  Reduce risk-weighted assets and free up capital for new lending opportunities through strategic portfolio management.
+                </p>
+                <div className="mt-6 flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-semibold text-blue-700">
+                    Up to 80% reduction
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">RWA Optimization</h3>
-              <p className="text-gray-600 font-poppins">Reduce risk-weighted assets and free up capital for new lending opportunities.</p>
             </div>
-            <div className="market-item text-center p-6 rounded-lg bg-gradient-to-b from-green-50 to-white border border-green-100">
-              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-piggy-bank text-2xl text-white"></i>
+            
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-400/20 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <PiggyBank className="text-2xl text-white" size={28} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Capital Relief</h3>
+                <p className="text-gray-700 font-poppins text-center leading-relaxed">
+                  Achieve significant capital relief while maintaining regulatory compliance and operational efficiency.
+                </p>
+                <div className="mt-6 flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-semibold text-emerald-700">
+                    Regulatory compliant
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">Capital Relief</h3>
-              <p className="text-gray-600 font-poppins">Achieve significant capital relief while maintaining regulatory compliance.</p>
             </div>
-            <div className="market-item text-center p-6 rounded-lg bg-gradient-to-b from-purple-50 to-white border border-purple-100">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-rocket text-2xl text-white"></i>
+            
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Target className="text-2xl text-white" size={28} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Enhanced ROE</h3>
+                <p className="text-gray-700 font-poppins text-center leading-relaxed">
+                  Improve return on equity and drive shareholder value through efficient capital management strategies.
+                </p>
+                <div className="mt-6 flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-semibold text-purple-700">
+                    Maximize returns
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">Enhanced ROE</h3>
-              <p className="text-gray-600 font-poppins">Improve return on equity and drive shareholder value through efficient capital management.</p>
             </div>
           </div>
           <div className="text-center">
             <img 
               src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=400&fit=crop&crop=center" 
               alt="Financial market analysis and growth charts" 
-              className="rounded-lg shadow-lg mx-auto w-full max-w-4xl h-64 object-cover"
+              className="rounded-2xl shadow-2xl mx-auto w-full max-w-5xl h-80 object-cover"
             />
           </div>
         </div>
