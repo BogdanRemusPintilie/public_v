@@ -97,19 +97,26 @@ export const getLoanData = async (userId?: string) => {
   
   console.log(`Total records available: ${count}`);
   
+  // If there are no records, return empty array
+  if (!count || count === 0) {
+    console.log('No records found');
+    return [];
+  }
+  
   // Fetch all records in batches to avoid memory issues with very large datasets
-  const BATCH_SIZE = 10000; // Larger batch size for fetching
+  const BATCH_SIZE = 1000; // Use smaller batch size for more reliable fetching
   let allData: LoanRecord[] = [];
   let from = 0;
-  let hasMore = true;
   
-  while (hasMore) {
-    console.log(`Fetching batch from ${from} to ${from + BATCH_SIZE - 1}`);
+  // Continue fetching until we have all records
+  while (allData.length < count) {
+    const to = Math.min(from + BATCH_SIZE - 1, count - 1);
+    console.log(`Fetching batch from ${from} to ${to} (${allData.length}/${count} records fetched so far)`);
     
     let query = supabase
       .from('loan_data')
       .select('*')
-      .range(from, from + BATCH_SIZE - 1)
+      .range(from, to)
       .order('created_at', { ascending: false });
     
     if (userId) {
@@ -127,14 +134,22 @@ export const getLoanData = async (userId?: string) => {
       allData = [...allData, ...data];
       console.log(`Fetched ${data.length} records in this batch. Total so far: ${allData.length}`);
       
-      // If we got less than the batch size, we've reached the end
-      if (data.length < BATCH_SIZE) {
-        hasMore = false;
-      } else {
-        from += BATCH_SIZE;
+      // Move to next batch
+      from = to + 1;
+      
+      // If we got fewer records than expected, we might have reached the end
+      if (data.length < BATCH_SIZE && allData.length < count) {
+        console.log(`Got ${data.length} records but expected ${BATCH_SIZE}. Continuing to fetch remaining records.`);
       }
     } else {
-      hasMore = false;
+      console.log('No more data returned, stopping fetch');
+      break;
+    }
+    
+    // Safety check to prevent infinite loops
+    if (from >= count) {
+      console.log('Reached the end based on count, stopping fetch');
+      break;
     }
   }
   
