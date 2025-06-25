@@ -1,6 +1,6 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import WorkedExample from '../components/WorkedExample';
 
 const SRTPlatform = () => {
   const navigate = useNavigate();
@@ -446,6 +446,17 @@ const SRTPlatform = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Worked Example Section */}
+      <section className="worked-example-section" id="worked-example">
+        <div className="container">
+          <div className="section-header text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Worked Example</h2>
+            <p className="text-xl text-gray-600">Deep dive into a real-world SRT transaction from start to finish</p>
+          </div>
+          <WorkedExample />
         </div>
       </section>
 
