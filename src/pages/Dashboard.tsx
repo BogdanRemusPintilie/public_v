@@ -1,12 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart } from 'lucide-react';
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import ExcelUpload from '@/components/ExcelUpload';
+import DatasetManager from '@/components/DatasetManager';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showExistingData, setShowExistingData] = useState(false);
+  const [showDatasetManager, setShowDatasetManager] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -37,6 +39,8 @@ const Dashboard = () => {
       setShowExcelUpload(true);
     } else if (action === 'Access Existing Data') {
       setShowExistingData(true);
+    } else if (action === 'Manage Datasets') {
+      setShowDatasetManager(true);
     } else {
       toast({
         title: "Pre-trade Action",
@@ -135,6 +139,14 @@ const Dashboard = () => {
                           >
                             <FolderOpen className="h-4 w-4 mr-2 text-green-600" />
                             <span className="text-sm">Access Existing Data</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start h-auto p-2 text-left"
+                            onClick={() => handlePreTradeAction('Manage Datasets')}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2 text-red-600" />
+                            <span className="text-sm">Manage Datasets</span>
                           </Button>
                           <Button
                             variant="ghost"
@@ -333,6 +345,12 @@ const Dashboard = () => {
         isOpen={showExistingData}
         onClose={() => setShowExistingData(false)}
         showExistingData={true}
+      />
+
+      {/* Dataset Manager Dialog */}
+      <DatasetManager
+        isOpen={showDatasetManager}
+        onClose={() => setShowDatasetManager(false)}
       />
     </div>
   );
