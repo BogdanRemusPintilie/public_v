@@ -1,4 +1,3 @@
-
 import React from 'react';
 import WorkedExample from '../components/WorkedExample';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../components/ui/chart';
@@ -335,7 +334,7 @@ const SRTPlatform = () => {
       </section>
 
       {/* Capabilities Section */}
-      <section id="capabilities" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+      <section id="capabilities" className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-6 font-poppins">Platform Capabilities</h2>
@@ -344,86 +343,59 @@ const SRTPlatform = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
             {/* Advanced Analytics - Blue Theme */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
               <div className="relative z-10">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <BarChart3 className="text-white" size={32} />
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <BarChart3 className="text-2xl text-white" size={28} />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Advanced Analytics</h3>
-                <p className="text-gray-600 font-poppins text-center leading-relaxed mb-6">
+                <p className="text-gray-700 font-poppins text-center leading-relaxed">
                   Leverage our proprietary models for comprehensive portfolio analysis, sophisticated risk assessment, and strategic capital optimization.
                 </p>
-                <div className="space-y-3">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-                    Portfolio risk modeling
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-                    Stress testing scenarios
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-                    Capital optimization insights
+                <div className="mt-6 flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-semibold text-blue-700">
+                    AI-powered insights
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Regulatory Expertise - Green Theme */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-400/20 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
               <div className="relative z-10">
-                <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <FileCheck className="text-white" size={32} />
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <FileCheck className="text-2xl text-white" size={28} />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Regulatory Expertise</h3>
-                <p className="text-gray-600 font-poppins text-center leading-relaxed mb-6">
+                <p className="text-gray-700 font-poppins text-center leading-relaxed">
                   Navigate complex regulatory requirements with confidence through our team of experienced SRT professionals and compliance specialists.
                 </p>
-                <div className="space-y-3">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
-                    Basel III/IV compliance
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
-                    Regulatory approval support
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
-                    Documentation expertise
+                <div className="mt-6 flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-semibold text-emerald-700">
+                    100% compliant
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Investor Network - Purple Theme */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
               <div className="relative z-10">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Users className="text-white" size={32} />
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Users className="text-2xl text-white" size={28} />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Investor Network</h3>
-                <p className="text-gray-600 font-poppins text-center leading-relaxed mb-6">
+                <p className="text-gray-700 font-poppins text-center leading-relaxed">
                   Access our extensive network of institutional investors who specialize in SRT transactions and understand the market dynamics.
                 </p>
-                <div className="space-y-3">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
-                    Insurance companies
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
-                    Pension funds
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
-                    Asset managers
+                <div className="mt-6 flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-semibold text-purple-700">
+                    Global reach
                   </div>
                 </div>
               </div>
