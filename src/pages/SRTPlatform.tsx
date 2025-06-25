@@ -84,14 +84,37 @@ const SRTPlatform = () => {
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-3">Capital Efficiency Trend</div>
-                  <div className="h-20 bg-gradient-to-r from-blue-200 via-purple-200 to-indigo-200 rounded flex items-end justify-between px-2 pb-2">
-                    <div className="w-3 bg-blue-500 h-8 rounded-t"></div>
-                    <div className="w-3 bg-blue-500 h-12 rounded-t"></div>
-                    <div className="w-3 bg-purple-500 h-16 rounded-t"></div>
-                    <div className="w-3 bg-purple-500 h-10 rounded-t"></div>
-                    <div className="w-3 bg-indigo-500 h-18 rounded-t"></div>
-                    <div className="w-3 bg-indigo-500 h-20 rounded-t"></div>
+                  <div className="text-sm text-gray-600 mb-3 font-medium">Capital Efficiency Trend</div>
+                  <div className="relative h-24 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg p-3">
+                    <div className="flex items-end justify-between h-full gap-1">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-4 bg-gradient-to-t from-blue-600 to-blue-400 h-8 rounded-t shadow-sm"></div>
+                        <span className="text-xs text-gray-500">Q1</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-4 bg-gradient-to-t from-blue-600 to-blue-400 h-12 rounded-t shadow-sm"></div>
+                        <span className="text-xs text-gray-500">Q2</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-4 bg-gradient-to-t from-purple-600 to-purple-400 h-16 rounded-t shadow-sm"></div>
+                        <span className="text-xs text-gray-500">Q3</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-4 bg-gradient-to-t from-purple-600 to-purple-400 h-10 rounded-t shadow-sm"></div>
+                        <span className="text-xs text-gray-500">Q4</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-4 bg-gradient-to-t from-indigo-600 to-indigo-400 h-14 rounded-t shadow-sm"></div>
+                        <span className="text-xs text-gray-500">Q1</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-4 bg-gradient-to-t from-indigo-600 to-indigo-400 h-18 rounded-t shadow-sm"></div>
+                        <span className="text-xs text-gray-500">Q2</span>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <span className="text-xs text-green-600 font-medium">↗ +24%</span>
+                    </div>
                   </div>
                 </div>
               </div>
