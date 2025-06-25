@@ -22,9 +22,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<SRTPlatform />} />
+            <Route path="/apps" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/srt-platform" element={<SRTPlatform />} />
             <Route 
               path="/dashboard" 
               element={

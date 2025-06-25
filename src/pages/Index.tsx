@@ -37,9 +37,9 @@ const Index = () => {
               <span className="text-xl font-bold text-gray-900 font-poppins">RiskBlocs</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
+              <a href="/" className="text-gray-600 hover:text-blue-600 transition-colors">SRT Platform</a>
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
               <a href="#security" className="text-gray-600 hover:text-blue-600 transition-colors">Security</a>
-              <a href="/srt-platform" className="text-gray-600 hover:text-blue-600 transition-colors">SRT Platform</a>
               <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
               <Button 
                 onClick={handleGetStarted}
@@ -109,7 +109,7 @@ const Index = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button 
-                  onClick={() => navigate('/srt-platform')}
+                  onClick={() => navigate('/')}
                   variant="outline"
                   size="lg"
                   className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-3 text-lg"
