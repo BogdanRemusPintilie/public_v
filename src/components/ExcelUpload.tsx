@@ -97,41 +97,44 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     });
   };
 
-  const getInterestRateDistribution = () => {
+  const getMaturityDistribution = () => {
     if (previewData.length === 0) return [];
     
-    const ranges = [
-      { range: '0-2%', min: 0, max: 2 },
-      { range: '2-4%', min: 2, max: 4 },
-      { range: '4-6%', min: 4, max: 6 },
-      { range: '6-8%', min: 6, max: 8 },
-      { range: '8%+', min: 8, max: 100 }
+    const buckets = [
+      { range: 'Up to 36 months', min: 0, max: 36 },
+      { range: '37-60 months', min: 37, max: 60 },
+      { range: '61-84 months', min: 61, max: 84 },
+      { range: 'More than 84 months', min: 85, max: 1000 }
     ];
     
-    return ranges.map(r => ({
-      range: r.range,
+    return buckets.map(bucket => ({
+      range: bucket.range,
       count: previewData.filter(loan => 
-        loan.interest_rate >= r.min && loan.interest_rate < r.max
+        loan.term >= bucket.min && loan.term <= bucket.max
       ).length
     }));
   };
 
-  const getLoanTypeDistribution = () => {
+  const getLoanSizeDistribution = () => {
     if (previewData.length === 0) return [];
     
-    const distribution = previewData.reduce((acc, loan) => {
-      const type = loan.loan_type || 'Standard';
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const buckets = [
+      { range: 'Up to €10k', min: 0, max: 10000 },
+      { range: '€10k-€25k', min: 10000, max: 25000 },
+      { range: '€25k-€50k', min: 25000, max: 50000 },
+      { range: '€50k-€100k', min: 50000, max: 100000 },
+      { range: 'More than €100k', min: 100000, max: Number.MAX_VALUE }
+    ];
     
-    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1'];
+    const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
     
-    return Object.entries(distribution).map(([type, count], index) => ({
-      name: type,
-      value: count,
-      fill: colors[index % colors.length]
-    }));
+    return buckets.map((bucket, index) => ({
+      name: bucket.range,
+      value: previewData.filter(loan => 
+        loan.opening_balance > bucket.min && loan.opening_balance <= bucket.max
+      ).length,
+      fill: colors[index]
+    })).filter(item => item.value > 0);
   };
 
   const chartConfig = {
@@ -330,13 +333,19 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                 <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Interest Rate Distribution</CardTitle>
+                      <CardTitle className="text-lg">Loan Distribution by Maturity</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ChartContainer config={chartConfig} className="h-[300px]">
-                        <BarChart data={getInterestRateDistribution()}>
+                        <BarChart data={getMaturityDistribution()}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="range" />
+                          <XAxis 
+                            dataKey="range" 
+                            angle={-45}
+                            textAnchor="end"
+                            height={100}
+                            fontSize={12}
+                          />
                           <YAxis />
                           <ChartTooltip content={<ChartTooltipContent />} />
                           <Bar dataKey="count" fill="#2563eb" />
@@ -347,13 +356,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Loan Type Distribution</CardTitle>
+                      <CardTitle className="text-lg">Portfolio Composition by Loan Size</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ChartContainer config={chartConfig} className="h-[300px]">
                         <PieChart>
                           <Pie
-                            data={getLoanTypeDistribution()}
+                            data={getLoanSizeDistribution()}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
@@ -362,7 +371,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                             fill="#8884d8"
                             dataKey="value"
                           >
-                            {getLoanTypeDistribution().map((entry, index) => (
+                            {getLoanSizeDistribution().map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Pie>
