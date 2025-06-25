@@ -7,11 +7,11 @@ import { PieChart, Pie, Cell } from 'recharts';
 const WorkedExample = () => {
   // Portfolio composition data for the sector distribution chart
   const sectorData = [
-    { name: 'Manufacturing', value: 28, color: '#667eea' },
-    { name: 'Services', value: 24, color: '#764ba2' },
-    { name: 'Real Estate', value: 18, color: '#f093fb' },
-    { name: 'Technology', value: 15, color: '#4ecdc4' },
-    { name: 'Other', value: 15, color: '#45b7d1' }
+    { name: 'Manufacturing', value: 28, color: '#3b82f6' },
+    { name: 'Services', value: 24, color: '#10b981' },
+    { name: 'Real Estate', value: 18, color: '#8b5cf6' },
+    { name: 'Technology', value: 15, color: '#f59e0b' },
+    { name: 'Other', value: 15, color: '#ef4444' }
   ];
 
   const chartConfig = {
@@ -175,68 +175,94 @@ const WorkedExample = () => {
                 <h2 className="text-4xl font-bold text-center mb-12">Portfolio Analysis</h2>
                 <div className="analysis-grid grid lg:grid-cols-2 gap-12">
                   <div className="portfolio-composition">
-                    <h3 className="text-2xl font-semibold mb-6">Portfolio Composition</h3>
-                    <div className="composition-chart bg-white p-6 rounded-lg shadow-md">
-                      <div className="flex items-start gap-6">
-                        <div className="flex-1">
-                          <h4 className="text-lg font-medium mb-4">Sector Distribution</h4>
-                          <div className="composition-breakdown space-y-3">
-                            <div className="breakdown-item flex justify-between items-center">
-                              <div className="flex items-center">
-                                <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
-                                <span>Manufacturing</span>
+                    <h3 className="text-2xl font-semibold mb-8 text-gray-900">Portfolio Composition</h3>
+                    
+                    {/* Enhanced Sector Distribution Section */}
+                    <div className="sector-distribution-container bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-6 border-b border-gray-100">
+                        <h4 className="text-xl font-bold text-gray-900 mb-2">Sector Distribution</h4>
+                        <p className="text-sm text-gray-600">Reference portfolio breakdown by industry sector</p>
+                      </div>
+                      
+                      <div className="p-8">
+                        <div className="flex items-center justify-between gap-12">
+                          {/* Chart Section */}
+                          <div className="flex-shrink-0">
+                            <div className="relative">
+                              <ChartContainer config={chartConfig} className="h-64 w-64">
+                                <PieChart>
+                                  <Pie
+                                    data={sectorData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={45}
+                                    outerRadius={110}
+                                    paddingAngle={3}
+                                    dataKey="value"
+                                    strokeWidth={2}
+                                    stroke="#ffffff"
+                                  >
+                                    {sectorData.map((entry, index) => (
+                                      <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={entry.color}
+                                        className="hover:opacity-80 transition-opacity duration-200"
+                                      />
+                                    ))}
+                                  </Pie>
+                                  <ChartTooltip 
+                                    content={<ChartTooltipContent />}
+                                    cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+                                  />
+                                </PieChart>
+                              </ChartContainer>
+                              
+                              {/* Center label */}
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-gray-900">€1.2B</div>
+                                  <div className="text-xs text-gray-500 uppercase tracking-wide">Total</div>
+                                </div>
                               </div>
-                              <span className="font-semibold">28%</span>
-                            </div>
-                            <div className="breakdown-item flex justify-between items-center">
-                              <div className="flex items-center">
-                                <div className="w-4 h-4 bg-green-500 rounded mr-3"></div>
-                                <span>Services</span>
-                              </div>
-                              <span className="font-semibold">24%</span>
-                            </div>
-                            <div className="breakdown-item flex justify-between items-center">
-                              <div className="flex items-center">
-                                <div className="w-4 h-4 bg-purple-500 rounded mr-3"></div>
-                                <span>Real Estate</span>
-                              </div>
-                              <span className="font-semibold">18%</span>
-                            </div>
-                            <div className="breakdown-item flex justify-between items-center">
-                              <div className="flex items-center">
-                                <div className="w-4 h-4 bg-orange-500 rounded mr-3"></div>
-                                <span>Technology</span>
-                              </div>
-                              <span className="font-semibold">15%</span>
-                            </div>
-                            <div className="breakdown-item flex justify-between items-center">
-                              <div className="flex items-center">
-                                <div className="w-4 h-4 bg-red-500 rounded mr-3"></div>
-                                <span>Other</span>
-                              </div>
-                              <span className="font-semibold">15%</span>
                             </div>
                           </div>
-                        </div>
-                        <div className="w-48">
-                          <ChartContainer config={chartConfig} className="h-48">
-                            <PieChart>
-                              <Pie
-                                data={sectorData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={30}
-                                outerRadius={80}
-                                paddingAngle={2}
-                                dataKey="value"
-                              >
-                                {sectorData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                              <ChartTooltip content={<ChartTooltipContent />} />
-                            </PieChart>
-                          </ChartContainer>
+                          
+                          {/* Legend Section */}
+                          <div className="flex-1 min-w-0">
+                            <div className="space-y-4">
+                              {sectorData.map((sector, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                                  <div className="flex items-center space-x-3">
+                                    <div 
+                                      className="w-4 h-4 rounded-full shadow-sm ring-2 ring-white"
+                                      style={{ backgroundColor: sector.color }}
+                                    ></div>
+                                    <span className="font-medium text-gray-900">{sector.name}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-lg font-bold text-gray-900">{sector.value}%</div>
+                                    <div className="text-xs text-gray-500">
+                                      €{((sector.value / 100) * 1200).toFixed(0)}M
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Summary Stats */}
+                            <div className="mt-6 pt-6 border-t border-gray-200">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                  <div className="text-sm font-medium text-blue-900">Largest Sector</div>
+                                  <div className="text-lg font-bold text-blue-700">Manufacturing</div>
+                                </div>
+                                <div className="text-center p-3 bg-green-50 rounded-lg">
+                                  <div className="text-sm font-medium text-green-900">Diversification</div>
+                                  <div className="text-lg font-bold text-green-700">Well Balanced</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
