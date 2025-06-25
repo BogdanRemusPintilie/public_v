@@ -1,515 +1,208 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import WorkedExample from '../components/WorkedExample';
 
 const SRTPlatform = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Load external CSS for the SRT platform
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/srt-platform/css/styles.css';
-    document.head.appendChild(link);
-
-    // Load Font Awesome
-    const fontAwesome = document.createElement('link');
-    fontAwesome.rel = 'stylesheet';
-    fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-    document.head.appendChild(fontAwesome);
-
-    // Load Google Fonts - Adding Poppins
-    const googleFonts = document.createElement('link');
-    googleFonts.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap';
-    googleFonts.rel = 'stylesheet';
-    document.head.appendChild(googleFonts);
-
-    // Load main script
-    const mainScript = document.createElement('script');
-    mainScript.src = '/srt-platform/js/main.js';
-    document.body.appendChild(mainScript);
-
-    return () => {
-      // Cleanup on unmount
-      if (document.head.contains(link)) document.head.removeChild(link);
-      if (document.head.contains(fontAwesome)) document.head.removeChild(fontAwesome);
-      if (document.head.contains(googleFonts)) document.head.removeChild(googleFonts);
-      if (document.body.contains(mainScript)) document.body.removeChild(mainScript);
-    };
-  }, []);
-
-  const handleAccessApps = () => {
-    navigate('/apps');
-  };
-
-  const handleRiskBlocsClick = () => {
-    navigate('/dashboard');
+  const scrollToWorkedExample = () => {
+    const workedExampleElement = document.getElementById('worked-example-section');
+    if (workedExampleElement) {
+      workedExampleElement.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
-    <div className="srt-platform-container">
-      {/* Header Banner */}
-      <div className="header-banner">
-        <div className="container">
-          <span className="header-banner-text">Complete SRT Platform Suite</span>
-          <button onClick={handleAccessApps} className="access-apps-btn">
-            <i className="fas fa-external-link-alt"></i>
-            Access Apps
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="navbar">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <img 
-              src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" 
-              alt="RiskBlocs Logo" 
-              className="nav-logo-img"
-              style={{ height: '1.5rem', width: '1.5rem' }}
-            />
-            <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>RiskBlocs</span>
-          </div>
-          <ul className="nav-menu">
-            <li><a href="#home" className="nav-link active">Home</a></li>
-            <li><a href="/srt-platform/demo" className="nav-link">Demo</a></li>
-            <li><a href="/srt-platform/example" className="nav-link">Worked Example</a></li>
-            <li>
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex items-center justify-between">
+            <div className="text-2xl font-bold text-blue-600">SRT Platform</div>
+            <div className="hidden md:flex space-x-8">
+              <a href="#hero" className="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
+              <a href="#market-context" className="text-gray-600 hover:text-blue-600 transition-colors">Market Context</a>
+              <a href="#platform-overview" className="text-gray-600 hover:text-blue-600 transition-colors">Platform</a>
               <button 
-                onClick={handleRiskBlocsClick} 
-                className="nav-link" 
-                style={{background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit'}}
+                onClick={scrollToWorkedExample}
+                className="text-gray-600 hover:text-blue-600 transition-colors cursor-pointer border-none bg-transparent"
               >
-                RiskBlocs
+                Worked Example
               </button>
-            </li>
-          </ul>
-          <div className="nav-access-apps">
-            <button 
-              onClick={handleAccessApps} 
-              className="nav-access-apps-text"
-            >
-              Access Apps
-            </button>
-          </div>
-          <div className="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
+              <a href="#capabilities" className="text-gray-600 hover:text-blue-600 transition-colors">Capabilities</a>
+              <a href="#why-choose" className="text-gray-600 hover:text-blue-600 transition-colors">Why Choose Us</a>
+            </div>
+          </nav>
         </div>
-      </nav>
+      </header>
 
       {/* Hero Section */}
-      <section className="hero" id="home">
-        <div className="hero-container">
-          <div className="hero-content">
-            <div className="hero-text">
-              <h1>Transform Risk into <span className="gradient-text">Opportunity</span></h1>
-              <p className="hero-subtitle">The comprehensive platform for Significant Risk Transfer transactions. Optimize capital efficiency, manage credit risk, and unlock growth potential with cutting-edge analytics and regulatory-compliant solutions.</p>
-              
-              <div className="hero-stats">
-                <div className="stat-item">
-                  <span className="stat-number">€200B+</span>
-                  <span className="stat-label">Transactions Facilitated</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">95%</span>
-                  <span className="stat-label">Capital Efficiency</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">50+</span>
-                  <span className="stat-label">Global Institutions</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">99.9%</span>
-                  <span className="stat-label">Compliance Rate</span>
-                </div>
-              </div>
-
-              <div className="hero-actions">
-                <a href="/srt-platform/demo" className="btn btn-primary">
-                  <i className="fas fa-play"></i>
-                  Explore Demo
+      <section id="hero" className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="text-left">
+              <h1 className="text-5xl font-bold text-gray-900 mb-6">Unlock Capital Efficiency with SRT</h1>
+              <p className="text-xl text-gray-700 mb-8">
+                Our platform empowers banks to optimize their balance sheets through synthetic securitization, reducing RWA and enhancing ROE.
+              </p>
+              <div className="flex space-x-4">
+                <a href="#platform-overview" className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
+                  Explore the Platform
                 </a>
-                <a href="/srt-platform/example" className="btn btn-secondary">
-                  <i className="fas fa-chart-bar"></i>
-                  View Example
+                <a href="#contact" className="inline-block bg-transparent border-2 border-blue-600 text-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700 transition-colors">
+                  Contact Us
                 </a>
               </div>
             </div>
-            
-            <div className="hero-visual">
-              <div className="dashboard-preview">
-                <div className="dashboard-header">
-                  <div className="dashboard-title">SRT Analytics Dashboard</div>
-                  <div className="dashboard-status">
-                    <span className="status-indicator active"></span>
-                    Live Data
-                  </div>
-                </div>
-                <div className="dashboard-content">
-                  <div className="metric-card">
-                    <div className="metric-label">Portfolio Value</div>
-                    <div className="metric-value">€2.4B</div>
-                    <div className="metric-change positive">+12.3%</div>
-                  </div>
-                  <div className="metric-card">
-                    <div className="metric-label">Risk-Weighted Assets</div>
-                    <div className="metric-value">€480M</div>
-                    <div className="metric-change negative">-23.1%</div>
-                  </div>
-                  <div className="chart-container">
-                    <canvas id="heroChart" width="300" height="150"></canvas>
-                  </div>
-                </div>
-              </div>
+            <div className="hero-image">
+              <img src="https://via.placeholder.com/600x400" alt="SRT Platform" className="rounded-lg shadow-lg" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Platform Overview */}
-      <section className="platform-overview">
-        <div className="container">
-          <div className="section-header">
-            <h2>Advanced SRT Solutions for Modern Banking</h2>
-            <p>Our platform revolutionizes how financial institutions approach credit risk transfer through sophisticated analytics and regulatory expertise.</p>
-          </div>
-          
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-chart-pie"></i>
-              </div>
-              <h3>Capital Optimization</h3>
-              <p>Reduce Risk-Weighted Assets by up to 80% through sophisticated SRT structuring. Maximize capital relief while maintaining regulatory compliance.</p>
-              <div className="feature-metric">
-                <span className="metric-number">80%</span>
-                <span className="metric-text">RWA Reduction</span>
-              </div>
+      {/* Market Context Section */}
+      <section id="market-context" className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Market Context</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="market-item text-center">
+              <i className="fas fa-chart-line text-5xl text-blue-600 mb-4"></i>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2">RWA Optimization</h3>
+              <p className="text-gray-600">Reduce risk-weighted assets and free up capital for new lending opportunities.</p>
             </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-shield-alt"></i>
-              </div>
-              <h3>Risk Management</h3>
-              <p>Advanced modeling capabilities provide deep insights into portfolio risk characteristics with comprehensive stress testing and scenario analysis.</p>
-              <div className="feature-metric">
-                <span className="metric-number">1000+</span>
-                <span className="metric-text">Risk Scenarios</span>
-              </div>
+            <div className="market-item text-center">
+              <i className="fas fa-piggy-bank text-5xl text-green-600 mb-4"></i>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Capital Relief</h3>
+              <p className="text-gray-600">Achieve significant capital relief while maintaining regulatory compliance.</p>
             </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-balance-scale"></i>
-              </div>
-              <h3>Regulatory Compliance</h3>
-              <p>Built-in compliance frameworks ensure adherence to Basel III, IFRS 9, and regional regulatory requirements with automated reporting.</p>
-              <div className="feature-metric">
-                <span className="metric-number">100%</span>
-                <span className="metric-text">Compliance</span>
-              </div>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-brain"></i>
-              </div>
-              <h3>Market Intelligence</h3>
-              <p>Access real-time market data, pricing benchmarks, and transaction comparables for optimal SRT transaction structuring.</p>
-              <div className="feature-metric">
-                <span className="metric-number">24/7</span>
-                <span className="metric-text">Market Data</span>
-              </div>
+            <div className="market-item text-center">
+              <i className="fas fa-rocket text-5xl text-purple-600 mb-4"></i>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Enhanced ROE</h3>
+              <p className="text-gray-600">Improve return on equity and drive shareholder value through efficient capital management.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Market Context */}
-      <section className="market-context">
-        <div className="container">
-          <div className="market-content">
-            <div className="market-text">
-              <h2>The Growing SRT Market</h2>
-              <p>The global Significant Risk Transfer market has experienced unprecedented growth, driven by increasing regulatory capital requirements and the need for balance sheet optimization.</p>
-              
-              <div className="market-highlights">
-                <div className="highlight-item">
-                  <div className="highlight-icon">
-                    <i className="fas fa-trending-up"></i>
-                  </div>
-                  <div className="highlight-content">
-                    <h4>Market Growth</h4>
-                    <p>Transaction volumes increased from €3.7B in 2016 to over €20B in 2022, representing 440% growth.</p>
-                  </div>
-                </div>
-                
-                <div className="highlight-item">
-                  <div className="highlight-icon">
-                    <i className="fas fa-globe-europe"></i>
-                  </div>
-                  <div className="highlight-content">
-                    <h4>Global Adoption</h4>
-                    <p>European banks lead adoption with strategic capital optimization, while U.S. banks rapidly expand usage.</p>
-                  </div>
-                </div>
-                
-                <div className="highlight-item">
-                  <div className="highlight-icon">
-                    <i className="fas fa-university"></i>
-                  </div>
-                  <div className="highlight-content">
-                    <h4>Regulatory Support</h4>
-                    <p>Clear regulatory frameworks from Fed, ECB, and other authorities support continued market growth.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="market-chart">
-              <div className="chart-header">
-                <h3>SRT Market Growth</h3>
-                <p>Global transaction volumes (€ billions)</p>
-              </div>
-              <canvas id="marketChart" width="400" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Platform Capabilities */}
-      <section className="capabilities">
-        <div className="container">
-          <div className="section-header">
-            <h2>Comprehensive Platform Capabilities</h2>
-            <p>Everything you need to structure, execute, and manage SRT transactions</p>
-          </div>
-          
-          <div className="capabilities-grid">
-            <div className="capability-item">
-              <div className="capability-header">
-                <i className="fas fa-analytics"></i>
-                <h3>Portfolio Analysis Engine</h3>
-              </div>
-              <ul className="capability-features">
-                <li>Comprehensive credit risk assessment</li>
-                <li>Granular exposure analysis by sector and geography</li>
-                <li>Historical performance analytics</li>
-                <li>Stress testing and scenario modeling</li>
+      {/* Platform Overview Section */}
+      <section id="platform-overview" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Platform Overview</h2>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="platform-description">
+              <h3 className="text-3xl font-semibold text-gray-800 mb-6">End-to-End SRT Solution</h3>
+              <p className="text-lg text-gray-700 mb-8">
+                Our platform provides a comprehensive suite of tools and services to facilitate synthetic securitization transactions, from initial portfolio analysis to ongoing performance monitoring.
+              </p>
+              <ul className="list-disc list-inside text-gray-600">
+                <li>Portfolio Analysis & Structuring</li>
+                <li>Documentation & Regulatory Approval</li>
+                <li>Market Execution & Investor Engagement</li>
+                <li>Ongoing Performance Monitoring</li>
               </ul>
             </div>
-            
-            <div className="capability-item">
-              <div className="capability-header">
-                <i className="fas fa-cogs"></i>
-                <h3>SRT Structure Optimizer</h3>
-              </div>
-              <ul className="capability-features">
-                <li>Automated structure recommendations</li>
-                <li>Tranche sizing and pricing optimization</li>
-                <li>Capital relief calculations</li>
-                <li>Regulatory capital impact analysis</li>
-              </ul>
-            </div>
-            
-            <div className="capability-item">
-              <div className="capability-header">
-                <i className="fas fa-clipboard-check"></i>
-                <h3>Compliance Management</h3>
-              </div>
-              <ul className="capability-features">
-                <li>Regulatory framework mapping</li>
-                <li>Automated documentation generation</li>
-                <li>Ongoing compliance monitoring</li>
-                <li>Audit trail and reporting capabilities</li>
-              </ul>
-            </div>
-            
-            <div className="capability-item">
-              <div className="capability-header">
-                <i className="fas fa-database"></i>
-                <h3>Market Data Integration</h3>
-              </div>
-              <ul className="capability-features">
-                <li>Real-time pricing feeds</li>
-                <li>Transaction comparables database</li>
-                <li>Market trend analysis</li>
-                <li>Investor sentiment tracking</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us */}
-      <section className="why-choose">
-        <div className="container">
-          <div className="why-content">
-            <div className="why-text">
-              <h2>Why Choose Our Platform</h2>
-              <p>Our clients consistently achieve superior outcomes with industry-leading expertise and technology.</p>
-              
-              <div className="benefits-list">
-                <div className="benefit-item">
-                  <div className="benefit-icon">
-                    <i className="fas fa-medal"></i>
-                  </div>
-                  <div className="benefit-content">
-                    <h4>Proven Expertise</h4>
-                    <p>Decades of experience in structured finance, risk management, and regulatory compliance.</p>
-                  </div>
-                </div>
-                
-                <div className="benefit-item">
-                  <div className="benefit-icon">
-                    <i className="fas fa-rocket"></i>
-                  </div>
-                  <div className="benefit-content">
-                    <h4>Technology Leadership</h4>
-                    <p>Proprietary analytics engine leveraging machine learning and advanced statistical models.</p>
-                  </div>
-                </div>
-                
-                <div className="benefit-item">
-                  <div className="benefit-icon">
-                    <i className="fas fa-award"></i>
-                  </div>
-                  <div className="benefit-content">
-                    <h4>Client Success</h4>
-                    <p>Average capital relief of 75% with transaction execution times reduced by 60%.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="success-metrics">
-              <div className="metrics-header">
-                <h3>Client Success Metrics</h3>
-              </div>
-              <div className="metrics-grid">
-                <div className="metric-box">
-                  <div className="metric-value">75%</div>
-                  <div className="metric-label">Average Capital Relief</div>
-                </div>
-                <div className="metric-box">
-                  <div className="metric-value">60%</div>
-                  <div className="metric-label">Faster Execution</div>
-                </div>
-                <div className="metric-box">
-                  <div className="metric-value">100%</div>
-                  <div className="metric-label">Regulatory Approval</div>
-                </div>
-                <div className="metric-box">
-                  <div className="metric-value">24/7</div>
-                  <div className="metric-label">Support Available</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="cta-section" id="contact">
-        <div className="container">
-          <div className="cta-content">
-            <h2>Ready to Transform Your Risk Management?</h2>
-            <p>Discover how our SRT platform can optimize your capital efficiency and enhance your risk management capabilities.</p>
-            
-            <div className="cta-actions">
-              <a href="/srt-platform/demo" className="btn btn-primary btn-large">
-                <i className="fas fa-play"></i>
-                Try Interactive Demo
-              </a>
-              <a href="/srt-platform/example" className="btn btn-secondary btn-large">
-                <i className="fas fa-chart-line"></i>
-                View Worked Example
-              </a>
-            </div>
-            
-            <div className="contact-info">
-              <p>Or contact our experts directly:</p>
-              <div className="contact-methods">
-                <a href="mailto:info@srtplatform.com" className="contact-method">
-                  <i className="fas fa-envelope"></i>
-                  info@srtplatform.com
-                </a>
-                <a href="tel:+1-555-0123" className="contact-method">
-                  <i className="fas fa-phone"></i>
-                  +1 (555) 012-3456
-                </a>
-              </div>
+            <div className="platform-image">
+              <img src="https://via.placeholder.com/600x400" alt="Platform Interface" className="rounded-lg shadow-lg" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Worked Example Section */}
-      <section className="worked-example-section" id="worked-example">
-        <div className="container">
-          <div className="section-header text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Worked Example</h2>
-            <p className="text-xl text-gray-600">Deep dive into a real-world SRT transaction from start to finish</p>
-          </div>
+      <section id="worked-example-section" className="py-16 bg-white">
+        <div className="container mx-auto px-4">
           <WorkedExample />
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-section">
-              <div className="footer-logo">
-                <i className="fas fa-chart-line"></i>
-                <span>BlocsTransfer</span>
-              </div>
-              <p>Advanced Significant Risk Transfer solutions for modern banking.</p>
-              <div className="social-links">
-                <a href="#"><i className="fab fa-linkedin"></i></a>
-                <a href="#"><i className="fab fa-twitter"></i></a>
-                <a href="#"><i className="fab fa-github"></i></a>
-              </div>
+      {/* Capabilities Section */}
+      <section id="capabilities" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Capabilities</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="capability-item text-center">
+              <i className="fas fa-calculator text-5xl text-blue-600 mb-4"></i>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Advanced Analytics</h3>
+              <p className="text-gray-600">Leverage our proprietary models for portfolio analysis, risk assessment, and capital optimization.</p>
             </div>
-            
-            <div className="footer-section">
-              <h4>Platform</h4>
-              <ul>
-                <li><a href="#">Features</a></li>
-                <li><a href="/srt-platform/demo">Demo</a></li>
-                <li><a href="/srt-platform/example">Examples</a></li>
-                <li><a href="#">API Documentation</a></li>
-              </ul>
+            <div className="capability-item text-center">
+              <i className="fas fa-file-alt text-5xl text-green-600 mb-4"></i>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Regulatory Expertise</h3>
+              <p className="text-gray-600">Navigate complex regulatory requirements with our team of experienced SRT professionals.</p>
             </div>
-            
-            <div className="footer-section">
-              <h4>Resources</h4>
-              <ul>
-                <li><a href="#">White Papers</a></li>
-                <li><a href="#">Case Studies</a></li>
-                <li><a href="#">Regulatory Updates</a></li>
-                <li><a href="#">Support</a></li>
-              </ul>
-            </div>
-            
-            <div className="footer-section">
-              <h4>Company</h4>
-              <ul>
-                <li><a href="#">About Us</a></li>
-                <li><a href="#">Careers</a></li>
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms of Service</a></li>
-              </ul>
+            <div className="capability-item text-center">
+              <i className="fas fa-handshake text-5xl text-purple-600 mb-4"></i>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Investor Network</h3>
+              <p className="text-gray-600">Access our extensive network of institutional investors specializing in SRT transactions.</p>
             </div>
           </div>
-          
-          <div className="footer-bottom">
-            <p>&copy; 2025 BlocsTransfer. All rights reserved.</p>
+        </div>
+      </section>
+
+      {/* Why Choose Us Section */}
+      <section id="why-choose" className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Why Choose Us</h2>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="reasons-list">
+              <ul className="space-y-6">
+                <li className="flex items-start">
+                  <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                  <div className="reason-content">
+                    <h4 className="text-xl font-semibold text-gray-800 mb-2">Proven Track Record</h4>
+                    <p className="text-gray-600">Successfully executed SRT transactions for leading European banks.</p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                  <div className="reason-content">
+                    <h4 className="text-xl font-semibold text-gray-800 mb-2">Customized Solutions</h4>
+                    <p className="text-gray-600">Tailored SRT structures to meet your specific needs and objectives.</p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                  <div className="reason-content">
+                    <h4 className="text-xl font-semibold text-gray-800 mb-2">Transparent Process</h4>
+                    <p className="text-gray-600">Clear and transparent communication throughout the entire transaction lifecycle.</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div className="team-image">
+              <img src="https://via.placeholder.com/600x400" alt="Our Team" className="rounded-lg shadow-lg" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-gradient-to-br from-blue-600 to-purple-700 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl font-bold mb-8">Ready to Optimize Your Capital?</h2>
+          <p className="text-xl mb-12">Contact us today to learn more about our SRT platform and how it can benefit your institution.</p>
+          <a href="#contact" className="inline-block bg-white text-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+            Get Started
+          </a>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <div className="text-lg">
+              &copy; 2024 SRT Platform. All rights reserved.
+            </div>
+            <div className="social-links space-x-4">
+              <a href="#" className="hover:text-blue-300">
+                <i className="fab fa-linkedin-in"></i>
+              </a>
+              <a href="#" className="hover:text-blue-300">
+                <i className="fab fa-twitter"></i>
+              </a>
+              <a href="#" className="hover:text-blue-300">
+                <i className="fab fa-facebook-f"></i>
+              </a>
+            </div>
           </div>
         </div>
       </footer>
