@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,8 +9,81 @@
     <link rel="stylesheet" href="css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .header-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 0;
+            text-align: center;
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .header-banner .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header-banner-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .access-apps-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .access-apps-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+            color: white;
+        }
+        
+        .access-apps-btn i {
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .header-banner .container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .header-banner-text {
+                font-size: 13px;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Header Banner -->
+    <div class="header-banner">
+        <div class="container">
+            <span class="header-banner-text">Complete SRT Platform Suite</span>
+            <a href="/" class="access-apps-btn">
+                <i class="fas fa-external-link-alt"></i>
+                Access Apps
+            </a>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
@@ -435,4 +509,3 @@
     <script src="js/main.js"></script>
 </body>
 </html>
-
