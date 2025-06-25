@@ -1,6 +1,8 @@
 
 import React from 'react';
 import WorkedExample from '../components/WorkedExample';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../components/ui/chart';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const SRTPlatform = () => {
   const scrollToWorkedExample = () => {
@@ -8,6 +10,31 @@ const SRTPlatform = () => {
     if (workedExampleElement) {
       workedExampleElement.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // Portfolio composition data
+  const portfolioData = [
+    { name: 'Large Corporate', value: 45, color: '#667eea' },
+    { name: 'Mid-Market', value: 35, color: '#764ba2' },
+    { name: 'SME', value: 20, color: '#f093fb' }
+  ];
+
+  // Geographic distribution data
+  const geographicData = [
+    { name: 'Germany', value: 35, color: '#667eea' },
+    { name: 'France', value: 25, color: '#764ba2' },
+    { name: 'Italy', value: 20, color: '#f093fb' },
+    { name: 'Spain', value: 15, color: '#4ecdc4' },
+    { name: 'Other EU', value: 5, color: '#45b7d1' }
+  ];
+
+  const chartConfig = {
+    portfolio: {
+      label: "Portfolio Composition",
+    },
+    geographic: {
+      label: "Geographic Distribution",
+    },
   };
 
   return (
@@ -80,6 +107,68 @@ const SRTPlatform = () => {
                     <div className="text-sm text-gray-600 mb-1">Risk-Weighted Assets</div>
                     <div className="text-2xl font-bold text-purple-600">€480M</div>
                     <div className="text-xs text-red-600">-23.1%</div>
+                  </div>
+                </div>
+
+                {/* Portfolio Analysis Charts */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs text-gray-600 mb-2 font-medium">Portfolio Composition</div>
+                    <ChartContainer config={chartConfig} className="h-24">
+                      <PieChart>
+                        <Pie
+                          data={portfolioData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={15}
+                          outerRadius={35}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {portfolioData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ChartContainer>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {portfolioData.map((item, index) => (
+                        <div key={index} className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                          <span className="text-xs text-gray-500">{item.value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="text-xs text-gray-600 mb-2 font-medium">Geographic Distribution</div>
+                    <ChartContainer config={chartConfig} className="h-24">
+                      <PieChart>
+                        <Pie
+                          data={geographicData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={15}
+                          outerRadius={35}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {geographicData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ChartContainer>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {geographicData.map((item, index) => (
+                        <div key={index} className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                          <span className="text-xs text-gray-500">{item.value}%</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 
