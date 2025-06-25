@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from 'lucide-react';
+import { Trash2, RefreshCw } from 'lucide-react';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -83,12 +83,27 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   }, [showExistingData, isOpen, user]);
 
+  // Add effect to refresh data when component becomes visible again
+  useEffect(() => {
+    if (showExistingData && isOpen && user) {
+      const handleFocus = () => {
+        loadExistingData();
+      };
+      
+      window.addEventListener('focus', handleFocus);
+      return () => window.removeEventListener('focus', handleFocus);
+    }
+  }, [showExistingData, isOpen, user]);
+
   const loadExistingData = async () => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
+      console.log('Loading existing data for user:', user.id);
       const existingData = await getLoanData(user.id);
+      
+      console.log('Loaded existing data:', existingData.length, 'records');
       
       if (existingData.length > 0) {
         setPreviewData(existingData);
@@ -98,6 +113,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           description: `Loaded ${existingData.length} existing records`,
         });
       } else {
+        setPreviewData([]);
+        setPortfolioSummary(null);
         toast({
           title: "No Data Found",
           description: "No existing loan data found for your account",
@@ -110,8 +127,16 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         description: "Failed to load existing data. Please try again.",
         variant: "destructive",
       });
+      setPreviewData([]);
+      setPortfolioSummary(null);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleRefreshData = () => {
+    if (showExistingData && user) {
+      loadExistingData();
     }
   };
 
@@ -400,15 +425,31 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       <div className="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white">
         <Card>
           <CardHeader>
-            <CardTitle>
-              {showExistingData ? "Manage Existing Data" : "Upload Excel File"}
-            </CardTitle>
-            <CardDescription>
-              {showExistingData 
-                ? "View and manage your existing loan portfolio data"
-                : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
-              }
-            </CardDescription>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>
+                  {showExistingData ? "Manage Existing Data" : "Upload Excel File"}
+                </CardTitle>
+                <CardDescription>
+                  {showExistingData 
+                    ? "View and manage your existing loan portfolio data"
+                    : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
+                  }
+                </CardDescription>
+              </div>
+              {showExistingData && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshData}
+                  disabled={isProcessing}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {!showExistingData && (
