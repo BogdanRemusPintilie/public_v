@@ -82,24 +82,37 @@ export const insertLoanData = async (
 export const getLoanData = async (userId?: string) => {
   console.log('Fetching loan data for user:', userId);
   
+  // First, get the total count
+  let countQuery = supabase.from('loan_data').select('*', { count: 'exact', head: true });
+  if (userId) {
+    countQuery = countQuery.eq('user_id', userId);
+  }
+  
+  const { count, error: countError } = await countQuery;
+  
+  if (countError) {
+    console.error('Error getting record count:', countError);
+    throw countError;
+  }
+  
+  console.log(`Total records available: ${count}`);
+  
+  // Now fetch all records without any limit
   let query = supabase.from('loan_data').select('*');
   
   if (userId) {
     query = query.eq('user_id', userId);
   }
   
-  // Remove any default limits and fetch all data
-  // Use range() with a large number to get all records
-  const { data, error, count } = await query
-    .order('created_at', { ascending: false })
-    .range(0, 999999); // Set a very high range to get all records
+  // Fetch all records - remove range limit entirely
+  const { data, error } = await query.order('created_at', { ascending: false });
   
   if (error) {
     console.error('Error fetching loan data:', error);
     throw error;
   }
   
-  console.log(`Successfully fetched ${data?.length || 0} loan records`);
+  console.log(`Successfully fetched ${data?.length || 0} loan records out of ${count} total records`);
   
   return data as LoanRecord[];
 };
