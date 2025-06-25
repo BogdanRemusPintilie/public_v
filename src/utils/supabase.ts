@@ -14,6 +14,7 @@ export interface LoanRecord {
   ltv: number;
   opening_balance: number;
   pd?: number;
+  dataset_name?: string;
   file_name?: string;
   worksheet_name?: string;
   created_at?: string;

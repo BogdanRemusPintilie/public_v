@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -51,6 +53,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   showExistingData = false 
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [datasetName, setDatasetName] = useState<string>('');
   const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -72,6 +75,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     } else if (!showExistingData && isOpen) {
       setPreviewData([]);
       setSelectedFile(null);
+      setDatasetName('');
       setPortfolioSummary(null);
       setUploadProgress(0);
       setUploadStatus('');
@@ -282,6 +286,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const handleClearData = () => {
     setPreviewData([]);
     setSelectedFile(null);
+    setDatasetName('');
     setPortfolioSummary(null);
     setUploadProgress(0);
     setUploadStatus('');
@@ -294,13 +299,23 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       user: !!user,
       previewDataLength: previewData.length,
       supabase: !!supabase,
-      userId: user?.id
+      userId: user?.id,
+      datasetName: datasetName
     });
 
     if (!selectedFile || !user || previewData.length === 0 || !supabase) {
       toast({
         title: "Upload Error",
         description: "Please select a file and ensure you're logged in",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!datasetName.trim()) {
+      toast({
+        title: "Dataset Name Required",
+        description: "Please enter a name for this dataset",
         variant: "destructive",
       });
       return;
@@ -324,10 +339,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       const dataWithUserId = previewData.map(loan => ({
         ...loan,
-        user_id: user.id
+        user_id: user.id,
+        dataset_name: datasetName.trim()
       }));
       
-      console.log('Inserting data to database:', dataWithUserId.length, 'records with user_id:', user.id);
+      console.log('Inserting data to database:', dataWithUserId.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
       
       // Use the new batch insert function with progress tracking
       await insertLoanData(dataWithUserId, (completed, total) => {
@@ -338,7 +354,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       toast({
         title: "Upload Successful",
-        description: `${previewData.length} loan records saved successfully`,
+        description: `${previewData.length} loan records saved successfully as "${datasetName}"`,
       });
       
       handleClose();
@@ -370,6 +386,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     onClose();
     setPreviewData([]);
     setSelectedFile(null);
+    setDatasetName('');
     setPortfolioSummary(null);
     setUploadProgress(0);
     setUploadStatus('');
@@ -395,30 +412,50 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           </CardHeader>
           <CardContent>
             {!showExistingData && (
-              <div {...getRootProps()} className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-md cursor-pointer bg-gray-50 dark:bg-gray-700">
-                <input {...getInputProps()} />
-                {
-                  isDragActive ?
-                    <p className="text-gray-500">Drop the files here ...</p> :
-                    <p className="text-gray-500">Drag 'n' drop some files here, or click to select files</p>
-                }
-                {selectedFile && (
-                  <div className="mt-4">
-                    <p className="text-gray-700">Selected file: {selectedFile.name}</p>
-                  </div>
-                )}
-                {isProcessing && (
-                  <div className="mt-4 flex flex-col items-center w-full max-w-md">
-                    <div className="flex items-center mb-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                      <p className="text-blue-600">{uploadStatus || 'Processing file...'}</p>
+              <>
+                <div className="mb-6">
+                  <Label htmlFor="dataset-name" className="text-base font-medium">
+                    Dataset Name *
+                  </Label>
+                  <Input
+                    id="dataset-name"
+                    type="text"
+                    placeholder="Enter a name for this dataset (e.g., 'Q4 2024 Portfolio', 'Commercial Loans')"
+                    value={datasetName}
+                    onChange={(e) => setDatasetName(e.target.value)}
+                    className="mt-2"
+                    disabled={isProcessing}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    This name will help you identify this dataset when managing your data
+                  </p>
+                </div>
+
+                <div {...getRootProps()} className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-md cursor-pointer bg-gray-50 dark:bg-gray-700">
+                  <input {...getInputProps()} />
+                  {
+                    isDragActive ?
+                      <p className="text-gray-500">Drop the files here ...</p> :
+                      <p className="text-gray-500">Drag 'n' drop some files here, or click to select files</p>
+                  }
+                  {selectedFile && (
+                    <div className="mt-4">
+                      <p className="text-gray-700">Selected file: {selectedFile.name}</p>
                     </div>
-                    {uploadProgress > 0 && (
-                      <Progress value={uploadProgress} className="w-full" />
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                  {isProcessing && (
+                    <div className="mt-4 flex flex-col items-center w-full max-w-md">
+                      <div className="flex items-center mb-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        <p className="text-blue-600">{uploadStatus || 'Processing file...'}</p>
+                      </div>
+                      {uploadProgress > 0 && (
+                        <Progress value={uploadProgress} className="w-full" />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
             {portfolioSummary && (
@@ -545,6 +582,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                             />
                           </TableHead>
                         )}
+                        {showExistingData && <TableHead>Dataset</TableHead>}
                         <TableHead>Opening Balance</TableHead>
                         <TableHead>Interest Rate</TableHead>
                         <TableHead>Term (Months)</TableHead>
@@ -565,6 +603,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                                   onCheckedChange={(checked) => handleSelectRecord(row.id!, checked as boolean)}
                                 />
                               )}
+                            </TableCell>
+                          )}
+                          {showExistingData && (
+                            <TableCell className="font-medium">
+                              {row.dataset_name || 'Unnamed Dataset'}
                             </TableCell>
                           )}
                           <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
@@ -592,7 +635,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
               <Button variant="destructive" onClick={handleClearData}>Clear Data</Button>
             )}
             {!showExistingData && (
-              <Button onClick={handleSaveToDatabase} disabled={isProcessing || previewData.length === 0}>
+              <Button onClick={handleSaveToDatabase} disabled={isProcessing || previewData.length === 0 || !datasetName.trim()}>
                 {isProcessing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

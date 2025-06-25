@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           created_at: string
           credit_score: number
+          dataset_name: string | null
           file_name: string | null
           id: string
           interest_rate: number
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           created_at?: string
           credit_score: number
+          dataset_name?: string | null
           file_name?: string | null
           id?: string
           interest_rate: number
@@ -45,6 +47,7 @@ export type Database = {
         Update: {
           created_at?: string
           credit_score?: number
+          dataset_name?: string | null
           file_name?: string | null
           id?: string
           interest_rate?: number
