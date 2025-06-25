@@ -21,7 +21,7 @@ const SRTPlatform = () => {
                 alt="RiskBlocs Logo" 
                 className="h-6 w-6" 
               />
-              <span className="text-2xl font-bold text-blue-600">RiskBlocs</span>
+              <span className="text-2xl font-bold text-black font-poppins">RiskBlocs</span>
             </div>
             <div className="hidden md:flex space-x-8">
               <a href="#hero" className="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
