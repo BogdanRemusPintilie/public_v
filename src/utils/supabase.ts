@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -95,13 +96,35 @@ export const getLoanData = async (userId?: string) => {
 };
 
 export const deleteLoanData = async (ids: string[]) => {
-  const { error } = await supabase
-    .from('loan_data')
-    .delete()
-    .in('id', ids);
+  console.log('Attempting to delete loan records with IDs:', ids);
   
-  if (error) {
-    console.error('Error deleting loan data:', error);
-    throw error;
+  if (!ids || ids.length === 0) {
+    throw new Error('No IDs provided for deletion');
   }
+
+  // Delete records in smaller batches to avoid URL length issues
+  const BATCH_SIZE = 100;
+  const batches = [];
+  
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    batches.push(ids.slice(i, i + BATCH_SIZE));
+  }
+  
+  for (const batch of batches) {
+    console.log(`Deleting batch of ${batch.length} records`);
+    
+    const { error } = await supabase
+      .from('loan_data')
+      .delete()
+      .in('id', batch);
+    
+    if (error) {
+      console.error('Error deleting loan data batch:', error);
+      throw error;
+    }
+    
+    console.log(`Successfully deleted batch of ${batch.length} records`);
+  }
+  
+  console.log(`Successfully deleted all ${ids.length} records`);
 };
