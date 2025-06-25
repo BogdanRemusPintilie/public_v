@@ -45,7 +45,7 @@ const SRTPlatform = () => {
   }, []);
 
   const handleAccessApps = () => {
-    navigate('/dashboard');
+    navigate('/apps');
   };
 
   const handleRiskBlocsClick = () => {
