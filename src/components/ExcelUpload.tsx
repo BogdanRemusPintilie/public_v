@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Progress } from "@/components/ui/progress";
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -31,6 +32,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
   const [portfolioSummary, setPortfolioSummary] = useState<{
     totalValue: number;
     avgInterestRate: number;
@@ -48,6 +51,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setPreviewData([]);
       setSelectedFile(null);
       setPortfolioSummary(null);
+      setUploadProgress(0);
+      setUploadStatus('');
     }
   }, [showExistingData, isOpen, user]);
 
@@ -148,6 +153,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     const file = acceptedFiles[0];
     setSelectedFile(file);
     setIsProcessing(true);
+    setUploadProgress(0);
+    setUploadStatus('Parsing Excel file...');
 
     try {
       console.log('Parsing Excel file:', file.name);
@@ -160,6 +167,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
       setPreviewData(parsedData.data);
       calculatePortfolioSummary(parsedData.data);
+      setUploadStatus('');
       
       toast({
         title: "File Parsed Successfully",
@@ -174,8 +182,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       });
       setPreviewData([]);
       setPortfolioSummary(null);
+      setUploadStatus('');
     } finally {
       setIsProcessing(false);
+      setUploadProgress(0);
     }
   }, []);
 
@@ -191,6 +201,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setPreviewData([]);
     setSelectedFile(null);
     setPortfolioSummary(null);
+    setUploadProgress(0);
+    setUploadStatus('');
   };
 
   const handleSaveToDatabase = async () => {
@@ -221,6 +233,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
 
     setIsProcessing(true);
+    setUploadProgress(0);
+    setUploadStatus('Preparing data for upload...');
     
     try {
       console.log('Using real Supabase user ID:', user.id);
@@ -231,7 +245,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       }));
       
       console.log('Inserting data to database:', dataWithUserId.length, 'records with user_id:', user.id);
-      await insertLoanData(dataWithUserId);
+      
+      // Use the new batch insert function with progress tracking
+      await insertLoanData(dataWithUserId, (completed, total) => {
+        const progress = Math.round((completed / total) * 100);
+        setUploadProgress(progress);
+        setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
+      });
       
       toast({
         title: "Upload Successful",
@@ -258,6 +278,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       });
     } finally {
       setIsProcessing(false);
+      setUploadProgress(0);
+      setUploadStatus('');
     }
   };
 
@@ -266,6 +288,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setPreviewData([]);
     setSelectedFile(null);
     setPortfolioSummary(null);
+    setUploadProgress(0);
+    setUploadStatus('');
   };
 
   if (!isOpen) return null;
@@ -292,9 +316,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                 </div>
               )}
               {isProcessing && (
-                <div className="mt-4 flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  <p className="text-blue-600">Processing file...</p>
+                <div className="mt-4 flex flex-col items-center w-full max-w-md">
+                  <div className="flex items-center mb-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    <p className="text-blue-600">{uploadStatus || 'Processing file...'}</p>
+                  </div>
+                  {uploadProgress > 0 && (
+                    <Progress value={uploadProgress} className="w-full" />
+                  )}
                 </div>
               )}
             </div>
@@ -423,7 +452,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
               {isProcessing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
+                  {uploadStatus || 'Saving...'}
                 </>
               ) : (
                 "Save to Database"
