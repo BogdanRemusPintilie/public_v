@@ -18,9 +18,9 @@ const SRTPlatform = () => {
     fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
     document.head.appendChild(fontAwesome);
 
-    // Load Google Fonts
+    // Load Google Fonts - Adding Poppins
     const googleFonts = document.createElement('link');
-    googleFonts.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap';
+    googleFonts.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap';
     googleFonts.rel = 'stylesheet';
     document.head.appendChild(googleFonts);
 
@@ -69,8 +69,8 @@ const SRTPlatform = () => {
       <nav className="navbar">
         <div className="nav-container">
           <div className="nav-logo">
-            <i className="fas fa-chart-line"></i>
-            <span>BlocsTransfer</span>
+            <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="nav-logo-img" />
+            <span>RiskBlocs</span>
           </div>
           <ul className="nav-menu">
             <li><a href="#home" className="nav-link active">Home</a></li>
