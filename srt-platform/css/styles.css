@@ -230,6 +230,30 @@ p {
     background: #4169e1;
 }
 
+.nav-access-apps {
+    display: flex;
+    align-items: center;
+}
+
+.nav-access-apps-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4169e1;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-access-apps-text:hover {
+    background: rgba(65, 105, 225, 0.1);
+    color: #00008b;
+}
+
 .hamburger {
     display: none;
     flex-direction: column;

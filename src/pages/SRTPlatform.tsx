@@ -91,6 +91,14 @@ const SRTPlatform = () => {
               </button>
             </li>
           </ul>
+          <div className="nav-access-apps">
+            <button 
+              onClick={handleAccessApps} 
+              className="nav-access-apps-text"
+            >
+              Access Apps
+            </button>
+          </div>
           <div className="hamburger">
             <span></span>
             <span></span>
