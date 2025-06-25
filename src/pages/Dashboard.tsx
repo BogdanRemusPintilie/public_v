@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,6 +28,10 @@ const Dashboard = () => {
     navigate('/apps');
   };
 
+  const handleLogoClick = () => {
+    navigate('/#platform-overview');
+  };
+
   const handlePreTradeAction = (action: string) => {
     if (action === 'Upload Data Tape') {
       setShowExcelUpload(true);
@@ -48,10 +51,13 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+              <button 
+                onClick={handleLogoClick}
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+              >
                 <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-8 w-8" />
                 <span className="text-xl font-bold text-gray-900 font-poppins">RiskBlocs</span>
-              </div>
+              </button>
               <button 
                 onClick={handleRiskBlocsClick}
                 className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
