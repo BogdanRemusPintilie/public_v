@@ -69,8 +69,13 @@ const SRTPlatform = () => {
       <nav className="navbar">
         <div className="nav-container">
           <div className="nav-logo">
-            <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="nav-logo-img" />
-            <span>RiskBlocs</span>
+            <img 
+              src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" 
+              alt="RiskBlocs Logo" 
+              className="nav-logo-img"
+              style={{ height: '1.5rem', width: '1.5rem' }}
+            />
+            <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>RiskBlocs</span>
           </div>
           <ul className="nav-menu">
             <li><a href="#home" className="nav-link active">Home</a></li>

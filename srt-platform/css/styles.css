@@ -1,3 +1,4 @@
+
 /* Reset and Base Styles */
 * {
     margin: 0;
@@ -56,6 +57,49 @@ p {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+/* Header Banner */
+.header-banner {
+    background: linear-gradient(135deg, #4169e1 0%, #00008b 100%);
+    color: white;
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+    position: relative;
+    z-index: 1001;
+}
+
+.header-banner .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-banner-text {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+}
+
+.access-apps-btn {
+    font-family: 'Poppins', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.access-apps-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
 }
 
 /* Buttons */
@@ -140,14 +184,14 @@ p {
     align-items: center;
     gap: 0.5rem;
     font-family: 'Poppins', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.125rem;
+    font-weight: 600;
     color: #1a1a1a;
 }
 
 .nav-logo-img {
-    height: 2rem;
-    width: 2rem;
+    height: 1.5rem;
+    width: 1.5rem;
 }
 
 .nav-logo i {
