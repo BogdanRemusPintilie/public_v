@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import ExcelUpload from '@/components/ExcelUpload';
 import DatasetManager from '@/components/DatasetManager';
+import DataExtractor from '@/components/DataExtractor';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -16,6 +17,7 @@ const Dashboard = () => {
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showExistingData, setShowExistingData] = useState(false);
   const [showDatasetManager, setShowDatasetManager] = useState(false);
+  const [showDataExtractor, setShowDataExtractor] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -41,6 +43,8 @@ const Dashboard = () => {
       setShowExistingData(true);
     } else if (action === 'Manage Datasets') {
       setShowDatasetManager(true);
+    } else if (action === 'Extract Data') {
+      setShowDataExtractor(true);
     } else {
       toast({
         title: "Pre-trade Action",
@@ -139,6 +143,14 @@ const Dashboard = () => {
                           >
                             <FolderOpen className="h-4 w-4 mr-2 text-green-600" />
                             <span className="text-sm">Access Existing Data</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start h-auto p-2 text-left"
+                            onClick={() => handlePreTradeAction('Extract Data')}
+                          >
+                            <Database className="h-4 w-4 mr-2 text-cyan-600" />
+                            <span className="text-sm">Extract Data</span>
                           </Button>
                           <Button
                             variant="ghost"
@@ -351,6 +363,12 @@ const Dashboard = () => {
       <DatasetManager
         isOpen={showDatasetManager}
         onClose={() => setShowDatasetManager(false)}
+      />
+
+      {/* Data Extractor Dialog */}
+      <DataExtractor
+        isOpen={showDataExtractor}
+        onClose={() => setShowDataExtractor(false)}
       />
     </div>
   );
