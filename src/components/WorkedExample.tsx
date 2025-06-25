@@ -1,1014 +1,796 @@
 
-import { useEffect } from 'react';
+import React from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 const WorkedExample = () => {
-  useEffect(() => {
-    // Initialize any interactive elements after component mounts
-    const initializeExample = () => {
-      // Tab navigation functionality
-      const tabBtns = document.querySelectorAll('.tab-btn');
-      const tabContents = document.querySelectorAll('.tab-content');
-      
-      tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const targetTab = btn.getAttribute('data-tab');
-          
-          // Remove active class from all tabs and contents
-          tabBtns.forEach(b => b.classList.remove('active'));
-          tabContents.forEach(c => c.classList.remove('active'));
-          
-          // Add active class to clicked tab and corresponding content
-          btn.classList.add('active');
-          document.getElementById(targetTab)?.classList.add('active');
-        });
-      });
-
-      // Step navigation functionality
-      const navSteps = document.querySelectorAll('.nav-step');
-      navSteps.forEach(step => {
-        step.addEventListener('click', (e) => {
-          e.preventDefault();
-          const targetSection = step.getAttribute('href');
-          if (targetSection) {
-            document.querySelector(targetSection)?.scrollIntoView({ behavior: 'smooth' });
-          }
-          
-          navSteps.forEach(s => s.classList.remove('active'));
-          step.classList.add('active');
-        });
-      });
-    };
-
-    const timer = setTimeout(initializeExample, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <div className="worked-example-container">
-      {/* Hero Section */}
-      <section className="example-hero">
-        <div className="container">
-          <div className="hero-content">
-            <h1>SRT Transaction: A Complete Walkthrough</h1>
-            <p>Follow a real-world Significant Risk Transfer transaction from initial assessment through execution and ongoing management.</p>
-            
-            <div className="example-nav">
-              <a href="#overview" className="nav-step active" data-step="overview">
-                <i className="fas fa-eye"></i>
-                <span>Overview</span>
-              </a>
-              <a href="#portfolio" className="nav-step" data-step="portfolio">
-                <i className="fas fa-briefcase"></i>
-                <span>Portfolio Analysis</span>
-              </a>
-              <a href="#structure" className="nav-step" data-step="structure">
-                <i className="fas fa-sitemap"></i>
-                <span>Transaction Structure</span>
-              </a>
-              <a href="#modeling" className="nav-step" data-step="modeling">
-                <i className="fas fa-calculator"></i>
-                <span>Financial Modeling</span>
-              </a>
-              <a href="#execution" className="nav-step" data-step="execution">
-                <i className="fas fa-handshake"></i>
-                <span>Execution</span>
-              </a>
-              <a href="#results" className="nav-step" data-step="results">
-                <i className="fas fa-chart-bar"></i>
-                <span>Results</span>
-              </a>
+      <Collapsible defaultOpen={false}>
+        <CollapsibleTrigger className="w-full group">
+          <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 transition-colors cursor-pointer">
+            <div className="text-left">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Worked Example</h2>
+              <p className="text-lg text-gray-600">Deep dive into a real-world SRT transaction from start to finish</p>
             </div>
+            <ChevronDown className="h-6 w-6 text-gray-600 group-data-[state=open]:rotate-180 transition-transform duration-200" />
           </div>
-        </div>
-      </section>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent className="mt-6">
+          <div className="worked-example-content">
+            {/* Hero Section */}
+            <section className="example-hero">
+              <div className="container mx-auto px-4">
+                <div className="hero-content text-center py-16">
+                  <h1 className="text-5xl font-bold mb-6">
+                    SRT Transaction: <span className="gradient-text bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">A Complete Walkthrough</span>
+                  </h1>
+                  <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                    Follow a real-world example of how a major European bank used our platform to execute a €1.2B synthetic securitization, achieving 78% RWA reduction while maintaining full regulatory compliance.
+                  </p>
+                  <div className="example-metrics grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                    <div className="metric-item bg-white p-6 rounded-lg shadow-md">
+                      <div className="metric-number text-3xl font-bold text-blue-600">€1.2B</div>
+                      <div className="metric-label text-sm text-gray-600">Portfolio Size</div>
+                    </div>
+                    <div className="metric-item bg-white p-6 rounded-lg shadow-md">
+                      <div className="metric-number text-3xl font-bold text-green-600">78%</div>
+                      <div className="metric-label text-sm text-gray-600">RWA Reduction</div>
+                    </div>
+                    <div className="metric-item bg-white p-6 rounded-lg shadow-md">
+                      <div className="metric-number text-3xl font-bold text-purple-600">3 months</div>
+                      <div className="metric-label text-sm text-gray-600">Execution Time</div>
+                    </div>
+                    <div className="metric-item bg-white p-6 rounded-lg shadow-md">
+                      <div className="metric-number text-3xl font-bold text-orange-600">AAA</div>
+                      <div className="metric-label text-sm text-gray-600">Rating Achieved</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
 
-      {/* Transaction Overview */}
-      <section className="example-section" id="overview">
-        <div className="container">
-          <div className="section-header">
-            <h2>Transaction Overview</h2>
-            <p>European Bank's €2.5B Corporate Loan Portfolio SRT</p>
-          </div>
-          
-          <div className="overview-grid">
-            <div className="overview-card">
-              <div className="card-header">
-                <i className="fas fa-building"></i>
-                <h3>Bank Profile</h3>
-              </div>
-              <div className="card-content">
-                <div className="detail-item">
-                  <span className="label">Institution:</span>
-                  <span className="value">European Commercial Bank</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Total Assets:</span>
-                  <span className="value">€45 billion</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">CET1 Ratio:</span>
-                  <span className="value">12.8%</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Target CET1:</span>
-                  <span className="value">14.0%</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="overview-card">
-              <div className="card-header">
-                <i className="fas fa-target"></i>
-                <h3>Transaction Objectives</h3>
-              </div>
-              <div className="card-content">
-                <ul className="objectives-list">
-                  <li>Reduce RWA by €1.8B to improve capital ratios</li>
-                  <li>Free up capital for new lending opportunities</li>
-                  <li>Maintain client relationships and servicing</li>
-                  <li>Achieve regulatory capital relief under Basel III</li>
-                  <li>Optimize balance sheet efficiency</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="overview-card">
-              <div className="card-header">
-                <i className="fas fa-clock"></i>
-                <h3>Timeline</h3>
-              </div>
-              <div className="card-content">
-                <div className="timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-date">Month 1-2</div>
-                    <div className="timeline-desc">Portfolio analysis and structure design</div>
-                  </div>
-                  <div className="timeline-item">
-                    <div className="timeline-date">Month 3-4</div>
-                    <div className="timeline-desc">Regulatory approval and documentation</div>
-                  </div>
-                  <div className="timeline-item">
-                    <div className="timeline-date">Month 5</div>
-                    <div className="timeline-desc">Investor marketing and execution</div>
-                  </div>
-                  <div className="timeline-item">
-                    <div className="timeline-date">Month 6+</div>
-                    <div className="timeline-desc">Ongoing monitoring and reporting</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="key-metrics">
-            <h3>Key Transaction Metrics</h3>
-            <div className="metrics-grid">
-              <div className="metric-item">
-                <div className="metric-icon">
-                  <i className="fas fa-euro-sign"></i>
-                </div>
-                <div className="metric-content">
-                  <div className="metric-value">€2.5B</div>
-                  <div className="metric-label">Portfolio Notional</div>
-                </div>
-              </div>
-              <div className="metric-item">
-                <div className="metric-icon">
-                  <i className="fas fa-percentage"></i>
-                </div>
-                <div className="metric-content">
-                  <div className="metric-value">72%</div>
-                  <div className="metric-label">Risk Transfer</div>
-                </div>
-              </div>
-              <div className="metric-item">
-                <div className="metric-icon">
-                  <i className="fas fa-chart-line"></i>
-                </div>
-                <div className="metric-content">
-                  <div className="metric-value">€1.8B</div>
-                  <div className="metric-label">RWA Reduction</div>
-                </div>
-              </div>
-              <div className="metric-item">
-                <div className="metric-icon">
-                  <i className="fas fa-calendar"></i>
-                </div>
-                <div className="metric-content">
-                  <div className="metric-value">5 Years</div>
-                  <div className="metric-label">Transaction Term</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Portfolio Analysis */}
-      <section className="example-section" id="portfolio">
-        <div className="container">
-          <div className="section-header">
-            <h2>Portfolio Analysis</h2>
-            <p>Comprehensive assessment of the reference portfolio characteristics and risk profile</p>
-          </div>
-          
-          <div className="analysis-grid">
-            <div className="analysis-card">
-              <h3>Portfolio Composition</h3>
-              <div className="chart-container">
-                <canvas id="portfolioChart" width="400" height="300"></canvas>
-              </div>
-              <div className="chart-legend">
-                <div className="legend-item">
-                  <span className="legend-color" style={{background: '#667eea'}}></span>
-                  <span>Large Corporate (45%)</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color" style={{background: '#764ba2'}}></span>
-                  <span>Mid-Market (35%)</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color" style={{background: '#f093fb'}}></span>
-                  <span>SME (20%)</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="analysis-card">
-              <h3>Geographic Distribution</h3>
-              <div className="geographic-breakdown">
-                <div className="geo-item">
-                  <div className="geo-header">
-                    <span className="country">Germany</span>
-                    <span className="percentage">28%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '28%'}}></div>
-                  </div>
-                </div>
-                <div className="geo-item">
-                  <div className="geo-header">
-                    <span className="country">France</span>
-                    <span className="percentage">22%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '22%'}}></div>
-                  </div>
-                </div>
-                <div className="geo-item">
-                  <div className="geo-header">
-                    <span className="country">Netherlands</span>
-                    <span className="percentage">18%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '18%'}}></div>
-                  </div>
-                </div>
-                <div className="geo-item">
-                  <div className="geo-header">
-                    <span className="country">Italy</span>
-                    <span className="percentage">15%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '15%'}}></div>
-                  </div>
-                </div>
-                <div className="geo-item">
-                  <div className="geo-header">
-                    <span className="country">Other EU</span>
-                    <span className="percentage">17%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{width: '17%'}}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="analysis-card">
-              <h3>Credit Quality</h3>
-              <div className="rating-distribution">
-                <div className="rating-item">
-                  <span className="rating">AAA-AA</span>
-                  <span className="amount">€125M</span>
-                  <span className="percent">5%</span>
-                </div>
-                <div className="rating-item">
-                  <span className="rating">A</span>
-                  <span className="amount">€625M</span>
-                  <span className="percent">25%</span>
-                </div>
-                <div className="rating-item">
-                  <span className="rating">BBB</span>
-                  <span className="amount">€1,125M</span>
-                  <span className="percent">45%</span>
-                </div>
-                <div className="rating-item">
-                  <span className="rating">BB</span>
-                  <span className="amount">€500M</span>
-                  <span className="percent">20%</span>
-                </div>
-                <div className="rating-item">
-                  <span className="rating">B and below</span>
-                  <span className="amount">€125M</span>
-                  <span className="percent">5%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="risk-metrics">
-            <h3>Risk Metrics</h3>
-            <div className="risk-grid">
-              <div className="risk-item">
-                <div className="risk-label">Weighted Average PD</div>
-                <div className="risk-value">1.85%</div>
-              </div>
-              <div className="risk-item">
-                <div className="risk-label">Weighted Average LGD</div>
-                <div className="risk-value">42%</div>
-              </div>
-              <div className="risk-item">
-                <div className="risk-label">Expected Loss</div>
-                <div className="risk-value">€19.4M</div>
-              </div>
-              <div className="risk-item">
-                <div className="risk-label">99.9% VaR</div>
-                <div className="risk-value">€285M</div>
-              </div>
-              <div className="risk-item">
-                <div className="risk-label">Risk Weight</div>
-                <div className="risk-value">72%</div>
-              </div>
-              <div className="risk-item">
-                <div className="risk-label">Current RWA</div>
-                <div className="risk-value">€1.8B</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Transaction Structure */}
-      <section className="example-section" id="structure">
-        <div className="container">
-          <div className="section-header">
-            <h2>Transaction Structure</h2>
-            <p>Synthetic SRT structure with credit-linked notes providing optimal capital relief</p>
-          </div>
-          
-          <div className="structure-diagram">
-            <div className="structure-visual">
-              <div className="entity bank">
-                <i className="fas fa-university"></i>
-                <h4>European Bank</h4>
-                <p>Originator & Protection Buyer</p>
-              </div>
-              
-              <div className="flow-arrow">
-                <span>Credit Protection Premium</span>
-                <i className="fas fa-arrow-right"></i>
-              </div>
-              
-              <div className="entity spv">
-                <i className="fas fa-building"></i>
-                <h4>SPV</h4>
-                <p>Issuer of Credit-Linked Notes</p>
-              </div>
-              
-              <div className="flow-arrow">
-                <span>Note Proceeds</span>
-                <i className="fas fa-arrow-right"></i>
-              </div>
-              
-              <div className="entity investors">
-                <i className="fas fa-users"></i>
-                <h4>Institutional Investors</h4>
-                <p>Protection Providers</p>
-              </div>
-              
-              <div className="reference-portfolio">
-                <i className="fas fa-briefcase"></i>
-                <h4>Reference Portfolio</h4>
-                <p>€2.5B Corporate Loans</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="tranche-structure">
-            <h3>Tranche Structure</h3>
-            <div className="tranches">
-              <div className="tranche senior">
-                <div className="tranche-header">
-                  <h4>Senior Tranche</h4>
-                  <span className="tranche-rating">AAA</span>
-                </div>
-                <div className="tranche-details">
-                  <div className="detail">
-                    <span className="label">Attachment Point:</span>
-                    <span className="value">8.5%</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Detachment Point:</span>
-                    <span className="value">100%</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Notional:</span>
-                    <span className="value">€2.29B</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Spread:</span>
-                    <span className="value">65 bps</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="tranche mezzanine">
-                <div className="tranche-header">
-                  <h4>Mezzanine Tranche</h4>
-                  <span className="tranche-rating">A</span>
-                </div>
-                <div className="tranche-details">
-                  <div className="detail">
-                    <span className="label">Attachment Point:</span>
-                    <span className="value">3.5%</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Detachment Point:</span>
-                    <span className="value">8.5%</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Notional:</span>
-                    <span className="value">€125M</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Spread:</span>
-                    <span className="value">285 bps</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="tranche junior">
-                <div className="tranche-header">
-                  <h4>First Loss Piece</h4>
-                  <span className="tranche-rating">Unrated</span>
-                </div>
-                <div className="tranche-details">
-                  <div className="detail">
-                    <span className="label">Attachment Point:</span>
-                    <span className="value">0%</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Detachment Point:</span>
-                    <span className="value">3.5%</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Notional:</span>
-                    <span className="value">€87.5M</span>
-                  </div>
-                  <div className="detail">
-                    <span className="label">Status:</span>
-                    <span className="value">Retained by Bank</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="structure-benefits">
-            <h3>Structure Benefits</h3>
-            <div className="benefits-grid">
-              <div className="benefit-card">
-                <i className="fas fa-shield-alt"></i>
-                <h4>Risk Transfer</h4>
-                <p>72% of credit risk transferred to investors through senior and mezzanine tranches</p>
-              </div>
-              <div className="benefit-card">
-                <i className="fas fa-chart-line"></i>
-                <h4>Capital Relief</h4>
-                <p>€1.8B RWA reduction achieving significant capital ratio improvement</p>
-              </div>
-              <div className="benefit-card">
-                <i className="fas fa-handshake"></i>
-                <h4>Client Relationships</h4>
-                <p>Bank retains all client relationships and continues loan servicing</p>
-              </div>
-              <div className="benefit-card">
-                <i className="fas fa-balance-scale"></i>
-                <h4>Regulatory Compliance</h4>
-                <p>Structure meets all Basel III requirements for significant risk transfer</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Financial Modeling */}
-      <section className="example-section" id="modeling">
-        <div className="container">
-          <div className="section-header">
-            <h2>Financial Modeling</h2>
-            <p>Detailed analysis of capital impact, pricing, and economic benefits</p>
-          </div>
-          
-          <div className="modeling-tabs">
-            <div className="tab-nav">
-              <button className="tab-btn active" data-tab="capital">Capital Impact</button>
-              <button className="tab-btn" data-tab="pricing">Pricing Analysis</button>
-              <button className="tab-btn" data-tab="economics">Economics</button>
-              <button className="tab-btn" data-tab="sensitivity">Sensitivity</button>
-            </div>
-            
-            <div className="tab-content active" id="capital">
-              <div className="capital-analysis">
-                <div className="before-after">
-                  <div className="scenario">
-                    <h4>Before SRT</h4>
-                    <div className="capital-metrics">
-                      <div className="metric">
-                        <span className="label">Total RWA:</span>
-                        <span className="value">€32.5B</span>
+            {/* Transaction Overview */}
+            <section className="transaction-overview py-16 bg-gray-50">
+              <div className="container mx-auto px-4">
+                <h2 className="text-4xl font-bold text-center mb-12">Transaction Overview</h2>
+                <div className="grid md:grid-cols-2 gap-12">
+                  <div className="overview-content">
+                    <h3 className="text-2xl font-semibold mb-6">Bank Profile</h3>
+                    <div className="bank-info bg-white p-6 rounded-lg shadow-md mb-8">
+                      <div className="info-item mb-4">
+                        <span className="label font-semibold text-gray-700">Institution:</span>
+                        <span className="value ml-2">Major European Bank</span>
                       </div>
-                      <div className="metric">
-                        <span className="label">CET1 Capital:</span>
-                        <span className="value">€4.16B</span>
+                      <div className="info-item mb-4">
+                        <span className="label font-semibold text-gray-700">Total Assets:</span>
+                        <span className="value ml-2">€450 billion</span>
                       </div>
-                      <div className="metric">
-                        <span className="label">CET1 Ratio:</span>
-                        <span className="value">12.8%</span>
+                      <div className="info-item mb-4">
+                        <span className="label font-semibold text-gray-700">Geography:</span>
+                        <span className="value ml-2">15 European countries</span>
                       </div>
-                      <div className="metric">
-                        <span className="label">Excess Capital:</span>
-                        <span className="value">€0.85B</span>
+                      <div className="info-item">
+                        <span className="label font-semibold text-gray-700">Focus:</span>
+                        <span className="value ml-2">Corporate & SME lending</span>
                       </div>
                     </div>
+                    
+                    <h3 className="text-2xl font-semibold mb-6">Objectives</h3>
+                    <ul className="objectives-list space-y-3">
+                      <li className="flex items-start">
+                        <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <span>Optimize capital efficiency while maintaining lending capacity</span>
+                      </li>
+                      <li className="flex items-start">
+                        <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <span>Achieve significant RWA reduction on corporate loan portfolio</span>
+                      </li>
+                      <li className="flex items-start">
+                        <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <span>Maintain full regulatory compliance across all jurisdictions</span>
+                      </li>
+                      <li className="flex items-start">
+                        <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <span>Establish framework for future SRT transactions</span>
+                      </li>
+                    </ul>
                   </div>
                   
-                  <div className="arrow">
-                    <i className="fas fa-arrow-right"></i>
-                  </div>
-                  
-                  <div className="scenario">
-                    <h4>After SRT</h4>
-                    <div className="capital-metrics">
-                      <div className="metric">
-                        <span className="label">Total RWA:</span>
-                        <span className="value">€30.7B</span>
-                      </div>
-                      <div className="metric">
-                        <span className="label">CET1 Capital:</span>
-                        <span className="value">€4.16B</span>
-                      </div>
-                      <div className="metric">
-                        <span className="label">CET1 Ratio:</span>
-                        <span className="value">13.5%</span>
-                      </div>
-                      <div className="metric">
-                        <span className="label">Excess Capital:</span>
-                        <span className="value">€1.08B</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="impact-summary">
-                  <h4>Capital Impact Summary</h4>
-                  <div className="impact-grid">
-                    <div className="impact-item positive">
-                      <span className="label">RWA Reduction:</span>
-                      <span className="value">€1.8B</span>
-                    </div>
-                    <div className="impact-item positive">
-                      <span className="label">CET1 Ratio Improvement:</span>
-                      <span className="value">+70 bps</span>
-                    </div>
-                    <div className="impact-item positive">
-                      <span className="label">Additional Lending Capacity:</span>
-                      <span className="value">€1.5B</span>
-                    </div>
-                    <div className="impact-item positive">
-                      <span className="label">Capital Efficiency Gain:</span>
-                      <span className="value">€230M</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="tab-content" id="pricing">
-              <div className="pricing-analysis">
-                <div className="pricing-table">
-                  <h4>Tranche Pricing Breakdown</h4>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Tranche</th>
-                        <th>Notional</th>
-                        <th>Spread (bps)</th>
-                        <th>Annual Premium</th>
-                        <th>Expected Loss</th>
-                        <th>Risk Premium</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Senior</td>
-                        <td>€2.29B</td>
-                        <td>65</td>
-                        <td>€14.9M</td>
-                        <td>€2.1M</td>
-                        <td>€12.8M</td>
-                      </tr>
-                      <tr>
-                        <td>Mezzanine</td>
-                        <td>€125M</td>
-                        <td>285</td>
-                        <td>€3.6M</td>
-                        <td>€1.8M</td>
-                        <td>€1.8M</td>
-                      </tr>
-                      <tr className="total">
-                        <td><strong>Total</strong></td>
-                        <td><strong>€2.415B</strong></td>
-                        <td><strong>76</strong></td>
-                        <td><strong>€18.5M</strong></td>
-                        <td><strong>€3.9M</strong></td>
-                        <td><strong>€14.6M</strong></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            
-            <div className="tab-content" id="economics">
-              <div className="economics-analysis">
-                <div className="cost-benefit">
-                  <h4>5-Year Economic Analysis</h4>
-                  <div className="economics-grid">
-                    <div className="economics-item cost">
-                      <h5>Costs</h5>
-                      <div className="cost-breakdown">
-                        <div className="cost-item">
-                          <span className="label">Protection Premiums:</span>
-                          <span className="value">€92.5M</span>
+                  <div className="timeline-content">
+                    <h3 className="text-2xl font-semibold mb-6">Timeline</h3>
+                    <div className="timeline space-y-6">
+                      <div className="timeline-item flex">
+                        <div className="timeline-marker w-4 h-4 bg-blue-500 rounded-full mt-2 mr-4 flex-shrink-0"></div>
+                        <div>
+                          <div className="timeline-date font-semibold text-blue-600">Month 1</div>
+                          <div className="timeline-title font-medium">Portfolio Analysis & Structure Design</div>
+                          <div className="timeline-desc text-sm text-gray-600">Comprehensive risk assessment and optimal structure determination</div>
                         </div>
-                        <div className="cost-item">
-                          <span className="label">Transaction Costs:</span>
-                          <span className="value">€8.2M</span>
+                      </div>
+                      <div className="timeline-item flex">
+                        <div className="timeline-marker w-4 h-4 bg-green-500 rounded-full mt-2 mr-4 flex-shrink-0"></div>
+                        <div>
+                          <div className="timeline-date font-semibold text-green-600">Month 2</div>
+                          <div className="timeline-title font-medium">Documentation & Regulatory Approval</div>
+                          <div className="timeline-desc text-sm text-gray-600">Legal documentation and supervisor engagement</div>
                         </div>
-                        <div className="cost-item">
-                          <span className="label">Ongoing Costs:</span>
-                          <span className="value">€3.5M</span>
-                        </div>
-                        <div className="cost-item total">
-                          <span className="label">Total Costs:</span>
-                          <span className="value">€104.2M</span>
+                      </div>
+                      <div className="timeline-item flex">
+                        <div className="timeline-marker w-4 h-4 bg-purple-500 rounded-full mt-2 mr-4 flex-shrink-0"></div>
+                        <div>
+                          <div className="timeline-date font-semibold text-purple-600">Month 3</div>
+                          <div className="timeline-title font-medium">Execution & Settlement</div>
+                          <div className="timeline-desc text-sm text-gray-600">Market execution and transaction closing</div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="economics-item benefit">
-                      <h5>Benefits</h5>
-                      <div className="benefit-breakdown">
-                        <div className="benefit-item">
-                          <span className="label">Capital Savings:</span>
-                          <span className="value">€115.0M</span>
+                    <div className="key-metrics mt-8 p-6 bg-white rounded-lg shadow-md">
+                      <h4 className="font-semibold mb-4">Key Metrics</h4>
+                      <div className="metrics-grid grid grid-cols-2 gap-4">
+                        <div className="metric">
+                          <div className="metric-value text-2xl font-bold text-blue-600">€1.2B</div>
+                          <div className="metric-label text-sm text-gray-600">Reference Portfolio</div>
                         </div>
-                        <div className="benefit-item">
-                          <span className="label">Funding Cost Reduction:</span>
-                          <span className="value">€28.5M</span>
+                        <div className="metric">
+                          <div className="metric-value text-2xl font-bold text-green-600">€312M</div>
+                          <div className="metric-label text-sm text-gray-600">RWA Relief</div>
                         </div>
-                        <div className="benefit-item">
-                          <span className="label">New Business ROE:</span>
-                          <span className="value">€45.2M</span>
+                        <div className="metric">
+                          <div className="metric-value text-2xl font-bold text-purple-600">15.2%</div>
+                          <div className="metric-label text-sm text-gray-600">ROE Improvement</div>
                         </div>
-                        <div className="benefit-item total">
-                          <span className="label">Total Benefits:</span>
-                          <span className="value">€188.7M</span>
+                        <div className="metric">
+                          <div className="metric-value text-2xl font-bold text-orange-600">8.5%</div>
+                          <div className="metric-label text-sm text-gray-600">Protection Premium</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Portfolio Analysis */}
+            <section className="portfolio-analysis py-16">
+              <div className="container mx-auto px-4">
+                <h2 className="text-4xl font-bold text-center mb-12">Portfolio Analysis</h2>
+                <div className="analysis-grid grid lg:grid-cols-2 gap-12">
+                  <div className="portfolio-composition">
+                    <h3 className="text-2xl font-semibold mb-6">Portfolio Composition</h3>
+                    <div className="composition-chart bg-white p-6 rounded-lg shadow-md">
+                      <div className="chart-placeholder bg-gradient-to-br from-blue-100 to-purple-100 h-64 rounded-lg flex items-center justify-center mb-6">
+                        <div className="text-center">
+                          <i className="fas fa-chart-pie text-4xl text-blue-500 mb-2"></i>
+                          <div className="text-lg font-medium">Sector Distribution</div>
+                        </div>
+                      </div>
+                      <div className="composition-breakdown space-y-3">
+                        <div className="breakdown-item flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
+                            <span>Manufacturing</span>
+                          </div>
+                          <span className="font-semibold">28%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 bg-green-500 rounded mr-3"></div>
+                            <span>Services</span>
+                          </div>
+                          <span className="font-semibold">24%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 bg-purple-500 rounded mr-3"></div>
+                            <span>Real Estate</span>
+                          </div>
+                          <span className="font-semibold">18%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 bg-orange-500 rounded mr-3"></div>
+                            <span>Technology</span>
+                          </div>
+                          <span className="font-semibold">15%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 bg-red-500 rounded mr-3"></div>
+                            <span>Other</span>
+                          </div>
+                          <span className="font-semibold">15%</span>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="net-benefit">
-                    <h4>Net Economic Benefit</h4>
-                    <div className="net-value">€84.5M</div>
-                    <div className="net-description">Over 5-year transaction term</div>
+                  <div className="geographic-distribution">
+                    <h3 className="text-2xl font-semibold mb-6">Geographic Distribution</h3>
+                    <div className="geo-chart bg-white p-6 rounded-lg shadow-md">
+                      <div className="chart-placeholder bg-gradient-to-br from-green-100 to-blue-100 h-64 rounded-lg flex items-center justify-center mb-6">
+                        <div className="text-center">
+                          <i className="fas fa-globe-europe text-4xl text-green-500 mb-2"></i>
+                          <div className="text-lg font-medium">European Exposure</div>
+                        </div>
+                      </div>
+                      <div className="geo-breakdown space-y-3">
+                        <div className="breakdown-item flex justify-between items-center">
+                          <span>Germany</span>
+                          <span className="font-semibold">32%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <span>France</span>
+                          <span className="font-semibold">22%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <span>Italy</span>
+                          <span className="font-semibold">18%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <span>Spain</span>
+                          <span className="font-semibold">14%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <span>Netherlands</span>
+                          <span className="font-semibold">8%</span>
+                        </div>
+                        <div className="breakdown-item flex justify-between items-center">
+                          <span>Other EU</span>
+                          <span className="font-semibold">6%</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="tab-content" id="sensitivity">
-              <div className="sensitivity-analysis">
-                <h4>Sensitivity Analysis</h4>
-                <div className="sensitivity-chart">
-                  <canvas id="sensitivityChart" width="600" height="400"></canvas>
                 </div>
                 
-                <div className="scenario-analysis">
-                  <h4>Scenario Analysis</h4>
-                  <table className="scenario-table">
-                    <thead>
-                      <tr>
-                        <th>Scenario</th>
-                        <th>Default Rate</th>
-                        <th>Recovery Rate</th>
-                        <th>Net Benefit</th>
-                        <th>IRR</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="base">
-                        <td>Base Case</td>
-                        <td>1.85%</td>
-                        <td>58%</td>
-                        <td>€84.5M</td>
-                        <td>18.2%</td>
-                      </tr>
-                      <tr className="stress">
-                        <td>Stress Case</td>
-                        <td>3.50%</td>
-                        <td>45%</td>
-                        <td>€52.1M</td>
-                        <td>12.8%</td>
-                      </tr>
-                      <tr className="severe">
-                        <td>Severe Stress</td>
-                        <td>5.25%</td>
-                        <td>35%</td>
-                        <td>€18.7M</td>
-                        <td>6.4%</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="credit-quality mt-12">
+                  <h3 className="text-2xl font-semibold mb-6 text-center">Credit Quality & Risk Metrics</h3>
+                  <div className="quality-grid grid md:grid-cols-3 gap-8">
+                    <div className="quality-card bg-white p-6 rounded-lg shadow-md">
+                      <h4 className="font-semibold mb-4 text-center">Rating Distribution</h4>
+                      <div className="rating-breakdown space-y-3">
+                        <div className="rating-item flex justify-between">
+                          <span className="text-green-600 font-medium">AAA-AA</span>
+                          <span>12%</span>
+                        </div>
+                        <div className="rating-item flex justify-between">
+                          <span className="text-blue-600 font-medium">A-BBB</span>
+                          <span>68%</span>
+                        </div>
+                        <div className="rating-item flex justify-between">
+                          <span className="text-orange-600 font-medium">BB-B</span>
+                          <span>18%</span>
+                        </div>
+                        <div className="rating-item flex justify-between">
+                          <span className="text-red-600 font-medium">Below B</span>
+                          <span>2%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="quality-card bg-white p-6 rounded-lg shadow-md">
+                      <h4 className="font-semibold mb-4 text-center">Key Risk Metrics</h4>
+                      <div className="risk-metrics space-y-3">
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Average PD</div>
+                          <div className="metric-value text-lg font-semibold">1.2%</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Average LGD</div>
+                          <div className="metric-value text-lg font-semibold">45%</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Weighted Maturity</div>
+                          <div className="metric-value text-lg font-semibold">3.2 years</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Concentration (HHI)</div>
+                          <div className="metric-value text-lg font-semibold">0.08</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="quality-card bg-white p-6 rounded-lg shadow-md">
+                      <h4 className="font-semibold mb-4 text-center">Historical Performance</h4>
+                      <div className="performance-metrics space-y-3">
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">3-Year Default Rate</div>
+                          <div className="metric-value text-lg font-semibold">0.8%</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Recovery Rate</div>
+                          <div className="metric-value text-lg font-semibold">58%</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Correlation</div>
+                          <div className="metric-value text-lg font-semibold">0.15</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Stress Test 99.9%</div>
+                          <div className="metric-value text-lg font-semibold">8.2%</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </section>
 
-      {/* Execution Process */}
-      <section className="example-section" id="execution">
-        <div className="container">
-          <div className="section-header">
-            <h2>Execution Process</h2>
-            <p>Step-by-step walkthrough of the transaction execution</p>
-          </div>
-          
-          <div className="execution-timeline">
-            <div className="timeline-step completed">
-              <div className="step-number">1</div>
-              <div className="step-content">
-                <h4>Portfolio Selection & Analysis</h4>
-                <p>Identified €2.5B corporate loan portfolio meeting SRT criteria. Conducted comprehensive risk analysis and regulatory assessment.</p>
-                <div className="step-details">
-                  <span className="duration">Duration: 6 weeks</span>
-                  <span className="status">✓ Completed</span>
+            {/* Transaction Structure */}
+            <section className="transaction-structure py-16 bg-gray-50">
+              <div className="container mx-auto px-4">
+                <h2 className="text-4xl font-bold text-center mb-12">Transaction Structure</h2>
+                <div className="structure-content">
+                  <div className="structure-diagram bg-white p-8 rounded-lg shadow-md mb-12">
+                    <h3 className="text-2xl font-semibold mb-6 text-center">Synthetic SRT Structure</h3>
+                    <div className="diagram-container">
+                      <div className="structure-flow grid lg:grid-cols-3 gap-8 items-center">
+                        <div className="originator-box p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
+                          <div className="text-center">
+                            <i className="fas fa-university text-3xl text-blue-600 mb-3"></i>
+                            <h4 className="font-semibold text-lg mb-2">Originating Bank</h4>
+                            <div className="text-sm text-gray-600">
+                              <div>€1.2B Reference Portfolio</div>
+                              <div>Retains legal ownership</div>
+                              <div>Pays protection premium</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flow-arrow text-center">
+                          <i className="fas fa-exchange-alt text-2xl text-gray-400"></i>
+                          <div className="text-sm text-gray-600 mt-2">Credit Default Swap</div>
+                        </div>
+                        
+                        <div className="protection-seller-box p-6 bg-green-50 rounded-lg border-2 border-green-200">
+                          <div className="text-center">
+                            <i className="fas fa-shield-alt text-3xl text-green-600 mb-3"></i>
+                            <h4 className="font-semibold text-lg mb-2">Protection Seller</h4>
+                            <div className="text-sm text-gray-600">
+                              <div>Provides credit protection</div>
+                              <div>Receives premium payments</div>
+                              <div>Bears credit risk</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="tranches-structure grid lg:grid-cols-2 gap-12">
+                    <div className="tranches-info">
+                      <h3 className="text-2xl font-semibold mb-6">Tranche Structure</h3>
+                      <div className="tranches-list space-y-4">
+                        <div className="tranche-item bg-white p-4 rounded-lg shadow-md">
+                          <div className="tranche-header flex justify-between items-center mb-2">
+                            <h4 className="font-semibold text-green-600">Senior Tranche</h4>
+                            <span className="text-lg font-bold">AAA</span>
+                          </div>
+                          <div className="tranche-details grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-600">Size:</span>
+                              <span className="ml-2 font-medium">€960M (80%)</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Attachment:</span>
+                              <span className="ml-2 font-medium">20% - 100%</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Spread:</span>
+                              <span className="ml-2 font-medium">45 bps</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Protection:</span>
+                              <span className="ml-2 font-medium">€768M</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="tranche-item bg-white p-4 rounded-lg shadow-md">
+                          <div className="tranche-header flex justify-between items-center mb-2">
+                            <h4 className="font-semibold text-blue-600">Mezzanine Tranche</h4>
+                            <span className="text-lg font-bold">AA</span>
+                          </div>
+                          <div className="tranche-details grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-600">Size:</span>
+                              <span className="ml-2 font-medium">€180M (15%)</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Attachment:</span>
+                              <span className="ml-2 font-medium">5% - 20%</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Spread:</span>
+                              <span className="ml-2 font-medium">125 bps</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Protection:</span>
+                              <span className="ml-2 font-medium">€144M</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="tranche-item bg-white p-4 rounded-lg shadow-md border-l-4 border-red-500">
+                          <div className="tranche-header flex justify-between items-center mb-2">
+                            <h4 className="font-semibold text-red-600">First Loss (Retained)</h4>
+                            <span className="text-lg font-bold">Unrated</span>
+                          </div>
+                          <div className="tranche-details grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-600">Size:</span>
+                              <span className="ml-2 font-medium">€60M (5%)</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Attachment:</span>
+                              <span className="ml-2 font-medium">0% - 5%</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Status:</span>
+                              <span className="ml-2 font-medium">Bank Retained</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Protection:</span>
+                              <span className="ml-2 font-medium">None</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="structure-benefits">
+                      <h3 className="text-2xl font-semibold mb-6">Structure Benefits</h3>
+                      <div className="benefits-list space-y-4">
+                        <div className="benefit-item bg-white p-4 rounded-lg shadow-md">
+                          <div className="benefit-header flex items-center mb-2">
+                            <i className="fas fa-chart-line text-green-500 mr-3"></i>
+                            <h4 className="font-semibold">Capital Efficiency</h4>
+                          </div>
+                          <p className="text-sm text-gray-600">78% RWA reduction on protected portion, improving capital ratios and ROE by 15.2%</p>
+                        </div>
+                        
+                        <div className="benefit-item bg-white p-4 rounded-lg shadow-md">
+                          <div className="benefit-header flex items-center mb-2">
+                            <i className="fas fa-balance-scale text-blue-500 mr-3"></i>
+                            <h4 className="font-semibold">Regulatory Compliance</h4>
+                          </div>
+                          <p className="text-sm text-gray-600">Full compliance with Basel III SRT requirements and national implementations</p>
+                        </div>
+                        
+                        <div className="benefit-item bg-white p-4 rounded-lg shadow-md">
+                          <div className="benefit-header flex items-center mb-2">
+                            <i className="fas fa-coins text-purple-500 mr-3"></i>
+                            <h4 className="font-semibold">Cost Optimization</h4>
+                          </div>
+                          <p className="text-sm text-gray-600">Net capital savings of €25M annually after protection premium costs</p>
+                        </div>
+                        
+                        <div className="benefit-item bg-white p-4 rounded-lg shadow-md">
+                          <div className="benefit-header flex items-center mb-2">
+                            <i className="fas fa-expand-arrows-alt text-orange-500 mr-3"></i>
+                            <h4 className="font-semibold">Balance Sheet Flexibility</h4>
+                          </div>
+                          <p className="text-sm text-gray-600">Freed capital available for new lending and business growth initiatives</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="timeline-step completed">
-              <div className="step-number">2</div>
-              <div className="step-content">
-                <h4>Structure Design</h4>
-                <p>Designed optimal tranche structure with 72% risk transfer. Obtained preliminary regulatory feedback on structure.</p>
-                <div className="step-details">
-                  <span className="duration">Duration: 4 weeks</span>
-                  <span className="status">✓ Completed</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="timeline-step completed">
-              <div className="step-number">3</div>
-              <div className="step-content">
-                <h4>Documentation</h4>
-                <p>Prepared comprehensive transaction documentation including credit-linked note terms, portfolio data, and legal agreements.</p>
-                <div className="step-details">
-                  <span className="duration">Duration: 8 weeks</span>
-                  <span className="status">✓ Completed</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="timeline-step completed">
-              <div className="step-number">4</div>
-              <div className="step-content">
-                <h4>Regulatory Approval</h4>
-                <p>Obtained formal regulatory approval for significant risk transfer treatment under Basel III framework.</p>
-                <div className="step-details">
-                  <span className="duration">Duration: 6 weeks</span>
-                  <span className="status">✓ Completed</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="timeline-step completed">
-              <div className="step-number">5</div>
-              <div className="step-content">
-                <h4>Investor Marketing</h4>
-                <p>Conducted targeted marketing to institutional investors. Achieved 3.2x oversubscription with strong investor interest.</p>
-                <div className="step-details">
-                  <span className="duration">Duration: 3 weeks</span>
-                  <span className="status">✓ Completed</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="timeline-step completed">
-              <div className="step-number">6</div>
-              <div className="step-content">
-                <h4>Transaction Closing</h4>
-                <p>Successfully closed transaction with all tranches fully placed. Achieved target pricing and structure terms.</p>
-                <div className="step-details">
-                  <span className="duration">Duration: 1 week</span>
-                  <span className="status">✓ Completed</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="execution-highlights">
-            <h3>Execution Highlights</h3>
-            <div className="highlights-grid">
-              <div className="highlight">
-                <i className="fas fa-clock"></i>
-                <h4>Timeline</h4>
-                <p>Completed in 6 months from initiation to closing, meeting all target milestones.</p>
-              </div>
-              <div className="highlight">
-                <i className="fas fa-users"></i>
-                <h4>Investor Response</h4>
-                <p>Strong institutional investor interest with 3.2x oversubscription across all tranches.</p>
-              </div>
-              <div className="highlight">
-                <i className="fas fa-check-circle"></i>
-                <h4>Regulatory</h4>
-                <p>Full regulatory approval obtained with confirmation of significant risk transfer treatment.</p>
-              </div>
-              <div className="highlight">
-                <i className="fas fa-target"></i>
-                <h4>Pricing</h4>
-                <p>Achieved target pricing with spreads at the tight end of initial guidance ranges.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </section>
 
-      {/* Results & Impact */}
-      <section className="example-section" id="results">
-        <div className="container">
-          <div className="section-header">
-            <h2>Results & Impact</h2>
-            <p>Comprehensive analysis of transaction outcomes and ongoing performance</p>
+            {/* Financial Modeling */}
+            <section className="financial-modeling py-16">
+              <div className="container mx-auto px-4">
+                <h2 className="text-4xl font-bold text-center mb-12">Financial Modeling</h2>
+                <div className="modeling-content">
+                  <div className="tabs-container bg-white rounded-lg shadow-md p-6">
+                    <div className="tab-navigation flex space-x-4 border-b mb-6">
+                      <button className="tab-button py-2 px-4 font-medium border-b-2 border-blue-500 text-blue-600">Capital Impact</button>
+                      <button className="tab-button py-2 px-4 font-medium text-gray-500 hover:text-gray-700">Pricing</button>
+                      <button className="tab-button py-2 px-4 font-medium text-gray-500 hover:text-gray-700">Economics</button>
+                      <button className="tab-button py-2 px-4 font-medium text-gray-500 hover:text-gray-700">Sensitivity</button>
+                    </div>
+                    
+                    <div className="tab-content">
+                      <div className="capital-impact-tab">
+                        <div className="grid lg:grid-cols-2 gap-8">
+                          <div className="before-after">
+                            <h4 className="text-xl font-semibold mb-4">Before vs After SRT</h4>
+                            <div className="comparison-table">
+                              <div className="table-header grid grid-cols-3 gap-4 py-2 border-b font-semibold text-sm">
+                                <div>Metric</div>
+                                <div>Before</div>
+                                <div>After</div>
+                              </div>
+                              <div className="table-row grid grid-cols-3 gap-4 py-3 border-b">
+                                <div>RWA (€M)</div>
+                                <div>400</div>
+                                <div className="text-green-600 font-semibold">88</div>
+                              </div>
+                              <div className="table-row grid grid-cols-3 gap-4 py-3 border-b">
+                                <div>Capital Required (€M)</div>
+                                <div>32</div>
+                                <div className="text-green-600 font-semibold">7</div>
+                              </div>
+                              <div className="table-row grid grid-cols-3 gap-4 py-3 border-b">
+                                <div>ROE Impact</div>
+                                <div>12.5%</div>
+                                <div className="text-green-600 font-semibold">14.4%</div>
+                              </div>
+                              <div className="table-row grid grid-cols-3 gap-4 py-3 border-b">
+                                <div>CET1 Ratio Impact</div>
+                                <div>-</div>
+                                <div className="text-green-600 font-semibold">+55 bps</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="capital-metrics">
+                            <h4 className="text-xl font-semibold mb-4">Capital Metrics</h4>
+                            <div className="metrics-cards space-y-4">
+                              <div className="metric-card bg-blue-50 p-4 rounded-lg">
+                                <div className="metric-label text-sm text-gray-600">Capital Relief</div>
+                                <div className="metric-value text-2xl font-bold text-blue-600">€25M</div>
+                                <div className="metric-desc text-xs text-gray-500">Annual savings</div>
+                              </div>
+                              <div className="metric-card bg-green-50 p-4 rounded-lg">
+                                <div className="metric-label text-sm text-gray-600">RWA Reduction</div>
+                                <div className="metric-value text-2xl font-bold text-green-600">78%</div>
+                                <div className="metric-desc text-xs text-gray-500">On protected portion</div>
+                              </div>
+                              <div className="metric-card bg-purple-50 p-4 rounded-lg">
+                                <div className="metric-label text-sm text-gray-600">ROE Improvement</div>
+                                <div className="metric-value text-2xl font-bold text-purple-600">1.9%</div>
+                                <div className="metric-desc text-xs text-gray-500">Percentage points</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Execution Process */}
+            <section className="execution-process py-16 bg-gray-50">
+              <div className="container mx-auto px-4">
+                <h2 className="text-4xl font-bold text-center mb-12">Execution Process</h2>
+                <div className="process-timeline">
+                  <div className="timeline-container">
+                    <div className="timeline-steps grid md:grid-cols-3 gap-8">
+                      <div className="step-card bg-white p-6 rounded-lg shadow-md">
+                        <div className="step-number w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-lg mb-4">1</div>
+                        <h3 className="text-xl font-semibold mb-3">Preparation Phase</h3>
+                        <div className="step-duration text-sm text-gray-500 mb-3">Duration: 4 weeks</div>
+                        <ul className="step-tasks space-y-2 text-sm">
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Portfolio data collection and validation</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Risk analysis and modeling</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Structure optimization</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Regulatory pre-clearance</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <div className="step-card bg-white p-6 rounded-lg shadow-md">
+                        <div className="step-number w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-lg mb-4">2</div>
+                        <h3 className="text-xl font-semibold mb-3">Documentation</h3>
+                        <div className="step-duration text-sm text-gray-500 mb-3">Duration: 6 weeks</div>
+                        <ul className="step-tasks space-y-2 text-sm">
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Legal documentation preparation</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Rating agency engagement</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Regulatory submission</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Investor presentation</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <div className="step-card bg-white p-6 rounded-lg shadow-md">
+                        <div className="step-number w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-lg mb-4">3</div>
+                        <h3 className="text-xl font-semibold mb-3">Market Execution</h3>
+                        <div className="step-duration text-sm text-gray-500 mb-3">Duration: 2 weeks</div>
+                        <ul className="step-tasks space-y-2 text-sm">
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Investor roadshow</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Price discovery and allocation</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Final documentation</span>
+                          </li>
+                          <li className="flex items-start">
+                            <i className="fas fa-check text-green-500 mt-1 mr-2 text-xs"></i>
+                            <span>Transaction closing</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="execution-highlights mt-12">
+                    <h3 className="text-2xl font-semibold mb-6 text-center">Execution Highlights</h3>
+                    <div className="highlights-grid grid md:grid-cols-2 gap-8">
+                      <div className="highlight-card bg-white p-6 rounded-lg shadow-md">
+                        <h4 className="font-semibold mb-4">Market Reception</h4>
+                        <ul className="space-y-2 text-sm">
+                          <li>• Strong investor demand with 2.5x oversubscription</li>
+                          <li>• AAA rating achieved on senior tranche</li>
+                          <li>• Pricing tightened by 15bps during execution</li>
+                          <li>• Diverse investor base across 12 countries</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="highlight-card bg-white p-6 rounded-lg shadow-md">
+                        <h4 className="font-semibold mb-4">Regulatory Outcome</h4>
+                        <ul className="space-y-2 text-sm">
+                          <li>• Full regulatory approval received</li>
+                          <li>• 78% capital relief recognized</li>
+                          <li>• Compliant with all jurisdictional requirements</li>
+                          <li>• Template established for future transactions</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Results and Impact */}
+            <section className="results-impact py-16">
+              <div className="container mx-auto px-4">
+                <h2 className="text-4xl font-bold text-center mb-12">Results & Impact</h2>
+                <div className="results-content">
+                  <div className="comprehensive-results grid lg:grid-cols-3 gap-8 mb-12">
+                    <div className="results-card bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                      <h3 className="text-xl font-semibold mb-4 text-green-600">Financial Impact</h3>
+                      <div className="results-metrics space-y-3">
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">Annual Capital Savings</div>
+                          <div className="metric-value text-2xl font-bold">€25M</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">ROE Improvement</div>
+                          <div className="metric-value text-2xl font-bold">+1.9%</div>
+                        </div>
+                        <div className="metric-item">
+                          <div className="metric-label text-sm text-gray-600">CET1 Ratio Boost</div>
+                          <div className="metric-value text-2xl font-bold">+55bps</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="results-card bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                      <h3 className="text-xl font-semibold mb-4 text-blue-600">Operational Benefits</h3>
+                      <div className="benefits-list space-y-3 text-sm">
+                        <div className="benefit-item flex items-start">
+                          <i className="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                          <span>Freed €312M in regulatory capital</span>
+                        </div>
+                        <div className="benefit-item flex items-start">
+                          <i className="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                          <span>Enhanced lending capacity by €2.5B</span>
+                        </div>
+                        <div className="benefit-item flex items-start">
+                          <i className="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                          <span>Diversified funding sources</span>
+                        </div>
+                        <div className="benefit-item flex items-start">
+                          <i className="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                          <span>Improved risk management capabilities</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="results-card bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+                      <h3 className="text-xl font-semibold mb-4 text-purple-600">Strategic Outcomes</h3>
+                      <div className="outcomes-list space-y-3 text-sm">
+                        <div className="outcome-item flex items-start">
+                          <i className="fas fa-star text-yellow-500 mt-1 mr-2"></i>
+                          <span>Established SRT program framework</span>
+                        </div>
+                        <div className="outcome-item flex items-start">
+                          <i className="fas fa-star text-yellow-500 mt-1 mr-2"></i>
+                          <span>Strengthened investor relationships</span>
+                        </div>
+                        <div className="outcome-item flex items-start">
+                          <i className="fas fa-star text-yellow-500 mt-1 mr-2"></i>
+                          <span>Enhanced market reputation</span>
+                        </div>
+                        <div className="outcome-item flex items-start">
+                          <i className="fas fa-star text-yellow-500 mt-1 mr-2"></i>
+                          <span>Regulatory template for future deals</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="performance-monitoring">
+                    <h3 className="text-2xl font-semibold mb-6 text-center">Ongoing Performance Monitoring</h3>
+                    <div className="monitoring-content bg-white p-8 rounded-lg shadow-md">
+                      <div className="grid lg:grid-cols-2 gap-8">
+                        <div className="monitoring-metrics">
+                          <h4 className="font-semibold mb-4">Key Performance Indicators</h4>
+                          <div className="kpi-grid grid grid-cols-2 gap-4">
+                            <div className="kpi-item bg-gray-50 p-3 rounded">
+                              <div className="kpi-label text-xs text-gray-600">Portfolio Performance</div>
+                              <div className="kpi-value text-lg font-semibold text-green-600">On Track</div>
+                            </div>
+                            <div className="kpi-item bg-gray-50 p-3 rounded">
+                              <div className="kpi-label text-xs text-gray-600">Credit Losses (YTD)</div>
+                              <div className="kpi-value text-lg font-semibold">0.6%</div>
+                            </div>
+                            <div className="kpi-item bg-gray-50 p-3 rounded">
+                              <div className="kpi-label text-xs text-gray-600">Capital Relief</div>
+                              <div className="kpi-value text-lg font-semibold text-blue-600">Maintained</div>
+                            </div>
+                            <div className="kpi-item bg-gray-50 p-3 rounded">
+                              <div className="kpi-label text-xs text-gray-600">Compliance Status</div>
+                              <div className="kpi-value text-lg font-semibold text-green-600">Full</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="lessons-learned">
+                          <h4 className="font-semibold mb-4">Lessons Learned</h4>
+                          <ul className="lessons-list space-y-2 text-sm">
+                            <li className="flex items-start">
+                              <i className="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                              <span>Early regulatory engagement crucial for smooth approval</span>
+                            </li>
+                            <li className="flex items-start">
+                              <i className="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                              <span>Investor education drives better execution terms</span>
+                            </li>
+                            <li className="flex items-start">
+                              <i className="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                              <span>Portfolio granularity key to rating agency comfort</span>
+                            </li>
+                            <li className="flex items-start">
+                              <i className="fas fa-lightbulb text-yellow-500 mt-1 mr-2"></i>
+                              <span>Ongoing monitoring systems essential for success</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
-          
-          <div className="results-dashboard">
-            <div className="results-grid">
-              <div className="result-card primary">
-                <div className="card-icon">
-                  <i className="fas fa-chart-line"></i>
-                </div>
-                <div className="card-content">
-                  <h3>Capital Ratio Improvement</h3>
-                  <div className="result-value">+70 bps</div>
-                  <div className="result-description">CET1 ratio increased from 12.8% to 13.5%</div>
-                </div>
-              </div>
-              
-              <div className="result-card">
-                <div className="card-icon">
-                  <i className="fas fa-weight"></i>
-                </div>
-                <div className="card-content">
-                  <h3>RWA Reduction</h3>
-                  <div className="result-value">€1.8B</div>
-                  <div className="result-description">5.5% reduction in total RWA</div>
-                </div>
-              </div>
-              
-              <div className="result-card">
-                <div className="card-icon">
-                  <i className="fas fa-euro-sign"></i>
-                </div>
-                <div className="card-content">
-                  <h3>Economic Benefit</h3>
-                  <div className="result-value">€84.5M</div>
-                  <div className="result-description">Net present value over 5 years</div>
-                </div>
-              </div>
-              
-              <div className="result-card">
-                <div className="card-icon">
-                  <i className="fas fa-percentage"></i>
-                </div>
-                <div className="card-content">
-                  <h3>ROE Impact</h3>
-                  <div className="result-value">+180 bps</div>
-                  <div className="result-description">Return on equity improvement</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="performance-tracking">
-            <h3>Ongoing Performance Monitoring</h3>
-            <div className="monitoring-grid">
-              <div className="monitoring-card">
-                <h4>Portfolio Performance</h4>
-                <div className="performance-metrics">
-                  <div className="metric-row">
-                    <span className="label">Current Default Rate:</span>
-                    <span className="value">1.2%</span>
-                    <span className="trend positive">↓ vs. Expected</span>
-                  </div>
-                  <div className="metric-row">
-                    <span className="label">Recovery Rate:</span>
-                    <span className="value">62%</span>
-                    <span className="trend positive">↑ vs. Expected</span>
-                  </div>
-                  <div className="metric-row">
-                    <span className="label">Portfolio Balance:</span>
-                    <span className="value">€2.48B</span>
-                    <span className="trend neutral">Stable</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="monitoring-card">
-                <h4>Regulatory Compliance</h4>
-                <div className="compliance-status">
-                  <div className="compliance-item">
-                    <i className="fas fa-check-circle"></i>
-                    <span>Basel III SRT Requirements</span>
-                  </div>
-                  <div className="compliance-item">
-                    <i className="fas fa-check-circle"></i>
-                    <span>Capital Relief Recognition</span>
-                  </div>
-                  <div className="compliance-item">
-                    <i className="fas fa-check-circle"></i>
-                    <span>Ongoing Reporting</span>
-                  </div>
-                  <div className="compliance-item">
-                    <i className="fas fa-check-circle"></i>
-                    <span>Risk Transfer Effectiveness</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="monitoring-card">
-                <h4>Investor Relations</h4>
-                <div className="investor-updates">
-                  <div className="update-item">
-                    <span className="date">Q1 2025</span>
-                    <span className="description">Quarterly performance report distributed</span>
-                  </div>
-                  <div className="update-item">
-                    <span className="date">Q4 2024</span>
-                    <span className="description">Annual investor call conducted</span>
-                  </div>
-                  <div className="update-item">
-                    <span className="date">Q3 2024</span>
-                    <span className="description">Portfolio substitution completed</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="lessons-learned">
-            <h3>Key Lessons & Best Practices</h3>
-            <div className="lessons-grid">
-              <div className="lesson-card">
-                <i className="fas fa-lightbulb"></i>
-                <h4>Early Regulatory Engagement</h4>
-                <p>Engaging regulators early in the process ensured smooth approval and avoided potential delays or structure modifications.</p>
-              </div>
-              <div className="lesson-card">
-                <i className="fas fa-users"></i>
-                <h4>Investor Education</h4>
-                <p>Comprehensive investor education on the portfolio and structure led to strong demand and favorable pricing.</p>
-              </div>
-              <div className="lesson-card">
-                <i className="fas fa-cogs"></i>
-                <h4>Operational Readiness</h4>
-                <p>Establishing robust operational processes for ongoing monitoring and reporting was crucial for success.</p>
-              </div>
-              <div className="lesson-card">
-                <i className="fas fa-chart-bar"></i>
-                <h4>Performance Tracking</h4>
-                <p>Implementing comprehensive performance tracking systems enabled proactive portfolio management.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };
