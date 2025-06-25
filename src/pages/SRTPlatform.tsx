@@ -60,11 +60,41 @@ const SRTPlatform = () => {
               </div>
             </div>
             <div className="hero-image">
-              <img 
-                src="https://images.unsplash.com/photo-1551803884-bf2cb5451d65?w=800&h=600&fit=crop&crop=center" 
-                alt="Modern banking and financial technology dashboard" 
-                className="rounded-lg shadow-2xl w-full h-auto object-cover"
-              />
+              <div className="relative bg-white rounded-lg shadow-2xl p-6 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"></div>
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Financial Analytics Dashboard</h3>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Live Data</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-1">Portfolio Value</div>
+                    <div className="text-2xl font-bold text-blue-600">€2.4B</div>
+                    <div className="text-xs text-green-600">+12.3%</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-1">Risk-Weighted Assets</div>
+                    <div className="text-2xl font-bold text-purple-600">€480M</div>
+                    <div className="text-xs text-red-600">-23.1%</div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="text-sm text-gray-600 mb-3">Capital Efficiency Trend</div>
+                  <div className="h-20 bg-gradient-to-r from-blue-200 via-purple-200 to-indigo-200 rounded flex items-end justify-between px-2 pb-2">
+                    <div className="w-3 bg-blue-500 h-8 rounded-t"></div>
+                    <div className="w-3 bg-blue-500 h-12 rounded-t"></div>
+                    <div className="w-3 bg-purple-500 h-16 rounded-t"></div>
+                    <div className="w-3 bg-purple-500 h-10 rounded-t"></div>
+                    <div className="w-3 bg-indigo-500 h-18 rounded-t"></div>
+                    <div className="w-3 bg-indigo-500 h-20 rounded-t"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
