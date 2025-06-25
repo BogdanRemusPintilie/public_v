@@ -1,0 +1,90 @@
+
+import { useEffect } from 'react';
+
+const SRTPlatform = () => {
+  useEffect(() => {
+    // Load external CSS for the SRT platform
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/srt-platform/css/styles.css';
+    document.head.appendChild(link);
+
+    // Load Font Awesome
+    const fontAwesome = document.createElement('link');
+    fontAwesome.rel = 'stylesheet';
+    fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+    document.head.appendChild(fontAwesome);
+
+    // Load Google Fonts
+    const googleFonts = document.createElement('link');
+    googleFonts.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap';
+    googleFonts.rel = 'stylesheet';
+    document.head.appendChild(googleFonts);
+
+    // Load component loader script
+    const script = document.createElement('script');
+    script.src = '/srt-platform/js/component-loader.js';
+    document.body.appendChild(script);
+
+    // Load main script
+    const mainScript = document.createElement('script');
+    mainScript.src = '/srt-platform/js/main.js';
+    document.body.appendChild(mainScript);
+
+    return () => {
+      // Cleanup on unmount
+      document.head.removeChild(link);
+      document.head.removeChild(fontAwesome);
+      document.head.removeChild(googleFonts);
+      document.body.removeChild(script);
+      document.body.removeChild(mainScript);
+    };
+  }, []);
+
+  return (
+    <div className="srt-platform-container">
+      {/* Header Banner */}
+      <div className="header-banner">
+        <div className="container">
+          <span className="header-banner-text">Complete SRT Platform Suite</span>
+          <a href="/" className="access-apps-btn">
+            <i className="fas fa-external-link-alt"></i>
+            Access Apps
+          </a>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="navbar">
+        <div className="nav-container">
+          <div className="nav-logo">
+            <i className="fas fa-chart-line"></i>
+            <span>BlocsTransfer</span>
+          </div>
+          <ul className="nav-menu">
+            <li><a href="#home" className="nav-link active">Home</a></li>
+            <li><a href="/srt-platform/demo" className="nav-link">Demo</a></li>
+            <li><a href="/srt-platform/example" className="nav-link">Worked Example</a></li>
+          </ul>
+          <div className="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Component placeholders */}
+      <div id="header-placeholder"></div>
+      <div id="hero-placeholder"></div>
+      <div id="platform-overview-placeholder"></div>
+      <div id="market-context-placeholder"></div>
+      <div id="capabilities-placeholder"></div>
+      <div id="why-choose-placeholder"></div>
+      <div id="cta-placeholder"></div>
+      <div id="footer-placeholder"></div>
+    </div>
+  );
+};
+
+export default SRTPlatform;

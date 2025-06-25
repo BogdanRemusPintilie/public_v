@@ -39,6 +39,7 @@ const Index = () => {
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
               <a href="#security" className="text-gray-600 hover:text-blue-600 transition-colors">Security</a>
+              <a href="/srt-platform" className="text-gray-600 hover:text-blue-600 transition-colors">SRT Platform</a>
               <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
               <Button 
                 onClick={handleGetStarted}
@@ -105,6 +106,15 @@ const Index = () => {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
                 >
                   Get Started Today
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button 
+                  onClick={() => navigate('/srt-platform')}
+                  variant="outline"
+                  size="lg"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-3 text-lg"
+                >
+                  Explore SRT Platform
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
