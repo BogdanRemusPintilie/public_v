@@ -3,7 +3,7 @@ import React from 'react';
 import WorkedExample from '../components/WorkedExample';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { TrendingUp, PiggyBank, Target } from 'lucide-react';
+import { TrendingUp, PiggyBank, Target, BarChart3, FileCheck, Users } from 'lucide-react';
 
 const SRTPlatform = () => {
   const scrollToWorkedExample = () => {
@@ -335,37 +335,106 @@ const SRTPlatform = () => {
       </section>
 
       {/* Capabilities Section */}
-      <section id="capabilities" className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
+      <section id="capabilities" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12 font-poppins">Capabilities</h2>
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div className="capability-item text-center p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <i className="fas fa-calculator text-3xl text-white"></i>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6 font-poppins">Platform Capabilities</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins leading-relaxed">
+              Comprehensive tools and expertise to optimize your SRT transactions from analysis to execution.
+            </p>
+          </div>
+          
+          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+            {/* Advanced Analytics */}
+            <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <BarChart3 className="text-white" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Advanced Analytics</h3>
+                <p className="text-gray-600 font-poppins text-center leading-relaxed mb-6">
+                  Leverage our proprietary models for comprehensive portfolio analysis, sophisticated risk assessment, and strategic capital optimization.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                    Portfolio risk modeling
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                    Stress testing scenarios
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                    Capital optimization insights
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4 font-poppins">Advanced Analytics</h3>
-              <p className="text-gray-600 font-poppins">Leverage our proprietary models for portfolio analysis, risk assessment, and capital optimization.</p>
             </div>
-            <div className="capability-item text-center p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <i className="fas fa-file-alt text-3xl text-white"></i>
+
+            {/* Regulatory Expertise */}
+            <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <FileCheck className="text-white" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Regulatory Expertise</h3>
+                <p className="text-gray-600 font-poppins text-center leading-relaxed mb-6">
+                  Navigate complex regulatory requirements with confidence through our team of experienced SRT professionals and compliance specialists.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></div>
+                    Basel III/IV compliance
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></div>
+                    Regulatory approval support
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></div>
+                    Documentation expertise
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4 font-poppins">Regulatory Expertise</h3>
-              <p className="text-gray-600 font-poppins">Navigate complex regulatory requirements with our team of experienced SRT professionals.</p>
             </div>
-            <div className="capability-item text-center p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <i className="fas fa-handshake text-3xl text-white"></i>
+
+            {/* Investor Network */}
+            <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Users className="text-white" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Investor Network</h3>
+                <p className="text-gray-600 font-poppins text-center leading-relaxed mb-6">
+                  Access our extensive network of institutional investors who specialize in SRT transactions and understand the market dynamics.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
+                    Insurance companies
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
+                    Pension funds
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
+                    Asset managers
+                  </div>
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4 font-poppins">Investor Network</h3>
-              <p className="text-gray-600 font-poppins">Access our extensive network of institutional investors specializing in SRT transactions.</p>
             </div>
           </div>
+          
           <div className="text-center">
             <img 
               src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=400&fit=crop&crop=center" 
               alt="Team collaboration and advanced technology workspace" 
-              className="rounded-lg shadow-lg mx-auto w-full max-w-4xl h-64 object-cover"
+              className="rounded-2xl shadow-2xl mx-auto w-full max-w-5xl h-80 object-cover"
             />
           </div>
         </div>
