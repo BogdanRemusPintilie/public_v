@@ -97,24 +97,50 @@ export const getLoanData = async (userId?: string) => {
   
   console.log(`Total records available: ${count}`);
   
-  // Now fetch all records without any limit
-  let query = supabase.from('loan_data').select('*');
+  // Fetch all records in batches to avoid memory issues with very large datasets
+  const BATCH_SIZE = 10000; // Larger batch size for fetching
+  let allData: LoanRecord[] = [];
+  let from = 0;
+  let hasMore = true;
   
-  if (userId) {
-    query = query.eq('user_id', userId);
+  while (hasMore) {
+    console.log(`Fetching batch from ${from} to ${from + BATCH_SIZE - 1}`);
+    
+    let query = supabase
+      .from('loan_data')
+      .select('*')
+      .range(from, from + BATCH_SIZE - 1)
+      .order('created_at', { ascending: false });
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching loan data batch:', error);
+      throw error;
+    }
+    
+    if (data && data.length > 0) {
+      allData = [...allData, ...data];
+      console.log(`Fetched ${data.length} records in this batch. Total so far: ${allData.length}`);
+      
+      // If we got less than the batch size, we've reached the end
+      if (data.length < BATCH_SIZE) {
+        hasMore = false;
+      } else {
+        from += BATCH_SIZE;
+      }
+    } else {
+      hasMore = false;
+    }
   }
   
-  // Fetch all records - remove range limit entirely
-  const { data, error } = await query.order('created_at', { ascending: false });
+  console.log(`Successfully fetched all ${allData.length} loan records out of ${count} total records`);
   
-  if (error) {
-    console.error('Error fetching loan data:', error);
-    throw error;
-  }
-  
-  console.log(`Successfully fetched ${data?.length || 0} loan records out of ${count} total records`);
-  
-  return data as LoanRecord[];
+  return allData as LoanRecord[];
 };
 
 export const deleteLoanData = async (ids: string[]) => {
