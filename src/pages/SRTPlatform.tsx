@@ -345,7 +345,7 @@ const SRTPlatform = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {/* Advanced Analytics */}
+            {/* Advanced Analytics - Blue Theme */}
             <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
               <div className="relative z-10">
@@ -373,11 +373,11 @@ const SRTPlatform = () => {
               </div>
             </div>
 
-            {/* Regulatory Expertise */}
+            {/* Regulatory Expertise - Green Theme */}
             <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
               <div className="relative z-10">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
                   <FileCheck className="text-white" size={32} />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-4 font-poppins text-center">Regulatory Expertise</h3>
@@ -386,22 +386,22 @@ const SRTPlatform = () => {
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></div>
+                    <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
                     Basel III/IV compliance
                   </div>
                   <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></div>
+                    <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
                     Regulatory approval support
                   </div>
                   <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-emerald-600 rounded-full mr-3"></div>
+                    <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
                     Documentation expertise
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Investor Network */}
+            {/* Investor Network - Purple Theme */}
             <div className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100/50 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
               <div className="relative z-10">
