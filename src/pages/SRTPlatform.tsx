@@ -48,6 +48,10 @@ const SRTPlatform = () => {
     navigate('/dashboard');
   };
 
+  const handleRiskBlocsClick = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="srt-platform-container">
       {/* Header Banner */}
@@ -72,7 +76,15 @@ const SRTPlatform = () => {
             <li><a href="#home" className="nav-link active">Home</a></li>
             <li><a href="/srt-platform/demo" className="nav-link">Demo</a></li>
             <li><a href="/srt-platform/example" className="nav-link">Worked Example</a></li>
-            <li><button onClick={handleAccessApps} className="nav-link" style={{background: 'none', border: 'none', cursor: 'pointer'}}>RiskBlocs</button></li>
+            <li>
+              <button 
+                onClick={handleRiskBlocsClick} 
+                className="nav-link" 
+                style={{background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit'}}
+              >
+                RiskBlocs
+              </button>
+            </li>
           </ul>
           <div className="hamburger">
             <span></span>
