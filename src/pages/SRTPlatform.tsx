@@ -1,3 +1,4 @@
+
 import React from 'react';
 import WorkedExample from '../components/WorkedExample';
 
@@ -43,23 +44,27 @@ const SRTPlatform = () => {
       {/* Hero Section */}
       <section id="hero" className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-left">
-              <h1 className="text-5xl font-bold text-gray-900 mb-6">Unlock Capital Efficiency with SRT</h1>
-              <p className="text-xl text-gray-700 mb-8">
+              <h1 className="text-5xl font-bold text-gray-900 mb-6 font-poppins">Unlock Capital Efficiency with SRT</h1>
+              <p className="text-xl text-gray-700 mb-8 font-poppins">
                 Our platform empowers banks to optimize their balance sheets through synthetic securitization, reducing RWA and enhancing ROE.
               </p>
               <div className="flex space-x-4">
-                <a href="/apps" className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
+                <a href="/apps" className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors font-poppins font-medium">
                   Explore the Platform
                 </a>
-                <a href="#contact" className="inline-block bg-transparent border-2 border-blue-600 text-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700 transition-colors">
+                <a href="#contact" className="inline-block bg-transparent border-2 border-blue-600 text-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700 transition-colors font-poppins font-medium">
                   Contact Us
                 </a>
               </div>
             </div>
             <div className="hero-image">
-              <img src="https://via.placeholder.com/600x400" alt="SRT Platform" className="rounded-lg shadow-lg" />
+              <img 
+                src="https://images.unsplash.com/photo-1551803884-bf2cb5451d65?w=800&h=600&fit=crop&crop=center" 
+                alt="Modern banking and financial technology dashboard" 
+                className="rounded-lg shadow-2xl w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
@@ -68,46 +73,80 @@ const SRTPlatform = () => {
       {/* Market Context Section */}
       <section id="market-context" className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Market Context</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="market-item text-center">
-              <i className="fas fa-chart-line text-5xl text-blue-600 mb-4"></i>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2">RWA Optimization</h3>
-              <p className="text-gray-600">Reduce risk-weighted assets and free up capital for new lending opportunities.</p>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4 font-poppins">Market Context</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins">
+              The global SRT market is experiencing unprecedented growth as financial institutions seek innovative solutions for capital optimization.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div className="market-item text-center p-6 rounded-lg bg-gradient-to-b from-blue-50 to-white border border-blue-100">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-chart-line text-2xl text-white"></i>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">RWA Optimization</h3>
+              <p className="text-gray-600 font-poppins">Reduce risk-weighted assets and free up capital for new lending opportunities.</p>
             </div>
-            <div className="market-item text-center">
-              <i className="fas fa-piggy-bank text-5xl text-green-600 mb-4"></i>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Capital Relief</h3>
-              <p className="text-gray-600">Achieve significant capital relief while maintaining regulatory compliance.</p>
+            <div className="market-item text-center p-6 rounded-lg bg-gradient-to-b from-green-50 to-white border border-green-100">
+              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-piggy-bank text-2xl text-white"></i>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">Capital Relief</h3>
+              <p className="text-gray-600 font-poppins">Achieve significant capital relief while maintaining regulatory compliance.</p>
             </div>
-            <div className="market-item text-center">
-              <i className="fas fa-rocket text-5xl text-purple-600 mb-4"></i>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Enhanced ROE</h3>
-              <p className="text-gray-600">Improve return on equity and drive shareholder value through efficient capital management.</p>
+            <div className="market-item text-center p-6 rounded-lg bg-gradient-to-b from-purple-50 to-white border border-purple-100">
+              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-rocket text-2xl text-white"></i>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2 font-poppins">Enhanced ROE</h3>
+              <p className="text-gray-600 font-poppins">Improve return on equity and drive shareholder value through efficient capital management.</p>
             </div>
+          </div>
+          <div className="text-center">
+            <img 
+              src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=400&fit=crop&crop=center" 
+              alt="Financial market analysis and growth charts" 
+              className="rounded-lg shadow-lg mx-auto w-full max-w-4xl h-64 object-cover"
+            />
           </div>
         </div>
       </section>
 
       {/* Platform Overview Section */}
-      <section id="platform-overview" className="py-16 bg-gray-50">
+      <section id="platform-overview" className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Platform Overview</h2>
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12 font-poppins">Platform Overview</h2>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="platform-description">
-              <h3 className="text-3xl font-semibold text-gray-800 mb-6">End-to-End SRT Solution</h3>
-              <p className="text-lg text-gray-700 mb-8">
+              <h3 className="text-3xl font-semibold text-gray-800 mb-6 font-poppins">End-to-End SRT Solution</h3>
+              <p className="text-lg text-gray-700 mb-8 font-poppins">
                 Our platform provides a comprehensive suite of tools and services to facilitate synthetic securitization transactions, from initial portfolio analysis to ongoing performance monitoring.
               </p>
-              <ul className="list-disc list-inside text-gray-600">
-                <li>Portfolio Analysis & Structuring</li>
-                <li>Documentation & Regulatory Approval</li>
-                <li>Market Execution & Investor Engagement</li>
-                <li>Ongoing Performance Monitoring</li>
+              <ul className="space-y-4 text-gray-600 font-poppins">
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                  Portfolio Analysis & Structuring
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                  Documentation & Regulatory Approval
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                  Market Execution & Investor Engagement
+                </li>
+                <li className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                  Ongoing Performance Monitoring
+                </li>
               </ul>
             </div>
             <div className="platform-image">
-              <img src="https://via.placeholder.com/600x400" alt="Platform Interface" className="rounded-lg shadow-lg" />
+              <img 
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop&crop=center" 
+                alt="Advanced analytics dashboard interface" 
+                className="rounded-lg shadow-2xl w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
@@ -121,25 +160,38 @@ const SRTPlatform = () => {
       </section>
 
       {/* Capabilities Section */}
-      <section id="capabilities" className="py-16 bg-gray-50">
+      <section id="capabilities" className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Capabilities</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="capability-item text-center">
-              <i className="fas fa-calculator text-5xl text-blue-600 mb-4"></i>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Advanced Analytics</h3>
-              <p className="text-gray-600">Leverage our proprietary models for portfolio analysis, risk assessment, and capital optimization.</p>
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12 font-poppins">Capabilities</h2>
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div className="capability-item text-center p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                <i className="fas fa-calculator text-3xl text-white"></i>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4 font-poppins">Advanced Analytics</h3>
+              <p className="text-gray-600 font-poppins">Leverage our proprietary models for portfolio analysis, risk assessment, and capital optimization.</p>
             </div>
-            <div className="capability-item text-center">
-              <i className="fas fa-file-alt text-5xl text-green-600 mb-4"></i>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Regulatory Expertise</h3>
-              <p className="text-gray-600">Navigate complex regulatory requirements with our team of experienced SRT professionals.</p>
+            <div className="capability-item text-center p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                <i className="fas fa-file-alt text-3xl text-white"></i>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4 font-poppins">Regulatory Expertise</h3>
+              <p className="text-gray-600 font-poppins">Navigate complex regulatory requirements with our team of experienced SRT professionals.</p>
             </div>
-            <div className="capability-item text-center">
-              <i className="fas fa-handshake text-5xl text-purple-600 mb-4"></i>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2">Investor Network</h3>
-              <p className="text-gray-600">Access our extensive network of institutional investors specializing in SRT transactions.</p>
+            <div className="capability-item text-center p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                <i className="fas fa-handshake text-3xl text-white"></i>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4 font-poppins">Investor Network</h3>
+              <p className="text-gray-600 font-poppins">Access our extensive network of institutional investors specializing in SRT transactions.</p>
             </div>
+          </div>
+          <div className="text-center">
+            <img 
+              src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=400&fit=crop&crop=center" 
+              alt="Team collaboration and advanced technology workspace" 
+              className="rounded-lg shadow-lg mx-auto w-full max-w-4xl h-64 object-cover"
+            />
           </div>
         </div>
       </section>
@@ -147,46 +199,56 @@ const SRTPlatform = () => {
       {/* Why Choose Us Section */}
       <section id="why-choose" className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Why Choose Us</h2>
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-12 font-poppins">Why Choose Us</h2>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="reasons-list">
-              <ul className="space-y-6">
+              <ul className="space-y-8">
                 <li className="flex items-start">
-                  <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-4 mt-1">
+                    <i className="fas fa-check text-white text-sm"></i>
+                  </div>
                   <div className="reason-content">
-                    <h4 className="text-xl font-semibold text-gray-800 mb-2">Proven Track Record</h4>
-                    <p className="text-gray-600">Successfully executed SRT transactions for leading European banks.</p>
+                    <h4 className="text-xl font-semibold text-gray-800 mb-2 font-poppins">Proven Track Record</h4>
+                    <p className="text-gray-600 font-poppins">Successfully executed SRT transactions for leading European banks.</p>
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-4 mt-1">
+                    <i className="fas fa-check text-white text-sm"></i>
+                  </div>
                   <div className="reason-content">
-                    <h4 className="text-xl font-semibold text-gray-800 mb-2">Customized Solutions</h4>
-                    <p className="text-gray-600">Tailored SRT structures to meet your specific needs and objectives.</p>
+                    <h4 className="text-xl font-semibold text-gray-800 mb-2 font-poppins">Customized Solutions</h4>
+                    <p className="text-gray-600 font-poppins">Tailored SRT structures to meet your specific needs and objectives.</p>
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-4 mt-1">
+                    <i className="fas fa-check text-white text-sm"></i>
+                  </div>
                   <div className="reason-content">
-                    <h4 className="text-xl font-semibold text-gray-800 mb-2">Transparent Process</h4>
-                    <p className="text-gray-600">Clear and transparent communication throughout the entire transaction lifecycle.</p>
+                    <h4 className="text-xl font-semibold text-gray-800 mb-2 font-poppins">Transparent Process</h4>
+                    <p className="text-gray-600 font-poppins">Clear and transparent communication throughout the entire transaction lifecycle.</p>
                   </div>
                 </li>
               </ul>
             </div>
             <div className="team-image">
-              <img src="https://via.placeholder.com/600x400" alt="Our Team" className="rounded-lg shadow-lg" />
+              <img 
+                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop&crop=center" 
+                alt="Professional team meeting in modern office" 
+                className="rounded-lg shadow-2xl w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-blue-600 to-purple-700 text-white">
+      <section id="contact" className="py-16 bg-gradient-to-br from-blue-600 to-purple-700 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-8">Ready to Optimize Your Capital?</h2>
-          <p className="text-xl mb-12">Contact us today to learn more about our SRT platform and how it can benefit your institution.</p>
-          <a href="#contact" className="inline-block bg-white text-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+          <h2 className="text-4xl font-bold mb-8 font-poppins">Ready to Optimize Your Capital?</h2>
+          <p className="text-xl mb-12 font-poppins max-w-2xl mx-auto">Contact us today to learn more about our SRT platform and how it can benefit your institution.</p>
+          <a href="/apps" className="inline-block bg-white text-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors font-poppins font-medium">
             Get Started
           </a>
         </div>
@@ -196,17 +258,17 @@ const SRTPlatform = () => {
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
-            <div className="text-lg">
-              &copy; 2024 SRT Platform. All rights reserved.
+            <div className="text-lg font-poppins">
+              &copy; 2024 RiskBlocs Platform. All rights reserved.
             </div>
             <div className="social-links space-x-4">
-              <a href="#" className="hover:text-blue-300">
+              <a href="#" className="hover:text-blue-300 transition-colors">
                 <i className="fab fa-linkedin-in"></i>
               </a>
-              <a href="#" className="hover:text-blue-300">
+              <a href="#" className="hover:text-blue-300 transition-colors">
                 <i className="fab fa-twitter"></i>
               </a>
-              <a href="#" className="hover:text-blue-300">
+              <a href="#" className="hover:text-blue-300 transition-colors">
                 <i className="fab fa-facebook-f"></i>
               </a>
             </div>
