@@ -10,13 +10,34 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { LoanRecord, insertLoanData, getLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getLoanData, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Progress } from "@/components/ui/progress";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from 'lucide-react';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -34,6 +55,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
+  const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
   const [portfolioSummary, setPortfolioSummary] = useState<{
     totalValue: number;
     avgInterestRate: number;
@@ -53,6 +75,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setPortfolioSummary(null);
       setUploadProgress(0);
       setUploadStatus('');
+      setSelectedRecords(new Set());
     }
   }, [showExistingData, isOpen, user]);
 
@@ -149,6 +172,64 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     },
   };
 
+  const handleSelectRecord = (recordId: string, checked: boolean) => {
+    const newSelected = new Set(selectedRecords);
+    if (checked) {
+      newSelected.add(recordId);
+    } else {
+      newSelected.delete(recordId);
+    }
+    setSelectedRecords(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = previewData.filter(record => record.id).map(record => record.id!);
+      setSelectedRecords(new Set(allIds));
+    } else {
+      setSelectedRecords(new Set());
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRecords.size === 0) {
+      toast({
+        title: "No Records Selected",
+        description: "Please select records to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setUploadStatus(`Deleting ${selectedRecords.size} records...`);
+      
+      await deleteLoanData(Array.from(selectedRecords));
+      
+      // Remove deleted records from preview data
+      const remainingData = previewData.filter(record => !selectedRecords.has(record.id || ''));
+      setPreviewData(remainingData);
+      calculatePortfolioSummary(remainingData);
+      setSelectedRecords(new Set());
+      
+      toast({
+        title: "Records Deleted",
+        description: `Successfully deleted ${selectedRecords.size} records`,
+      });
+    } catch (error) {
+      console.error('Error deleting records:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete records. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      setUploadStatus('');
+    }
+  };
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     setSelectedFile(file);
@@ -168,6 +249,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setPreviewData(parsedData.data);
       calculatePortfolioSummary(parsedData.data);
       setUploadStatus('');
+      setSelectedRecords(new Set());
       
       toast({
         title: "File Parsed Successfully",
@@ -197,12 +279,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   });
 
-  const handleDeleteSelected = () => {
+  const handleClearData = () => {
     setPreviewData([]);
     setSelectedFile(null);
     setPortfolioSummary(null);
     setUploadProgress(0);
     setUploadStatus('');
+    setSelectedRecords(new Set());
   };
 
   const handleSaveToDatabase = async () => {
@@ -290,6 +373,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setPortfolioSummary(null);
     setUploadProgress(0);
     setUploadStatus('');
+    setSelectedRecords(new Set());
   };
 
   if (!isOpen) return null;
@@ -299,34 +383,43 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       <div className="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white">
         <Card>
           <CardHeader>
-            <CardTitle>Upload Excel File</CardTitle>
-            <CardDescription>Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet.</CardDescription>
+            <CardTitle>
+              {showExistingData ? "Manage Existing Data" : "Upload Excel File"}
+            </CardTitle>
+            <CardDescription>
+              {showExistingData 
+                ? "View and manage your existing loan portfolio data"
+                : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
+              }
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div {...getRootProps()} className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-md cursor-pointer bg-gray-50 dark:bg-gray-700">
-              <input {...getInputProps()} />
-              {
-                isDragActive ?
-                  <p className="text-gray-500">Drop the files here ...</p> :
-                  <p className="text-gray-500">Drag 'n' drop some files here, or click to select files</p>
-              }
-              {selectedFile && (
-                <div className="mt-4">
-                  <p className="text-gray-700">Selected file: {selectedFile.name}</p>
-                </div>
-              )}
-              {isProcessing && (
-                <div className="mt-4 flex flex-col items-center w-full max-w-md">
-                  <div className="flex items-center mb-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                    <p className="text-blue-600">{uploadStatus || 'Processing file...'}</p>
+            {!showExistingData && (
+              <div {...getRootProps()} className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-md cursor-pointer bg-gray-50 dark:bg-gray-700">
+                <input {...getInputProps()} />
+                {
+                  isDragActive ?
+                    <p className="text-gray-500">Drop the files here ...</p> :
+                    <p className="text-gray-500">Drag 'n' drop some files here, or click to select files</p>
+                }
+                {selectedFile && (
+                  <div className="mt-4">
+                    <p className="text-gray-700">Selected file: {selectedFile.name}</p>
                   </div>
-                  {uploadProgress > 0 && (
-                    <Progress value={uploadProgress} className="w-full" />
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+                {isProcessing && (
+                  <div className="mt-4 flex flex-col items-center w-full max-w-md">
+                    <div className="flex items-center mb-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      <p className="text-blue-600">{uploadStatus || 'Processing file...'}</p>
+                    </div>
+                    {uploadProgress > 0 && (
+                      <Progress value={uploadProgress} className="w-full" />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {portfolioSummary && (
               <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg">
@@ -411,31 +504,81 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                   </Card>
                 </div>
 
-                {/* Data Preview Table */}
+                {/* Enhanced Data Preview Table with Selection */}
                 <div className="mt-6 overflow-x-auto">
-                  <h3 className="text-xl font-semibold mb-4">Data Preview ({previewData.length} records)</h3>
-                  <table className="min-w-full leading-normal">
-                    <thead>
-                      <tr>
-                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Opening Balance</th>
-                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Interest Rate</th>
-                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Term (Months)</th>
-                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PD</th>
-                        <th className="px-5 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Loan Type</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold">Data Preview ({previewData.length} records)</h3>
+                    {showExistingData && selectedRecords.size > 0 && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" disabled={isProcessing}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Selected ({selectedRecords.size})
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete {selectedRecords.size} loan records from your account.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteSelected}>
+                              Delete Records
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {showExistingData && (
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={selectedRecords.size === previewData.filter(r => r.id).length && previewData.length > 0}
+                              onCheckedChange={handleSelectAll}
+                            />
+                          </TableHead>
+                        )}
+                        <TableHead>Opening Balance</TableHead>
+                        <TableHead>Interest Rate</TableHead>
+                        <TableHead>Term (Months)</TableHead>
+                        <TableHead>PD</TableHead>
+                        <TableHead>Loan Type</TableHead>
+                        <TableHead>Credit Score</TableHead>
+                        <TableHead>LTV</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {previewData.slice(0, 10).map((row, index) => (
-                        <tr key={index}>
-                          <td className="px-5 py-5 border-b text-sm">${row.opening_balance.toLocaleString()}</td>
-                          <td className="px-5 py-5 border-b text-sm">{row.interest_rate.toFixed(2)}%</td>
-                          <td className="px-5 py-5 border-b text-sm">{row.term}</td>
-                          <td className="px-5 py-5 border-b text-sm">{((row.pd || 0) * 100).toFixed(2)}%</td>
-                          <td className="px-5 py-5 border-b text-sm">{row.loan_type}</td>
-                        </tr>
+                        <TableRow key={row.id || index}>
+                          {showExistingData && (
+                            <TableCell>
+                              {row.id && (
+                                <Checkbox
+                                  checked={selectedRecords.has(row.id)}
+                                  onCheckedChange={(checked) => handleSelectRecord(row.id!, checked as boolean)}
+                                />
+                              )}
+                            </TableCell>
+                          )}
+                          <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
+                          <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
+                          <TableCell>{row.term}</TableCell>
+                          <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
+                          <TableCell>{row.loan_type}</TableCell>
+                          <TableCell>{row.credit_score}</TableCell>
+                          <TableCell>{row.ltv.toFixed(2)}%</TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
+                  
                   {previewData.length > 10 && (
                     <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records</p>
                   )}
@@ -445,19 +588,21 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           </CardContent>
           <CardFooter className="flex justify-end gap-4">
             <Button variant="ghost" onClick={handleClose}>Cancel</Button>
-            {previewData.length > 0 && (
-              <Button variant="destructive" onClick={handleDeleteSelected}>Clear Data</Button>
+            {previewData.length > 0 && !showExistingData && (
+              <Button variant="destructive" onClick={handleClearData}>Clear Data</Button>
             )}
-            <Button onClick={handleSaveToDatabase} disabled={isProcessing || previewData.length === 0}>
-              {isProcessing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {uploadStatus || 'Saving...'}
-                </>
-              ) : (
-                "Save to Database"
-              )}
-            </Button>
+            {!showExistingData && (
+              <Button onClick={handleSaveToDatabase} disabled={isProcessing || previewData.length === 0}>
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {uploadStatus || 'Saving...'}
+                  </>
+                ) : (
+                  "Save to Database"
+                )}
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </div>
