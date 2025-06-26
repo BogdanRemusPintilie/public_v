@@ -87,7 +87,7 @@ export const insertLoanData = async (
   return allInsertedData;
 };
 
-// New optimized function to get loan data with pagination
+// Function to get loan data with pagination
 export const getLoanDataPaginated = async (page: number = 0, pageSize: number = 1000) => {
   console.log(`Fetching loan data page ${page + 1} with ${pageSize} records per page`);
   
@@ -112,6 +112,37 @@ export const getLoanDataPaginated = async (page: number = 0, pageSize: number = 
     totalCount: count || 0,
     hasMore: count ? (from + pageSize) < count : false
   };
+};
+
+// Function to get ALL loan data (for backward compatibility and when you need all records)
+export const getAllLoanData = async () => {
+  console.log('Fetching ALL loan data for authenticated user');
+  
+  // Get total count first
+  const { count } = await supabase
+    .from('loan_data')
+    .select('*', { count: 'exact', head: true });
+  
+  if (!count || count === 0) {
+    console.log('No loan data found');
+    return [];
+  }
+  
+  console.log(`Found ${count} total records, fetching all...`);
+  
+  // Fetch all data in one query (Supabase can handle large datasets)
+  const { data, error } = await supabase
+    .from('loan_data')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching all loan data:', error);
+    throw error;
+  }
+  
+  console.log(`Successfully fetched all ${data?.length || 0} records`);
+  return data as LoanRecord[];
 };
 
 // Optimized function to get dataset summaries without loading all data
@@ -180,12 +211,10 @@ export const getDatasetSummaries = async () => {
   return summaries;
 };
 
+// Updated function that uses getAllLoanData for backward compatibility
 export const getLoanData = async (userId?: string) => {
-  console.log('Fetching loan data for authenticated user');
-  
-  // For backward compatibility, fetch first page only
-  const result = await getLoanDataPaginated(0, 1000);
-  return result.data;
+  console.log('Fetching all loan data for authenticated user (backward compatibility)');
+  return await getAllLoanData();
 };
 
 export const deleteLoanData = async (ids: string[]) => {

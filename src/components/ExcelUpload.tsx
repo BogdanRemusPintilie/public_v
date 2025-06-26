@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { LoanRecord, insertLoanData, getLoanDataPaginated, deleteLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getAllLoanData, getLoanDataPaginated, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { parseExcelFile } from '@/utils/excelParser';
@@ -56,6 +56,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [datasetName, setDatasetName] = useState<string>('');
   const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
+  const [allData, setAllData] = useState<LoanRecord[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
@@ -81,6 +82,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       loadExistingData();
     } else if (!showExistingData && isOpen) {
       setPreviewData([]);
+      setAllData([]);
       setSelectedFile(null);
       setDatasetName('');
       setPortfolioSummary(null);
@@ -105,34 +107,33 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   }, [showExistingData, isOpen, user]);
 
-  const loadExistingData = async (page: number = 0) => {
+  const loadExistingData = async () => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log(`Loading existing data page ${page + 1} for authenticated user`);
+      console.log('Loading all existing data for authenticated user');
       
-      const result = await getLoanDataPaginated(page, PAGE_SIZE);
+      // Load ALL data for existing data view
+      const allRecords = await getAllLoanData();
+      setAllData(allRecords);
+      setTotalRecords(allRecords.length);
       
-      console.log('Loaded existing data:', result.data.length, 'records, total:', result.totalCount);
+      // Set preview data to first page for display
+      const firstPageData = allRecords.slice(0, PAGE_SIZE);
+      setPreviewData(firstPageData);
+      setHasMore(allRecords.length > PAGE_SIZE);
+      setCurrentPage(0);
       
-      if (result.data.length > 0) {
-        setPreviewData(result.data);
-        setTotalRecords(result.totalCount);
-        setHasMore(result.hasMore);
-        setCurrentPage(page);
-        calculatePortfolioSummary(result.data);
+      if (allRecords.length > 0) {
+        calculatePortfolioSummary(allRecords);
         
         toast({
           title: "Data Loaded",
-          description: `Loaded ${result.data.length} records (page ${page + 1} of ${Math.ceil(result.totalCount / PAGE_SIZE)})`,
+          description: `Loaded ${allRecords.length.toLocaleString()} total records`,
         });
       } else {
-        setPreviewData([]);
         setPortfolioSummary(null);
-        setTotalRecords(0);
-        setHasMore(false);
-        setCurrentPage(0);
         
         toast({
           title: "No Data Found",
@@ -147,6 +148,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         variant: "destructive",
       });
       setPreviewData([]);
+      setAllData([]);
       setPortfolioSummary(null);
       setTotalRecords(0);
       setHasMore(false);
@@ -156,14 +158,23 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 0 && showExistingData) {
-      loadExistingData(newPage);
+    if (newPage >= 0 && showExistingData && allData.length > 0) {
+      const startIndex = newPage * PAGE_SIZE;
+      const endIndex = startIndex + PAGE_SIZE;
+      const pageData = allData.slice(startIndex, endIndex);
+      
+      setPreviewData(pageData);
+      setCurrentPage(newPage);
+      setHasMore(endIndex < allData.length);
+      
+      // Clear selections when changing pages
+      setSelectedRecords(new Set());
     }
   };
 
   const handleRefreshData = () => {
     if (showExistingData && user) {
-      loadExistingData(currentPage);
+      loadExistingData();
     }
   };
 
@@ -177,12 +188,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       totalValue,
       avgInterestRate,
       highRiskLoans,
-      totalRecords: totalRecords || data.length
+      totalRecords: data.length
     });
   };
 
   const getMaturityDistribution = () => {
-    if (previewData.length === 0) return [];
+    const dataToUse = showExistingData ? allData : previewData;
+    if (dataToUse.length === 0) return [];
     
     const buckets = [
       { range: 'Up to 36 months', min: 0, max: 36 },
@@ -193,14 +205,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     
     return buckets.map(bucket => ({
       range: bucket.range,
-      count: previewData.filter(loan => 
+      count: dataToUse.filter(loan => 
         loan.term >= bucket.min && loan.term <= bucket.max
       ).length
     }));
   };
 
   const getLoanSizeDistribution = () => {
-    if (previewData.length === 0) return [];
+    const dataToUse = showExistingData ? allData : previewData;
+    if (dataToUse.length === 0) return [];
     
     const buckets = [
       { range: 'Up to €10k', min: 0, max: 10000 },
@@ -214,7 +227,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     
     return buckets.map((bucket, index) => ({
       name: bucket.range,
-      value: previewData.filter(loan => 
+      value: dataToUse.filter(loan => 
         loan.opening_balance > bucket.min && loan.opening_balance <= bucket.max
       ).length,
       fill: colors[index]
@@ -263,8 +276,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       await deleteLoanData(Array.from(selectedRecords));
       
-      // Refresh the current page after deletion
-      await loadExistingData(currentPage);
+      // Refresh all data after deletion
+      await loadExistingData();
       setSelectedRecords(new Set());
       
       toast({
@@ -335,6 +348,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
   const handleClearData = () => {
     setPreviewData([]);
+    setAllData([]);
     setSelectedFile(null);
     setDatasetName('');
     setPortfolioSummary(null);
@@ -438,6 +452,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const handleClose = () => {
     onClose();
     setPreviewData([]);
+    setAllData([]);
     setSelectedFile(null);
     setDatasetName('');
     setPortfolioSummary(null);
@@ -633,7 +648,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                   <div className="mt-6 overflow-x-auto">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-xl font-semibold">
-                        Data Preview ({previewData.length} records)
+                        Data Preview ({previewData.length.toLocaleString()} records on this page)
                         {showExistingData && totalRecords > PAGE_SIZE && (
                           <span className="text-sm text-gray-500 ml-2">
                             Page {currentPage + 1} of {Math.ceil(totalRecords / PAGE_SIZE)}
@@ -743,7 +758,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                     </Table>
                     
                     {previewData.length > 10 && (
-                      <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records on this page</p>
+                      <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length.toLocaleString()} records on this page</p>
                     )}
                   </div>
                 </>
