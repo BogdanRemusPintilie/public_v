@@ -23,9 +23,32 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   showExistingData = false,
   portfolioSummary
 }) => {
-  // Always use allData for existing data (full dataset), previewData for uploads
+  // For existing data: use allData if loaded, otherwise show loading message
+  // For uploaded data: always use previewData (which is the complete uploaded dataset)
   const dataToUse = showExistingData ? allData : previewData;
   
+  console.log('📊 CHARTS DATA CHECK:', {
+    showExistingData,
+    allDataLength: allData.length,
+    previewDataLength: previewData.length,
+    dataToUseLength: dataToUse.length,
+    portfolioSummary: portfolioSummary?.totalRecords
+  });
+  
+  // Show loading state for existing data when allData hasn't been loaded yet
+  if (showExistingData && allData.length === 0 && portfolioSummary && portfolioSummary.totalRecords > 0) {
+    return (
+      <div className="mt-6 p-8 bg-gray-50 rounded-lg text-center">
+        <div className="flex items-center justify-center gap-3 text-gray-600">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
+          <p>Loading charts for {portfolioSummary.totalRecords.toLocaleString()} records...</p>
+        </div>
+        <p className="text-sm text-gray-500 mt-2">This may take a moment for large datasets</p>
+      </div>
+    );
+  }
+  
+  // Show no data state
   if (dataToUse.length === 0) {
     return (
       <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center">
@@ -86,9 +109,9 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
         <h3 className="text-xl font-semibold mb-2">Portfolio Analytics</h3>
         <p className="text-sm text-gray-600">
           Analysis based on {dataToUse.length.toLocaleString()} records
-          {showExistingData && allData.length > previewData.length && (
+          {showExistingData && portfolioSummary && (
             <span className="ml-1 text-blue-600 font-medium">
-              (Full dataset: {allData.length.toLocaleString()} total records)
+              (Total portfolio: {portfolioSummary.totalRecords.toLocaleString()} records)
             </span>
           )}
         </p>
