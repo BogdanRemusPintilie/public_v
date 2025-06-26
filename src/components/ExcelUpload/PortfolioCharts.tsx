@@ -37,7 +37,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
         <Card>
           <CardHeader>
             <CardTitle>Risk Distribution</CardTitle>
-            <CardDescription>High risk vs low risk loans (PD > 5%)</CardDescription>
+            <CardDescription>High risk vs low risk loans (PD {'>'}5%)</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -153,7 +153,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
       <Card>
         <CardHeader>
           <CardTitle>Risk Distribution</CardTitle>
-          <CardDescription>High risk vs low risk loans (PD > 5%)</CardDescription>
+          <CardDescription>High risk vs low risk loans (PD {'>'} 5%)</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={200}>
