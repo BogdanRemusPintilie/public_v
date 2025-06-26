@@ -71,115 +71,117 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center py-4">
-      <div className="relative mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white max-h-[95vh] overflow-hidden">
-        <Card className="h-full flex flex-col">
-          <CardHeader className="flex-shrink-0">
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>
-                  {showExistingData ? "Manage Existing Data" : "Upload Excel File"}
-                </CardTitle>
-                <CardDescription>
-                  {showExistingData 
-                    ? `View and manage your existing loan portfolio data ${totalRecords > 0 ? `(${totalRecords.toLocaleString()} total records)` : ''}`
-                    : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
-                  }
-                </CardDescription>
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative mx-auto border w-full max-w-6xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-hidden">
+          <Card className="h-full flex flex-col">
+            <CardHeader className="flex-shrink-0">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>
+                    {showExistingData ? "Manage Existing Data" : "Upload Excel File"}
+                  </CardTitle>
+                  <CardDescription>
+                    {showExistingData 
+                      ? `View and manage your existing loan portfolio data ${totalRecords > 0 ? `(${totalRecords.toLocaleString()} total records)` : ''}`
+                      : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
+                    }
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  {showExistingData && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onShowSharingManager}
+                        disabled={isProcessing}
+                        className="flex items-center gap-2"
+                      >
+                        <Users className="h-4 w-4" />
+                        Manage Sharing
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onRefreshData}
+                        disabled={isProcessing}
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-2">
-                {showExistingData && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onShowSharingManager}
-                      disabled={isProcessing}
-                      className="flex items-center gap-2"
-                    >
-                      <Users className="h-4 w-4" />
-                      Manage Sharing
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onRefreshData}
-                      disabled={isProcessing}
-                      className="flex items-center gap-2"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full w-full">
-              <div className="pr-4">
-                {!showExistingData && (
-                  <FileUploadSection
-                    datasetName={datasetName}
-                    onDatasetNameChange={onDatasetNameChange}
-                    onFileDrop={onFileDrop}
-                    isProcessing={isProcessing}
-                    uploadProgress={uploadProgress}
-                    uploadStatus={uploadStatus}
-                  />
-                )}
-
-                {portfolioSummary && (
-                  <PortfolioSummary portfolioSummary={portfolioSummary} />
-                )}
-
-                {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
-                  <>
-                    <PortfolioCharts 
-                      allData={allData}
-                      previewData={previewData}
-                      showExistingData={showExistingData}
-                    />
-
-                    <DataPreviewTable
-                      previewData={previewData}
-                      selectedRecords={selectedRecords}
-                      showExistingData={showExistingData}
-                      totalRecords={totalRecords}
-                      currentPage={currentPage}
-                      hasMore={hasMore}
+            </CardHeader>
+            
+            <CardContent className="flex-1 min-h-0">
+              <ScrollArea className="h-full w-full">
+                <div className="space-y-6 pr-4">
+                  {!showExistingData && (
+                    <FileUploadSection
+                      datasetName={datasetName}
+                      onDatasetNameChange={onDatasetNameChange}
+                      onFileDrop={onFileDrop}
                       isProcessing={isProcessing}
-                      onSelectRecord={onSelectRecord}
-                      onSelectAll={onSelectAll}
-                      onDeleteSelected={onDeleteSelected}
-                      onPageChange={onPageChange}
+                      uploadProgress={uploadProgress}
+                      uploadStatus={uploadStatus}
                     />
-                  </>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-          
-          <CardFooter className="flex justify-end gap-4 flex-shrink-0">
-            <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            {previewData.length > 0 && !showExistingData && (
-              <Button variant="destructive" onClick={onClearData}>Clear Data</Button>
-            )}
-            {!showExistingData && (
-              <Button onClick={onSaveToDatabase} disabled={isProcessing || previewData.length === 0 || !datasetName.trim()}>
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {uploadStatus || 'Saving...'}
-                  </>
-                ) : (
-                  "Save to Database"
-                )}
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+                  )}
+
+                  {portfolioSummary && (
+                    <PortfolioSummary portfolioSummary={portfolioSummary} />
+                  )}
+
+                  {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
+                    <>
+                      <PortfolioCharts 
+                        allData={allData}
+                        previewData={previewData}
+                        showExistingData={showExistingData}
+                      />
+
+                      <DataPreviewTable
+                        previewData={previewData}
+                        selectedRecords={selectedRecords}
+                        showExistingData={showExistingData}
+                        totalRecords={totalRecords}
+                        currentPage={currentPage}
+                        hasMore={hasMore}
+                        isProcessing={isProcessing}
+                        onSelectRecord={onSelectRecord}
+                        onSelectAll={onSelectAll}
+                        onDeleteSelected={onDeleteSelected}
+                        onPageChange={onPageChange}
+                      />
+                    </>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+            
+            <CardFooter className="flex justify-end gap-4 flex-shrink-0 border-t">
+              <Button variant="ghost" onClick={onClose}>Cancel</Button>
+              {previewData.length > 0 && !showExistingData && (
+                <Button variant="destructive" onClick={onClearData}>Clear Data</Button>
+              )}
+              {!showExistingData && (
+                <Button onClick={onSaveToDatabase} disabled={isProcessing || previewData.length === 0 || !datasetName.trim()}>
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {uploadStatus || 'Saving...'}
+                    </>
+                  ) : (
+                    "Save to Database"
+                  )}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     </div>
   );

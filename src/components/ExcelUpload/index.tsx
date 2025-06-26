@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { LoanRecord, insertLoanData, getAllLoanData, deleteLoanData } from '@/utils/supabase';
@@ -83,22 +82,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setIsProcessing(true);
       console.log('Loading all existing data for authenticated user');
       
-      // Load ALL data first
+      // Load ALL data first - this is the complete dataset
       const allRecords = await getAllLoanData();
       console.log(`Loaded ${allRecords.length} total records`);
       
-      // Store all data
+      // Store ALL data - this is important for portfolio summary calculations
       setAllData(allRecords);
       setTotalRecords(allRecords.length);
       
-      // Set preview data to first page for table display
+      // Set preview data to first page for table display only
       const firstPageData = allRecords.slice(0, PAGE_SIZE);
       setPreviewData(firstPageData);
       setHasMore(allRecords.length > PAGE_SIZE);
       setCurrentPage(0);
       
       if (allRecords.length > 0) {
-        // Calculate portfolio summary using ALL records
+        // IMPORTANT: Calculate portfolio summary using ALL records, not just preview
         calculatePortfolioSummary(allRecords);
         
         toast({
@@ -146,6 +145,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     const avgInterestRate = data.length > 0 ? 
       data.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / totalValue : 0;
     const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.05).length;
+    
+    console.log(`Portfolio summary calculated from ${data.length} records:`, {
+      totalValue,
+      avgInterestRate,
+      highRiskLoans,
+      totalRecords: data.length
+    });
     
     setPortfolioSummary({
       totalValue,
@@ -227,7 +233,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         recordCount: parsedData.data.length
       });
 
+      // For uploaded files, previewData and allData are the same
       setPreviewData(parsedData.data);
+      setAllData(parsedData.data);
       calculatePortfolioSummary(parsedData.data);
       setUploadStatus('');
       setSelectedRecords(new Set());
@@ -244,6 +252,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         variant: "destructive",
       });
       setPreviewData([]);
+      setAllData([]);
       setPortfolioSummary(null);
       setUploadStatus('');
     } finally {
