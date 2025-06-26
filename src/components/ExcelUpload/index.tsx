@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { LoanRecord, insertLoanData, getLoanDataPaginated, getPortfolioSummaryOnly, deleteLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getLoanDataPaginated, getPortfolioSummaryOnly, getAllLoanData, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ExcelUploadModal } from './ExcelUploadModal';
@@ -128,41 +128,35 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
-  // NEW: Load table data on demand (when user first views the table)
+  // FIXED: Load ALL table data for charts and table display
   const loadTableDataIfNeeded = async () => {
     if (isTableDataLoaded || totalRecords === 0) {
       return; // Already loaded or no data to load
     }
     
-    console.log('📋 LOADING TABLE DATA: First page on demand');
-    await loadTablePage(0);
-    setIsTableDataLoaded(true);
-  };
-
-  // NEW: Load specific page of table data
-  const loadTablePage = async (page: number) => {
-    if (!user) return;
-    
     try {
       setIsProcessing(true);
-      console.log(`📋 LOADING PAGE: Fetching page ${page + 1}`);
+      console.log('📋 LOADING ALL DATA: Loading all records for charts and table');
       
-      const result = await getLoanDataPaginated(page, PAGE_SIZE);
+      // Load ALL data for proper charts and table functionality
+      const allRecords = await getAllLoanData();
       
-      setPreviewData(result.data);
-      setCurrentPage(page);
-      setHasMore(result.hasMore);
-      setTotalRecords(result.totalCount);
+      setAllData(allRecords);
+      setPreviewData(allRecords.slice(0, PAGE_SIZE)); // Show first page
+      setCurrentPage(0);
+      setHasMore(allRecords.length > PAGE_SIZE);
+      setTotalRecords(allRecords.length);
+      setIsTableDataLoaded(true);
       
-      // Clear selections when changing pages
+      // Clear selections when loading data
       setSelectedRecords(new Set());
       
-      console.log(`📋 PAGE LOADED: Page ${page + 1} with ${result.data.length} records`);
+      console.log(`📋 ALL DATA LOADED: ${allRecords.length} total records`);
       
     } catch (error) {
-      console.error('❌ ERROR loading table page:', error);
+      console.error('❌ ERROR loading all data:', error);
       toast({
-        title: "Error Loading Page",
+        title: "Error Loading Data",
         description: "Failed to load table data. Please try again.",
         variant: "destructive",
       });
@@ -172,8 +166,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 0 && showExistingData) {
-      loadTablePage(newPage);
+    if (newPage >= 0 && showExistingData && allData.length > 0) {
+      const startIndex = newPage * PAGE_SIZE;
+      const endIndex = startIndex + PAGE_SIZE;
+      setPreviewData(allData.slice(startIndex, endIndex));
+      setCurrentPage(newPage);
+      setHasMore(endIndex < allData.length);
+      setSelectedRecords(new Set()); // Clear selections when changing pages
     }
   };
 
