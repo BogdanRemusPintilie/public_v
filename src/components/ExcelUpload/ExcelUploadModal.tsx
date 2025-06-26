@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, RefreshCw, Eye } from 'lucide-react';
+import { Users, RefreshCw, Eye, Loader2 } from 'lucide-react';
 import { FileUploadSection } from './FileUploadSection';
 import { PortfolioSummary } from './PortfolioSummary';
 import { PortfolioCharts } from './PortfolioCharts';
@@ -121,6 +121,26 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
           
           <CardContent className="flex-1 overflow-y-auto">
             <div className="space-y-6">
+              {/* Show loading indicator when processing existing data */}
+              {showExistingData && isProcessing && !portfolioSummary && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading portfolio data...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Show loading indicator when processing table data */}
+              {showExistingData && isProcessing && portfolioSummary && isTableDataLoaded && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-3 text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading {totalRecords.toLocaleString()} records...</span>
+                  </div>
+                </div>
+              )}
+
               {!showExistingData && (
                 <FileUploadSection
                   datasetName={datasetName}
