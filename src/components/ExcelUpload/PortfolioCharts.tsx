@@ -1,13 +1,12 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { LoanRecord } from '@/utils/supabase';
 
 interface PortfolioChartsProps {
   allData: LoanRecord[];
   previewData: LoanRecord[];
-  showExistingData: boolean;
+  showExistingData?: boolean;
   portfolioSummary?: {
     totalValue: number;
     avgInterestRate: number;
@@ -16,167 +15,156 @@ interface PortfolioChartsProps {
   };
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
 export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   allData,
   previewData,
-  showExistingData,
+  showExistingData = false,
   portfolioSummary
 }) => {
-  // For existing data with lazy loading, use summary data to create simplified charts
-  if (showExistingData && portfolioSummary && allData.length === 0) {
-    // Create simple charts from summary data
-    const riskData = [
-      { name: 'Low Risk', value: portfolioSummary.totalRecords - portfolioSummary.highRiskLoans },
-      { name: 'High Risk', value: portfolioSummary.highRiskLoans }
-    ];
-
-    const COLORS = ['#10b981', '#ef4444'];
-
+  // Use allData when available (for existing data), otherwise use previewData (for new uploads)
+  const dataToUse = showExistingData && allData.length > 0 ? allData : previewData;
+  
+  if (dataToUse.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Risk Distribution</CardTitle>
-            <CardDescription>High risk vs low risk loans (PD {'>'}5%)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={riskData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {riskData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Portfolio Overview</CardTitle>
-            <CardDescription>Key portfolio metrics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Total Records:</span>
-                <span className="text-sm">{portfolioSummary.totalRecords.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Total Value:</span>
-                <span className="text-sm">${(portfolioSummary.totalValue / 1000000).toFixed(1)}M</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Avg Interest Rate:</span>
-                <span className="text-sm">{portfolioSummary.avgInterestRate.toFixed(2)}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">High Risk Loans:</span>
-                <span className="text-sm">{portfolioSummary.highRiskLoans.toLocaleString()}</span>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-xs text-blue-600">
-                💡 Load the data table to see detailed charts and analysis
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center">
+        <p className="text-gray-600">No data available for charts</p>
       </div>
     );
   }
 
-  // For uploaded files or when full data is loaded, show detailed charts
-  const dataToUse = showExistingData ? allData : previewData;
-  
-  if (dataToUse.length === 0) {
-    return null;
-  }
+  const loanTypeData = dataToUse.reduce((acc, loan) => {
+    const type = loan.loan_type || 'Unknown';
+    if (!acc[type]) {
+      acc[type] = { name: type, count: 0, value: 0 };
+    }
+    acc[type].count += 1;
+    acc[type].value += loan.opening_balance;
+    return acc;
+  }, {} as Record<string, { name: string; count: number; value: number }>);
 
-  // Interest rate distribution
-  const interestRateRanges = [
-    { range: '0-3%', min: 0, max: 3, count: 0 },
-    { range: '3-5%', min: 3, max: 5, count: 0 },
-    { range: '5-7%', min: 5, max: 7, count: 0 },
-    { range: '7-10%', min: 7, max: 10, count: 0 },
-    { range: '10%+', min: 10, max: 100, count: 0 }
+  const loanTypeChartData = Object.values(loanTypeData);
+
+  const riskBuckets = [
+    { name: 'Low Risk (0-1%)', min: 0, max: 0.01, count: 0, value: 0 },
+    { name: 'Medium Risk (1-5%)', min: 0.01, max: 0.05, count: 0, value: 0 },
+    { name: 'High Risk ({'>'}5%)', min: 0.05, max: 1, count: 0, value: 0 }
   ];
 
   dataToUse.forEach(loan => {
-    const rate = loan.interest_rate;
-    const range = interestRateRanges.find(r => rate >= r.min && rate < r.max) || interestRateRanges[4];
-    range.count++;
+    const pd = loan.pd || 0;
+    const bucket = riskBuckets.find(b => pd {'>'}= b.min && pd < b.max) || riskBuckets[riskBuckets.length - 1];
+    bucket.count += 1;
+    bucket.value += loan.opening_balance;
   });
 
-  // Risk distribution (PD > 5% considered high risk)
-  const highRiskCount = dataToUse.filter(loan => (loan.pd || 0) > 0.05).length;
-  const lowRiskCount = dataToUse.length - highRiskCount;
-  
-  const riskData = [
-    { name: 'Low Risk', value: lowRiskCount },
-    { name: 'High Risk', value: highRiskCount }
+  const riskChartData = riskBuckets.filter(bucket => bucket.count > 0);
+
+  const creditScoreBuckets = [
+    { name: '300-579', min: 300, max: 579, count: 0, value: 0 },
+    { name: '580-669', min: 580, max: 669, count: 0, value: 0 },
+    { name: '670-739', min: 670, max: 739, count: 0, value: 0 },
+    { name: '740-799', min: 740, max: 799, count: 0, value: 0 },
+    { name: '800-850', min: 800, max: 850, count: 0, value: 0 }
   ];
 
-  const COLORS = ['#10b981', '#ef4444'];
+  dataToUse.forEach(loan => {
+    const score = loan.credit_score;
+    const bucket = creditScoreBuckets.find(b => score >= b.min && score <= b.max);
+    if (bucket) {
+      bucket.count += 1;
+      bucket.value += loan.opening_balance;
+    }
+  });
+
+  const creditScoreChartData = creditScoreBuckets.filter(bucket => bucket.count > 0);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Interest Rate Distribution</CardTitle>
-          <CardDescription>Number of loans by interest rate range</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={interestRateRanges}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="range" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+    <div className="mt-6 space-y-6">
+      <div className="mb-4">
+        <h3 className="text-xl font-semibold mb-2">Portfolio Analytics</h3>
+        <p className="text-sm text-gray-600">
+          Analysis based on {dataToUse.length.toLocaleString()} records
+          {showExistingData && allData.length > previewData.length && (
+            <span className="ml-1 text-blue-600 font-medium">
+              (Full dataset: {allData.length.toLocaleString()} total records)
+            </span>
+          )}
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Risk Distribution</CardTitle>
-          <CardDescription>High risk vs low risk loans (PD {'>'} 5%)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Loan Types Chart */}
+        <div className="bg-white p-4 rounded-lg border">
+          <h4 className="text-lg font-medium mb-4">Loan Distribution by Type</h4>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={riskData}
+                data={loanTypeChartData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
-                dataKey="value"
+                dataKey="count"
               >
-                {riskData.map((entry, index) => (
+                {loanTypeChartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(value, name) => [value, 'Count']} />
+              <Legend />
             </PieChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Risk Distribution Chart */}
+        <div className="bg-white p-4 rounded-lg border">
+          <h4 className="text-lg font-medium mb-4">Risk Distribution (PD)</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={riskChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} />
+              <Legend />
+              <Bar dataKey="count" fill="#8884d8" name="Loan Count" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Credit Score Distribution */}
+        <div className="bg-white p-4 rounded-lg border">
+          <h4 className="text-lg font-medium mb-4">Credit Score Distribution</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={creditScoreChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} />
+              <Legend />
+              <Bar dataKey="count" fill="#82ca9d" name="Loan Count" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Portfolio Value Distribution */}
+        <div className="bg-white p-4 rounded-lg border">
+          <h4 className="text-lg font-medium mb-4">Portfolio Value by Loan Type</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={loanTypeChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`} />
+              <Tooltip formatter={(value, name) => [`$${value.toLocaleString()}`, 'Total Value']} />
+              <Legend />
+              <Bar dataKey="value" fill="#ffc658" name="Total Value" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 };
