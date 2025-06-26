@@ -68,7 +68,8 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
     
     try {
       setIsLoading(true);
-      const allData = await getLoanData(user.id);
+      // Remove userId parameter - RLS handles access control now
+      const allData = await getLoanData();
       
       // Group data by dataset_name
       const datasetMap = new Map<string, any[]>();

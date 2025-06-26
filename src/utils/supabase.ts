@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -89,10 +88,10 @@ export const insertLoanData = async (
 };
 
 export const getLoanData = async (userId?: string) => {
-  console.log('Fetching loan data for user:', userId);
+  console.log('Fetching loan data for authenticated user');
   
-  // The RLS policy will now handle filtering for own data and shared data
-  // No need to explicitly filter by userId in the query
+  // The RLS policy will now handle filtering for own data and shared data automatically
+  // We don't need to pass userId anymore since RLS handles access control
   let countQuery = supabase.from('loan_data').select('*', { count: 'exact', head: true });
   
   const { count, error: countError } = await countQuery;
@@ -111,7 +110,7 @@ export const getLoanData = async (userId?: string) => {
   }
   
   // Fetch all records in batches to avoid memory issues with very large datasets
-  const BATCH_SIZE = 1000; // Use smaller batch size for more reliable fetching
+  const BATCH_SIZE = 1000;
   let allData: LoanRecord[] = [];
   let from = 0;
   
@@ -259,6 +258,7 @@ export const removeDatasetShare = async (shareId: string) => {
 export const getUserDatasets = async () => {
   console.log('Fetching user datasets');
   
+  // This will now respect RLS and only return datasets the user owns or has access to
   const { data, error } = await supabase
     .from('loan_data')
     .select('dataset_name, user_id')

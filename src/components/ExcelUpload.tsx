@@ -102,8 +102,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     
     try {
       setIsProcessing(true);
-      console.log('Loading existing data for user:', user.id);
-      const existingData = await getLoanData(user.id);
+      console.log('Loading existing data for authenticated user');
+      // Remove userId parameter - RLS handles access control now
+      const existingData = await getLoanData();
       
       console.log('Loaded existing data:', existingData.length, 'records');
       
