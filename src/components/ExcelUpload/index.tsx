@@ -231,6 +231,57 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
+  const handleDeleteCompleteDataset = async () => {
+    if (!user || allData.length === 0) {
+      toast({
+        title: "No Data to Delete",
+        description: "No data found to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setUploadStatus(`Deleting all ${allData.length} records...`);
+      
+      // Get all record IDs
+      const allRecordIds = allData.filter(record => record.id).map(record => record.id!);
+      
+      if (allRecordIds.length === 0) {
+        toast({
+          title: "No Records to Delete",
+          description: "No valid record IDs found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await deleteLoanData(allRecordIds);
+      
+      // Reset all state after successful deletion
+      resetState();
+      
+      toast({
+        title: "Complete Dataset Deleted",
+        description: `Successfully deleted all ${allRecordIds.length} records`,
+      });
+
+      // Close the modal after successful deletion
+      handleClose();
+    } catch (error) {
+      console.error('Error deleting complete dataset:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete complete dataset. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      setUploadStatus('');
+    }
+  };
+
   const handleFileDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     setSelectedFile(file);
@@ -393,6 +444,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         onSelectRecord={handleSelectRecord}
         onSelectAll={handleSelectAll}
         onDeleteSelected={handleDeleteSelected}
+        onDeleteCompleteDataset={handleDeleteCompleteDataset}
         onPageChange={handlePageChange}
         onFileDrop={handleFileDrop}
       />

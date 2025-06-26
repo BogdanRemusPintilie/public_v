@@ -2,12 +2,23 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, RefreshCw } from 'lucide-react';
+import { Users, RefreshCw, Trash2 } from 'lucide-react';
 import { FileUploadSection } from './FileUploadSection';
 import { PortfolioSummary } from './PortfolioSummary';
 import { PortfolioCharts } from './PortfolioCharts';
 import { DataPreviewTable } from './DataPreviewTable';
 import { LoanRecord } from '@/utils/supabase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ExcelUploadModalProps {
   isOpen: boolean;
@@ -37,6 +48,7 @@ interface ExcelUploadModalProps {
   onSelectRecord: (recordId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
   onDeleteSelected: () => void;
+  onDeleteCompleteDataset: () => void;
   onPageChange: (page: number) => void;
   onFileDrop: (files: File[]) => void;
 }
@@ -64,6 +76,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   onSelectRecord,
   onSelectAll,
   onDeleteSelected,
+  onDeleteCompleteDataset,
   onPageChange,
   onFileDrop
 }) => {
@@ -109,6 +122,38 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                       <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
                       Refresh
                     </Button>
+                    {totalRecords > 0 && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={isProcessing}
+                            className="flex items-center gap-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete All Data
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Complete Dataset?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete all {totalRecords.toLocaleString()} loan records from your account.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={onDeleteCompleteDataset}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete All Data
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </>
                 )}
               </div>
