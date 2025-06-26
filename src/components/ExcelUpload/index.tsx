@@ -80,19 +80,20 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     
     try {
       setIsProcessing(true);
-      console.log('Loading all existing data for authenticated user');
+      console.log('📊 STARTING DATA LOAD - Loading all existing data for authenticated user');
       
       // Load ALL data first - this is the complete dataset
       const allRecords = await getAllLoanData();
-      console.log(`Loaded ${allRecords.length} total records for portfolio calculation`);
+      console.log(`📊 DATA LOADED: ${allRecords.length} total records retrieved from database`);
       
-      // CRITICAL: Store ALL data and set total count FIRST
+      // CRITICAL: Store ALL data and set total count FIRST before any other operations
       setAllData(allRecords);
       setTotalRecords(allRecords.length);
+      console.log(`📊 STATE UPDATED: allData set to ${allRecords.length} records, totalRecords set to ${allRecords.length}`);
       
-      // CRITICAL: Calculate portfolio summary using ALL records immediately
+      // CRITICAL: Calculate portfolio summary using ALL records immediately after setting the data
       if (allRecords.length > 0) {
-        console.log(`Calculating portfolio summary with ALL ${allRecords.length} records`);
+        console.log(`📊 PORTFOLIO CALC START: Beginning calculation with ALL ${allRecords.length} records`);
         calculatePortfolioSummary(allRecords);
         
         toast({
@@ -100,6 +101,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           description: `Loaded ${allRecords.length.toLocaleString()} total records`,
         });
       } else {
+        console.log('📊 NO DATA: No records found, setting portfolio summary to null');
         setPortfolioSummary(null);
         
         toast({
@@ -113,9 +115,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setPreviewData(firstPageData);
       setHasMore(allRecords.length > PAGE_SIZE);
       setCurrentPage(0);
+      console.log(`📊 PREVIEW SET: First page set to ${firstPageData.length} records for display, hasMore: ${allRecords.length > PAGE_SIZE}`);
       
     } catch (error) {
-      console.error('Error loading existing data:', error);
+      console.error('❌ ERROR loading existing data:', error);
       toast({
         title: "Error Loading Data",
         description: "Failed to load existing data. Please try again.",
@@ -141,12 +144,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setSelectedRecords(new Set());
       
       // Portfolio summary should NOT change when paging - it should always reflect ALL data
-      console.log(`Page changed to ${newPage}, showing ${pageData.length} records, but portfolio summary remains based on all ${allData.length} records`);
+      console.log(`📊 PAGE CHANGE: Changed to page ${newPage}, showing ${pageData.length} records in table, but portfolio summary remains based on all ${allData.length} records`);
     }
   };
 
   const calculatePortfolioSummary = (data: LoanRecord[]) => {
-    console.log(`PORTFOLIO CALCULATION: Starting calculation with ${data.length} records`);
+    console.log(`📊 PORTFOLIO CALCULATION START: Beginning calculation with ${data.length} records`);
+    console.log(`📊 CALCULATION INPUT: First few records:`, data.slice(0, 3));
     
     const totalValue = data.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const avgInterestRate = data.length > 0 ? 
@@ -160,13 +164,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       totalRecords: data.length
     };
     
-    console.log(`PORTFOLIO CALCULATION RESULT:`, calculatedSummary);
-    console.log(`- Total Records: ${calculatedSummary.totalRecords.toLocaleString()}`);
-    console.log(`- Total Value: $${(calculatedSummary.totalValue / 1000000).toFixed(1)}M`);
-    console.log(`- Avg Interest Rate: ${calculatedSummary.avgInterestRate.toFixed(2)}%`);
-    console.log(`- High Risk Loans: ${calculatedSummary.highRiskLoans}`);
+    console.log(`📊 PORTFOLIO CALCULATION COMPLETE:`, calculatedSummary);
+    console.log(`📊 DETAILED RESULTS:`);
+    console.log(`   - Total Records: ${calculatedSummary.totalRecords.toLocaleString()}`);
+    console.log(`   - Total Value: $${(calculatedSummary.totalValue / 1000000).toFixed(1)}M`);
+    console.log(`   - Avg Interest Rate: ${calculatedSummary.avgInterestRate.toFixed(2)}%`);
+    console.log(`   - High Risk Loans: ${calculatedSummary.highRiskLoans}`);
     
     setPortfolioSummary(calculatedSummary);
+    console.log(`📊 PORTFOLIO STATE SET: Portfolio summary state updated with ${calculatedSummary.totalRecords} total records`);
   };
 
   const handleSelectRecord = (recordId: string, checked: boolean) => {
