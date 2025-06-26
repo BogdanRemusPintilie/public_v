@@ -114,7 +114,7 @@ export const getLoanDataPaginated = async (page: number = 0, pageSize: number = 
   };
 };
 
-// Function to get ALL loan data (for backward compatibility and when you need all records)
+// FIXED: Function to get ALL loan data without any limits
 export const getAllLoanData = async () => {
   console.log('Fetching ALL loan data for authenticated user');
   
@@ -130,19 +130,37 @@ export const getAllLoanData = async () => {
   
   console.log(`Found ${count} total records, fetching all...`);
   
-  // Fetch all data in one query (Supabase can handle large datasets)
-  const { data, error } = await supabase
-    .from('loan_data')
-    .select('*')
-    .order('created_at', { ascending: false });
+  // CRITICAL FIX: Fetch ALL data in batches to avoid any limits
+  const BATCH_SIZE = 10000; // Large batch size for efficiency
+  const allRecords: LoanRecord[] = [];
   
-  if (error) {
-    console.error('Error fetching all loan data:', error);
-    throw error;
+  for (let offset = 0; offset < count; offset += BATCH_SIZE) {
+    console.log(`Fetching batch: ${offset + 1} to ${Math.min(offset + BATCH_SIZE, count)} of ${count}`);
+    
+    const { data, error } = await supabase
+      .from('loan_data')
+      .select('*')
+      .range(offset, offset + BATCH_SIZE - 1)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error(`Error fetching batch starting at ${offset}:`, error);
+      throw error;
+    }
+    
+    if (data && data.length > 0) {
+      allRecords.push(...data as LoanRecord[]);
+      console.log(`Fetched ${data.length} records in this batch, total so far: ${allRecords.length}`);
+    }
+    
+    // If we got fewer records than expected, we've reached the end
+    if (!data || data.length < BATCH_SIZE) {
+      break;
+    }
   }
   
-  console.log(`Successfully fetched all ${data?.length || 0} records`);
-  return data as LoanRecord[];
+  console.log(`Successfully fetched all ${allRecords.length} records`);
+  return allRecords;
 };
 
 // Optimized function to get dataset summaries without loading all data
