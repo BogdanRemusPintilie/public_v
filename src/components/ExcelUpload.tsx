@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
@@ -193,6 +194,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const getMaturityDistribution = () => {
+    // Use allData for charts when showing existing data, previewData for uploads
     const dataToUse = showExistingData ? allData : previewData;
     if (dataToUse.length === 0) return [];
     
@@ -212,6 +214,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const getLoanSizeDistribution = () => {
+    // Use allData for charts when showing existing data, previewData for uploads
     const dataToUse = showExistingData ? allData : previewData;
     if (dataToUse.length === 0) return [];
     
@@ -589,13 +592,18 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                 </div>
               )}
 
-              {previewData.length > 0 && (
+              {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
                 <>
-                  {/* Charts Section */}
+                  {/* Charts Section - Now using correct data source */}
                   <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Loan Distribution by Maturity</CardTitle>
+                        <CardTitle className="text-lg">
+                          Loan Distribution by Maturity
+                          {showExistingData && (
+                            <span className="text-sm text-gray-500 block">Based on all {allData.length.toLocaleString()} records</span>
+                          )}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ChartContainer config={chartConfig} className="h-[300px]">
@@ -618,7 +626,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Portfolio Composition by Loan Size</CardTitle>
+                        <CardTitle className="text-lg">
+                          Portfolio Composition by Loan Size
+                          {showExistingData && (
+                            <span className="text-sm text-gray-500 block">Based on all {allData.length.toLocaleString()} records</span>
+                          )}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ChartContainer config={chartConfig} className="h-[300px]">
