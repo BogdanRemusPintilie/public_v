@@ -84,20 +84,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       // Load ALL data first - this is the complete dataset
       const allRecords = await getAllLoanData();
-      console.log(`Loaded ${allRecords.length} total records`);
+      console.log(`Loaded ${allRecords.length} total records for portfolio calculation`);
       
-      // Store ALL data - this is important for portfolio summary calculations
+      // CRITICAL: Store ALL data and set total count FIRST
       setAllData(allRecords);
       setTotalRecords(allRecords.length);
       
-      // Set preview data to first page for table display only
-      const firstPageData = allRecords.slice(0, PAGE_SIZE);
-      setPreviewData(firstPageData);
-      setHasMore(allRecords.length > PAGE_SIZE);
-      setCurrentPage(0);
-      
+      // CRITICAL: Calculate portfolio summary using ALL records immediately
       if (allRecords.length > 0) {
-        // IMPORTANT: Calculate portfolio summary using ALL records, not just preview
+        console.log(`Calculating portfolio summary with ALL ${allRecords.length} records`);
         calculatePortfolioSummary(allRecords);
         
         toast({
@@ -112,6 +107,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           description: "No existing loan data found for your account",
         });
       }
+      
+      // Set preview data to first page for table display only (AFTER portfolio calculation)
+      const firstPageData = allRecords.slice(0, PAGE_SIZE);
+      setPreviewData(firstPageData);
+      setHasMore(allRecords.length > PAGE_SIZE);
+      setCurrentPage(0);
+      
     } catch (error) {
       console.error('Error loading existing data:', error);
       toast({
@@ -137,28 +139,34 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       // Clear selections when changing pages
       setSelectedRecords(new Set());
+      
+      // Portfolio summary should NOT change when paging - it should always reflect ALL data
+      console.log(`Page changed to ${newPage}, showing ${pageData.length} records, but portfolio summary remains based on all ${allData.length} records`);
     }
   };
 
   const calculatePortfolioSummary = (data: LoanRecord[]) => {
+    console.log(`PORTFOLIO CALCULATION: Starting calculation with ${data.length} records`);
+    
     const totalValue = data.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const avgInterestRate = data.length > 0 ? 
       data.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / totalValue : 0;
     const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.05).length;
     
-    console.log(`Portfolio summary calculated from ${data.length} records:`, {
+    const calculatedSummary = {
       totalValue,
       avgInterestRate,
       highRiskLoans,
       totalRecords: data.length
-    });
+    };
     
-    setPortfolioSummary({
-      totalValue,
-      avgInterestRate,
-      highRiskLoans,
-      totalRecords: data.length
-    });
+    console.log(`PORTFOLIO CALCULATION RESULT:`, calculatedSummary);
+    console.log(`- Total Records: ${calculatedSummary.totalRecords.toLocaleString()}`);
+    console.log(`- Total Value: $${(calculatedSummary.totalValue / 1000000).toFixed(1)}M`);
+    console.log(`- Avg Interest Rate: ${calculatedSummary.avgInterestRate.toFixed(2)}%`);
+    console.log(`- High Risk Loans: ${calculatedSummary.highRiskLoans}`);
+    
+    setPortfolioSummary(calculatedSummary);
   };
 
   const handleSelectRecord = (recordId: string, checked: boolean) => {
