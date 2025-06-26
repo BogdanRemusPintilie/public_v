@@ -23,9 +23,8 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   showExistingData = false,
   portfolioSummary
 }) => {
-  // For uploaded data: use previewData (complete dataset)
-  // For existing data: use allData if available, otherwise previewData
-  const dataToUse = showExistingData ? (allData.length > 0 ? allData : previewData) : previewData;
+  // Use all available data for charts - this ensures we show complete portfolio analysis
+  const dataToUse = showExistingData ? allData : previewData;
   
   console.log('📊 CHARTS DATA CHECK:', {
     showExistingData,
