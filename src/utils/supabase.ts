@@ -130,17 +130,18 @@ export const getAllLoanData = async () => {
   
   console.log(`Found ${count} total records, fetching all...`);
   
-  // CRITICAL FIX: Fetch ALL data in batches to avoid any limits
-  const BATCH_SIZE = 10000; // Large batch size for efficiency
+  // CRITICAL FIX: Use smaller batch size and proper range calculation
+  const BATCH_SIZE = 1000; // Use smaller batch size to avoid any potential limits
   const allRecords: LoanRecord[] = [];
   
   for (let offset = 0; offset < count; offset += BATCH_SIZE) {
-    console.log(`Fetching batch: ${offset + 1} to ${Math.min(offset + BATCH_SIZE, count)} of ${count}`);
+    const endOffset = Math.min(offset + BATCH_SIZE - 1, count - 1);
+    console.log(`Fetching batch: records ${offset} to ${endOffset} of ${count - 1}`);
     
     const { data, error } = await supabase
       .from('loan_data')
       .select('*')
-      .range(offset, offset + BATCH_SIZE - 1)
+      .range(offset, endOffset)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -151,15 +152,24 @@ export const getAllLoanData = async () => {
     if (data && data.length > 0) {
       allRecords.push(...data as LoanRecord[]);
       console.log(`Fetched ${data.length} records in this batch, total so far: ${allRecords.length}`);
+    } else {
+      console.log(`No data returned for batch starting at ${offset}`);
+      break;
     }
     
-    // If we got fewer records than expected, we've reached the end
-    if (!data || data.length < BATCH_SIZE) {
-      break;
+    // Add a small delay between batches to avoid overwhelming the database
+    if (offset + BATCH_SIZE < count) {
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
   }
   
-  console.log(`Successfully fetched all ${allRecords.length} records`);
+  console.log(`Successfully fetched all ${allRecords.length} records out of expected ${count}`);
+  
+  // Verify we got all the records
+  if (allRecords.length !== count) {
+    console.warn(`Warning: Expected ${count} records but got ${allRecords.length}`);
+  }
+  
   return allRecords;
 };
 
