@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Users, RefreshCw } from 'lucide-react';
 import { FileUploadSection } from './FileUploadSection';
 import { PortfolioSummary } from './PortfolioSummary';
@@ -69,10 +71,10 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white">
-        <Card>
-          <CardHeader>
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center py-4">
+      <div className="relative mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white max-h-[95vh] overflow-hidden">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="flex-shrink-0">
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle>
@@ -114,48 +116,52 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
             </div>
           </CardHeader>
           
-          <CardContent>
-            {!showExistingData && (
-              <FileUploadSection
-                datasetName={datasetName}
-                onDatasetNameChange={onDatasetNameChange}
-                onFileDrop={onFileDrop}
-                isProcessing={isProcessing}
-                uploadProgress={uploadProgress}
-                uploadStatus={uploadStatus}
-              />
-            )}
+          <CardContent className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full w-full">
+              <div className="pr-4">
+                {!showExistingData && (
+                  <FileUploadSection
+                    datasetName={datasetName}
+                    onDatasetNameChange={onDatasetNameChange}
+                    onFileDrop={onFileDrop}
+                    isProcessing={isProcessing}
+                    uploadProgress={uploadProgress}
+                    uploadStatus={uploadStatus}
+                  />
+                )}
 
-            {portfolioSummary && (
-              <PortfolioSummary portfolioSummary={portfolioSummary} />
-            )}
+                {portfolioSummary && (
+                  <PortfolioSummary portfolioSummary={portfolioSummary} />
+                )}
 
-            {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
-              <>
-                <PortfolioCharts 
-                  allData={allData}
-                  previewData={previewData}
-                  showExistingData={showExistingData}
-                />
+                {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
+                  <>
+                    <PortfolioCharts 
+                      allData={allData}
+                      previewData={previewData}
+                      showExistingData={showExistingData}
+                    />
 
-                <DataPreviewTable
-                  previewData={previewData}
-                  selectedRecords={selectedRecords}
-                  showExistingData={showExistingData}
-                  totalRecords={totalRecords}
-                  currentPage={currentPage}
-                  hasMore={hasMore}
-                  isProcessing={isProcessing}
-                  onSelectRecord={onSelectRecord}
-                  onSelectAll={onSelectAll}
-                  onDeleteSelected={onDeleteSelected}
-                  onPageChange={onPageChange}
-                />
-              </>
-            )}
+                    <DataPreviewTable
+                      previewData={previewData}
+                      selectedRecords={selectedRecords}
+                      showExistingData={showExistingData}
+                      totalRecords={totalRecords}
+                      currentPage={currentPage}
+                      hasMore={hasMore}
+                      isProcessing={isProcessing}
+                      onSelectRecord={onSelectRecord}
+                      onSelectAll={onSelectAll}
+                      onDeleteSelected={onDeleteSelected}
+                      onPageChange={onPageChange}
+                    />
+                  </>
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
           
-          <CardFooter className="flex justify-end gap-4">
+          <CardFooter className="flex justify-end gap-4 flex-shrink-0">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
             {previewData.length > 0 && !showExistingData && (
               <Button variant="destructive" onClick={onClearData}>Clear Data</Button>

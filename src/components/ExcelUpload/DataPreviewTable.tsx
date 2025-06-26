@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Table, 
   TableBody, 
@@ -54,7 +55,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
   onPageChange
 }) => {
   return (
-    <div className="mt-6 overflow-x-auto">
+    <div className="mt-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-semibold">
           Data Preview ({previewData.length.toLocaleString()} records on this page)
@@ -115,56 +116,60 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {showExistingData && (
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={selectedRecords.size === previewData.filter(r => r.id).length && previewData.length > 0}
-                  onCheckedChange={onSelectAll}
-                />
-              </TableHead>
-            )}
-            {showExistingData && <TableHead>Dataset</TableHead>}
-            <TableHead>Opening Balance</TableHead>
-            <TableHead>Interest Rate</TableHead>
-            <TableHead>Term (Months)</TableHead>
-            <TableHead>PD</TableHead>
-            <TableHead>Loan Type</TableHead>
-            <TableHead>Credit Score</TableHead>
-            <TableHead>LTV</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {previewData.slice(0, 10).map((row, index) => (
-            <TableRow key={row.id || index}>
-              {showExistingData && (
-                <TableCell>
-                  {row.id && (
+      <div className="border rounded-lg">
+        <ScrollArea className="h-[400px] w-full">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {showExistingData && (
+                  <TableHead className="w-12">
                     <Checkbox
-                      checked={selectedRecords.has(row.id)}
-                      onCheckedChange={(checked) => onSelectRecord(row.id!, checked as boolean)}
+                      checked={selectedRecords.size === previewData.filter(r => r.id).length && previewData.length > 0}
+                      onCheckedChange={onSelectAll}
                     />
+                  </TableHead>
+                )}
+                {showExistingData && <TableHead>Dataset</TableHead>}
+                <TableHead>Opening Balance</TableHead>
+                <TableHead>Interest Rate</TableHead>
+                <TableHead>Term (Months)</TableHead>
+                <TableHead>PD</TableHead>
+                <TableHead>Loan Type</TableHead>
+                <TableHead>Credit Score</TableHead>
+                <TableHead>LTV</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {previewData.slice(0, 10).map((row, index) => (
+                <TableRow key={row.id || index}>
+                  {showExistingData && (
+                    <TableCell>
+                      {row.id && (
+                        <Checkbox
+                          checked={selectedRecords.has(row.id)}
+                          onCheckedChange={(checked) => onSelectRecord(row.id!, checked as boolean)}
+                        />
+                      )}
+                    </TableCell>
                   )}
-                </TableCell>
-              )}
-              {showExistingData && (
-                <TableCell className="font-medium">
-                  {row.dataset_name || 'Unnamed Dataset'}
-                </TableCell>
-              )}
-              <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
-              <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
-              <TableCell>{row.term}</TableCell>
-              <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
-              <TableCell>{row.loan_type}</TableCell>
-              <TableCell>{row.credit_score}</TableCell>
-              <TableCell>{row.ltv.toFixed(2)}%</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                  {showExistingData && (
+                    <TableCell className="font-medium">
+                      {row.dataset_name || 'Unnamed Dataset'}
+                    </TableCell>
+                  )}
+                  <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
+                  <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
+                  <TableCell>{row.term}</TableCell>
+                  <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
+                  <TableCell>{row.loan_type}</TableCell>
+                  <TableCell>{row.credit_score}</TableCell>
+                  <TableCell>{row.ltv.toFixed(2)}%</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </div>
       
       {previewData.length > 10 && (
         <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length.toLocaleString()} records on this page</p>
