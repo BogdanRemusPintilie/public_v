@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, RefreshCw, Eye, Loader2 } from 'lucide-react';
+import { Users, RefreshCw } from 'lucide-react';
 import { FileUploadSection } from './FileUploadSection';
 import { PortfolioSummary } from './PortfolioSummary';
 import { PortfolioCharts } from './PortfolioCharts';
@@ -28,7 +28,6 @@ interface ExcelUploadModalProps {
   datasetName: string;
   uploadProgress: number;
   uploadStatus: string;
-  isTableDataLoaded: boolean;
   onClose: () => void;
   onRefreshData: () => void;
   onShowSharingManager: () => void;
@@ -40,7 +39,6 @@ interface ExcelUploadModalProps {
   onDeleteSelected: () => void;
   onPageChange: (page: number) => void;
   onFileDrop: (files: File[]) => void;
-  onLoadTableData: () => void;
 }
 
 export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
@@ -57,7 +55,6 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   datasetName,
   uploadProgress,
   uploadStatus,
-  isTableDataLoaded,
   onClose,
   onRefreshData,
   onShowSharingManager,
@@ -68,8 +65,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   onSelectAll,
   onDeleteSelected,
   onPageChange,
-  onFileDrop,
-  onLoadTableData
+  onFileDrop
 }) => {
   if (!isOpen) return null;
 
@@ -121,26 +117,6 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
           
           <CardContent className="flex-1 overflow-y-auto">
             <div className="space-y-6">
-              {/* Show loading indicator when processing existing data */}
-              {showExistingData && isProcessing && !portfolioSummary && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Loading portfolio data...</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Show loading indicator when processing table data */}
-              {showExistingData && isProcessing && portfolioSummary && isTableDataLoaded && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="flex items-center gap-3 text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Loading {totalRecords.toLocaleString()} records...</span>
-                  </div>
-                </div>
-              )}
-
               {!showExistingData && (
                 <FileUploadSection
                   datasetName={datasetName}
@@ -156,16 +132,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                 <PortfolioSummary portfolioSummary={portfolioSummary} />
               )}
 
-              {showExistingData && portfolioSummary && (
-                <PortfolioCharts 
-                  allData={allData}
-                  previewData={previewData}
-                  showExistingData={showExistingData}
-                  portfolioSummary={portfolioSummary}
-                />
-              )}
-
-              {!showExistingData && (previewData.length > 0 || allData.length > 0) && (
+              {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
                 <>
                   <PortfolioCharts 
                     allData={allData}
@@ -187,38 +154,6 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                     onPageChange={onPageChange}
                   />
                 </>
-              )}
-
-              {showExistingData && portfolioSummary && !isTableDataLoaded && (
-                <div className="mt-6 text-center">
-                  <Button
-                    onClick={onLoadTableData}
-                    disabled={isProcessing}
-                    className="flex items-center gap-2"
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Data Table ({totalRecords.toLocaleString()} records)
-                  </Button>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Click to load the data table (may take a moment for large datasets)
-                  </p>
-                </div>
-              )}
-
-              {showExistingData && isTableDataLoaded && previewData.length > 0 && (
-                <DataPreviewTable
-                  previewData={previewData}
-                  selectedRecords={selectedRecords}
-                  showExistingData={showExistingData}
-                  totalRecords={totalRecords}
-                  currentPage={currentPage}
-                  hasMore={hasMore}
-                  isProcessing={isProcessing}
-                  onSelectRecord={onSelectRecord}
-                  onSelectAll={onSelectAll}
-                  onDeleteSelected={onDeleteSelected}
-                  onPageChange={onPageChange}
-                />
               )}
             </div>
           </CardContent>

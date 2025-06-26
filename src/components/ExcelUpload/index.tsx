@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { LoanRecord, insertLoanData, getLoanDataPaginated, getPortfolioSummaryOnly, getAllLoanData, deleteLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getAllLoanData, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ExcelUploadModal } from './ExcelUploadModal';
@@ -35,7 +35,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [isTableDataLoaded, setIsTableDataLoaded] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -44,7 +43,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   // Load existing data when showExistingData is true
   useEffect(() => {
     if (showExistingData && isOpen && user) {
-      loadExistingDataFast();
+      loadExistingData();
     } else if (!showExistingData && isOpen) {
       resetState();
     }
@@ -54,7 +53,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   useEffect(() => {
     if (showExistingData && isOpen && user) {
       const handleFocus = () => {
-        loadExistingDataFast();
+        loadExistingData();
       };
       
       window.addEventListener('focus', handleFocus);
@@ -74,33 +73,36 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setCurrentPage(0);
     setTotalRecords(0);
     setHasMore(false);
-    setIsTableDataLoaded(false);
   };
 
-  // OPTIMIZED: Load portfolio summary first, then table data on demand
-  const loadExistingDataFast = async () => {
+  const loadExistingData = async () => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log('🚀 FAST LOAD: Loading portfolio summary only');
+      console.log('📊 STARTING DATA LOAD - Loading all existing data for authenticated user');
       
-      // Step 1: Get portfolio summary quickly (no full data load)
-      const summary = await getPortfolioSummaryOnly();
+      // Load ALL data first - this is the complete dataset
+      const allRecords = await getAllLoanData();
+      console.log(`📊 DATA LOADED: ${allRecords.length} total records retrieved from database`);
       
-      if (summary) {
-        setPortfolioSummary(summary);
-        setTotalRecords(summary.totalRecords);
-        console.log(`🚀 SUMMARY LOADED: ${summary.totalRecords} total records, portfolio ready`);
+      // CRITICAL: Store ALL data and set total count FIRST before any other operations
+      setAllData(allRecords);
+      setTotalRecords(allRecords.length);
+      console.log(`📊 STATE UPDATED: allData set to ${allRecords.length} records, totalRecords set to ${allRecords.length}`);
+      
+      // CRITICAL: Calculate portfolio summary using ALL records immediately after setting the data
+      if (allRecords.length > 0) {
+        console.log(`📊 PORTFOLIO CALC START: Beginning calculation with ALL ${allRecords.length} records`);
+        calculatePortfolioSummary(allRecords);
         
         toast({
-          title: "Portfolio Summary Loaded",
-          description: `Portfolio overview ready (${summary.totalRecords.toLocaleString()} total records)`,
+          title: "Data Loaded",
+          description: `Loaded ${allRecords.length.toLocaleString()} total records`,
         });
       } else {
-        console.log('🚀 NO DATA: No records found');
+        console.log('📊 NO DATA: No records found, setting portfolio summary to null');
         setPortfolioSummary(null);
-        setTotalRecords(0);
         
         toast({
           title: "No Data Found",
@@ -108,58 +110,21 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         });
       }
       
-      // Reset table state - data will be loaded when user views the table
-      setPreviewData([]);
-      setAllData([]);
+      // Set preview data to first page for table display only (AFTER portfolio calculation)
+      const firstPageData = allRecords.slice(0, PAGE_SIZE);
+      setPreviewData(firstPageData);
+      setHasMore(allRecords.length > PAGE_SIZE);
       setCurrentPage(0);
-      setHasMore(summary ? summary.totalRecords > PAGE_SIZE : false);
-      setIsTableDataLoaded(false);
+      console.log(`📊 PREVIEW SET: First page set to ${firstPageData.length} records for display, hasMore: ${allRecords.length > PAGE_SIZE}`);
       
     } catch (error) {
-      console.error('❌ ERROR loading portfolio summary:', error);
+      console.error('❌ ERROR loading existing data:', error);
       toast({
         title: "Error Loading Data",
-        description: "Failed to load portfolio summary. Please try again.",
+        description: "Failed to load existing data. Please try again.",
         variant: "destructive",
       });
       resetState();
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // FIXED: Load ALL table data for charts and table display
-  const loadTableDataIfNeeded = async () => {
-    if (isTableDataLoaded || totalRecords === 0) {
-      return; // Already loaded or no data to load
-    }
-    
-    try {
-      setIsProcessing(true);
-      console.log('📋 LOADING ALL DATA: Loading all records for charts and table');
-      
-      // Load ALL data for proper charts and table functionality
-      const allRecords = await getAllLoanData();
-      
-      setAllData(allRecords);
-      setPreviewData(allRecords.slice(0, PAGE_SIZE)); // Show first page
-      setCurrentPage(0);
-      setHasMore(allRecords.length > PAGE_SIZE);
-      setTotalRecords(allRecords.length);
-      setIsTableDataLoaded(true);
-      
-      // Clear selections when loading data
-      setSelectedRecords(new Set());
-      
-      console.log(`📋 ALL DATA LOADED: ${allRecords.length} total records`);
-      
-    } catch (error) {
-      console.error('❌ ERROR loading all data:', error);
-      toast({
-        title: "Error Loading Data",
-        description: "Failed to load table data. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsProcessing(false);
     }
@@ -169,15 +134,23 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     if (newPage >= 0 && showExistingData && allData.length > 0) {
       const startIndex = newPage * PAGE_SIZE;
       const endIndex = startIndex + PAGE_SIZE;
-      setPreviewData(allData.slice(startIndex, endIndex));
+      const pageData = allData.slice(startIndex, endIndex);
+      
+      setPreviewData(pageData);
       setCurrentPage(newPage);
       setHasMore(endIndex < allData.length);
-      setSelectedRecords(new Set()); // Clear selections when changing pages
+      
+      // Clear selections when changing pages
+      setSelectedRecords(new Set());
+      
+      // Portfolio summary should NOT change when paging - it should always reflect ALL data
+      console.log(`📊 PAGE CHANGE: Changed to page ${newPage}, showing ${pageData.length} records in table, but portfolio summary remains based on all ${allData.length} records`);
     }
   };
 
   const calculatePortfolioSummary = (data: LoanRecord[]) => {
-    console.log(`📊 PORTFOLIO CALCULATION: ${data.length} records for uploaded file`);
+    console.log(`📊 PORTFOLIO CALCULATION START: Beginning calculation with ${data.length} records`);
+    console.log(`📊 CALCULATION INPUT: First few records:`, data.slice(0, 3));
     
     const totalValue = data.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const avgInterestRate = data.length > 0 ? 
@@ -191,8 +164,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       totalRecords: data.length
     };
     
-    console.log(`📊 CALCULATION COMPLETE:`, calculatedSummary);
+    console.log(`📊 PORTFOLIO CALCULATION COMPLETE:`, calculatedSummary);
+    console.log(`📊 DETAILED RESULTS:`);
+    console.log(`   - Total Records: ${calculatedSummary.totalRecords.toLocaleString()}`);
+    console.log(`   - Total Value: $${(calculatedSummary.totalValue / 1000000).toFixed(1)}M`);
+    console.log(`   - Avg Interest Rate: ${calculatedSummary.avgInterestRate.toFixed(2)}%`);
+    console.log(`   - High Risk Loans: ${calculatedSummary.highRiskLoans}`);
+    
     setPortfolioSummary(calculatedSummary);
+    console.log(`📊 PORTFOLIO STATE SET: Portfolio summary state updated with ${calculatedSummary.totalRecords} total records`);
   };
 
   const handleSelectRecord = (recordId: string, checked: boolean) => {
@@ -230,10 +210,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       await deleteLoanData(Array.from(selectedRecords));
       
-      // Refresh data after deletion
-      await loadExistingDataFast();
+      // Refresh all data after deletion
+      await loadExistingData();
       setSelectedRecords(new Set());
-      setIsTableDataLoaded(false); // Force reload of table data
       
       toast({
         title: "Records Deleted",
@@ -405,9 +384,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         datasetName={datasetName}
         uploadProgress={uploadProgress}
         uploadStatus={uploadStatus}
-        isTableDataLoaded={isTableDataLoaded}
         onClose={handleClose}
-        onRefreshData={loadExistingDataFast}
+        onRefreshData={loadExistingData}
         onShowSharingManager={() => setShowSharingManager(true)}
         onClearData={resetState}
         onSaveToDatabase={handleSaveToDatabase}
@@ -417,7 +395,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         onDeleteSelected={handleDeleteSelected}
         onPageChange={handlePageChange}
         onFileDrop={handleFileDrop}
-        onLoadTableData={loadTableDataIfNeeded}
       />
       
       <DatasetSharingManager 

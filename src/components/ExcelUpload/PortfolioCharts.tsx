@@ -1,179 +1,133 @@
 
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { LoanRecord } from '@/utils/supabase';
 
 interface PortfolioChartsProps {
   allData: LoanRecord[];
   previewData: LoanRecord[];
-  showExistingData?: boolean;
-  portfolioSummary?: {
-    totalValue: number;
-    avgInterestRate: number;
-    highRiskLoans: number;
-    totalRecords: number;
-  };
+  showExistingData: boolean;
 }
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   allData,
   previewData,
-  showExistingData = false,
-  portfolioSummary
+  showExistingData
 }) => {
-  // Use all available data for charts - this ensures we show complete portfolio analysis
-  const dataToUse = showExistingData ? allData : previewData;
-  
-  console.log('📊 CHARTS DATA CHECK:', {
-    showExistingData,
-    allDataLength: allData.length,
-    previewDataLength: previewData.length,
-    dataToUseLength: dataToUse.length,
-    portfolioSummary: portfolioSummary?.totalRecords
-  });
-  
-  // Show no data state when there's truly no data
-  if (dataToUse.length === 0) {
-    return (
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center">
-        <p className="text-gray-600">No data available for charts</p>
-      </div>
-    );
-  }
+  const chartConfig = {
+    count: {
+      label: "Count",
+      color: "#2563eb",
+    },
+  };
 
-  const loanTypeData = dataToUse.reduce((acc, loan) => {
-    const type = loan.loan_type || 'Unknown';
-    if (!acc[type]) {
-      acc[type] = { name: type, count: 0, value: 0 };
-    }
-    acc[type].count += 1;
-    acc[type].value += loan.opening_balance;
-    return acc;
-  }, {} as Record<string, { name: string; count: number; value: number }>);
+  const getMaturityDistribution = () => {
+    // Use allData for charts when showing existing data, previewData for uploads
+    const dataToUse = showExistingData ? allData : previewData;
+    if (dataToUse.length === 0) return [];
+    
+    const buckets = [
+      { range: 'Up to 36 months', min: 0, max: 36 },
+      { range: '37-60 months', min: 37, max: 60 },
+      { range: '61-84 months', min: 61, max: 84 },
+      { range: 'More than 84 months', min: 85, max: 1000 }
+    ];
+    
+    return buckets.map(bucket => ({
+      range: bucket.range,
+      count: dataToUse.filter(loan => 
+        loan.term >= bucket.min && loan.term <= bucket.max
+      ).length
+    }));
+  };
 
-  const loanTypeChartData = Object.values(loanTypeData);
-
-  const riskBuckets = [
-    { name: 'Low Risk (0-1%)', min: 0, max: 0.01, count: 0, value: 0 },
-    { name: 'Medium Risk (1-5%)', min: 0.01, max: 0.05, count: 0, value: 0 },
-    { name: 'High Risk (>5%)', min: 0.05, max: 1, count: 0, value: 0 }
-  ];
-
-  dataToUse.forEach(loan => {
-    const pd = loan.pd || 0;
-    const bucket = riskBuckets.find(b => pd >= b.min && pd < b.max) || riskBuckets[riskBuckets.length - 1];
-    bucket.count += 1;
-    bucket.value += loan.opening_balance;
-  });
-
-  const riskChartData = riskBuckets.filter(bucket => bucket.count > 0);
-
-  const creditScoreBuckets = [
-    { name: '300-579', min: 300, max: 579, count: 0, value: 0 },
-    { name: '580-669', min: 580, max: 669, count: 0, value: 0 },
-    { name: '670-739', min: 670, max: 739, count: 0, value: 0 },
-    { name: '740-799', min: 740, max: 799, count: 0, value: 0 },
-    { name: '800-850', min: 800, max: 850, count: 0, value: 0 }
-  ];
-
-  dataToUse.forEach(loan => {
-    const score = loan.credit_score;
-    const bucket = creditScoreBuckets.find(b => score >= b.min && score <= b.max);
-    if (bucket) {
-      bucket.count += 1;
-      bucket.value += loan.opening_balance;
-    }
-  });
-
-  const creditScoreChartData = creditScoreBuckets.filter(bucket => bucket.count > 0);
+  const getLoanSizeDistribution = () => {
+    // Use allData for charts when showing existing data, previewData for uploads
+    const dataToUse = showExistingData ? allData : previewData;
+    if (dataToUse.length === 0) return [];
+    
+    const buckets = [
+      { range: 'Up to €10k', min: 0, max: 10000 },
+      { range: '€10k-€25k', min: 10000, max: 25000 },
+      { range: '€25k-€50k', min: 25000, max: 50000 },
+      { range: '€50k-€100k', min: 50000, max: 100000 },
+      { range: 'More than €100k', min: 100000, max: Number.MAX_VALUE }
+    ];
+    
+    const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
+    
+    return buckets.map((bucket, index) => ({
+      name: bucket.range,
+      value: dataToUse.filter(loan => 
+        loan.opening_balance > bucket.min && loan.opening_balance <= bucket.max
+      ).length,
+      fill: colors[index]
+    })).filter(item => item.value > 0);
+  };
 
   return (
-    <div className="mt-6 space-y-6">
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold mb-2">Portfolio Analytics</h3>
-        <p className="text-sm text-gray-600">
-          Analysis based on {dataToUse.length.toLocaleString()} records
-          {showExistingData && portfolioSummary && (
-            <span className="ml-1 text-blue-600 font-medium">
-              (Total portfolio: {portfolioSummary.totalRecords.toLocaleString()} records)
-            </span>
-          )}
-        </p>
-      </div>
+    <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            Loan Distribution by Maturity
+            {showExistingData && (
+              <span className="text-sm text-gray-500 block">Based on all {allData.length.toLocaleString()} records</span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
+            <BarChart data={getMaturityDistribution()}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="range" 
+                angle={-45}
+                textAnchor="end"
+                height={100}
+                fontSize={12}
+              />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="count" fill="#2563eb" />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Loan Types Chart */}
-        <div className="bg-white p-4 rounded-lg border">
-          <h4 className="text-lg font-medium mb-4">Loan Distribution by Type</h4>
-          <ResponsiveContainer width="100%" height={300}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            Portfolio Composition by Loan Size
+            {showExistingData && (
+              <span className="text-sm text-gray-500 block">Based on all {allData.length.toLocaleString()} records</span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
             <PieChart>
               <Pie
-                data={loanTypeChartData}
+                data={getLoanSizeDistribution()}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
-                dataKey="count"
+                dataKey="value"
               >
-                {loanTypeChartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {getLoanSizeDistribution().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value, name) => [value, 'Count']} />
-              <Legend />
+              <ChartTooltip content={<ChartTooltipContent />} />
             </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Risk Distribution Chart */}
-        <div className="bg-white p-4 rounded-lg border">
-          <h4 className="text-lg font-medium mb-4">Risk Distribution (PD)</h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={riskChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} />
-              <Legend />
-              <Bar dataKey="count" fill="#8884d8" name="Loan Count" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Credit Score Distribution */}
-        <div className="bg-white p-4 rounded-lg border">
-          <h4 className="text-lg font-medium mb-4">Credit Score Distribution</h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={creditScoreChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} />
-              <Legend />
-              <Bar dataKey="count" fill="#82ca9d" name="Loan Count" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Portfolio Value Distribution */}
-        <div className="bg-white p-4 rounded-lg border">
-          <h4 className="text-lg font-medium mb-4">Portfolio Value by Loan Type</h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={loanTypeChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`} />
-              <Tooltip formatter={(value, name) => [`$${value.toLocaleString()}`, 'Total Value']} />
-              <Legend />
-              <Bar dataKey="value" fill="#ffc658" name="Total Value" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+          </ChartContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 };

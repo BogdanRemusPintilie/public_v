@@ -114,48 +114,9 @@ export const getLoanDataPaginated = async (page: number = 0, pageSize: number = 
   };
 };
 
-// OPTIMIZED: Function to get portfolio summary WITHOUT loading all data
-export const getPortfolioSummaryOnly = async () => {
-  console.log('📊 FAST SUMMARY: Fetching portfolio summary using aggregated queries');
-  
-  // Get total count and sum of opening_balance in one query
-  const { data: summaryData, error: summaryError } = await supabase
-    .from('loan_data')
-    .select('opening_balance, interest_rate, pd')
-    .not('opening_balance', 'is', null);
-  
-  if (summaryError) {
-    console.error('Error fetching portfolio summary:', summaryError);
-    throw summaryError;
-  }
-  
-  if (!summaryData || summaryData.length === 0) {
-    console.log('📊 NO DATA: No records found for portfolio summary');
-    return null;
-  }
-  
-  // Calculate summary statistics
-  const totalRecords = summaryData.length;
-  const totalValue = summaryData.reduce((sum, record) => sum + (record.opening_balance || 0), 0);
-  const weightedInterestSum = summaryData.reduce((sum, record) => 
-    sum + ((record.interest_rate || 0) * (record.opening_balance || 0)), 0);
-  const avgInterestRate = totalValue > 0 ? weightedInterestSum / totalValue : 0;
-  const highRiskLoans = summaryData.filter(record => (record.pd || 0) > 0.05).length;
-  
-  const summary = {
-    totalValue,
-    avgInterestRate,
-    highRiskLoans,
-    totalRecords
-  };
-  
-  console.log('📊 FAST SUMMARY COMPLETE:', summary);
-  return summary;
-};
-
-// LEGACY: Keep getAllLoanData for backward compatibility but mark as slow
+// FIXED: Function to get ALL loan data without any limits
 export const getAllLoanData = async () => {
-  console.log('⚠️ WARNING: Using getAllLoanData - this is slow for large datasets. Consider using getLoanDataPaginated instead.');
+  console.log('Fetching ALL loan data for authenticated user');
   
   // Get total count first
   const { count } = await supabase
@@ -169,8 +130,8 @@ export const getAllLoanData = async () => {
   
   console.log(`Found ${count} total records, fetching all...`);
   
-  // Use smaller batch size and proper range calculation
-  const BATCH_SIZE = 1000;
+  // CRITICAL FIX: Use smaller batch size and proper range calculation
+  const BATCH_SIZE = 1000; // Use smaller batch size to avoid any potential limits
   const allRecords: LoanRecord[] = [];
   
   for (let offset = 0; offset < count; offset += BATCH_SIZE) {
