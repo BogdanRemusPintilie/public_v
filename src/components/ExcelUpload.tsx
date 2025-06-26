@@ -115,18 +115,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setIsProcessing(true);
       console.log('Loading all existing data for authenticated user');
       
-      // Load ALL data for existing data view
+      // Load ALL data first
       const allRecords = await getAllLoanData();
+      console.log(`Loaded ${allRecords.length} total records`);
+      
+      // Store all data
       setAllData(allRecords);
       setTotalRecords(allRecords.length);
       
-      // Set preview data to first page for display
+      // Set preview data to first page for table display
       const firstPageData = allRecords.slice(0, PAGE_SIZE);
       setPreviewData(firstPageData);
       setHasMore(allRecords.length > PAGE_SIZE);
       setCurrentPage(0);
       
       if (allRecords.length > 0) {
+        // Calculate portfolio summary using ALL records
         calculatePortfolioSummary(allRecords);
         
         toast({
