@@ -39,7 +39,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, RefreshCw } from 'lucide-react';
+import { Trash2, RefreshCw, Users } from 'lucide-react';
+import DatasetSharingManager from './DatasetSharingManager';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -65,6 +66,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     highRiskLoans: number;
     totalRecords: number;
   } | null>(null);
+  const [showSharingManager, setShowSharingManager] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -421,276 +423,299 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>
-                  {showExistingData ? "Manage Existing Data" : "Upload Excel File"}
-                </CardTitle>
-                <CardDescription>
-                  {showExistingData 
-                    ? "View and manage your existing loan portfolio data"
-                    : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
-                  }
-                </CardDescription>
-              </div>
-              {showExistingData && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefreshData}
-                  disabled={isProcessing}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!showExistingData && (
-              <>
-                <div className="mb-6">
-                  <Label htmlFor="dataset-name" className="text-base font-medium">
-                    Dataset Name *
-                  </Label>
-                  <Input
-                    id="dataset-name"
-                    type="text"
-                    placeholder="Enter a name for this dataset (e.g., 'Q4 2024 Portfolio', 'Commercial Loans')"
-                    value={datasetName}
-                    onChange={(e) => setDatasetName(e.target.value)}
-                    className="mt-2"
-                    disabled={isProcessing}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    This name will help you identify this dataset when managing your data
-                  </p>
+    <>
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div className="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>
+                    {showExistingData ? "Manage Existing Data" : "Upload Excel File"}
+                  </CardTitle>
+                  <CardDescription>
+                    {showExistingData 
+                      ? "View and manage your existing loan portfolio data"
+                      : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
+                    }
+                  </CardDescription>
                 </div>
-
-                <div {...getRootProps()} className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-md cursor-pointer bg-gray-50 dark:bg-gray-700">
-                  <input {...getInputProps()} />
-                  {
-                    isDragActive ?
-                      <p className="text-gray-500">Drop the files here ...</p> :
-                      <p className="text-gray-500">Drag 'n' drop some files here, or click to select files</p>
-                  }
-                  {selectedFile && (
-                    <div className="mt-4">
-                      <p className="text-gray-700">Selected file: {selectedFile.name}</p>
-                    </div>
+                <div className="flex gap-2">
+                  {showExistingData && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSharingManager(true)}
+                        disabled={isProcessing}
+                        className="flex items-center gap-2"
+                      >
+                        <Users className="h-4 w-4" />
+                        Manage Sharing
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRefreshData}
+                        disabled={isProcessing}
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </>
                   )}
-                  {isProcessing && (
-                    <div className="mt-4 flex flex-col items-center w-full max-w-md">
-                      <div className="flex items-center mb-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                        <p className="text-blue-600">{uploadStatus || 'Processing file...'}</p>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent>
+              {!showExistingData && (
+                <>
+                  <div className="mb-6">
+                    <Label htmlFor="dataset-name" className="text-base font-medium">
+                      Dataset Name *
+                    </Label>
+                    <Input
+                      id="dataset-name"
+                      type="text"
+                      placeholder="Enter a name for this dataset (e.g., 'Q4 2024 Portfolio', 'Commercial Loans')"
+                      value={datasetName}
+                      onChange={(e) => setDatasetName(e.target.value)}
+                      className="mt-2"
+                      disabled={isProcessing}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      This name will help you identify this dataset when managing your data
+                    </p>
+                  </div>
+
+                  <div {...getRootProps()} className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-md cursor-pointer bg-gray-50 dark:bg-gray-700">
+                    <input {...getInputProps()} />
+                    {
+                      isDragActive ?
+                        <p className="text-gray-500">Drop the files here ...</p> :
+                        <p className="text-gray-500">Drag 'n' drop some files here, or click to select files</p>
+                    }
+                    {selectedFile && (
+                      <div className="mt-4">
+                        <p className="text-gray-700">Selected file: {selectedFile.name}</p>
                       </div>
-                      {uploadProgress > 0 && (
-                        <Progress value={uploadProgress} className="w-full" />
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {portfolioSummary && (
-              <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">Portfolio Summary</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-blue-600">{portfolioSummary.totalRecords}</div>
-                    <div className="text-sm text-gray-600">Total Loans</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-green-600">
-                      ${(portfolioSummary.totalValue / 1000000).toFixed(1)}M
-                    </div>
-                    <div className="text-sm text-gray-600">Portfolio Value</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {portfolioSummary.avgInterestRate.toFixed(2)}%
-                    </div>
-                    <div className="text-sm text-gray-600">Avg Interest Rate</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-red-600">{portfolioSummary.highRiskLoans}</div>
-                    <div className="text-sm text-gray-600">High Risk Loans</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {previewData.length > 0 && (
-              <>
-                {/* Charts Section */}
-                <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Loan Distribution by Maturity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={chartConfig} className="h-[300px]">
-                        <BarChart data={getMaturityDistribution()}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="range" 
-                            angle={-45}
-                            textAnchor="end"
-                            height={100}
-                            fontSize={12}
-                          />
-                          <YAxis />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="count" fill="#2563eb" />
-                        </BarChart>
-                      </ChartContainer>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Portfolio Composition by Loan Size</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={chartConfig} className="h-[300px]">
-                        <PieChart>
-                          <Pie
-                            data={getLoanSizeDistribution()}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {getLoanSizeDistribution().map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                          </Pie>
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                        </PieChart>
-                      </ChartContainer>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Enhanced Data Preview Table with Selection */}
-                <div className="mt-6 overflow-x-auto">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold">Data Preview ({previewData.length} records)</h3>
-                    {showExistingData && selectedRecords.size > 0 && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" disabled={isProcessing}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Selected ({selectedRecords.size})
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete {selectedRecords.size} loan records from your account.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteSelected}>
-                              Delete Records
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                    )}
+                    {isProcessing && (
+                      <div className="mt-4 flex flex-col items-center w-full max-w-md">
+                        <div className="flex items-center mb-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                          <p className="text-blue-600">{uploadStatus || 'Processing file...'}</p>
+                        </div>
+                        {uploadProgress > 0 && (
+                          <Progress value={uploadProgress} className="w-full" />
+                        )}
+                      </div>
                     )}
                   </div>
+                </>
+              )}
 
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {showExistingData && (
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={selectedRecords.size === previewData.filter(r => r.id).length && previewData.length > 0}
-                              onCheckedChange={handleSelectAll}
-                            />
-                          </TableHead>
-                        )}
-                        {showExistingData && <TableHead>Dataset</TableHead>}
-                        <TableHead>Opening Balance</TableHead>
-                        <TableHead>Interest Rate</TableHead>
-                        <TableHead>Term (Months)</TableHead>
-                        <TableHead>PD</TableHead>
-                        <TableHead>Loan Type</TableHead>
-                        <TableHead>Credit Score</TableHead>
-                        <TableHead>LTV</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {previewData.slice(0, 10).map((row, index) => (
-                        <TableRow key={row.id || index}>
-                          {showExistingData && (
-                            <TableCell>
-                              {row.id && (
-                                <Checkbox
-                                  checked={selectedRecords.has(row.id)}
-                                  onCheckedChange={(checked) => handleSelectRecord(row.id!, checked as boolean)}
-                                />
-                              )}
-                            </TableCell>
-                          )}
-                          {showExistingData && (
-                            <TableCell className="font-medium">
-                              {row.dataset_name || 'Unnamed Dataset'}
-                            </TableCell>
-                          )}
-                          <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
-                          <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
-                          <TableCell>{row.term}</TableCell>
-                          <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
-                          <TableCell>{row.loan_type}</TableCell>
-                          <TableCell>{row.credit_score}</TableCell>
-                          <TableCell>{row.ltv.toFixed(2)}%</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  
-                  {previewData.length > 10 && (
-                    <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records</p>
-                  )}
+              {portfolioSummary && (
+                <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-4 text-gray-800">Portfolio Summary</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-blue-600">{portfolioSummary.totalRecords}</div>
+                      <div className="text-sm text-gray-600">Total Loans</div>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-green-600">
+                        ${(portfolioSummary.totalValue / 1000000).toFixed(1)}M
+                      </div>
+                      <div className="text-sm text-gray-600">Portfolio Value</div>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {portfolioSummary.avgInterestRate.toFixed(2)}%
+                      </div>
+                      <div className="text-sm text-gray-600">Avg Interest Rate</div>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-red-600">{portfolioSummary.highRiskLoans}</div>
+                      <div className="text-sm text-gray-600">High Risk Loans</div>
+                    </div>
+                  </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-end gap-4">
-            <Button variant="ghost" onClick={handleClose}>Cancel</Button>
-            {previewData.length > 0 && !showExistingData && (
-              <Button variant="destructive" onClick={handleClearData}>Clear Data</Button>
-            )}
-            {!showExistingData && (
-              <Button onClick={handleSaveToDatabase} disabled={isProcessing || previewData.length === 0 || !datasetName.trim()}>
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {uploadStatus || 'Saving...'}
-                  </>
-                ) : (
-                  "Save to Database"
-                )}
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+              )}
+
+              {previewData.length > 0 && (
+                <>
+                  {/* Charts Section */}
+                  <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Loan Distribution by Maturity</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ChartContainer config={chartConfig} className="h-[300px]">
+                          <BarChart data={getMaturityDistribution()}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="range" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={100}
+                              fontSize={12}
+                            />
+                            <YAxis />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="count" fill="#2563eb" />
+                          </BarChart>
+                        </ChartContainer>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Portfolio Composition by Loan Size</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ChartContainer config={chartConfig} className="h-[300px]">
+                          <PieChart>
+                            <Pie
+                              data={getLoanSizeDistribution()}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {getLoanSizeDistribution().map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ChartContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Enhanced Data Preview Table with Selection */}
+                  <div className="mt-6 overflow-x-auto">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-xl font-semibold">Data Preview ({previewData.length} records)</h3>
+                      {showExistingData && selectedRecords.size > 0 && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm" disabled={isProcessing}>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Selected ({selectedRecords.size})
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete {selectedRecords.size} loan records from your account.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteSelected}>
+                                Delete Records
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {showExistingData && (
+                            <TableHead className="w-12">
+                              <Checkbox
+                                checked={selectedRecords.size === previewData.filter(r => r.id).length && previewData.length > 0}
+                                onCheckedChange={handleSelectAll}
+                              />
+                            </TableHead>
+                          )}
+                          {showExistingData && <TableHead>Dataset</TableHead>}
+                          <TableHead>Opening Balance</TableHead>
+                          <TableHead>Interest Rate</TableHead>
+                          <TableHead>Term (Months)</TableHead>
+                          <TableHead>PD</TableHead>
+                          <TableHead>Loan Type</TableHead>
+                          <TableHead>Credit Score</TableHead>
+                          <TableHead>LTV</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {previewData.slice(0, 10).map((row, index) => (
+                          <TableRow key={row.id || index}>
+                            {showExistingData && (
+                              <TableCell>
+                                {row.id && (
+                                  <Checkbox
+                                    checked={selectedRecords.has(row.id)}
+                                    onCheckedChange={(checked) => handleSelectRecord(row.id!, checked as boolean)}
+                                  />
+                                )}
+                              </TableCell>
+                            )}
+                            {showExistingData && (
+                              <TableCell className="font-medium">
+                                {row.dataset_name || 'Unnamed Dataset'}
+                              </TableCell>
+                            )}
+                            <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
+                            <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
+                            <TableCell>{row.term}</TableCell>
+                            <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
+                            <TableCell>{row.loan_type}</TableCell>
+                            <TableCell>{row.credit_score}</TableCell>
+                            <TableCell>{row.ltv.toFixed(2)}%</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    
+                    {previewData.length > 10 && (
+                      <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </CardContent>
+            
+            <CardFooter className="flex justify-end gap-4">
+              <Button variant="ghost" onClick={handleClose}>Cancel</Button>
+              {previewData.length > 0 && !showExistingData && (
+                <Button variant="destructive" onClick={handleClearData}>Clear Data</Button>
+              )}
+              {!showExistingData && (
+                <Button onClick={handleSaveToDatabase} disabled={isProcessing || previewData.length === 0 || !datasetName.trim()}>
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {uploadStatus || 'Saving...'}
+                    </>
+                  ) : (
+                    "Save to Database"
+                  )}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </div>
       </div>
-    </div>
+      
+      <DatasetSharingManager 
+        isOpen={showSharingManager}
+        onClose={() => setShowSharingManager(false)}
+      />
+    </>
   );
 };
 

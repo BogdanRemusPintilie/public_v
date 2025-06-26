@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -17,6 +16,15 @@ export interface LoanRecord {
   dataset_name?: string;
   file_name?: string;
   worksheet_name?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DatasetShare {
+  id?: string;
+  dataset_name: string;
+  owner_id: string;
+  shared_with_user_id: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -82,11 +90,9 @@ export const insertLoanData = async (
 export const getLoanData = async (userId?: string) => {
   console.log('Fetching loan data for user:', userId);
   
-  // First, get the total count
+  // The RLS policy will now handle filtering for own data and shared data
+  // No need to explicitly filter by userId in the query
   let countQuery = supabase.from('loan_data').select('*', { count: 'exact', head: true });
-  if (userId) {
-    countQuery = countQuery.eq('user_id', userId);
-  }
   
   const { count, error: countError } = await countQuery;
   
@@ -95,11 +101,11 @@ export const getLoanData = async (userId?: string) => {
     throw countError;
   }
   
-  console.log(`Total records available: ${count}`);
+  console.log(`Total accessible records: ${count}`);
   
   // If there are no records, return empty array
   if (!count || count === 0) {
-    console.log('No records found');
+    console.log('No accessible records found');
     return [];
   }
   
@@ -118,10 +124,6 @@ export const getLoanData = async (userId?: string) => {
       .select('*')
       .range(from, to)
       .order('created_at', { ascending: false });
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
     
     const { data, error } = await query;
     
@@ -153,7 +155,7 @@ export const getLoanData = async (userId?: string) => {
     }
   }
   
-  console.log(`Successfully fetched all ${allData.length} loan records out of ${count} total records`);
+  console.log(`Successfully fetched all ${allData.length} loan records out of ${count} total accessible records`);
   
   return allData as LoanRecord[];
 };
@@ -190,4 +192,92 @@ export const deleteLoanData = async (ids: string[]) => {
   }
   
   console.log(`Successfully deleted all ${ids.length} records`);
+};
+
+// New functions for dataset sharing
+export const shareDataset = async (datasetName: string, sharedWithUserId: string) => {
+  console.log('Sharing dataset:', datasetName, 'with user:', sharedWithUserId);
+  
+  const { data, error } = await supabase
+    .from('dataset_shares')
+    .insert({
+      dataset_name: datasetName,
+      owner_id: (await supabase.auth.getUser()).data.user?.id,
+      shared_with_user_id: sharedWithUserId
+    })
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error sharing dataset:', error);
+    throw error;
+  }
+  
+  console.log('Dataset shared successfully:', data);
+  return data;
+};
+
+export const getDatasetShares = async (datasetName?: string) => {
+  console.log('Fetching dataset shares for:', datasetName);
+  
+  let query = supabase
+    .from('dataset_shares')
+    .select('*');
+  
+  if (datasetName) {
+    query = query.eq('dataset_name', datasetName);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching dataset shares:', error);
+    throw error;
+  }
+  
+  console.log('Dataset shares fetched:', data);
+  return data as DatasetShare[];
+};
+
+export const removeDatasetShare = async (shareId: string) => {
+  console.log('Removing dataset share:', shareId);
+  
+  const { error } = await supabase
+    .from('dataset_shares')
+    .delete()
+    .eq('id', shareId);
+  
+  if (error) {
+    console.error('Error removing dataset share:', error);
+    throw error;
+  }
+  
+  console.log('Dataset share removed successfully');
+};
+
+export const getUserDatasets = async () => {
+  console.log('Fetching user datasets');
+  
+  const { data, error } = await supabase
+    .from('loan_data')
+    .select('dataset_name, user_id')
+    .not('dataset_name', 'is', null);
+  
+  if (error) {
+    console.error('Error fetching user datasets:', error);
+    throw error;
+  }
+  
+  // Group by dataset_name and get unique datasets with owner info
+  const datasets = data.reduce((acc, record) => {
+    if (!acc[record.dataset_name]) {
+      acc[record.dataset_name] = {
+        name: record.dataset_name,
+        owner_id: record.user_id
+      };
+    }
+    return acc;
+  }, {} as Record<string, { name: string; owner_id: string }>);
+  
+  return Object.values(datasets);
 };
