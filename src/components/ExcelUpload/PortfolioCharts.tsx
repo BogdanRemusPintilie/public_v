@@ -23,8 +23,8 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   showExistingData = false,
   portfolioSummary
 }) => {
-  // For existing data: use allData if loaded, otherwise show loading message
-  // For uploaded data: always use previewData (which is the complete uploaded dataset)
+  // For uploaded data: use previewData (complete dataset)
+  // For existing data: use allData if available, otherwise wait for it to load
   const dataToUse = showExistingData ? allData : previewData;
   
   console.log('📊 CHARTS DATA CHECK:', {
@@ -35,20 +35,20 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
     portfolioSummary: portfolioSummary?.totalRecords
   });
   
-  // Show loading state for existing data when allData hasn't been loaded yet
+  // For existing data: if we have portfolio summary but no allData loaded yet, show loading
   if (showExistingData && allData.length === 0 && portfolioSummary && portfolioSummary.totalRecords > 0) {
     return (
       <div className="mt-6 p-8 bg-gray-50 rounded-lg text-center">
         <div className="flex items-center justify-center gap-3 text-gray-600">
           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
-          <p>Loading charts for {portfolioSummary.totalRecords.toLocaleString()} records...</p>
+          <p>Charts will be available once you load the data table</p>
         </div>
-        <p className="text-sm text-gray-500 mt-2">This may take a moment for large datasets</p>
+        <p className="text-sm text-gray-500 mt-2">Click "View Data Table" to load all {portfolioSummary.totalRecords.toLocaleString()} records for chart analysis</p>
       </div>
     );
   }
   
-  // Show no data state
+  // Show no data state when there's truly no data
   if (dataToUse.length === 0) {
     return (
       <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center">
@@ -109,9 +109,9 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
         <h3 className="text-xl font-semibold mb-2">Portfolio Analytics</h3>
         <p className="text-sm text-gray-600">
           Analysis based on {dataToUse.length.toLocaleString()} records
-          {showExistingData && portfolioSummary && (
-            <span className="ml-1 text-blue-600 font-medium">
-              (Total portfolio: {portfolioSummary.totalRecords.toLocaleString()} records)
+          {showExistingData && portfolioSummary && dataToUse.length === portfolioSummary.totalRecords && (
+            <span className="ml-1 text-green-600 font-medium">
+              (Complete dataset loaded)
             </span>
           )}
         </p>
