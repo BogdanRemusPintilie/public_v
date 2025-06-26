@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -198,7 +199,7 @@ export const deleteLoanData = async (ids: string[]) => {
 export const shareDataset = async (datasetName: string, sharedWithUserId: string) => {
   console.log('Sharing dataset:', datasetName, 'with user:', sharedWithUserId);
   
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('dataset_shares')
     .insert({
       dataset_name: datasetName,
@@ -220,7 +221,7 @@ export const shareDataset = async (datasetName: string, sharedWithUserId: string
 export const getDatasetShares = async (datasetName?: string) => {
   console.log('Fetching dataset shares for:', datasetName);
   
-  let query = supabase
+  let query = (supabase as any)
     .from('dataset_shares')
     .select('*');
   
@@ -242,7 +243,7 @@ export const getDatasetShares = async (datasetName?: string) => {
 export const removeDatasetShare = async (shareId: string) => {
   console.log('Removing dataset share:', shareId);
   
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('dataset_shares')
     .delete()
     .eq('id', shareId);
