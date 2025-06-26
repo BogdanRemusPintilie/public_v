@@ -23,8 +23,8 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   showExistingData = false,
   portfolioSummary
 }) => {
-  // Use allData when available (for existing data), otherwise use previewData (for new uploads)
-  const dataToUse = showExistingData && allData.length > 0 ? allData : previewData;
+  // Always use allData for existing data (full dataset), previewData for uploads
+  const dataToUse = showExistingData ? allData : previewData;
   
   if (dataToUse.length === 0) {
     return (
@@ -49,12 +49,12 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   const riskBuckets = [
     { name: 'Low Risk (0-1%)', min: 0, max: 0.01, count: 0, value: 0 },
     { name: 'Medium Risk (1-5%)', min: 0.01, max: 0.05, count: 0, value: 0 },
-    { name: 'High Risk ({'>'}5%)', min: 0.05, max: 1, count: 0, value: 0 }
+    { name: 'High Risk (>5%)', min: 0.05, max: 1, count: 0, value: 0 }
   ];
 
   dataToUse.forEach(loan => {
     const pd = loan.pd || 0;
-    const bucket = riskBuckets.find(b => pd {'>'}= b.min && pd < b.max) || riskBuckets[riskBuckets.length - 1];
+    const bucket = riskBuckets.find(b => pd >= b.min && pd < b.max) || riskBuckets[riskBuckets.length - 1];
     bucket.count += 1;
     bucket.value += loan.opening_balance;
   });
