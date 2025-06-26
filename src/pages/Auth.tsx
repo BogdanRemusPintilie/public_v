@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Lock, Mail } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Lock, Mail, AlertCircle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, sanitizeInput } from '@/utils/validation';
@@ -21,6 +21,37 @@ const Auth = () => {
   const navigate = useNavigate();
   const { login, signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Check for verification errors in URL parameters
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+    
+    if (error) {
+      console.log('URL contains auth error:', error, errorDescription);
+      
+      if (error === 'access_denied' && errorDescription?.includes('Email link is invalid')) {
+        toast({
+          title: "Email Verification Failed",
+          description: "The verification link has expired or has already been used. Please try signing up again or contact support if you continue to have issues.",
+          variant: "destructive",
+        });
+      } else if (error === 'server_error') {
+        toast({
+          title: "Authentication Error",
+          description: "There was a server error during authentication. Please try again or contact support.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Authentication Error",
+          description: errorDescription || "An error occurred during authentication. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [searchParams, toast]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -79,8 +110,8 @@ const Auth = () => {
           });
         } else if (error.message?.includes('User already registered')) {
           toast({
-            title: "Account Exists",
-            description: "An account with this email already exists. Please sign in instead.",
+            title: "Account Exists", 
+            description: "An account with this email already exists. Please sign in instead, or use a different email address if you want to create a new account.",
             variant: "destructive",
           });
           setActiveTab('login');
@@ -88,6 +119,12 @@ const Auth = () => {
           toast({
             title: "Signup Disabled",
             description: "New user registration is currently disabled. Please contact support.",
+            variant: "destructive",
+          });
+        } else if (error.message?.includes('Email not confirmed')) {
+          toast({
+            title: "Email Not Verified",
+            description: "Please check your email and click the verification link before signing in. If the link has expired, try signing up again.",
             variant: "destructive",
           });
         } else {
@@ -102,9 +139,12 @@ const Auth = () => {
         if (isSignup) {
           toast({
             title: "Account Created",
-            description: "Please check your email to verify your account before signing in.",
+            description: "Please check your email to verify your account before signing in. The verification link will expire in 24 hours.",
           });
           setActiveTab('login');
+          // Clear the form
+          setEmail('');
+          setPassword('');
         } else {
           toast({
             title: "Login Successful",
@@ -146,6 +186,15 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Email alias warning */}
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-amber-800">
+                <p className="font-medium">Email Alias Notice:</p>
+                <p>If you're using an email alias, make sure to use the same email address consistently for both signup and login.</p>
+              </div>
+            </div>
+
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Sign In</TabsTrigger>
