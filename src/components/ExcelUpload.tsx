@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { LoanRecord, insertLoanData, getLoanData, deleteLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getLoanDataPaginated, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { parseExcelFile } from '@/utils/excelParser';
@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, RefreshCw, Users } from 'lucide-react';
+import { Trash2, RefreshCw, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import DatasetSharingManager from './DatasetSharingManager';
 
 interface ExcelUploadProps {
@@ -67,8 +67,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     totalRecords: number;
   } | null>(null);
   const [showSharingManager, setShowSharingManager] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const PAGE_SIZE = 1000;
 
   // Load existing data when showExistingData is true
   useEffect(() => {
@@ -82,6 +87,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setUploadProgress(0);
       setUploadStatus('');
       setSelectedRecords(new Set());
+      setCurrentPage(0);
+      setTotalRecords(0);
+      setHasMore(false);
     }
   }, [showExistingData, isOpen, user]);
 
@@ -97,27 +105,35 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   }, [showExistingData, isOpen, user]);
 
-  const loadExistingData = async () => {
+  const loadExistingData = async (page: number = 0) => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log('Loading existing data for authenticated user');
-      // Remove userId parameter - RLS handles access control now
-      const existingData = await getLoanData();
+      console.log(`Loading existing data page ${page + 1} for authenticated user`);
       
-      console.log('Loaded existing data:', existingData.length, 'records');
+      const result = await getLoanDataPaginated(page, PAGE_SIZE);
       
-      if (existingData.length > 0) {
-        setPreviewData(existingData);
-        calculatePortfolioSummary(existingData);
+      console.log('Loaded existing data:', result.data.length, 'records, total:', result.totalCount);
+      
+      if (result.data.length > 0) {
+        setPreviewData(result.data);
+        setTotalRecords(result.totalCount);
+        setHasMore(result.hasMore);
+        setCurrentPage(page);
+        calculatePortfolioSummary(result.data);
+        
         toast({
           title: "Data Loaded",
-          description: `Loaded ${existingData.length} existing records`,
+          description: `Loaded ${result.data.length} records (page ${page + 1} of ${Math.ceil(result.totalCount / PAGE_SIZE)})`,
         });
       } else {
         setPreviewData([]);
         setPortfolioSummary(null);
+        setTotalRecords(0);
+        setHasMore(false);
+        setCurrentPage(0);
+        
         toast({
           title: "No Data Found",
           description: "No existing loan data found for your account",
@@ -132,14 +148,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       });
       setPreviewData([]);
       setPortfolioSummary(null);
+      setTotalRecords(0);
+      setHasMore(false);
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 0 && showExistingData) {
+      loadExistingData(newPage);
+    }
+  };
+
   const handleRefreshData = () => {
     if (showExistingData && user) {
-      loadExistingData();
+      loadExistingData(currentPage);
     }
   };
 
@@ -153,7 +177,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       totalValue,
       avgInterestRate,
       highRiskLoans,
-      totalRecords: data.length
+      totalRecords: totalRecords || data.length
     });
   };
 
@@ -239,10 +263,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       await deleteLoanData(Array.from(selectedRecords));
       
-      // Remove deleted records from preview data
-      const remainingData = previewData.filter(record => !selectedRecords.has(record.id || ''));
-      setPreviewData(remainingData);
-      calculatePortfolioSummary(remainingData);
+      // Refresh the current page after deletion
+      await loadExistingData(currentPage);
       setSelectedRecords(new Set());
       
       toast({
@@ -319,6 +341,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setUploadProgress(0);
     setUploadStatus('');
     setSelectedRecords(new Set());
+    setCurrentPage(0);
+    setTotalRecords(0);
+    setHasMore(false);
   };
 
   const handleSaveToDatabase = async () => {
@@ -419,6 +444,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setUploadProgress(0);
     setUploadStatus('');
     setSelectedRecords(new Set());
+    setCurrentPage(0);
+    setTotalRecords(0);
+    setHasMore(false);
   };
 
   if (!isOpen) return null;
@@ -436,7 +464,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                   </CardTitle>
                   <CardDescription>
                     {showExistingData 
-                      ? "View and manage your existing loan portfolio data"
+                      ? `View and manage your existing loan portfolio data ${totalRecords > 0 ? `(${totalRecords.toLocaleString()} total records)` : ''}`
                       : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
                     }
                   </CardDescription>
@@ -523,7 +551,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                   <h3 className="text-xl font-semibold mb-4 text-gray-800">Portfolio Summary</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                      <div className="text-2xl font-bold text-blue-600">{portfolioSummary.totalRecords}</div>
+                      <div className="text-2xl font-bold text-blue-600">{portfolioSummary.totalRecords.toLocaleString()}</div>
                       <div className="text-sm text-gray-600">Total Loans</div>
                     </div>
                     <div className="text-center p-4 bg-white rounded-lg shadow-sm">
@@ -601,34 +629,66 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                     </Card>
                   </div>
 
-                  {/* Enhanced Data Preview Table with Selection */}
+                  {/* Enhanced Data Preview Table with Selection and Pagination */}
                   <div className="mt-6 overflow-x-auto">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-xl font-semibold">Data Preview ({previewData.length} records)</h3>
-                      {showExistingData && selectedRecords.size > 0 && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" disabled={isProcessing}>
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Selected ({selectedRecords.size})
+                      <h3 className="text-xl font-semibold">
+                        Data Preview ({previewData.length} records)
+                        {showExistingData && totalRecords > PAGE_SIZE && (
+                          <span className="text-sm text-gray-500 ml-2">
+                            Page {currentPage + 1} of {Math.ceil(totalRecords / PAGE_SIZE)}
+                          </span>
+                        )}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        {showExistingData && totalRecords > PAGE_SIZE && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              disabled={currentPage === 0 || isProcessing}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete {selectedRecords.size} loan records from your account.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDeleteSelected}>
-                                Delete Records
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                            <span className="text-sm text-gray-600">
+                              {currentPage + 1} / {Math.ceil(totalRecords / PAGE_SIZE)}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              disabled={!hasMore || isProcessing}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        {showExistingData && selectedRecords.size > 0 && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm" disabled={isProcessing}>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Selected ({selectedRecords.size})
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete {selectedRecords.size} loan records from your account.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteSelected}>
+                                  Delete Records
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </div>
 
                     <Table>
@@ -683,7 +743,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
                     </Table>
                     
                     {previewData.length > 10 && (
-                      <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records</p>
+                      <p className="text-sm text-gray-500 mt-2">Showing first 10 of {previewData.length} records on this page</p>
                     )}
                   </div>
                 </>

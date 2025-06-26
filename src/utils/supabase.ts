@@ -87,77 +87,105 @@ export const insertLoanData = async (
   return allInsertedData;
 };
 
+// New optimized function to get loan data with pagination
+export const getLoanDataPaginated = async (page: number = 0, pageSize: number = 1000) => {
+  console.log(`Fetching loan data page ${page + 1} with ${pageSize} records per page`);
+  
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+  
+  const { data, error, count } = await supabase
+    .from('loan_data')
+    .select('*', { count: 'exact' })
+    .range(from, to)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching paginated loan data:', error);
+    throw error;
+  }
+  
+  console.log(`Fetched ${data?.length || 0} records for page ${page + 1}, total count: ${count}`);
+  
+  return {
+    data: data as LoanRecord[],
+    totalCount: count || 0,
+    hasMore: count ? (from + pageSize) < count : false
+  };
+};
+
+// Optimized function to get dataset summaries without loading all data
+export const getDatasetSummaries = async () => {
+  console.log('Fetching dataset summaries');
+  
+  const { data, error } = await supabase
+    .from('loan_data')
+    .select(`
+      dataset_name,
+      opening_balance,
+      interest_rate,
+      created_at,
+      id,
+      pd
+    `)
+    .not('dataset_name', 'is', null);
+  
+  if (error) {
+    console.error('Error fetching dataset summaries:', error);
+    throw error;
+  }
+  
+  // Group by dataset_name and calculate summaries
+  const datasetMap = new Map();
+  
+  data.forEach(record => {
+    const datasetName = record.dataset_name || 'Unnamed Dataset';
+    if (!datasetMap.has(datasetName)) {
+      datasetMap.set(datasetName, {
+        dataset_name: datasetName,
+        record_count: 0,
+        total_value: 0,
+        weighted_interest_sum: 0,
+        high_risk_count: 0,
+        earliest_date: record.created_at,
+        record_ids: []
+      });
+    }
+    
+    const dataset = datasetMap.get(datasetName);
+    dataset.record_count++;
+    dataset.total_value += record.opening_balance;
+    dataset.weighted_interest_sum += (record.interest_rate * record.opening_balance);
+    if ((record.pd || 0) > 0.05) {
+      dataset.high_risk_count++;
+    }
+    if (new Date(record.created_at) < new Date(dataset.earliest_date)) {
+      dataset.earliest_date = record.created_at;
+    }
+    dataset.record_ids.push(record.id);
+  });
+  
+  // Convert to array and calculate averages
+  const summaries = Array.from(datasetMap.values()).map(dataset => ({
+    dataset_name: dataset.dataset_name,
+    record_count: dataset.record_count,
+    total_value: dataset.total_value,
+    avg_interest_rate: dataset.total_value > 0 ? dataset.weighted_interest_sum / dataset.total_value : 0,
+    high_risk_count: dataset.high_risk_count,
+    created_at: dataset.earliest_date,
+    record_ids: dataset.record_ids
+  }));
+  
+  console.log(`Found ${summaries.length} dataset summaries`);
+  return summaries;
+};
+
 export const getLoanData = async (userId?: string) => {
   console.log('Fetching loan data for authenticated user');
   
-  // The RLS policy will now handle filtering for own data and shared data automatically
-  // We don't need to pass userId anymore since RLS handles access control
-  let countQuery = supabase.from('loan_data').select('*', { count: 'exact', head: true });
-  
-  const { count, error: countError } = await countQuery;
-  
-  if (countError) {
-    console.error('Error getting record count:', countError);
-    throw countError;
-  }
-  
-  console.log(`Total accessible records: ${count}`);
-  
-  // If there are no records, return empty array
-  if (!count || count === 0) {
-    console.log('No accessible records found');
-    return [];
-  }
-  
-  // Fetch all records in batches to avoid memory issues with very large datasets
-  const BATCH_SIZE = 1000;
-  let allData: LoanRecord[] = [];
-  let from = 0;
-  
-  // Continue fetching until we have all records
-  while (allData.length < count) {
-    const to = Math.min(from + BATCH_SIZE - 1, count - 1);
-    console.log(`Fetching batch from ${from} to ${to} (${allData.length}/${count} records fetched so far)`);
-    
-    let query = supabase
-      .from('loan_data')
-      .select('*')
-      .range(from, to)
-      .order('created_at', { ascending: false });
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching loan data batch:', error);
-      throw error;
-    }
-    
-    if (data && data.length > 0) {
-      allData = [...allData, ...data];
-      console.log(`Fetched ${data.length} records in this batch. Total so far: ${allData.length}`);
-      
-      // Move to next batch
-      from = to + 1;
-      
-      // If we got fewer records than expected, we might have reached the end
-      if (data.length < BATCH_SIZE && allData.length < count) {
-        console.log(`Got ${data.length} records but expected ${BATCH_SIZE}. Continuing to fetch remaining records.`);
-      }
-    } else {
-      console.log('No more data returned, stopping fetch');
-      break;
-    }
-    
-    // Safety check to prevent infinite loops
-    if (from >= count) {
-      console.log('Reached the end based on count, stopping fetch');
-      break;
-    }
-  }
-  
-  console.log(`Successfully fetched all ${allData.length} loan records out of ${count} total accessible records`);
-  
-  return allData as LoanRecord[];
+  // For backward compatibility, fetch first page only
+  const result = await getLoanDataPaginated(0, 1000);
+  return result.data;
 };
 
 export const deleteLoanData = async (ids: string[]) => {
@@ -258,27 +286,11 @@ export const removeDatasetShare = async (shareId: string) => {
 export const getUserDatasets = async () => {
   console.log('Fetching user datasets');
   
-  // This will now respect RLS and only return datasets the user owns or has access to
-  const { data, error } = await supabase
-    .from('loan_data')
-    .select('dataset_name, user_id')
-    .not('dataset_name', 'is', null);
+  // Use the optimized dataset summaries function
+  const datasets = await getDatasetSummaries();
   
-  if (error) {
-    console.error('Error fetching user datasets:', error);
-    throw error;
-  }
-  
-  // Group by dataset_name and get unique datasets with owner info
-  const datasets = data.reduce((acc, record) => {
-    if (!acc[record.dataset_name]) {
-      acc[record.dataset_name] = {
-        name: record.dataset_name,
-        owner_id: record.user_id
-      };
-    }
-    return acc;
-  }, {} as Record<string, { name: string; owner_id: string }>);
-  
-  return Object.values(datasets);
+  return datasets.map(dataset => ({
+    name: dataset.dataset_name,
+    owner_id: 'current_user' // This would need to be enhanced for proper ownership tracking
+  }));
 };

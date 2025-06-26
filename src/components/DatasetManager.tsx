@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { getLoanData, deleteLoanData } from '@/utils/supabase';
+import { getDatasetSummaries, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Table, 
@@ -68,40 +68,9 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
     
     try {
       setIsLoading(true);
-      // Remove userId parameter - RLS handles access control now
-      const allData = await getLoanData();
+      console.log('Loading dataset summaries...');
       
-      // Group data by dataset_name
-      const datasetMap = new Map<string, any[]>();
-      
-      allData.forEach(record => {
-        const datasetName = record.dataset_name || 'Unnamed Dataset';
-        if (!datasetMap.has(datasetName)) {
-          datasetMap.set(datasetName, []);
-        }
-        datasetMap.get(datasetName)!.push(record);
-      });
-      
-      // Create dataset summaries
-      const datasetSummaries: DatasetSummary[] = Array.from(datasetMap.entries()).map(([name, records]) => {
-        const totalValue = records.reduce((sum, record) => sum + record.opening_balance, 0);
-        const avgInterestRate = records.length > 0 ? 
-          records.reduce((sum, record) => sum + (record.interest_rate * record.opening_balance), 0) / totalValue : 0;
-        const earliestDate = records.reduce((earliest, record) => 
-          new Date(record.created_at) < new Date(earliest) ? record.created_at : earliest, 
-          records[0]?.created_at
-        );
-        
-        return {
-          dataset_name: name,
-          record_count: records.length,
-          total_value: totalValue,
-          avg_interest_rate: avgInterestRate,
-          created_at: earliestDate,
-          record_ids: records.map(r => r.id).filter(Boolean) as string[]
-        };
-      });
-      
+      const datasetSummaries = await getDatasetSummaries();
       setDatasets(datasetSummaries);
       
       toast({
@@ -162,6 +131,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
         }
       });
       
+      console.log(`Deleting ${recordIds.length} records from ${selectedDatasets.size} datasets`);
       await deleteLoanData(recordIds);
       
       // Remove deleted datasets from local state
