@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -173,68 +174,36 @@ export const getAllLoanData = async () => {
   return allRecords;
 };
 
-// FIXED: Simplified function that groups datasets properly
+// FIXED: Use database function for accurate dataset summaries
 export const getDatasetSummaries = async () => {
-  console.log('Fetching dataset summaries with accurate record counts');
+  console.log('Fetching dataset summaries using database function for accurate counts');
   
   try {
-    // Fetch all loan data to calculate accurate summaries
-    const { data: allData, error } = await supabase
-      .from('loan_data')
-      .select('id, dataset_name, opening_balance, interest_rate, created_at, pd')
-      .not('dataset_name', 'is', null);
+    // Call the database function to get accurate aggregated data
+    const { data, error } = await supabase.rpc('get_dataset_summaries');
     
     if (error) {
-      console.error('Error fetching loan data for summaries:', error);
+      console.error('Error calling get_dataset_summaries function:', error);
       throw error;
     }
     
-    if (!allData || allData.length === 0) {
+    if (!data || data.length === 0) {
       console.log('No datasets found');
       return [];
     }
     
-    // Group data by dataset and calculate summaries
-    const datasetMap = new Map();
-    
-    allData.forEach(record => {
-      const datasetName = record.dataset_name || 'Unnamed Dataset';
-      if (!datasetMap.has(datasetName)) {
-        datasetMap.set(datasetName, {
-          dataset_name: datasetName,
-          record_count: 0,
-          total_value: 0,
-          weighted_interest_sum: 0,
-          high_risk_count: 0,
-          earliest_date: record.created_at,
-          record_ids: []
-        });
-      }
-      
-      const dataset = datasetMap.get(datasetName);
-      dataset.record_count++;
-      dataset.total_value += record.opening_balance || 0;
-      dataset.weighted_interest_sum += ((record.interest_rate || 0) * (record.opening_balance || 0));
-      if ((record.pd || 0) > 0.05) {
-        dataset.high_risk_count++;
-      }
-      if (new Date(record.created_at) < new Date(dataset.earliest_date)) {
-        dataset.earliest_date = record.created_at;
-      }
-      dataset.record_ids.push(record.id);
-    });
-    
-    const summaries = Array.from(datasetMap.values()).map(dataset => ({
+    // Transform the data to match our interface
+    const summaries = data.map((dataset: any) => ({
       dataset_name: dataset.dataset_name,
-      record_count: dataset.record_count,
-      total_value: dataset.total_value,
-      avg_interest_rate: dataset.total_value > 0 ? dataset.weighted_interest_sum / dataset.total_value : 0,
-      high_risk_count: dataset.high_risk_count,
-      created_at: dataset.earliest_date,
-      record_ids: dataset.record_ids
+      record_count: parseInt(dataset.record_count) || 0,
+      total_value: parseFloat(dataset.total_value) || 0,
+      avg_interest_rate: parseFloat(dataset.avg_interest_rate) || 0,
+      high_risk_count: parseInt(dataset.high_risk_count) || 0,
+      created_at: dataset.created_at,
+      record_ids: [] // We don't need individual IDs for summaries
     }));
     
-    console.log(`Found ${summaries.length} dataset summaries with accurate counts:`, 
+    console.log(`Found ${summaries.length} dataset summaries with accurate database counts:`, 
       summaries.map(s => `${s.dataset_name}: ${s.record_count.toLocaleString()} records`));
     
     return summaries;

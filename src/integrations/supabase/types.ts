@@ -72,6 +72,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_dataset_summaries: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          dataset_name: string
+          record_count: number
+          total_value: number
+          avg_interest_rate: number
+          high_risk_count: number
+          created_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
