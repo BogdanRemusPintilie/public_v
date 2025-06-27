@@ -173,67 +173,28 @@ export const getAllLoanData = async () => {
   return allRecords;
 };
 
-// COMPLETELY REWRITTEN: Use SQL COUNT queries for accurate dataset summaries
+// FIXED: Simplified function that groups datasets properly
 export const getDatasetSummaries = async () => {
-  console.log('Fetching dataset summaries using SQL COUNT queries for accuracy');
+  console.log('Fetching dataset summaries with accurate record counts');
   
   try {
-    // Use a single query with SQL aggregation to get accurate counts and calculations
-    const { data, error } = await supabase
+    // Fetch all loan data to calculate accurate summaries
+    const { data: allData, error } = await supabase
       .from('loan_data')
-      .select(`
-        dataset_name,
-        COUNT(*) as record_count,
-        SUM(opening_balance) as total_value,
-        AVG(interest_rate) as avg_interest_rate,
-        COUNT(CASE WHEN pd > 0.05 THEN 1 END) as high_risk_count,
-        MIN(created_at) as created_at
-      `)
-      .not('dataset_name', 'is', null)
-      .group('dataset_name')
-      .order('created_at', { ascending: false });
+      .select('id, dataset_name, opening_balance, interest_rate, created_at, pd')
+      .not('dataset_name', 'is', null);
     
     if (error) {
-      console.error('Error fetching dataset summaries with SQL aggregation:', error);
+      console.error('Error fetching loan data for summaries:', error);
       throw error;
     }
     
-    if (!data || data.length === 0) {
+    if (!allData || allData.length === 0) {
       console.log('No datasets found');
       return [];
     }
     
-    // Transform the aggregated data
-    const summaries = data.map(dataset => ({
-      dataset_name: dataset.dataset_name || 'Unnamed Dataset',
-      record_count: parseInt(dataset.record_count as string) || 0,
-      total_value: parseFloat(dataset.total_value as string) || 0,
-      avg_interest_rate: parseFloat(dataset.avg_interest_rate as string) || 0,
-      high_risk_count: parseInt(dataset.high_risk_count as string) || 0,
-      created_at: dataset.created_at,
-      record_ids: [] // We don't need individual IDs for summaries
-    }));
-    
-    console.log(`Found ${summaries.length} dataset summaries with SQL COUNT:`, 
-      summaries.map(s => `${s.dataset_name}: ${s.record_count.toLocaleString()} records`));
-    
-    return summaries;
-    
-  } catch (error) {
-    console.error('SQL aggregation failed, falling back to manual count:', error);
-    
-    // Fallback: If SQL aggregation fails, use the previous approach but with proper counting
-    const { data: allData, error: fallbackError } = await supabase
-      .from('loan_data')
-      .select('dataset_name, opening_balance, interest_rate, created_at, pd')
-      .not('dataset_name', 'is', null);
-    
-    if (fallbackError) {
-      console.error('Fallback query also failed:', fallbackError);
-      throw fallbackError;
-    }
-    
-    // Group and calculate manually
+    // Group data by dataset and calculate summaries
     const datasetMap = new Map();
     
     allData.forEach(record => {
@@ -252,14 +213,15 @@ export const getDatasetSummaries = async () => {
       
       const dataset = datasetMap.get(datasetName);
       dataset.record_count++;
-      dataset.total_value += record.opening_balance;
-      dataset.weighted_interest_sum += (record.interest_rate * record.opening_balance);
+      dataset.total_value += record.opening_balance || 0;
+      dataset.weighted_interest_sum += ((record.interest_rate || 0) * (record.opening_balance || 0));
       if ((record.pd || 0) > 0.05) {
         dataset.high_risk_count++;
       }
       if (new Date(record.created_at) < new Date(dataset.earliest_date)) {
         dataset.earliest_date = record.created_at;
       }
+      dataset.record_ids.push(record.id);
     });
     
     const summaries = Array.from(datasetMap.values()).map(dataset => ({
@@ -272,10 +234,14 @@ export const getDatasetSummaries = async () => {
       record_ids: dataset.record_ids
     }));
     
-    console.log(`Fallback method found ${summaries.length} dataset summaries:`, 
+    console.log(`Found ${summaries.length} dataset summaries with accurate counts:`, 
       summaries.map(s => `${s.dataset_name}: ${s.record_count.toLocaleString()} records`));
     
     return summaries;
+    
+  } catch (error) {
+    console.error('Error in getDatasetSummaries:', error);
+    throw error;
   }
 };
 
