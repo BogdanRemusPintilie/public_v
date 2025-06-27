@@ -351,3 +351,37 @@ export const getUserDatasets = async () => {
     owner_id: 'current_user' // This would need to be enhanced for proper ownership tracking
   }));
 };
+
+export const getAllLoanDataByDataset = async (datasetName: string): Promise<LoanRecord[]> => {
+  console.log('🔍 FETCHING DATASET:', datasetName);
+  
+  const { data, error } = await supabase
+    .from('loan_data')
+    .select('*')
+    .eq('dataset_name', datasetName)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('❌ Error fetching dataset:', error);
+    throw error;
+  }
+
+  console.log(`✅ DATASET FETCHED: ${data?.length || 0} records for ${datasetName}`);
+  return data || [];
+};
+
+export const deleteLoanDataByDataset = async (datasetName: string): Promise<void> => {
+  console.log('🗑️ DELETING DATASET:', datasetName);
+  
+  const { error } = await supabase
+    .from('loan_data')
+    .delete()
+    .eq('dataset_name', datasetName);
+
+  if (error) {
+    console.error('❌ Error deleting dataset:', error);
+    throw error;
+  }
+
+  console.log(`✅ DATASET DELETED: ${datasetName}`);
+};
