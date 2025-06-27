@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -173,10 +174,31 @@ export const getAllLoanData = async () => {
   return allRecords;
 };
 
-// Optimized function to get dataset summaries without loading all data
+// FIXED: Optimized function to get accurate dataset summaries
 export const getDatasetSummaries = async () => {
-  console.log('Fetching dataset summaries');
+  console.log('Fetching dataset summaries with accurate record counts');
   
+  // First, get unique dataset names with their record counts
+  const { data: datasetCounts, error: countError } = await supabase
+    .from('loan_data')
+    .select('dataset_name')
+    .not('dataset_name', 'is', null);
+  
+  if (countError) {
+    console.error('Error fetching dataset counts:', countError);
+    throw countError;
+  }
+  
+  // Count records per dataset
+  const datasetCountMap = new Map();
+  datasetCounts.forEach(record => {
+    const datasetName = record.dataset_name || 'Unnamed Dataset';
+    datasetCountMap.set(datasetName, (datasetCountMap.get(datasetName) || 0) + 1);
+  });
+  
+  console.log('Dataset record counts:', Object.fromEntries(datasetCountMap));
+  
+  // Now get detailed data for calculations (we can limit this for performance)
   const { data, error } = await supabase
     .from('loan_data')
     .select(`
@@ -202,7 +224,7 @@ export const getDatasetSummaries = async () => {
     if (!datasetMap.has(datasetName)) {
       datasetMap.set(datasetName, {
         dataset_name: datasetName,
-        record_count: 0,
+        record_count: datasetCountMap.get(datasetName) || 0, // Use accurate count
         total_value: 0,
         weighted_interest_sum: 0,
         high_risk_count: 0,
@@ -212,7 +234,6 @@ export const getDatasetSummaries = async () => {
     }
     
     const dataset = datasetMap.get(datasetName);
-    dataset.record_count++;
     dataset.total_value += record.opening_balance;
     dataset.weighted_interest_sum += (record.interest_rate * record.opening_balance);
     if ((record.pd || 0) > 0.05) {
@@ -227,7 +248,7 @@ export const getDatasetSummaries = async () => {
   // Convert to array and calculate averages
   const summaries = Array.from(datasetMap.values()).map(dataset => ({
     dataset_name: dataset.dataset_name,
-    record_count: dataset.record_count,
+    record_count: dataset.record_count, // This is now the accurate count
     total_value: dataset.total_value,
     avg_interest_rate: dataset.total_value > 0 ? dataset.weighted_interest_sum / dataset.total_value : 0,
     high_risk_count: dataset.high_risk_count,
@@ -235,7 +256,9 @@ export const getDatasetSummaries = async () => {
     record_ids: dataset.record_ids
   }));
   
-  console.log(`Found ${summaries.length} dataset summaries`);
+  console.log(`Found ${summaries.length} dataset summaries with accurate counts:`, 
+    summaries.map(s => `${s.dataset_name}: ${s.record_count} records`));
+  
   return summaries;
 };
 
