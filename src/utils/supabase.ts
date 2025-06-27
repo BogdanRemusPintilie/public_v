@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -174,92 +173,110 @@ export const getAllLoanData = async () => {
   return allRecords;
 };
 
-// FIXED: Optimized function to get accurate dataset summaries
+// COMPLETELY REWRITTEN: Use SQL COUNT queries for accurate dataset summaries
 export const getDatasetSummaries = async () => {
-  console.log('Fetching dataset summaries with accurate record counts');
+  console.log('Fetching dataset summaries using SQL COUNT queries for accuracy');
   
-  // First, get unique dataset names with their record counts
-  const { data: datasetCounts, error: countError } = await supabase
-    .from('loan_data')
-    .select('dataset_name')
-    .not('dataset_name', 'is', null);
-  
-  if (countError) {
-    console.error('Error fetching dataset counts:', countError);
-    throw countError;
-  }
-  
-  // Count records per dataset
-  const datasetCountMap = new Map();
-  datasetCounts.forEach(record => {
-    const datasetName = record.dataset_name || 'Unnamed Dataset';
-    datasetCountMap.set(datasetName, (datasetCountMap.get(datasetName) || 0) + 1);
-  });
-  
-  console.log('Dataset record counts:', Object.fromEntries(datasetCountMap));
-  
-  // Now get detailed data for calculations (we can limit this for performance)
-  const { data, error } = await supabase
-    .from('loan_data')
-    .select(`
-      dataset_name,
-      opening_balance,
-      interest_rate,
-      created_at,
-      id,
-      pd
-    `)
-    .not('dataset_name', 'is', null);
-  
-  if (error) {
-    console.error('Error fetching dataset summaries:', error);
-    throw error;
-  }
-  
-  // Group by dataset_name and calculate summaries
-  const datasetMap = new Map();
-  
-  data.forEach(record => {
-    const datasetName = record.dataset_name || 'Unnamed Dataset';
-    if (!datasetMap.has(datasetName)) {
-      datasetMap.set(datasetName, {
-        dataset_name: datasetName,
-        record_count: datasetCountMap.get(datasetName) || 0, // Use accurate count
-        total_value: 0,
-        weighted_interest_sum: 0,
-        high_risk_count: 0,
-        earliest_date: record.created_at,
-        record_ids: []
-      });
+  try {
+    // Use a single query with SQL aggregation to get accurate counts and calculations
+    const { data, error } = await supabase
+      .from('loan_data')
+      .select(`
+        dataset_name,
+        COUNT(*) as record_count,
+        SUM(opening_balance) as total_value,
+        AVG(interest_rate) as avg_interest_rate,
+        COUNT(CASE WHEN pd > 0.05 THEN 1 END) as high_risk_count,
+        MIN(created_at) as created_at
+      `)
+      .not('dataset_name', 'is', null)
+      .group('dataset_name')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching dataset summaries with SQL aggregation:', error);
+      throw error;
     }
     
-    const dataset = datasetMap.get(datasetName);
-    dataset.total_value += record.opening_balance;
-    dataset.weighted_interest_sum += (record.interest_rate * record.opening_balance);
-    if ((record.pd || 0) > 0.05) {
-      dataset.high_risk_count++;
+    if (!data || data.length === 0) {
+      console.log('No datasets found');
+      return [];
     }
-    if (new Date(record.created_at) < new Date(dataset.earliest_date)) {
-      dataset.earliest_date = record.created_at;
+    
+    // Transform the aggregated data
+    const summaries = data.map(dataset => ({
+      dataset_name: dataset.dataset_name || 'Unnamed Dataset',
+      record_count: parseInt(dataset.record_count as string) || 0,
+      total_value: parseFloat(dataset.total_value as string) || 0,
+      avg_interest_rate: parseFloat(dataset.avg_interest_rate as string) || 0,
+      high_risk_count: parseInt(dataset.high_risk_count as string) || 0,
+      created_at: dataset.created_at,
+      record_ids: [] // We don't need individual IDs for summaries
+    }));
+    
+    console.log(`Found ${summaries.length} dataset summaries with SQL COUNT:`, 
+      summaries.map(s => `${s.dataset_name}: ${s.record_count.toLocaleString()} records`));
+    
+    return summaries;
+    
+  } catch (error) {
+    console.error('SQL aggregation failed, falling back to manual count:', error);
+    
+    // Fallback: If SQL aggregation fails, use the previous approach but with proper counting
+    const { data: allData, error: fallbackError } = await supabase
+      .from('loan_data')
+      .select('dataset_name, opening_balance, interest_rate, created_at, pd')
+      .not('dataset_name', 'is', null);
+    
+    if (fallbackError) {
+      console.error('Fallback query also failed:', fallbackError);
+      throw fallbackError;
     }
-    dataset.record_ids.push(record.id);
-  });
-  
-  // Convert to array and calculate averages
-  const summaries = Array.from(datasetMap.values()).map(dataset => ({
-    dataset_name: dataset.dataset_name,
-    record_count: dataset.record_count, // This is now the accurate count
-    total_value: dataset.total_value,
-    avg_interest_rate: dataset.total_value > 0 ? dataset.weighted_interest_sum / dataset.total_value : 0,
-    high_risk_count: dataset.high_risk_count,
-    created_at: dataset.earliest_date,
-    record_ids: dataset.record_ids
-  }));
-  
-  console.log(`Found ${summaries.length} dataset summaries with accurate counts:`, 
-    summaries.map(s => `${s.dataset_name}: ${s.record_count} records`));
-  
-  return summaries;
+    
+    // Group and calculate manually
+    const datasetMap = new Map();
+    
+    allData.forEach(record => {
+      const datasetName = record.dataset_name || 'Unnamed Dataset';
+      if (!datasetMap.has(datasetName)) {
+        datasetMap.set(datasetName, {
+          dataset_name: datasetName,
+          record_count: 0,
+          total_value: 0,
+          weighted_interest_sum: 0,
+          high_risk_count: 0,
+          earliest_date: record.created_at,
+          record_ids: []
+        });
+      }
+      
+      const dataset = datasetMap.get(datasetName);
+      dataset.record_count++;
+      dataset.total_value += record.opening_balance;
+      dataset.weighted_interest_sum += (record.interest_rate * record.opening_balance);
+      if ((record.pd || 0) > 0.05) {
+        dataset.high_risk_count++;
+      }
+      if (new Date(record.created_at) < new Date(dataset.earliest_date)) {
+        dataset.earliest_date = record.created_at;
+      }
+    });
+    
+    const summaries = Array.from(datasetMap.values()).map(dataset => ({
+      dataset_name: dataset.dataset_name,
+      record_count: dataset.record_count,
+      total_value: dataset.total_value,
+      avg_interest_rate: dataset.total_value > 0 ? dataset.weighted_interest_sum / dataset.total_value : 0,
+      high_risk_count: dataset.high_risk_count,
+      created_at: dataset.earliest_date,
+      record_ids: dataset.record_ids
+    }));
+    
+    console.log(`Fallback method found ${summaries.length} dataset summaries:`, 
+      summaries.map(s => `${s.dataset_name}: ${s.record_count.toLocaleString()} records`));
+    
+    return summaries;
+  }
 };
 
 // Updated function that uses getAllLoanData for backward compatibility
