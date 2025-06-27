@@ -40,28 +40,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
   const PAGE_SIZE = 1000;
 
-  // Load existing data when showExistingData is true
+  // Force refresh data when modal opens or showExistingData changes
   useEffect(() => {
     if (showExistingData && isOpen && user) {
-      loadExistingData();
+      // Clear any cached state first
+      resetState();
+      // Add a small delay to ensure cleanup happens before load
+      setTimeout(() => {
+        loadExistingData();
+      }, 100);
     } else if (!showExistingData && isOpen) {
       resetState();
     }
   }, [showExistingData, isOpen, user]);
 
-  // Add effect to refresh data when component becomes visible again
-  useEffect(() => {
-    if (showExistingData && isOpen && user) {
-      const handleFocus = () => {
-        loadExistingData();
-      };
-      
-      window.addEventListener('focus', handleFocus);
-      return () => window.removeEventListener('focus', handleFocus);
-    }
-  }, [showExistingData, isOpen, user]);
-
   const resetState = () => {
+    console.log('🔄 RESETTING STATE: Clearing all cached data');
     setPreviewData([]);
     setAllData([]);
     setSelectedFile(null);
@@ -80,20 +74,20 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     
     try {
       setIsProcessing(true);
-      console.log('📊 STARTING DATA LOAD - Loading all existing data for authenticated user');
+      console.log('📊 LOADING FRESH DATA - Fetching from database without cache');
       
-      // Load ALL data first - this is the complete dataset
+      // Force a fresh fetch from database
       const allRecords = await getAllLoanData();
-      console.log(`📊 DATA LOADED: ${allRecords.length} total records retrieved from database`);
+      console.log(`📊 FRESH DATA LOADED: ${allRecords.length} total records retrieved from database`);
       
-      // CRITICAL: Store ALL data and set total count FIRST before any other operations
+      // Update all state with fresh data
       setAllData(allRecords);
       setTotalRecords(allRecords.length);
       console.log(`📊 STATE UPDATED: allData set to ${allRecords.length} records, totalRecords set to ${allRecords.length}`);
       
-      // CRITICAL: Calculate portfolio summary using ALL records immediately after setting the data
+      // Calculate portfolio summary with fresh data
       if (allRecords.length > 0) {
-        console.log(`📊 PORTFOLIO CALC START: Beginning calculation with ALL ${allRecords.length} records`);
+        console.log(`📊 PORTFOLIO CALC START: Beginning calculation with FRESH ${allRecords.length} records`);
         calculatePortfolioSummary(allRecords);
         
         toast({
@@ -101,7 +95,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           description: `Loaded ${allRecords.length.toLocaleString()} total records`,
         });
       } else {
-        console.log('📊 NO DATA: No records found, setting portfolio summary to null');
+        console.log('📊 NO DATA: No records found after refresh, setting portfolio summary to null');
         setPortfolioSummary(null);
         
         toast({
@@ -110,7 +104,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         });
       }
       
-      // Set preview data to first page for table display only (AFTER portfolio calculation)
+      // Set preview data to first page for table display
       const firstPageData = allRecords.slice(0, PAGE_SIZE);
       setPreviewData(firstPageData);
       setHasMore(allRecords.length > PAGE_SIZE);
@@ -257,9 +251,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         return;
       }
 
+      console.log('🗑️ DELETING COMPLETE DATASET:', allRecordIds.length, 'records');
       await deleteLoanData(allRecordIds);
       
-      // Reset all state after successful deletion
+      // Force complete state reset after successful deletion
+      console.log('🔄 DATASET DELETED - Forcing complete state reset');
       resetState();
       
       toast({
@@ -367,7 +363,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setUploadStatus('Preparing data for upload...');
     
     try {
-      console.log('Using real Supabase user ID:', user.id);
+      console.log('💾 SAVING TO DATABASE:', previewData.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
       
       const dataWithUserId = previewData.map(loan => ({
         ...loan,
@@ -375,19 +371,28 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         dataset_name: datasetName.trim()
       }));
       
-      console.log('Inserting data to database:', dataWithUserId.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
-      
-      // Use the new batch insert function with progress tracking
+      // Use the batch insert function with progress tracking
       await insertLoanData(dataWithUserId, (completed, total) => {
         const progress = Math.round((completed / total) * 100);
         setUploadProgress(progress);
         setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
       });
       
+      console.log('✅ UPLOAD SUCCESSFUL - Data saved to database');
+      
       toast({
         title: "Upload Successful",
         description: `${previewData.length} loan records saved successfully as "${datasetName}"`,
       });
+      
+      // Clear the upload state but don't reset everything
+      setSelectedFile(null);
+      setDatasetName('');
+      setPreviewData([]);
+      setAllData([]);
+      setPortfolioSummary(null);
+      setUploadProgress(0);
+      setUploadStatus('');
       
       handleClose();
     } catch (error) {
@@ -416,7 +421,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
   const handleClose = () => {
     onClose();
-    resetState();
+    // Only reset upload-related state, not existing data state
+    if (!showExistingData) {
+      resetState();
+    }
   };
 
   return (
