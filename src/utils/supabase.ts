@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -328,21 +327,63 @@ export const getUserDatasets = async () => {
 };
 
 export const getAllLoanDataByDataset = async (datasetName: string): Promise<LoanRecord[]> => {
-  console.log('🔍 FETCHING DATASET:', datasetName);
+  console.log('🔍 FETCHING COMPLETE DATASET:', datasetName);
   
-  const { data, error } = await supabase
+  // Get total count first
+  const { count } = await supabase
     .from('loan_data')
-    .select('*')
-    .eq('dataset_name', datasetName)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('❌ Error fetching dataset:', error);
-    throw error;
+    .select('*', { count: 'exact', head: true })
+    .eq('dataset_name', datasetName);
+  
+  if (!count || count === 0) {
+    console.log('No records found for dataset:', datasetName);
+    return [];
   }
-
-  console.log(`✅ DATASET FETCHED: ${data?.length || 0} records for ${datasetName}`);
-  return data || [];
+  
+  console.log(`Found ${count} total records for dataset ${datasetName}, fetching all...`);
+  
+  // Use batching to fetch all records
+  const BATCH_SIZE = 1000;
+  const allRecords: LoanRecord[] = [];
+  
+  for (let offset = 0; offset < count; offset += BATCH_SIZE) {
+    const endOffset = Math.min(offset + BATCH_SIZE - 1, count - 1);
+    console.log(`Fetching batch: records ${offset} to ${endOffset} of ${count - 1} for dataset ${datasetName}`);
+    
+    const { data, error } = await supabase
+      .from('loan_data')
+      .select('*')
+      .eq('dataset_name', datasetName)
+      .range(offset, endOffset)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error(`Error fetching batch starting at ${offset} for dataset ${datasetName}:`, error);
+      throw error;
+    }
+    
+    if (data && data.length > 0) {
+      allRecords.push(...data as LoanRecord[]);
+      console.log(`Fetched ${data.length} records in this batch, total so far: ${allRecords.length}`);
+    } else {
+      console.log(`No data returned for batch starting at ${offset}`);
+      break;
+    }
+    
+    // Add a small delay between batches to avoid overwhelming the database
+    if (offset + BATCH_SIZE < count) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  }
+  
+  console.log(`✅ COMPLETE DATASET FETCHED: ${allRecords.length} records out of expected ${count} for ${datasetName}`);
+  
+  // Verify we got all the records
+  if (allRecords.length !== count) {
+    console.warn(`Warning: Expected ${count} records but got ${allRecords.length} for dataset ${datasetName}`);
+  }
+  
+  return allRecords;
 };
 
 export const deleteLoanDataByDataset = async (datasetName: string): Promise<void> => {
