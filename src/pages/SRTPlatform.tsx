@@ -1,12 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import LoginPopup from '@/components/LoginPopup';
 
 const SRTPlatform = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   // Sample data for the analytics chart
   const chartData = [
@@ -37,6 +38,10 @@ const SRTPlatform = () => {
     localStorage.removeItem('homepageAuthenticated');
     setIsAuthenticated(false);
     setShowLoginPopup(true);
+  };
+
+  const handleLogoClick = () => {
+    navigate('/');
   };
 
   if (isLoading) {
@@ -75,14 +80,17 @@ const SRTPlatform = () => {
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
+            <button 
+              onClick={handleLogoClick}
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none p-0"
+            >
               <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-6 w-6" />
               <span className="text-lg font-semibold text-gray-900">RiskBlocs</span>
-            </div>
+            </button>
             <div className="flex items-center space-x-8">
-              <a href="/#home" className="text-blue-600 font-medium">Home</a>
-              <a href="#demo" className="text-gray-600 hover:text-gray-900">Demo</a>
-              <a href="#example" className="text-gray-600 hover:text-gray-900">Worked Example</a>
+              <button onClick={() => window.location.hash = 'home'} className="text-blue-600 font-medium bg-transparent border-none cursor-pointer">Home</button>
+              <button onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })} className="text-gray-600 hover:text-gray-900 bg-transparent border-none cursor-pointer">Demo</button>
+              <button onClick={() => document.getElementById('example')?.scrollIntoView({ behavior: 'smooth' })} className="text-gray-600 hover:text-gray-900 bg-transparent border-none cursor-pointer">Worked Example</button>
               <a href="/dashboard" className="text-gray-600 hover:text-gray-900">RiskBlocs</a>
             </div>
             <div className="flex items-center space-x-4">
