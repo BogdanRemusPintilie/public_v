@@ -1,11 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import LoginPopup from '@/components/LoginPopup';
 
 const SRTPlatform = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sample data for the analytics chart
+  const chartData = [
+    { name: 'Jan', value: 2200 },
+    { name: 'Feb', value: 2350 },
+    { name: 'Mar', value: 2400 },
+    { name: 'Apr', value: 2280 },
+    { name: 'May', value: 2450 },
+    { name: 'Jun', value: 2400 },
+  ];
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -70,8 +81,8 @@ const SRTPlatform = () => {
             </div>
             <div className="flex items-center space-x-8">
               <a href="/#home" className="text-blue-600 font-medium">Home</a>
-              <a href="/srt-platform/demo" className="text-gray-600 hover:text-gray-900">Demo</a>
-              <a href="/srt-platform/example" className="text-gray-600 hover:text-gray-900">Worked Example</a>
+              <a href="#demo" className="text-gray-600 hover:text-gray-900">Demo</a>
+              <a href="#example" className="text-gray-600 hover:text-gray-900">Worked Example</a>
               <a href="/dashboard" className="text-gray-600 hover:text-gray-900">RiskBlocs</a>
             </div>
             <div className="flex items-center space-x-4">
@@ -119,11 +130,11 @@ const SRTPlatform = () => {
               </div>
 
               <div className="flex gap-4">
-                <a href="/srt-platform/demo" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+                <a href="#demo" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
                   <i className="fas fa-play"></i>
                   Explore Demo
                 </a>
-                <a href="/srt-platform/example" className="bg-gray-100 text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors inline-flex items-center gap-2">
+                <a href="#example" className="bg-gray-100 text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors inline-flex items-center gap-2">
                   <i className="fas fa-chart-bar"></i>
                   View Example
                 </a>
@@ -152,12 +163,59 @@ const SRTPlatform = () => {
                       <div className="text-sm text-red-600">-23.1%</div>
                     </div>
                   </div>
-                  <div className="h-32 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-500">Analytics Chart</span>
+                  <div className="h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Line 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke="#2563eb" 
+                          strokeWidth={2}
+                          dot={{ fill: '#2563eb', strokeWidth: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Demo Section */}
+      <section id="demo" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Interactive Demo</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Experience our SRT platform with live data and interactive features.
+            </p>
+          </div>
+          <div className="bg-gray-100 rounded-xl p-8 text-center">
+            <i className="fas fa-play-circle text-6xl text-blue-600 mb-4"></i>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Demo Coming Soon</h3>
+            <p className="text-gray-600">Interactive demo will be available here.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Worked Example Section */}
+      <section id="example" className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Worked Example</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Step-by-step walkthrough of a real SRT transaction.
+            </p>
+          </div>
+          <div className="bg-white rounded-xl p-8 text-center">
+            <i className="fas fa-chart-line text-6xl text-green-600 mb-4"></i>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Example Coming Soon</h3>
+            <p className="text-gray-600">Detailed worked example will be available here.</p>
           </div>
         </div>
       </section>
@@ -209,11 +267,11 @@ const SRTPlatform = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/srt-platform/demo" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2">
+            <a href="#demo" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2">
               <i className="fas fa-play"></i>
               Try Interactive Demo
             </a>
-            <a href="/srt-platform/example" className="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-400 transition-colors inline-flex items-center justify-center gap-2">
+            <a href="#example" className="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-400 transition-colors inline-flex items-center justify-center gap-2">
               <i className="fas fa-chart-line"></i>
               View Worked Example
             </a>
@@ -237,8 +295,8 @@ const SRTPlatform = () => {
               <h4 className="font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="/srt-platform/demo" className="hover:text-white">Demo</a></li>
-                <li><a href="/srt-platform/example" className="hover:text-white">Examples</a></li>
+                <li><a href="#demo" className="hover:text-white">Demo</a></li>
+                <li><a href="#example" className="hover:text-white">Examples</a></li>
                 <li><a href="#" className="hover:text-white">API Documentation</a></li>
               </ul>
             </div>
