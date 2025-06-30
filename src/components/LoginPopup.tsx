@@ -37,7 +37,7 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ isOpen, onLogin }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" hideCloseButton>
+      <DialogContent className="sm:max-w-md [&>button]:hidden">
         <DialogHeader className="text-center">
           <div className="flex items-center justify-center mb-4">
             <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-12 w-12" />
