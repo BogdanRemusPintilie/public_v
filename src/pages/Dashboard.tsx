@@ -33,7 +33,7 @@ const Dashboard = () => {
   };
 
   const handleLogoClick = () => {
-    navigate('/#platform-overview');
+    navigate('/');
   };
 
   const handlePreTradeAction = (action: string) => {
