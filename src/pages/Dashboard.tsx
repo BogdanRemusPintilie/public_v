@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [showExistingData, setShowExistingData] = useState(false);
   const [showDatasetManager, setShowDatasetManager] = useState(false);
   const [showDataExtractor, setShowDataExtractor] = useState(false);
+  const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -38,6 +39,9 @@ const Dashboard = () => {
   };
 
   const handlePreTradeAction = (action: string) => {
+    // Close the popover immediately when any action is selected
+    setPreTradePopoverOpen(false);
+    
     if (action === 'Upload Data Tape') {
       setShowExcelUpload(true);
     } else if (action === 'Access Existing Data') {
@@ -118,7 +122,7 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="pt-2">
-                <Popover>
+                <Popover open={preTradePopoverOpen} onOpenChange={setPreTradePopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button className="w-full bg-blue-600 hover:bg-blue-700">
                       Access Pre-trade Tools
