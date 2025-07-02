@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Download, BarChart3, Database } from 'lucide-react';
+import { Search, Download, BarChart3, Database, FileText } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -135,6 +134,37 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
       newSelected.delete(datasetName);
     }
     setSelectedDatasets(newSelected);
+  };
+
+  const handleDownloadDataset = (dataset: DatasetSummary) => {
+    // Convert dataset to CSV
+    const headers = ['Dataset', 'Opening Balance', 'Interest Rate', 'Term', 'PD', 'Loan Type', 'Credit Score', 'LTV'];
+    const csvContent = [
+      headers.join(','),
+      ...dataset.records.map(row => [
+        row.dataset_name || 'Unnamed Dataset',
+        row.opening_balance,
+        row.interest_rate,
+        row.term,
+        row.pd || 0,
+        row.loan_type,
+        row.credit_score,
+        row.ltv
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${dataset.dataset_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download Complete",
+      description: `Dataset "${dataset.dataset_name}" has been downloaded as CSV`,
+    });
   };
 
   const handleExtractData = () => {
@@ -276,14 +306,14 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
               Data Extractor
             </CardTitle>
             <CardDescription>
-              Select datasets and apply filters to extract specific data for analysis
+              Select datasets and apply filters to extract specific data for analysis, or download complete datasets
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Dataset Selection */}
+              {/* Dataset Selection and Download */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Select Datasets</h3>
+                <h3 className="text-lg font-semibold mb-4">Available Datasets</h3>
                 
                 {/* Search Bar */}
                 <div className="mb-4">
@@ -324,6 +354,15 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                             {dataset.record_count} records • ${(dataset.total_value / 1000000).toFixed(1)}M
                           </div>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDataset(dataset)}
+                          className="flex items-center gap-1"
+                        >
+                          <FileText className="h-3 w-3" />
+                          Download CSV
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -332,7 +371,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
 
               {/* Filter Criteria */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Filter Criteria</h3>
+                <h3 className="text-lg font-semibold mb-4">Filter Criteria (Optional)</h3>
                 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -430,7 +469,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                     disabled={selectedDatasets.size === 0}
                   >
                     <BarChart3 className="h-4 w-4 mr-2" />
-                    Extract Data ({selectedDatasets.size} dataset{selectedDatasets.size !== 1 ? 's' : ''})
+                    Extract Filtered Data ({selectedDatasets.size} dataset{selectedDatasets.size !== 1 ? 's' : ''})
                   </Button>
                   
                   {extractedData.length > 0 && (
@@ -440,7 +479,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                       className="w-full"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download CSV ({extractedData.length} records)
+                      Download Filtered CSV ({extractedData.length} records)
                     </Button>
                   )}
                 </div>
