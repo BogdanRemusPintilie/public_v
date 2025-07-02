@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { LoanRecord, insertLoanData, getAllLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
@@ -408,6 +409,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       return;
     }
 
+    // Additional validation for user authentication
     if (!user.id || user.id.length < 30) {
       console.log('❌ SAVE FAILED - Invalid user ID:', user.id);
       toast({
@@ -425,16 +427,17 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     try {
       console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
       
-      const dataWithUserId = dataToSave.map(loan => ({
+      // Prepare data with user_id and dataset_name - let insertLoanData handle the rest
+      const dataWithMetadata = dataToSave.map(loan => ({
         ...loan,
         user_id: user.id,
         dataset_name: datasetName.trim()
       }));
       
-      console.log('💾 PREPARED DATA SAMPLE:', dataWithUserId.slice(0, 2));
+      console.log('💾 PREPARED DATA SAMPLE:', dataWithMetadata.slice(0, 2));
       
       // Use the batch insert function with progress tracking
-      await insertLoanData(dataWithUserId, (completed, total) => {
+      await insertLoanData(dataWithMetadata, (completed, total) => {
         const progress = Math.round((completed / total) * 100);
         setUploadProgress(progress);
         setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
@@ -465,7 +468,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       let errorMessage = "Failed to save data to database. Please try again.";
       if (error instanceof Error) {
         console.error('❌ ERROR DETAILS:', error.message);
-        if (error.message.includes('permission')) {
+        if (error.message.includes('not authenticated')) {
+          errorMessage = "Authentication error. Please log out and log back in.";
+        } else if (error.message.includes('permission')) {
           errorMessage = "Permission denied. Please check your account permissions.";
         } else if (error.message.includes('violates row-level security')) {
           errorMessage = "Security error. Please ensure you're properly authenticated.";

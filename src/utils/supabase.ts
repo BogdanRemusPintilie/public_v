@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -42,7 +43,16 @@ export const insertLoanData = async (
   loanData: LoanRecord[], 
   onProgress?: (completed: number, total: number) => void
 ) => {
-  const BATCH_SIZE = 1000; // Process 1000 records at a time
+  // Verify user is authenticated before starting
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    console.error('❌ Authentication error:', authError);
+    throw new Error('User not authenticated. Please log in again.');
+  }
+
+  console.log('✅ User authenticated for insert:', user.id);
+
+  const BATCH_SIZE = 500; // Reduced batch size for better reliability
   const totalRecords = loanData.length;
   let completedRecords = 0;
   const allInsertedData = [];
@@ -55,18 +65,36 @@ export const insertLoanData = async (
     
     console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(totalRecords / BATCH_SIZE)}: records ${i + 1} to ${Math.min(i + BATCH_SIZE, totalRecords)}`);
     
+    // Ensure user_id is set for each record in the batch
+    const batchWithUserId = batch.map(record => ({
+      ...record,
+      user_id: user.id, // Ensure user_id is set from authenticated user
+      id: undefined, // Let database generate new IDs
+      created_at: undefined,
+      updated_at: undefined
+    }));
+
+    console.log('🔍 Sample batch record:', batchWithUserId[0]);
+    
     const { data, error } = await supabase
       .from('loan_data')
-      .insert(batch)
+      .insert(batchWithUserId)
       .select();
     
     if (error) {
-      console.error(`Error inserting batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error);
+      console.error(`❌ Error inserting batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error);
+      console.error('❌ Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
       throw error;
     }
     
     if (data) {
       allInsertedData.push(...data);
+      console.log(`✅ Successfully inserted batch ${Math.floor(i / BATCH_SIZE) + 1} with ${data.length} records`);
     }
     
     completedRecords += batch.length;
@@ -76,15 +104,15 @@ export const insertLoanData = async (
       onProgress(completedRecords, totalRecords);
     }
     
-    console.log(`Completed ${completedRecords}/${totalRecords} records (${Math.round((completedRecords / totalRecords) * 100)}%)`);
+    console.log(`📊 Progress: ${completedRecords}/${totalRecords} records (${Math.round((completedRecords / totalRecords) * 100)}%)`);
     
     // Add a small delay between batches to avoid overwhelming the database
     if (i + BATCH_SIZE < loanData.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
   }
   
-  console.log(`Successfully inserted all ${totalRecords} records`);
+  console.log(`✅ Successfully inserted all ${totalRecords} records`);
   return allInsertedData;
 };
 
