@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { LoanRecord, insertLoanData, getLoanDataPaginated, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ExcelUploadModal } from './ExcelUploadModal';
@@ -76,43 +76,40 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     await loadDatasetData(datasetName);
   };
 
-  // FIXED: Use pagination instead of loading all data at once
+  // FIXED: Use efficient dataset-specific query instead of filtering all data
   const loadDatasetData = async (datasetName: string, page = 0) => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log(`📊 LOADING DATASET PAGE: ${datasetName} - Page ${page + 1}`);
+      console.log(`📊 LOADING DATASET DATA: ${datasetName} - Page ${page + 1}`);
       
-      // Use paginated query to get only the data we need
-      const result = await getLoanDataPaginated(page, PAGE_SIZE);
+      // Use the new efficient dataset-specific query
+      const result = await getLoanDataByDataset(datasetName, page, PAGE_SIZE);
       
-      // Filter results by dataset name (since we don't have dataset-specific pagination yet)
-      const datasetRecords = result.data.filter(record => record.dataset_name === datasetName);
-      
-      console.log(`📊 DATASET PAGE LOADED: ${datasetRecords.length} records for ${datasetName} (Page ${page + 1})`);
+      console.log(`📊 DATASET DATA LOADED: ${result.data.length} records for ${datasetName} (Page ${page + 1})`);
       
       if (page === 0) {
         // First page - reset all data
-        setPreviewData(datasetRecords);
-        setAllData(datasetRecords);
-        setFilteredData(datasetRecords);
+        setPreviewData(result.data);
+        setAllData(result.data);
+        setFilteredData(result.data);
         setCurrentPage(0);
         
-        if (datasetRecords.length > 0) {
-          // Calculate summary for first page only (faster)
+        if (result.data.length > 0) {
+          // Calculate summary for loaded data
           const quickSummary = {
-            totalValue: datasetRecords.reduce((sum, loan) => sum + loan.opening_balance, 0),
-            avgInterestRate: datasetRecords.length > 0 ? 
-              datasetRecords.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetRecords.length : 0,
-            highRiskLoans: datasetRecords.filter(loan => (loan.pd || 0) > 0.05).length,
-            totalRecords: datasetRecords.length // This will be updated when we get total count
+            totalValue: result.data.reduce((sum, loan) => sum + loan.opening_balance, 0),
+            avgInterestRate: result.data.length > 0 ? 
+              result.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / result.data.length : 0,
+            highRiskLoans: result.data.filter(loan => (loan.pd || 0) > 0.05).length,
+            totalRecords: result.totalCount // Use actual total count from database
           };
           setPortfolioSummary(quickSummary);
           
           toast({
             title: "Dataset Loaded",
-            description: `Loaded first ${datasetRecords.length.toLocaleString()} records from "${datasetName}"`,
+            description: `Loaded ${result.data.length.toLocaleString()} records from "${datasetName}" (${result.totalCount.toLocaleString()} total)`,
           });
         } else {
           setPortfolioSummary(null);
