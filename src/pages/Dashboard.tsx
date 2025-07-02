@@ -164,14 +164,6 @@ const Dashboard = () => {
                           <Button
                             variant="ghost"
                             className="w-full justify-start h-auto p-2 text-left"
-                            onClick={() => handlePreTradeAction('Prepare Data Sets')}
-                          >
-                            <Settings className="h-4 w-4 mr-2 text-orange-600" />
-                            <span className="text-sm">Prepare Data Sets</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start h-auto p-2 text-left"
                             onClick={() => handlePreTradeAction('Tranche and Analyse Data')}
                           >
                             <BarChart className="h-4 w-4 mr-2 text-indigo-600" />
