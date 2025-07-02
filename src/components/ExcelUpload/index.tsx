@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { LoanRecord, insertLoanData, getAllLoanDataByDataset, deleteLoanDataByDataset } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getAllLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ExcelUploadModal } from './ExcelUploadModal';
@@ -23,6 +23,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [selectedDatasetName, setSelectedDatasetName] = useState<string>('');
   const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [allData, setAllData] = useState<LoanRecord[]>([]);
+  const [filteredData, setFilteredData] = useState<LoanRecord[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
@@ -56,6 +57,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     console.log('🔄 RESETTING STATE: Clearing all cached data');
     setPreviewData([]);
     setAllData([]);
+    setFilteredData([]);
     setSelectedFile(null);
     setDatasetName('');
     setSelectedDatasetName('');
@@ -85,6 +87,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       console.log(`📊 DATASET LOADED: ${datasetRecords.length} records for ${datasetName}`);
       
       setAllData(datasetRecords);
+      setFilteredData(datasetRecords); // Initialize filtered data
       setTotalRecords(datasetRecords.length);
       
       if (datasetRecords.length > 0) {
@@ -121,21 +124,80 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
+  const handleFilteredDataChange = (filtered: LoanRecord[]) => {
+    setFilteredData(filtered);
+    
+    // Update preview data to show filtered results
+    const firstPageData = filtered.slice(0, PAGE_SIZE);
+    setPreviewData(firstPageData);
+    setHasMore(filtered.length > PAGE_SIZE);
+    setCurrentPage(0);
+    setSelectedRecords(new Set()); // Clear selections when filter changes
+    
+    // Update portfolio summary based on filtered data
+    if (filtered.length > 0) {
+      calculatePortfolioSummary(filtered);
+    } else {
+      setPortfolioSummary(null);
+    }
+  };
+
+  const handleSaveFilteredDataset = async (filteredRecords: LoanRecord[], newDatasetName: string) => {
+    if (!user) return;
+    
+    try {
+      setIsProcessing(true);
+      setUploadStatus('Saving filtered dataset...');
+      
+      // Prepare data for insertion
+      const dataWithUserId = filteredRecords.map(record => ({
+        ...record,
+        id: undefined, // Let database generate new IDs
+        user_id: user.id,
+        dataset_name: newDatasetName,
+        created_at: undefined,
+        updated_at: undefined
+      }));
+      
+      await insertLoanData(dataWithUserId, (completed, total) => {
+        const progress = Math.round((completed / total) * 100);
+        setUploadProgress(progress);
+        setUploadStatus(`Saving filtered dataset: ${completed}/${total} records (${progress}%)`);
+      });
+      
+      toast({
+        title: "Filtered Dataset Saved",
+        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}"`,
+      });
+      
+    } catch (error) {
+      console.error('Error saving filtered dataset:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save filtered dataset. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      setUploadStatus('');
+      setUploadProgress(0);
+    }
+  };
+
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 0 && showExistingData && allData.length > 0) {
+    if (newPage >= 0 && showExistingData && filteredData.length > 0) {
       const startIndex = newPage * PAGE_SIZE;
       const endIndex = startIndex + PAGE_SIZE;
-      const pageData = allData.slice(startIndex, endIndex);
+      const pageData = filteredData.slice(startIndex, endIndex);
       
       setPreviewData(pageData);
       setCurrentPage(newPage);
-      setHasMore(endIndex < allData.length);
+      setHasMore(endIndex < filteredData.length);
       
       // Clear selections when changing pages
       setSelectedRecords(new Set());
       
-      // Portfolio summary should NOT change when paging - it should always reflect ALL data
-      console.log(`📊 PAGE CHANGE: Changed to page ${newPage}, showing ${pageData.length} records in table, but portfolio summary remains based on all ${allData.length} records`);
+      console.log(`📊 PAGE CHANGE: Changed to page ${newPage}, showing ${pageData.length} records in table`);
     }
   };
 
@@ -199,8 +261,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setIsProcessing(true);
       setUploadStatus(`Deleting ${selectedRecords.size} records...`);
       
-      // Implementation would need to be updated to handle individual record deletion
-      // For now, we'll keep the existing logic but need to modify supabase utils
+      // Delete selected records
+      await deleteLoanData(Array.from(selectedRecords));
       
       // Refresh dataset after deletion
       await loadDatasetData(selectedDatasetName);
@@ -279,6 +341,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       // For uploaded files, previewData and allData are the same
       setPreviewData(parsedData.data);
       setAllData(parsedData.data);
+      setFilteredData(parsedData.data);
       calculatePortfolioSummary(parsedData.data);
       setUploadStatus('');
       setSelectedRecords(new Set());
@@ -296,6 +359,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       });
       setPreviewData([]);
       setAllData([]);
+      setFilteredData([]);
       setPortfolioSummary(null);
       setUploadStatus('');
     } finally {
@@ -372,6 +436,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setDatasetName('');
       setPreviewData([]);
       setAllData([]);
+      setFilteredData([]);
       setPortfolioSummary(null);
       setUploadProgress(0);
       setUploadStatus('');
@@ -426,6 +491,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         portfolioSummary={portfolioSummary}
         previewData={previewData}
         allData={allData}
+        filteredData={filteredData}
         selectedRecords={selectedRecords}
         currentPage={currentPage}
         hasMore={hasMore}
@@ -444,6 +510,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         onDeleteCompleteDataset={handleDeleteCompleteDataset}
         onPageChange={handlePageChange}
         onFileDrop={handleFileDrop}
+        onFilteredDataChange={handleFilteredDataChange}
+        onSaveFilteredDataset={handleSaveFilteredDataset}
       />
       
       <DatasetSharingManager 
