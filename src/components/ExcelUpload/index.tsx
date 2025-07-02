@@ -369,24 +369,37 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handleSaveToDatabase = async () => {
-    console.log('Save to database button clicked', {
+    console.log('🔍 SAVE TO DATABASE CLICKED - Checking conditions:', {
       selectedFile: !!selectedFile,
       user: !!user,
-      previewDataLength: previewData.length,
       userId: user?.id,
-      datasetName: datasetName
+      previewDataLength: previewData.length,
+      allDataLength: allData.length,
+      datasetName: datasetName,
+      datasetNameTrimmed: datasetName.trim(),
+      isProcessing: isProcessing
     });
 
-    if (!selectedFile || !user || previewData.length === 0) {
+    // Use allData instead of previewData for saving all records
+    const dataToSave = allData.length > 0 ? allData : previewData;
+    
+    if (!selectedFile || !user || dataToSave.length === 0) {
+      console.log('❌ SAVE FAILED - Missing requirements:', {
+        selectedFile: !!selectedFile,
+        user: !!user,
+        dataLength: dataToSave.length
+      });
+      
       toast({
         title: "Upload Error",
-        description: "Please select a file and ensure you're logged in",
+        description: "Please select a file and ensure you're logged in with data parsed",
         variant: "destructive",
       });
       return;
     }
 
     if (!datasetName.trim()) {
+      console.log('❌ SAVE FAILED - No dataset name');
       toast({
         title: "Dataset Name Required",
         description: "Please enter a name for this dataset",
@@ -396,6 +409,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
 
     if (!user.id || user.id.length < 30) {
+      console.log('❌ SAVE FAILED - Invalid user ID:', user.id);
       toast({
         title: "Authentication Error",
         description: "Invalid user session. Please log out and log back in.",
@@ -409,26 +423,29 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setUploadStatus('Preparing data for upload...');
     
     try {
-      console.log('💾 SAVING TO DATABASE:', previewData.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
+      console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
       
-      const dataWithUserId = previewData.map(loan => ({
+      const dataWithUserId = dataToSave.map(loan => ({
         ...loan,
         user_id: user.id,
         dataset_name: datasetName.trim()
       }));
+      
+      console.log('💾 PREPARED DATA SAMPLE:', dataWithUserId.slice(0, 2));
       
       // Use the batch insert function with progress tracking
       await insertLoanData(dataWithUserId, (completed, total) => {
         const progress = Math.round((completed / total) * 100);
         setUploadProgress(progress);
         setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
+        console.log(`📊 UPLOAD PROGRESS: ${completed}/${total} (${progress}%)`);
       });
       
       console.log('✅ UPLOAD SUCCESSFUL - Data saved to database');
       
       toast({
         title: "Upload Successful",
-        description: `${previewData.length} loan records saved successfully as "${datasetName}"`,
+        description: `${dataToSave.length} loan records saved successfully as "${datasetName}"`,
       });
       
       // Clear the upload state but don't reset everything
@@ -443,10 +460,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       handleClose();
     } catch (error) {
-      console.error('Error uploading data:', error);
+      console.error('❌ ERROR uploading data:', error);
       
       let errorMessage = "Failed to save data to database. Please try again.";
       if (error instanceof Error) {
+        console.error('❌ ERROR DETAILS:', error.message);
         if (error.message.includes('permission')) {
           errorMessage = "Permission denied. Please check your account permissions.";
         } else if (error.message.includes('violates row-level security')) {

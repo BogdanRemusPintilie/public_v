@@ -89,6 +89,20 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  // Check if we have data to save (either from upload or existing data)
+  const hasDataToSave = allData.length > 0 || previewData.length > 0;
+  const isSaveButtonDisabled = isProcessing || !hasDataToSave || !datasetName.trim();
+
+  console.log('🔍 MODAL RENDER - Save button state:', {
+    isProcessing,
+    hasDataToSave,
+    allDataLength: allData.length,
+    previewDataLength: previewData.length,
+    datasetName: datasetName,
+    datasetNameTrimmed: datasetName.trim(),
+    isSaveButtonDisabled
+  });
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="relative mx-auto border w-full max-w-6xl shadow-lg rounded-md bg-white h-[90vh] flex flex-col">
@@ -221,11 +235,15 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
           
           <CardFooter className="flex justify-end gap-4 flex-shrink-0 border-t">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            {previewData.length > 0 && !showExistingData && (
+            {hasDataToSave && !showExistingData && (
               <Button variant="destructive" onClick={onClearData}>Clear Data</Button>
             )}
             {!showExistingData && (
-              <Button onClick={onSaveToDatabase} disabled={isProcessing || previewData.length === 0 || !datasetName.trim()}>
+              <Button 
+                onClick={onSaveToDatabase} 
+                disabled={isSaveButtonDisabled}
+                className={`${isSaveButtonDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
                 {isProcessing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
