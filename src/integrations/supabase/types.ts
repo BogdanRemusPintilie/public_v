@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      dataset_shares: {
+        Row: {
+          created_at: string | null
+          dataset_name: string
+          id: string
+          owner_id: string
+          shared_with_email: string
+          shared_with_user_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dataset_name: string
+          id?: string
+          owner_id: string
+          shared_with_email: string
+          shared_with_user_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dataset_name?: string
+          id?: string
+          owner_id?: string
+          shared_with_email?: string
+          shared_with_user_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       loan_data: {
         Row: {
           created_at: string
