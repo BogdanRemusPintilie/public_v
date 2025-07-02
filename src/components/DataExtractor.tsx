@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { getLoanData } from '@/utils/supabase';
+import { getDatasetSummaries } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Table, 
@@ -22,15 +23,9 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Download, BarChart3, Database, FileText } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { getAllLoanDataByDataset } from '@/utils/supabase';
 
 interface DataExtractorProps {
   isOpen: boolean;
@@ -43,7 +38,6 @@ interface DatasetSummary {
   total_value: number;
   avg_interest_rate: number;
   created_at: string;
-  records: any[];
 }
 
 const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
@@ -52,15 +46,6 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [extractedData, setExtractedData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [filterCriteria, setFilterCriteria] = useState({
-    minLoanAmount: '',
-    maxLoanAmount: '',
-    minInterestRate: '',
-    maxInterestRate: '',
-    loanType: 'all',
-    minCreditScore: '',
-    maxCreditScore: ''
-  });
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -75,38 +60,10 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     
     try {
       setIsLoading(true);
-      const allData = await getLoanData(user.id);
+      console.log('Loading dataset summaries using optimized database function...');
       
-      // Group data by dataset_name
-      const datasetMap = new Map<string, any[]>();
-      
-      allData.forEach(record => {
-        const datasetName = record.dataset_name || 'Unnamed Dataset';
-        if (!datasetMap.has(datasetName)) {
-          datasetMap.set(datasetName, []);
-        }
-        datasetMap.get(datasetName)!.push(record);
-      });
-      
-      // Create dataset summaries
-      const datasetSummaries: DatasetSummary[] = Array.from(datasetMap.entries()).map(([name, records]) => {
-        const totalValue = records.reduce((sum, record) => sum + record.opening_balance, 0);
-        const avgInterestRate = records.length > 0 ? 
-          records.reduce((sum, record) => sum + (record.interest_rate * record.opening_balance), 0) / totalValue : 0;
-        const earliestDate = records.reduce((earliest, record) => 
-          new Date(record.created_at) < new Date(earliest) ? record.created_at : earliest, 
-          records[0]?.created_at
-        );
-        
-        return {
-          dataset_name: name,
-          record_count: records.length,
-          total_value: totalValue,
-          avg_interest_rate: avgInterestRate,
-          created_at: earliestDate,
-          records: records
-        };
-      });
+      // Use the optimized database function for faster loading
+      const datasetSummaries = await getDatasetSummaries();
       
       setDatasets(datasetSummaries);
       
@@ -136,38 +93,54 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     setSelectedDatasets(newSelected);
   };
 
-  const handleDownloadDataset = (dataset: DatasetSummary) => {
-    // Convert dataset to CSV
-    const headers = ['Dataset', 'Opening Balance', 'Interest Rate', 'Term', 'PD', 'Loan Type', 'Credit Score', 'LTV'];
-    const csvContent = [
-      headers.join(','),
-      ...dataset.records.map(row => [
-        row.dataset_name || 'Unnamed Dataset',
-        row.opening_balance,
-        row.interest_rate,
-        row.term,
-        row.pd || 0,
-        row.loan_type,
-        row.credit_score,
-        row.ltv
-      ].join(','))
-    ].join('\n');
+  const handleDownloadDataset = async (dataset: DatasetSummary) => {
+    try {
+      setIsLoading(true);
+      
+      // Get complete dataset data
+      const datasetRecords = await getAllLoanDataByDataset(dataset.dataset_name);
+      
+      // Convert dataset to CSV
+      const headers = ['Dataset', 'Opening Balance', 'Interest Rate', 'Term', 'PD', 'Loan Type', 'Credit Score', 'LTV'];
+      const csvContent = [
+        headers.join(','),
+        ...datasetRecords.map(row => [
+          row.dataset_name || 'Unnamed Dataset',
+          row.opening_balance,
+          row.interest_rate,
+          row.term,
+          row.pd || 0,
+          row.loan_type,
+          row.credit_score,
+          row.ltv
+        ].join(','))
+      ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${dataset.dataset_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${dataset.dataset_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "Download Complete",
-      description: `Dataset "${dataset.dataset_name}" has been downloaded as CSV`,
-    });
+      toast({
+        title: "Download Complete",
+        description: `Dataset "${dataset.dataset_name}" has been downloaded as CSV`,
+      });
+    } catch (error) {
+      console.error('Error downloading dataset:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download dataset. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleExtractData = () => {
+  const handleExtractData = async () => {
     if (selectedDatasets.size === 0) {
       toast({
         title: "No Datasets Selected",
@@ -177,54 +150,33 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Get all records from selected datasets
-    let combinedData: any[] = [];
-    datasets.forEach(dataset => {
-      if (selectedDatasets.has(dataset.dataset_name)) {
-        combinedData.push(...dataset.records);
-      }
-    });
-
-    // Apply filters
-    let filteredData = combinedData.filter(record => {
-      // Loan amount filter
-      if (filterCriteria.minLoanAmount && record.opening_balance < parseFloat(filterCriteria.minLoanAmount)) {
-        return false;
-      }
-      if (filterCriteria.maxLoanAmount && record.opening_balance > parseFloat(filterCriteria.maxLoanAmount)) {
-        return false;
+    try {
+      setIsLoading(true);
+      
+      // Get all records from selected datasets
+      let combinedData: any[] = [];
+      
+      for (const datasetName of selectedDatasets) {
+        const datasetRecords = await getAllLoanDataByDataset(datasetName);
+        combinedData.push(...datasetRecords);
       }
 
-      // Interest rate filter
-      if (filterCriteria.minInterestRate && record.interest_rate < parseFloat(filterCriteria.minInterestRate)) {
-        return false;
-      }
-      if (filterCriteria.maxInterestRate && record.interest_rate > parseFloat(filterCriteria.maxInterestRate)) {
-        return false;
-      }
-
-      // Loan type filter
-      if (filterCriteria.loanType !== 'all' && record.loan_type !== filterCriteria.loanType) {
-        return false;
-      }
-
-      // Credit score filter
-      if (filterCriteria.minCreditScore && record.credit_score < parseFloat(filterCriteria.minCreditScore)) {
-        return false;
-      }
-      if (filterCriteria.maxCreditScore && record.credit_score > parseFloat(filterCriteria.maxCreditScore)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    setExtractedData(filteredData);
-    
-    toast({
-      title: "Data Extracted",
-      description: `Extracted ${filteredData.length} records from ${selectedDatasets.size} dataset(s)`,
-    });
+      setExtractedData(combinedData);
+      
+      toast({
+        title: "Data Extracted",
+        description: `Extracted ${combinedData.length} records from ${selectedDatasets.size} dataset(s)`,
+      });
+    } catch (error) {
+      console.error('Error extracting data:', error);
+      toast({
+        title: "Extraction Failed",
+        description: "Failed to extract data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDownloadExtract = () => {
@@ -287,18 +239,11 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     dataset.dataset_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const chartConfig = {
-    count: {
-      label: "Count",
-      color: "#2563eb",
-    },
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-7xl shadow-lg rounded-md bg-white">
+      <div className="relative top-20 mx-auto p-5 border w-full max-w-6xl shadow-lg rounded-md bg-white">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -306,11 +251,11 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
               Data Extractor
             </CardTitle>
             <CardDescription>
-              Select datasets and apply filters to extract specific data for analysis, or download complete datasets
+              Select datasets to extract data for analysis, or download complete datasets
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
               {/* Dataset Selection and Download */}
               <div>
                 <h3 className="text-lg font-semibold mb-4">Available Datasets</h3>
@@ -351,7 +296,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                         <div className="flex-1">
                           <div className="font-medium">{dataset.dataset_name}</div>
                           <div className="text-sm text-gray-500">
-                            {dataset.record_count} records • ${(dataset.total_value / 1000000).toFixed(1)}M
+                            {dataset.record_count.toLocaleString()} records • ${(dataset.total_value / 1000000).toFixed(1)}M
                           </div>
                         </div>
                         <Button
@@ -359,6 +304,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                           size="sm"
                           onClick={() => handleDownloadDataset(dataset)}
                           className="flex items-center gap-1"
+                          disabled={isLoading}
                         >
                           <FileText className="h-3 w-3" />
                           Download CSV
@@ -367,109 +313,15 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Filter Criteria */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Filter Criteria (Optional)</h3>
-                
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="minLoan">Min Loan Amount</Label>
-                      <Input
-                        id="minLoan"
-                        type="number"
-                        placeholder="0"
-                        value={filterCriteria.minLoanAmount}
-                        onChange={(e) => setFilterCriteria({...filterCriteria, minLoanAmount: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="maxLoan">Max Loan Amount</Label>
-                      <Input
-                        id="maxLoan"
-                        type="number"
-                        placeholder="1000000"
-                        value={filterCriteria.maxLoanAmount}
-                        onChange={(e) => setFilterCriteria({...filterCriteria, maxLoanAmount: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="minRate">Min Interest Rate (%)</Label>
-                      <Input
-                        id="minRate"
-                        type="number"
-                        step="0.01"
-                        placeholder="0"
-                        value={filterCriteria.minInterestRate}
-                        onChange={(e) => setFilterCriteria({...filterCriteria, minInterestRate: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="maxRate">Max Interest Rate (%)</Label>
-                      <Input
-                        id="maxRate"
-                        type="number"
-                        step="0.01"
-                        placeholder="20"
-                        value={filterCriteria.maxInterestRate}
-                        onChange={(e) => setFilterCriteria({...filterCriteria, maxInterestRate: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="loanType">Loan Type</Label>
-                    <Select value={filterCriteria.loanType} onValueChange={(value) => setFilterCriteria({...filterCriteria, loanType: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select loan type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="Personal">Personal</SelectItem>
-                        <SelectItem value="Mortgage">Mortgage</SelectItem>
-                        <SelectItem value="Auto">Auto</SelectItem>
-                        <SelectItem value="Business">Business</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="minCredit">Min Credit Score</Label>
-                      <Input
-                        id="minCredit"
-                        type="number"
-                        placeholder="300"
-                        value={filterCriteria.minCreditScore}
-                        onChange={(e) => setFilterCriteria({...filterCriteria, minCreditScore: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="maxCredit">Max Credit Score</Label>
-                      <Input
-                        id="maxCredit"
-                        type="number"
-                        placeholder="850"
-                        value={filterCriteria.maxCreditScore}
-                        onChange={(e) => setFilterCriteria({...filterCriteria, maxCreditScore: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                </div>
 
                 <div className="mt-6 space-y-3">
                   <Button 
                     onClick={handleExtractData} 
                     className="w-full"
-                    disabled={selectedDatasets.size === 0}
+                    disabled={selectedDatasets.size === 0 || isLoading}
                   >
                     <BarChart3 className="h-4 w-4 mr-2" />
-                    Extract Filtered Data ({selectedDatasets.size} dataset{selectedDatasets.size !== 1 ? 's' : ''})
+                    Extract Data ({selectedDatasets.size} dataset{selectedDatasets.size !== 1 ? 's' : ''})
                   </Button>
                   
                   {extractedData.length > 0 && (
@@ -477,86 +329,87 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                       onClick={handleDownloadExtract} 
                       variant="outline" 
                       className="w-full"
+                      disabled={isLoading}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download Filtered CSV ({extractedData.length} records)
+                      Download Extracted CSV ({extractedData.length} records)
                     </Button>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Extracted Data Summary */}
-            {getExtractSummary() && (
-              <div className="mt-6 bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">Extract Summary</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-blue-600">{getExtractSummary()!.totalRecords}</div>
-                    <div className="text-sm text-gray-600">Total Records</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-green-600">
-                      ${(getExtractSummary()!.totalValue / 1000000).toFixed(1)}M
+              {/* Extracted Data Summary */}
+              {getExtractSummary() && (
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-4 text-gray-800">Extract Summary</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-blue-600">{getExtractSummary()!.totalRecords.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">Total Records</div>
                     </div>
-                    <div className="text-sm text-gray-600">Portfolio Value</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {getExtractSummary()!.avgInterestRate.toFixed(2)}%
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-green-600">
+                        ${(getExtractSummary()!.totalValue / 1000000).toFixed(1)}M
+                      </div>
+                      <div className="text-sm text-gray-600">Portfolio Value</div>
                     </div>
-                    <div className="text-sm text-gray-600">Avg Interest Rate</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="text-2xl font-bold text-red-600">{getExtractSummary()!.highRiskLoans}</div>
-                    <div className="text-sm text-gray-600">High Risk Loans</div>
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {getExtractSummary()!.avgInterestRate.toFixed(2)}%
+                      </div>
+                      <div className="text-sm text-gray-600">Avg Interest Rate</div>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-red-600">{getExtractSummary()!.highRiskLoans.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">High Risk Loans</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Extracted Data Preview */}
-            {extractedData.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold mb-4">Extracted Data Preview</h3>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Dataset</TableHead>
-                        <TableHead>Opening Balance</TableHead>
-                        <TableHead>Interest Rate</TableHead>
-                        <TableHead>Term</TableHead>
-                        <TableHead>PD</TableHead>
-                        <TableHead>Loan Type</TableHead>
-                        <TableHead>Credit Score</TableHead>
-                        <TableHead>LTV</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {extractedData.slice(0, 10).map((row, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">
-                            {row.dataset_name || 'Unnamed Dataset'}
-                          </TableCell>
-                          <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
-                          <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
-                          <TableCell>{row.term}</TableCell>
-                          <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
-                          <TableCell>{row.loan_type}</TableCell>
-                          <TableCell>{row.credit_score}</TableCell>
-                          <TableCell>{row.ltv.toFixed(2)}%</TableCell>
+              {/* Extracted Data Preview */}
+              {extractedData.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Extracted Data Preview</h3>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Dataset</TableHead>
+                          <TableHead>Opening Balance</TableHead>
+                          <TableHead>Interest Rate</TableHead>
+                          <TableHead>Term</TableHead>
+                          <TableHead>PD</TableHead>
+                          <TableHead>Loan Type</TableHead>
+                          <TableHead>Credit Score</TableHead>
+                          <TableHead>LTV</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  
-                  {extractedData.length > 10 && (
-                    <p className="text-sm text-gray-500 mt-2">Showing first 10 of {extractedData.length} records</p>
-                  )}
+                      </TableHeader>
+                      <TableBody>
+                        {extractedData.slice(0, 10).map((row, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">
+                              {row.dataset_name || 'Unnamed Dataset'}
+                            </TableCell>
+                            <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
+                            <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
+                            <TableCell>{row.term}</TableCell>
+                            <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
+                            <TableCell>{row.loan_type}</TableCell>
+                            <TableCell>{row.credit_score}</TableCell>
+                            <TableCell>{row.ltv.toFixed(2)}%</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    
+                    {extractedData.length > 10 && (
+                      <p className="text-sm text-gray-500 mt-2">Showing first 10 of {extractedData.length.toLocaleString()} records</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
           <div className="flex justify-end gap-4 p-6 border-t">
             <Button variant="ghost" onClick={onClose}>Close</Button>
