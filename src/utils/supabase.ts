@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -64,14 +65,35 @@ export const insertLoanData = async (
     
     console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(totalRecords / BATCH_SIZE)}: records ${i + 1} to ${Math.min(i + BATCH_SIZE, totalRecords)}`);
     
-    // Ensure user_id is set for each record in the batch
-    const batchWithUserId = batch.map(record => ({
-      ...record,
-      user_id: user.id, // Ensure user_id is set from authenticated user
-      id: undefined, // Let database generate new IDs
-      created_at: undefined,
-      updated_at: undefined
-    }));
+    // Clean the data properly - only include fields that should be inserted
+    const batchWithUserId = batch.map(record => {
+      const cleanRecord: any = {
+        user_id: user.id, // Ensure user_id is set from authenticated user
+        loan_amount: record.loan_amount,
+        interest_rate: record.interest_rate,
+        term: record.term,
+        loan_type: record.loan_type,
+        credit_score: record.credit_score,
+        ltv: record.ltv,
+        opening_balance: record.opening_balance
+      };
+
+      // Only add optional fields if they exist and are not undefined
+      if (record.pd !== undefined && record.pd !== null) {
+        cleanRecord.pd = record.pd;
+      }
+      if (record.dataset_name !== undefined && record.dataset_name !== null) {
+        cleanRecord.dataset_name = record.dataset_name;
+      }
+      if (record.file_name !== undefined && record.file_name !== null) {
+        cleanRecord.file_name = record.file_name;
+      }
+      if (record.worksheet_name !== undefined && record.worksheet_name !== null) {
+        cleanRecord.worksheet_name = record.worksheet_name;
+      }
+
+      return cleanRecord;
+    });
 
     console.log('🔍 Sample batch record:', batchWithUserId[0]);
     
