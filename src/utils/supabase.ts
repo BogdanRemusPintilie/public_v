@@ -24,7 +24,8 @@ export interface DatasetShare {
   id?: string;
   dataset_name: string;
   owner_id: string;
-  shared_with_user_id: string;
+  shared_with_email: string;
+  shared_with_user_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -254,76 +255,85 @@ export const deleteLoanData = async (ids: string[]) => {
 };
 
 // New functions for dataset sharing
-export const shareDataset = async (datasetName: string, sharedWithUserId: string) => {
-  console.log('Sharing dataset:', datasetName, 'with user:', sharedWithUserId);
-  
-  const { data, error } = await (supabase as any)
+export const shareDataset = async (datasetName: string, sharedWithEmail: string): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
     .from('dataset_shares')
     .insert({
       dataset_name: datasetName,
-      owner_id: (await supabase.auth.getUser()).data.user?.id,
-      shared_with_user_id: sharedWithUserId
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error sharing dataset:', error);
-    throw error;
-  }
-  
-  console.log('Dataset shared successfully:', data);
-  return data;
+      owner_id: user.id,
+      shared_with_email: sharedWithEmail
+    });
+
+  if (error) throw error;
 };
 
-export const getDatasetShares = async (datasetName?: string) => {
-  console.log('Fetching dataset shares for:', datasetName);
-  
-  let query = (supabase as any)
+export const getDatasetShares = async (datasetName: string): Promise<DatasetShare[]> => {
+  const { data, error } = await supabase
     .from('dataset_shares')
-    .select('*');
-  
-  if (datasetName) {
-    query = query.eq('dataset_name', datasetName);
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error('Error fetching dataset shares:', error);
-    throw error;
-  }
-  
-  console.log('Dataset shares fetched:', data);
-  return data as DatasetShare[];
+    .select('*')
+    .eq('dataset_name', datasetName);
+
+  if (error) throw error;
+  return data || [];
 };
 
-export const removeDatasetShare = async (shareId: string) => {
-  console.log('Removing dataset share:', shareId);
-  
-  const { error } = await (supabase as any)
+export const removeDatasetShare = async (shareId: string): Promise<void> => {
+  const { error } = await supabase
     .from('dataset_shares')
     .delete()
     .eq('id', shareId);
-  
-  if (error) {
-    console.error('Error removing dataset share:', error);
-    throw error;
-  }
-  
-  console.log('Dataset share removed successfully');
+
+  if (error) throw error;
 };
 
-export const getUserDatasets = async () => {
-  console.log('Fetching user datasets');
-  
-  // Use the optimized dataset summaries function
-  const datasets = await getDatasetSummaries();
-  
-  return datasets.map(dataset => ({
-    name: dataset.dataset_name,
-    owner_id: 'current_user' // This would need to be enhanced for proper ownership tracking
-  }));
+export const getUserDatasets = async (): Promise<{ name: string; owner_id: string }[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Get datasets owned by the user
+  const { data: ownedDatasets, error: ownedError } = await supabase
+    .from('loan_data')
+    .select('dataset_name, user_id')
+    .eq('user_id', user.id)
+    .not('dataset_name', 'is', null);
+
+  if (ownedError) throw ownedError;
+
+  // Get datasets shared with the user
+  const { data: sharedDatasets, error: sharedError } = await supabase
+    .from('dataset_shares')
+    .select('dataset_name, owner_id')
+    .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`);
+
+  if (sharedError) throw sharedError;
+
+  // Combine and deduplicate datasets
+  const allDatasets: { [key: string]: { name: string; owner_id: string } } = {};
+
+  // Add owned datasets
+  ownedDatasets?.forEach(dataset => {
+    if (dataset.dataset_name) {
+      allDatasets[dataset.dataset_name] = {
+        name: dataset.dataset_name,
+        owner_id: dataset.user_id || user.id
+      };
+    }
+  });
+
+  // Add shared datasets
+  sharedDatasets?.forEach(share => {
+    if (share.dataset_name) {
+      allDatasets[share.dataset_name] = {
+        name: share.dataset_name,
+        owner_id: share.owner_id
+      };
+    }
+  });
+
+  return Object.values(allDatasets);
 };
 
 export const getAllLoanDataByDataset = async (datasetName: string): Promise<LoanRecord[]> => {

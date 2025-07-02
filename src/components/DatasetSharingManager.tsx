@@ -38,7 +38,7 @@ import {
   getUserDatasets,
   DatasetShare 
 } from '@/utils/supabase';
-import { Share2, Trash2, Users } from 'lucide-react';
+import { Share2, Trash2, Users, Crown } from 'lucide-react';
 
 interface DatasetSharingManagerProps {
   isOpen: boolean;
@@ -51,7 +51,7 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
 }) => {
   const [datasets, setDatasets] = useState<{ name: string; owner_id: string }[]>([]);
   const [selectedDataset, setSelectedDataset] = useState<string>('');
-  const [userIdToShare, setUserIdToShare] = useState<string>('');
+  const [emailToShare, setEmailToShare] = useState<string>('');
   const [datasetShares, setDatasetShares] = useState<DatasetShare[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -73,9 +73,7 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
     try {
       setIsLoading(true);
       const userDatasets = await getUserDatasets();
-      // Filter to show only datasets owned by current user
-      const ownedDatasets = userDatasets.filter(dataset => dataset.owner_id === user?.id);
-      setDatasets(ownedDatasets);
+      setDatasets(userDatasets);
     } catch (error) {
       console.error('Error loading datasets:', error);
       toast({
@@ -105,10 +103,21 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
   };
 
   const handleShareDataset = async () => {
-    if (!selectedDataset || !userIdToShare.trim()) {
+    if (!selectedDataset || !emailToShare.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please select a dataset and enter a user ID to share with.",
+        description: "Please select a dataset and enter an email address to share with.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user owns the selected dataset
+    const selectedDatasetInfo = datasets.find(d => d.name === selectedDataset);
+    if (!selectedDatasetInfo || selectedDatasetInfo.owner_id !== user?.id) {
+      toast({
+        title: "Permission Denied",
+        description: "You can only share datasets that you own.",
         variant: "destructive",
       });
       return;
@@ -116,19 +125,19 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
 
     try {
       setIsLoading(true);
-      await shareDataset(selectedDataset, userIdToShare.trim());
-      setUserIdToShare('');
+      await shareDataset(selectedDataset, emailToShare.trim());
+      setEmailToShare('');
       await loadDatasetShares();
       
       toast({
         title: "Dataset Shared",
-        description: `Dataset "${selectedDataset}" has been shared successfully.`,
+        description: `Dataset "${selectedDataset}" has been shared with ${emailToShare}.`,
       });
     } catch (error) {
       console.error('Error sharing dataset:', error);
       toast({
         title: "Share Failed",
-        description: "Failed to share dataset. Please check the user ID and try again.",
+        description: "Failed to share dataset. Please check the email address and try again.",
         variant: "destructive",
       });
     } finally {
@@ -158,6 +167,11 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
     }
   };
 
+  const isOwner = (datasetName: string): boolean => {
+    const dataset = datasets.find(d => d.name === datasetName);
+    return dataset?.owner_id === user?.id;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -172,7 +186,7 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
                   Dataset Sharing Manager
                 </CardTitle>
                 <CardDescription>
-                  Manage who can access your datasets
+                  Manage who can access your datasets. You can only share datasets you own.
                 </CardDescription>
               </div>
             </div>
@@ -191,7 +205,7 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
                 <option value="">Select a dataset...</option>
                 {datasets.map((dataset) => (
                   <option key={dataset.name} value={dataset.name}>
-                    {dataset.name}
+                    {dataset.name} {isOwner(dataset.name) ? '(Owned)' : '(Shared with you)'}
                   </option>
                 ))}
               </select>
@@ -199,35 +213,44 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
 
             {selectedDataset && (
               <>
-                {/* Share Dataset Section */}
-                <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Share Dataset
-                  </h3>
-                  <div className="flex gap-4 items-end">
-                    <div className="flex-1">
-                      <Label htmlFor="user-id">User ID to Share With</Label>
-                      <Input
-                        id="user-id"
-                        type="text"
-                        placeholder="Enter user ID (UUID format)"
-                        value={userIdToShare}
-                        onChange={(e) => setUserIdToShare(e.target.value)}
-                        disabled={isLoading}
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Enter the UUID of the user you want to share this dataset with
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={handleShareDataset}
-                      disabled={isLoading || !userIdToShare.trim()}
-                    >
+                {/* Share Dataset Section - Only show if user owns the dataset */}
+                {isOwner(selectedDataset) ? (
+                  <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Share2 className="h-4 w-4" />
                       Share Dataset
-                    </Button>
+                    </h3>
+                    <div className="flex gap-4 items-end">
+                      <div className="flex-1">
+                        <Label htmlFor="email">Email Address to Share With</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="Enter email address"
+                          value={emailToShare}
+                          onChange={(e) => setEmailToShare(e.target.value)}
+                          disabled={isLoading}
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          Enter the email address of the user you want to share this dataset with
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={handleShareDataset}
+                        disabled={isLoading || !emailToShare.trim()}
+                      >
+                        Share Dataset
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-4 border rounded-lg bg-gray-50">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Crown className="h-4 w-4" />
+                      <span>You can only manage sharing for datasets you own.</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Current Shares */}
                 <div className="space-y-4">
@@ -240,43 +263,45 @@ const DatasetSharingManager: React.FC<DatasetSharingManagerProps> = ({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Shared With User ID</TableHead>
+                          <TableHead>Shared With Email</TableHead>
                           <TableHead>Shared Date</TableHead>
-                          <TableHead className="w-24">Actions</TableHead>
+                          {isOwner(selectedDataset) && <TableHead className="w-24">Actions</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {datasetShares.map((share) => (
                           <TableRow key={share.id}>
-                            <TableCell className="font-mono text-sm">
-                              {share.shared_with_user_id}
+                            <TableCell>
+                              {share.shared_with_email}
                             </TableCell>
                             <TableCell>
                               {share.created_at ? new Date(share.created_at).toLocaleDateString() : 'N/A'}
                             </TableCell>
-                            <TableCell>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm" disabled={isLoading}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Remove Share</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to remove this user's access to the dataset "{selectedDataset}"?
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleRemoveShare(share.id!)}>
-                                      Remove Access
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </TableCell>
+                            {isOwner(selectedDataset) && (
+                              <TableCell>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" disabled={isLoading}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Remove Share</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to remove access to the dataset "{selectedDataset}" for {share.shared_with_email}?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleRemoveShare(share.id!)}>
+                                        Remove Access
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>
