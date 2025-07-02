@@ -123,7 +123,15 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           sampleRecord: filteredData[0]
         });
         
-        await onSaveFilteredDataset(filteredData, saveDatasetName.trim());
+        // Prepare clean data without database-specific fields
+        const cleanFilteredData = filteredData.map(record => {
+          const { id, created_at, updated_at, ...cleanRecord } = record;
+          return cleanRecord;
+        });
+        
+        console.log('🧹 CLEANED DATA SAMPLE:', cleanFilteredData[0]);
+        
+        await onSaveFilteredDataset(cleanFilteredData, saveDatasetName.trim());
         
         setSaveSuccess(true);
         

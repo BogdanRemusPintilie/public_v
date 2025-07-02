@@ -176,17 +176,39 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         sampleRecord: filteredRecords[0]
       });
       
-      // Prepare data for insertion with proper metadata
-      const dataWithUserId = filteredRecords.map(record => ({
-        ...record,
-        id: undefined, // Let database generate new IDs
-        user_id: user.id, // Ensure user_id is set
-        dataset_name: newDatasetName,
-        created_at: undefined,
-        updated_at: undefined
-      }));
+      // Prepare clean data for insertion - remove database-generated fields completely
+      const dataWithUserId = filteredRecords.map(record => {
+        // Extract only the fields we want to save, excluding database-generated ones
+        const {
+          loan_amount,
+          interest_rate,
+          term,
+          loan_type,
+          credit_score,
+          ltv,
+          opening_balance,
+          pd,
+          file_name,
+          worksheet_name
+        } = record;
+        
+        return {
+          user_id: user.id,
+          dataset_name: newDatasetName,
+          loan_amount,
+          interest_rate,
+          term,
+          loan_type,
+          credit_score,
+          ltv,
+          opening_balance,
+          pd,
+          file_name,
+          worksheet_name
+        };
+      });
       
-      console.log('💾 PREPARED DATA SAMPLE:', dataWithUserId.slice(0, 2));
+      console.log('💾 PREPARED CLEAN DATA SAMPLE:', dataWithUserId[0]);
       
       await insertLoanData(dataWithUserId, (completed, total) => {
         const progress = Math.round((completed / total) * 100);
