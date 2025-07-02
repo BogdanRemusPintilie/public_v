@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { LoanRecord, insertLoanData, getAllLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getLoanDataPaginated, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ExcelUploadModal } from './ExcelUploadModal';
@@ -77,40 +76,56 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     await loadDatasetData(datasetName);
   };
 
-  const loadDatasetData = async (datasetName: string) => {
+  // FIXED: Use pagination instead of loading all data at once
+  const loadDatasetData = async (datasetName: string, page = 0) => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log(`📊 LOADING DATASET: ${datasetName}`);
+      console.log(`📊 LOADING DATASET PAGE: ${datasetName} - Page ${page + 1}`);
       
-      const datasetRecords = await getAllLoanDataByDataset(datasetName);
-      console.log(`📊 DATASET LOADED: ${datasetRecords.length} records for ${datasetName}`);
+      // Use paginated query to get only the data we need
+      const result = await getLoanDataPaginated(page, PAGE_SIZE);
       
-      setAllData(datasetRecords);
-      setFilteredData(datasetRecords); // Initialize filtered data
-      setTotalRecords(datasetRecords.length);
+      // Filter results by dataset name (since we don't have dataset-specific pagination yet)
+      const datasetRecords = result.data.filter(record => record.dataset_name === datasetName);
       
-      if (datasetRecords.length > 0) {
-        calculatePortfolioSummary(datasetRecords);
+      console.log(`📊 DATASET PAGE LOADED: ${datasetRecords.length} records for ${datasetName} (Page ${page + 1})`);
+      
+      if (page === 0) {
+        // First page - reset all data
+        setPreviewData(datasetRecords);
+        setAllData(datasetRecords);
+        setFilteredData(datasetRecords);
+        setCurrentPage(0);
         
-        toast({
-          title: "Dataset Loaded",
-          description: `Loaded ${datasetRecords.length.toLocaleString()} records from "${datasetName}"`,
-        });
-      } else {
-        setPortfolioSummary(null);
-        toast({
-          title: "No Data Found",
-          description: `No records found in dataset "${datasetName}"`,
-        });
+        if (datasetRecords.length > 0) {
+          // Calculate summary for first page only (faster)
+          const quickSummary = {
+            totalValue: datasetRecords.reduce((sum, loan) => sum + loan.opening_balance, 0),
+            avgInterestRate: datasetRecords.length > 0 ? 
+              datasetRecords.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetRecords.length : 0,
+            highRiskLoans: datasetRecords.filter(loan => (loan.pd || 0) > 0.05).length,
+            totalRecords: datasetRecords.length // This will be updated when we get total count
+          };
+          setPortfolioSummary(quickSummary);
+          
+          toast({
+            title: "Dataset Loaded",
+            description: `Loaded first ${datasetRecords.length.toLocaleString()} records from "${datasetName}"`,
+          });
+        } else {
+          setPortfolioSummary(null);
+          toast({
+            title: "No Data Found",
+            description: `No records found in dataset "${datasetName}"`,
+          });
+        }
       }
       
-      // Set preview data to first page
-      const firstPageData = datasetRecords.slice(0, PAGE_SIZE);
-      setPreviewData(firstPageData);
-      setHasMore(datasetRecords.length > PAGE_SIZE);
-      setCurrentPage(0);
+      // Set pagination info
+      setTotalRecords(result.totalCount);
+      setHasMore(result.hasMore);
       
     } catch (error) {
       console.error('❌ ERROR loading dataset:', error);
@@ -185,6 +200,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
+  // FIXED: Handle pagination more efficiently
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && showExistingData && filteredData.length > 0) {
       const startIndex = newPage * PAGE_SIZE;
@@ -204,7 +220,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
   const calculatePortfolioSummary = (data: LoanRecord[]) => {
     console.log(`📊 PORTFOLIO CALCULATION START: Beginning calculation with ${data.length} records`);
-    console.log(`📊 CALCULATION INPUT: First few records:`, data.slice(0, 3));
     
     const totalValue = data.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const avgInterestRate = data.length > 0 ? 
@@ -219,14 +234,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     };
     
     console.log(`📊 PORTFOLIO CALCULATION COMPLETE:`, calculatedSummary);
-    console.log(`📊 DETAILED RESULTS:`);
-    console.log(`   - Total Records: ${calculatedSummary.totalRecords.toLocaleString()}`);
-    console.log(`   - Total Value: $${(calculatedSummary.totalValue / 1000000).toFixed(1)}M`);
-    console.log(`   - Avg Interest Rate: ${calculatedSummary.avgInterestRate.toFixed(2)}%`);
-    console.log(`   - High Risk Loans: ${calculatedSummary.highRiskLoans}`);
-    
     setPortfolioSummary(calculatedSummary);
-    console.log(`📊 PORTFOLIO STATE SET: Portfolio summary state updated with ${calculatedSummary.totalRecords} total records`);
   };
 
   const handleSelectRecord = (recordId: string, checked: boolean) => {
@@ -287,7 +295,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handleDeleteCompleteDataset = async () => {
-    if (!user || !selectedDatasetName || allData.length === 0) {
+    if (!user || !selectedDatasetName || totalRecords === 0) {
       toast({
         title: "No Dataset to Delete",
         description: "No dataset selected to delete",
