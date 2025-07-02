@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Filter, X, Save } from 'lucide-react';
+import { Filter, X, Save, CheckCircle } from 'lucide-react';
 import { LoanRecord } from '@/utils/supabase';
 
 interface FilterCriteria {
@@ -49,6 +48,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [showFiltered, setShowFiltered] = useState(false);
   const [saveDatasetName, setSaveDatasetName] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const applyFilters = () => {
     const filtered = allData.filter(record => {
@@ -114,11 +114,30 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     onFilteredDataChange(allData);
   };
 
-  const handleSaveFilteredDataset = () => {
+  const handleSaveFilteredDataset = async () => {
     if (saveDatasetName.trim() && filteredData.length > 0) {
-      onSaveFilteredDataset(filteredData, saveDatasetName.trim());
-      setShowSaveDialog(false);
-      setSaveDatasetName('');
+      try {
+        console.log('🔄 SAVING FILTERED DATASET:', {
+          name: saveDatasetName.trim(),
+          recordCount: filteredData.length,
+          sampleRecord: filteredData[0]
+        });
+        
+        await onSaveFilteredDataset(filteredData, saveDatasetName.trim());
+        
+        setSaveSuccess(true);
+        
+        // Reset form after successful save
+        setTimeout(() => {
+          setShowSaveDialog(false);
+          setSaveDatasetName('');
+          setSaveSuccess(false);
+        }, 2000);
+        
+      } catch (error) {
+        console.error('❌ Error saving filtered dataset:', error);
+        setSaveSuccess(false);
+      }
     }
   };
 
@@ -265,20 +284,51 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         {showSaveDialog && (
           <div className="mt-4 p-4 border rounded-lg bg-gray-50">
             <div className="space-y-3">
-              <Label>Save Filtered Dataset ({filteredData.length} records)</Label>
+              <div className="flex items-center gap-2">
+                <Label>Save Filtered Dataset ({filteredData.length} records)</Label>
+                {saveSuccess && (
+                  <div className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm">Saved successfully!</span>
+                  </div>
+                )}
+              </div>
               <Input
                 placeholder="Enter dataset name..."
                 value={saveDatasetName}
                 onChange={(e) => setSaveDatasetName(e.target.value)}
+                disabled={isProcessing || saveSuccess}
               />
               <div className="flex gap-2">
                 <Button 
                   onClick={handleSaveFilteredDataset}
-                  disabled={!saveDatasetName.trim() || isProcessing}
+                  disabled={!saveDatasetName.trim() || isProcessing || saveSuccess}
                 >
-                  Save Dataset
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : saveSuccess ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Saved!
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Dataset
+                    </>
+                  )}
                 </Button>
-                <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowSaveDialog(false);
+                    setSaveSuccess(false);
+                  }}
+                  disabled={isProcessing}
+                >
                   Cancel
                 </Button>
               </div>

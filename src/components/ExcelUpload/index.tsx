@@ -156,21 +156,37 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handleSaveFilteredDataset = async (filteredRecords: LoanRecord[], newDatasetName: string) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to save filtered datasets",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       setIsProcessing(true);
       setUploadStatus('Saving filtered dataset...');
       
-      // Prepare data for insertion
+      console.log('💾 SAVING FILTERED DATASET:', {
+        datasetName: newDatasetName,
+        recordCount: filteredRecords.length,
+        userId: user.id,
+        sampleRecord: filteredRecords[0]
+      });
+      
+      // Prepare data for insertion with proper metadata
       const dataWithUserId = filteredRecords.map(record => ({
         ...record,
         id: undefined, // Let database generate new IDs
-        user_id: user.id,
+        user_id: user.id, // Ensure user_id is set
         dataset_name: newDatasetName,
         created_at: undefined,
         updated_at: undefined
       }));
+      
+      console.log('💾 PREPARED DATA SAMPLE:', dataWithUserId.slice(0, 2));
       
       await insertLoanData(dataWithUserId, (completed, total) => {
         const progress = Math.round((completed / total) * 100);
@@ -178,18 +194,31 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         setUploadStatus(`Saving filtered dataset: ${completed}/${total} records (${progress}%)`);
       });
       
+      console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
+      
       toast({
         title: "Filtered Dataset Saved",
         description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}"`,
       });
       
     } catch (error) {
-      console.error('Error saving filtered dataset:', error);
+      console.error('❌ Error saving filtered dataset:', error);
+      
+      let errorMessage = "Failed to save filtered dataset. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes('not authenticated')) {
+          errorMessage = "Authentication error. Please log out and log back in.";
+        } else if (error.message.includes('permission')) {
+          errorMessage = "Permission denied. Please check your account permissions.";
+        }
+      }
+      
       toast({
         title: "Save Failed",
-        description: "Failed to save filtered dataset. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
+      throw error; // Re-throw to let the DataFilterPanel handle the error state
     } finally {
       setIsProcessing(false);
       setUploadStatus('');

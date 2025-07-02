@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { getDatasetSummaries } from '@/utils/supabase';
+import { getDatasetSummaries, getLoanDataByDataset } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Table, 
@@ -25,7 +24,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Download, BarChart3, Database, FileText } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { getAllLoanDataByDataset } from '@/utils/supabase';
 
 interface DataExtractorProps {
   isOpen: boolean;
@@ -97,14 +95,24 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       
-      // Get complete dataset data
-      const datasetRecords = await getAllLoanDataByDataset(dataset.dataset_name);
+      // Get complete dataset data using the correct function
+      const result = await getLoanDataByDataset(dataset.dataset_name, 0, 10000);
+      let allRecords = result.data;
+      
+      // If there are more records, fetch them all
+      let page = 1;
+      while (result.hasMore) {
+        const nextResult = await getLoanDataByDataset(dataset.dataset_name, page, 10000);
+        allRecords = [...allRecords, ...nextResult.data];
+        page++;
+        if (!nextResult.hasMore) break;
+      }
       
       // Convert dataset to CSV
       const headers = ['Dataset', 'Opening Balance', 'Interest Rate', 'Term', 'PD', 'Loan Type', 'Credit Score', 'LTV'];
       const csvContent = [
         headers.join(','),
-        ...datasetRecords.map(row => [
+        ...allRecords.map(row => [
           row.dataset_name || 'Unnamed Dataset',
           row.opening_balance,
           row.interest_rate,
@@ -157,7 +165,18 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
       let combinedData: any[] = [];
       
       for (const datasetName of selectedDatasets) {
-        const datasetRecords = await getAllLoanDataByDataset(datasetName);
+        const result = await getLoanDataByDataset(datasetName, 0, 10000);
+        let datasetRecords = result.data;
+        
+        // If there are more records, fetch them all
+        let page = 1;
+        while (result.hasMore) {
+          const nextResult = await getLoanDataByDataset(datasetName, page, 10000);
+          datasetRecords = [...datasetRecords, ...nextResult.data];
+          page++;
+          if (!nextResult.hasMore) break;
+        }
+        
         combinedData.push(...datasetRecords);
       }
 
