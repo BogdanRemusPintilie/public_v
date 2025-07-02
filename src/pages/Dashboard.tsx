@@ -156,14 +156,6 @@ const Dashboard = () => {
                           <Button
                             variant="ghost"
                             className="w-full justify-start h-auto p-2 text-left"
-                            onClick={() => handlePreTradeAction('Manage Datasets')}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2 text-red-600" />
-                            <span className="text-sm">Manage Datasets</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start h-auto p-2 text-left"
                             onClick={() => handlePreTradeAction('Manage Silent RiskData Vault')}
                           >
                             <Shield className="h-4 w-4 mr-2 text-purple-600" />
