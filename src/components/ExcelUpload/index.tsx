@@ -76,53 +76,70 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     await loadDatasetData(datasetName);
   };
 
-  // FIXED: Use efficient dataset-specific query instead of filtering all data
+  // Load ALL dataset data for filtering instead of paginated data
   const loadDatasetData = async (datasetName: string, page = 0) => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log(`📊 LOADING DATASET DATA: ${datasetName} - Page ${page + 1}`);
+      console.log(`📊 LOADING COMPLETE DATASET: ${datasetName}`);
       
-      // Use the new efficient dataset-specific query
-      const result = await getLoanDataByDataset(datasetName, page, PAGE_SIZE);
+      // First get the total count
+      const firstPageResult = await getLoanDataByDataset(datasetName, 0, PAGE_SIZE);
+      setTotalRecords(firstPageResult.totalCount);
       
-      console.log(`📊 DATASET DATA LOADED: ${result.data.length} records for ${datasetName} (Page ${page + 1})`);
-      
-      if (page === 0) {
-        // First page - reset all data
-        setPreviewData(result.data);
-        setAllData(result.data);
-        setFilteredData(result.data);
-        setCurrentPage(0);
+      if (firstPageResult.totalCount > 0) {
+        // Load ALL data for filtering instead of just one page
+        const allPages = [];
+        const totalPages = Math.ceil(firstPageResult.totalCount / PAGE_SIZE);
         
-        if (result.data.length > 0) {
-          // Calculate summary for loaded data
-          const quickSummary = {
-            totalValue: result.data.reduce((sum, loan) => sum + loan.opening_balance, 0),
-            avgInterestRate: result.data.length > 0 ? 
-              result.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / result.data.length : 0,
-            highRiskLoans: result.data.filter(loan => (loan.pd || 0) > 0.05).length,
-            totalRecords: result.totalCount // Use actual total count from database
-          };
-          setPortfolioSummary(quickSummary);
+        console.log(`📊 LOADING ${totalPages} PAGES OF DATA (${firstPageResult.totalCount} total records)`);
+        
+        // Load all pages
+        for (let i = 0; i < totalPages; i++) {
+          const pageResult = await getLoanDataByDataset(datasetName, i, PAGE_SIZE);
+          allPages.push(...pageResult.data);
           
-          toast({
-            title: "Dataset Loaded",
-            description: `Loaded ${result.data.length.toLocaleString()} records from "${datasetName}" (${result.totalCount.toLocaleString()} total)`,
-          });
-        } else {
-          setPortfolioSummary(null);
-          toast({
-            title: "No Data Found",
-            description: `No records found in dataset "${datasetName}"`,
-          });
+          // Update progress
+          const progress = Math.round(((i + 1) / totalPages) * 100);
+          setUploadStatus(`Loading data: Page ${i + 1}/${totalPages} (${progress}%)`);
         }
+        
+        console.log(`📊 LOADED ALL DATA: ${allPages.length} records for filtering`);
+        
+        // Set all data for filtering
+        setAllData(allPages);
+        setFilteredData(allPages);
+        
+        // Set preview data to first page
+        setPreviewData(allPages.slice(0, PAGE_SIZE));
+        setCurrentPage(0);
+        setHasMore(allPages.length > PAGE_SIZE);
+        
+        // Calculate summary for all data
+        const quickSummary = {
+          totalValue: allPages.reduce((sum, loan) => sum + loan.opening_balance, 0),
+          avgInterestRate: allPages.length > 0 ? 
+            allPages.reduce((sum, loan) => sum + loan.interest_rate, 0) / allPages.length : 0,
+          highRiskLoans: allPages.filter(loan => (loan.pd || 0) > 0.05).length,
+          totalRecords: allPages.length
+        };
+        setPortfolioSummary(quickSummary);
+        
+        toast({
+          title: "Dataset Loaded",
+          description: `Loaded all ${allPages.length.toLocaleString()} records from "${datasetName}" for filtering`,
+        });
+      } else {
+        setAllData([]);
+        setFilteredData([]);
+        setPreviewData([]);
+        setPortfolioSummary(null);
+        toast({
+          title: "No Data Found",
+          description: `No records found in dataset "${datasetName}"`,
+        });
       }
-      
-      // Set pagination info
-      setTotalRecords(result.totalCount);
-      setHasMore(result.hasMore);
       
     } catch (error) {
       console.error('❌ ERROR loading dataset:', error);
@@ -134,10 +151,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       resetState();
     } finally {
       setIsProcessing(false);
+      setUploadStatus('');
     }
   };
 
   const handleFilteredDataChange = (filtered: LoanRecord[]) => {
+    console.log(`🔍 FILTER APPLIED: ${filtered.length} records from ${allData.length} total`);
     setFilteredData(filtered);
     
     // Update preview data to show filtered results
@@ -248,7 +267,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
-  // FIXED: Handle pagination more efficiently
+  // Handle pagination more efficiently for filtered data
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && showExistingData && filteredData.length > 0) {
       const startIndex = newPage * PAGE_SIZE;

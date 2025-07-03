@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const applyFilters = () => {
+    console.log(`🔍 APPLYING FILTERS TO ${allData.length} TOTAL RECORDS`);
+    
     const filtered = allData.filter(record => {
       // Loan amount filter
       if (filterCriteria.minLoanAmount && record.opening_balance < parseFloat(filterCriteria.minLoanAmount)) {
@@ -92,6 +95,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       return true;
     });
 
+    console.log(`🔍 FILTER RESULTS: ${filtered.length} records match criteria out of ${allData.length} total`);
+    
     setFilteredData(filtered);
     setShowFiltered(true);
     onFilteredDataChange(filtered);
@@ -125,7 +130,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         
         // Prepare clean data without database-specific fields
         const cleanFilteredData = filteredData.map(record => {
-          const { id, created_at, updated_at, ...cleanRecord } = record;
+          const { id, created_at, ...cleanRecord } = record;
           return cleanRecord;
         });
         
