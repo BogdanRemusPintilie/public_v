@@ -46,7 +46,6 @@ interface DatasetSummary {
   total_value: number;
   avg_interest_rate: number;
   created_at: string;
-  record_ids: string[];
 }
 
 const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
@@ -123,16 +122,14 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       
-      // Get all record IDs for selected datasets
-      const recordIds: string[] = [];
-      datasets.forEach(dataset => {
-        if (selectedDatasets.has(dataset.dataset_name)) {
-          recordIds.push(...dataset.record_ids);
-        }
-      });
+      // For each selected dataset, we need to get all record IDs and delete them
+      // Since we don't have record_ids in the summary anymore, we'll need to use deleteLoanDataByDataset
+      const { deleteLoanDataByDataset } = await import('@/utils/supabase');
       
-      console.log(`Deleting ${recordIds.length} records from ${selectedDatasets.size} datasets`);
-      await deleteLoanData(recordIds);
+      for (const datasetName of selectedDatasets) {
+        console.log(`Deleting dataset: ${datasetName}`);
+        await deleteLoanDataByDataset(datasetName);
+      }
       
       // Remove deleted datasets from local state
       const remainingDatasets = datasets.filter(dataset => !selectedDatasets.has(dataset.dataset_name));
@@ -141,7 +138,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
       
       toast({
         title: "Datasets Deleted",
-        description: `Successfully deleted ${selectedDatasets.size} datasets (${recordIds.length} records)`,
+        description: `Successfully deleted ${selectedDatasets.size} datasets`,
       });
     } catch (error) {
       console.error('Error deleting datasets:', error);
