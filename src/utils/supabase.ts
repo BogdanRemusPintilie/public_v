@@ -1,11 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
-
-export { supabase };
 
 export interface LoanRecord {
   id?: string;
+  created_at?: string;
   user_id?: string;
+  dataset_name?: string;
   loan_amount: number;
   interest_rate: number;
   term: number;
@@ -13,280 +12,225 @@ export interface LoanRecord {
   credit_score: number;
   ltv: number;
   opening_balance: number;
-  pd?: number;
-  dataset_name?: string;
-  file_name?: string;
-  worksheet_name?: string;
-  created_at?: string;
-  updated_at?: string;
+  pd: number;
+  file_name: string;
+  worksheet_name: string;
 }
+
+interface DatasetSummary {
+  dataset_name: string;
+  record_count: number;
+  total_value: number;
+  avg_interest_rate: number;
+  created_at: string;
+}
+
+export const insertLoanData = async (
+  loanData: LoanRecord[],
+  progressCallback?: (completed: number, total: number) => void
+): Promise<void> => {
+  const BATCH_SIZE = 1000;
+  const totalRecords = loanData.length;
+  let completedRecords = 0;
+
+  for (let i = 0; i < totalRecords; i += BATCH_SIZE) {
+    const batch = loanData.slice(i, i + BATCH_SIZE);
+
+    const { error } = await supabase
+      .from('loan_data')
+      .insert(batch);
+
+    if (error) {
+      console.error('Error inserting loan data:', error);
+      throw error; // Re-throw to stop the process
+    }
+
+    completedRecords += batch.length;
+    if (progressCallback) {
+      progressCallback(completedRecords, totalRecords);
+    }
+  }
+};
+
+export const getLoanDataByDataset = async (
+  datasetName: string,
+  page: number,
+  pageSize: number
+): Promise<{ data: LoanRecord[]; totalCount: number; hasMore: boolean }> => {
+  const startIndex = page * pageSize;
+  
+  // Fetch total count first
+  const { count, error: countError } = await supabase
+    .from('loan_data')
+    .select('*', { count: 'exact', head: true })
+    .eq('dataset_name', datasetName);
+  
+  if (countError) {
+    console.error('Error fetching total count:', countError);
+    throw countError;
+  }
+  
+  // Then fetch the data
+  const { data, error } = await supabase
+    .from('loan_data')
+    .select('*')
+    .eq('dataset_name', datasetName)
+    .range(startIndex, startIndex + pageSize - 1)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching loan data:', error);
+    throw error;
+  }
+
+  const totalCount = count || 0;
+  const hasMore = startIndex + pageSize < totalCount;
+
+  return { data: data || [], totalCount, hasMore };
+};
+
+export const deleteLoanDataByDataset = async (datasetName: string): Promise<void> => {
+  const { error } = await supabase
+    .from('loan_data')
+    .delete()
+    .eq('dataset_name', datasetName);
+
+  if (error) {
+    console.error('Error deleting loan data by dataset:', error);
+    throw error;
+  }
+};
+
+export const deleteLoanData = async (recordIds: string[]): Promise<void> => {
+  const { error } = await supabase
+    .from('loan_data')
+    .delete()
+    .in('id', recordIds);
+
+  if (error) {
+    console.error('Error deleting loan data:', error);
+    throw error;
+  }
+};
+
+export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
+  const { data, error } = await supabase.rpc('get_dataset_summaries');
+  
+  if (error) {
+    console.error('Error fetching dataset summaries:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+// New function to get datasets including shared ones
+export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id: string; is_shared: boolean }[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  // Get owned datasets
+  const { data: ownedDatasets, error: ownedError } = await supabase
+    .from('loan_data')
+    .select('dataset_name, user_id')
+    .eq('user_id', user.id)
+    .not('dataset_name', 'is', null);
+
+  if (ownedError) {
+    console.error('Error fetching owned datasets:', ownedError);
+    throw ownedError;
+  }
+
+  // Get shared datasets
+  const { data: sharedDatasets, error: sharedError } = await supabase
+    .from('dataset_shares')
+    .select('dataset_name, owner_id')
+    .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`);
+
+  if (sharedError) {
+    console.error('Error fetching shared datasets:', sharedError);
+    throw sharedError;
+  }
+
+  // Combine and deduplicate datasets
+  const datasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
+
+  // Add owned datasets
+  ownedDatasets?.forEach(dataset => {
+    if (dataset.dataset_name) {
+      datasets.set(dataset.dataset_name, {
+        name: dataset.dataset_name,
+        owner_id: dataset.user_id,
+        is_shared: false
+      });
+    }
+  });
+
+  // Add shared datasets (don't override owned ones)
+  sharedDatasets?.forEach(share => {
+    if (share.dataset_name && !datasets.has(share.dataset_name)) {
+      datasets.set(share.dataset_name, {
+        name: share.dataset_name,
+        owner_id: share.owner_id,
+        is_shared: true
+      });
+    }
+  });
+
+  return Array.from(datasets.values());
+};
+
+export const getUserDatasets = async (): Promise<{ name: string; owner_id: string }[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('loan_data')
+    .select('dataset_name, user_id')
+    .eq('user_id', user.id)
+    .not('dataset_name', 'is', null);
+
+  if (error) {
+    console.error('Error fetching user datasets:', error);
+    throw error;
+  }
+
+  return (data || []).map(dataset => ({ name: dataset.dataset_name, owner_id: dataset.user_id }));
+};
 
 export interface DatasetShare {
   id?: string;
   dataset_name: string;
   owner_id: string;
   shared_with_email: string;
-  shared_with_user_id?: string;
   created_at?: string;
-  updated_at?: string;
 }
 
-export const createLoanDataTable = async () => {
-  const { error } = await supabase.rpc('create_loan_data_table');
-  if (error) {
-    console.error('Error creating loan data table:', error);
-    throw error;
-  }
-};
-
-export const insertLoanData = async (
-  loanData: LoanRecord[], 
-  onProgress?: (completed: number, total: number) => void
-) => {
-  // Verify user is authenticated before starting
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    console.error('❌ Authentication error:', authError);
-    throw new Error('User not authenticated. Please log in again.');
-  }
-
-  console.log('✅ User authenticated for insert:', user.id);
-
-  const BATCH_SIZE = 500; // Reduced batch size for better reliability
-  const totalRecords = loanData.length;
-  let completedRecords = 0;
-  const allInsertedData = [];
-
-  console.log(`Starting batch insert of ${totalRecords} records with batch size ${BATCH_SIZE}`);
-  
-  // Process data in batches
-  for (let i = 0; i < loanData.length; i += BATCH_SIZE) {
-    const batch = loanData.slice(i, i + BATCH_SIZE);
-    
-    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(totalRecords / BATCH_SIZE)}: records ${i + 1} to ${Math.min(i + BATCH_SIZE, totalRecords)}`);
-    
-    // Clean the data properly - only include fields that should be inserted
-    const batchWithUserId = batch.map(record => {
-      const cleanRecord: any = {
-        user_id: user.id, // Ensure user_id is set from authenticated user
-        loan_amount: record.loan_amount,
-        interest_rate: record.interest_rate,
-        term: record.term,
-        loan_type: record.loan_type,
-        credit_score: record.credit_score,
-        ltv: record.ltv,
-        opening_balance: record.opening_balance
-      };
-
-      // Only add optional fields if they exist and are not undefined
-      if (record.pd !== undefined && record.pd !== null) {
-        cleanRecord.pd = record.pd;
-      }
-      if (record.dataset_name !== undefined && record.dataset_name !== null) {
-        cleanRecord.dataset_name = record.dataset_name;
-      }
-      if (record.file_name !== undefined && record.file_name !== null) {
-        cleanRecord.file_name = record.file_name;
-      }
-      if (record.worksheet_name !== undefined && record.worksheet_name !== null) {
-        cleanRecord.worksheet_name = record.worksheet_name;
-      }
-
-      return cleanRecord;
-    });
-
-    console.log('🔍 Sample batch record:', batchWithUserId[0]);
-    
-    const { data, error } = await supabase
-      .from('loan_data')
-      .insert(batchWithUserId)
-      .select();
-    
-    if (error) {
-      console.error(`❌ Error inserting batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error);
-      console.error('❌ Error details:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
-      });
-      throw error;
-    }
-    
-    if (data) {
-      allInsertedData.push(...data);
-      console.log(`✅ Successfully inserted batch ${Math.floor(i / BATCH_SIZE) + 1} with ${data.length} records`);
-    }
-    
-    completedRecords += batch.length;
-    
-    // Call progress callback if provided
-    if (onProgress) {
-      onProgress(completedRecords, totalRecords);
-    }
-    
-    console.log(`📊 Progress: ${completedRecords}/${totalRecords} records (${Math.round((completedRecords / totalRecords) * 100)}%)`);
-    
-    // Add a small delay between batches to avoid overwhelming the database
-    if (i + BATCH_SIZE < loanData.length) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-  }
-  
-  console.log(`✅ Successfully inserted all ${totalRecords} records`);
-  return allInsertedData;
-};
-
-// Function to get loan data with pagination
-export const getLoanDataPaginated = async (page: number = 0, pageSize: number = 1000) => {
-  console.log(`Fetching loan data page ${page + 1} with ${pageSize} records per page`);
-  
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  
-  const { data, error, count } = await supabase
-    .from('loan_data')
-    .select('*', { count: 'exact' })
-    .range(from, to)
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching paginated loan data:', error);
-    throw error;
-  }
-  
-  console.log(`Fetched ${data?.length || 0} records for page ${page + 1}, total count: ${count}`);
-  
-  return {
-    data: data as LoanRecord[],
-    totalCount: count || 0,
-    hasMore: count ? (from + pageSize) < count : false
-  };
-};
-
-// OPTIMIZED: New function to get dataset data efficiently
-export const getLoanDataByDataset = async (datasetName: string, page: number = 0, pageSize: number = 1000) => {
-  console.log(`🔍 FETCHING DATASET DATA: ${datasetName} - Page ${page + 1} with ${pageSize} records`);
-  
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  
-  const { data, error, count } = await supabase
-    .from('loan_data')
-    .select('*', { count: 'exact' })
-    .eq('dataset_name', datasetName)
-    .range(from, to)
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('❌ Error fetching dataset data:', error);
-    throw error;
-  }
-  
-  console.log(`✅ DATASET DATA FETCHED: ${data?.length || 0} records for page ${page + 1} of ${datasetName}, total count: ${count}`);
-  
-  return {
-    data: data as LoanRecord[],
-    totalCount: count || 0,
-    hasMore: count ? (from + pageSize) < count : false
-  };
-};
-
-// OPTIMIZED: Use efficient dataset summaries function
-export const getDatasetSummaries = async () => {
-  console.log('Fetching dataset summaries using database function for accurate counts');
-  
-  try {
-    // Call the database function to get accurate aggregated data
-    const { data, error } = await supabase.rpc('get_dataset_summaries');
-    
-    if (error) {
-      console.error('Error calling get_dataset_summaries function:', error);
-      throw error;
-    }
-    
-    if (!data || data.length === 0) {
-      console.log('No datasets found');
-      return [];
-    }
-    
-    // Transform the data to match our interface
-    const summaries = data.map((dataset: any) => ({
-      dataset_name: dataset.dataset_name,
-      record_count: parseInt(dataset.record_count) || 0,
-      total_value: parseFloat(dataset.total_value) || 0,
-      avg_interest_rate: parseFloat(dataset.avg_interest_rate) || 0,
-      high_risk_count: parseInt(dataset.high_risk_count) || 0,
-      created_at: dataset.created_at,
-      record_ids: [] // We don't need individual IDs for summaries
-    }));
-    
-    console.log(`Found ${summaries.length} dataset summaries with accurate database counts:`, 
-      summaries.map(s => `${s.dataset_name}: ${s.record_count.toLocaleString()} records`));
-    
-    return summaries;
-    
-  } catch (error) {
-    console.error('Error in getDatasetSummaries:', error);
-    throw error;
-  }
-};
-
-// Updated function that uses getAllLoanData for backward compatibility
-export const getLoanData = async (userId?: string) => {
-  console.log('Fetching paginated loan data for authenticated user');
-  const result = await getLoanDataPaginated(0, 1000);
-  return result.data;
-};
-
-export const deleteLoanData = async (ids: string[]) => {
-  console.log('Attempting to delete loan records with IDs:', ids);
-  
-  if (!ids || ids.length === 0) {
-    throw new Error('No IDs provided for deletion');
-  }
-
-  // Delete records in smaller batches to avoid URL length issues
-  const BATCH_SIZE = 100;
-  const batches = [];
-  
-  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-    batches.push(ids.slice(i, i + BATCH_SIZE));
-  }
-  
-  for (const batch of batches) {
-    console.log(`Deleting batch of ${batch.length} records`);
-    
-    const { error } = await supabase
-      .from('loan_data')
-      .delete()
-      .in('id', batch);
-    
-    if (error) {
-      console.error('Error deleting loan data batch:', error);
-      throw error;
-    }
-    
-    console.log(`Successfully deleted batch of ${batch.length} records`);
-  }
-  
-  console.log(`Successfully deleted all ${ids.length} records`);
-};
-
-// New functions for dataset sharing
 export const shareDataset = async (datasetName: string, sharedWithEmail: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
 
   const { error } = await supabase
     .from('dataset_shares')
-    .insert({
+    .insert([{
       dataset_name: datasetName,
       owner_id: user.id,
       shared_with_email: sharedWithEmail
-    });
+    }]);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error sharing dataset:', error);
+    throw error;
+  }
 };
 
 export const getDatasetShares = async (datasetName: string): Promise<DatasetShare[]> => {
@@ -295,8 +239,12 @@ export const getDatasetShares = async (datasetName: string): Promise<DatasetShar
     .select('*')
     .eq('dataset_name', datasetName);
 
-  if (error) throw error;
-  return data || [];
+  if (error) {
+    console.error('Error fetching dataset shares:', error);
+    throw error;
+  }
+
+  return (data || []) as DatasetShare[];
 };
 
 export const removeDatasetShare = async (shareId: string): Promise<void> => {
@@ -305,68 +253,8 @@ export const removeDatasetShare = async (shareId: string): Promise<void> => {
     .delete()
     .eq('id', shareId);
 
-  if (error) throw error;
-};
-
-export const getUserDatasets = async (): Promise<{ name: string; owner_id: string }[]> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  // Get datasets owned by the user
-  const { data: ownedDatasets, error: ownedError } = await supabase
-    .from('loan_data')
-    .select('dataset_name, user_id')
-    .eq('user_id', user.id)
-    .not('dataset_name', 'is', null);
-
-  if (ownedError) throw ownedError;
-
-  // Get datasets shared with the user
-  const { data: sharedDatasets, error: sharedError } = await supabase
-    .from('dataset_shares')
-    .select('dataset_name, owner_id')
-    .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`);
-
-  if (sharedError) throw sharedError;
-
-  // Combine and deduplicate datasets
-  const allDatasets: { [key: string]: { name: string; owner_id: string } } = {};
-
-  // Add owned datasets
-  ownedDatasets?.forEach(dataset => {
-    if (dataset.dataset_name) {
-      allDatasets[dataset.dataset_name] = {
-        name: dataset.dataset_name,
-        owner_id: dataset.user_id || user.id
-      };
-    }
-  });
-
-  // Add shared datasets
-  sharedDatasets?.forEach(share => {
-    if (share.dataset_name) {
-      allDatasets[share.dataset_name] = {
-        name: share.dataset_name,
-        owner_id: share.owner_id
-      };
-    }
-  });
-
-  return Object.values(allDatasets);
-};
-
-export const deleteLoanDataByDataset = async (datasetName: string): Promise<void> => {
-  console.log('🗑️ DELETING DATASET:', datasetName);
-  
-  const { error } = await supabase
-    .from('loan_data')
-    .delete()
-    .eq('dataset_name', datasetName);
-
   if (error) {
-    console.error('❌ Error deleting dataset:', error);
+    console.error('Error removing dataset share:', error);
     throw error;
   }
-
-  console.log(`✅ DATASET DELETED: ${datasetName}`);
 };

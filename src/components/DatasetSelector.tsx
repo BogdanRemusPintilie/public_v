@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getDatasetSummaries } from '@/utils/supabase';
+import { getAccessibleDatasets } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Table, 
@@ -13,8 +13,9 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Search, Database, FolderOpen } from 'lucide-react';
+import { Search, Database, FolderOpen, Users, Crown } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface DatasetSelectorProps {
   isOpen: boolean;
@@ -22,12 +23,10 @@ interface DatasetSelectorProps {
   onSelectDataset: (datasetName: string) => void;
 }
 
-interface DatasetSummary {
-  dataset_name: string;
-  record_count: number;
-  total_value: number;
-  avg_interest_rate: number;
-  created_at: string;
+interface AccessibleDataset {
+  name: string;
+  owner_id: string;
+  is_shared: boolean;
 }
 
 const DatasetSelector: React.FC<DatasetSelectorProps> = ({ 
@@ -35,7 +34,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   onClose, 
   onSelectDataset 
 }) => {
-  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
+  const [datasets, setDatasets] = useState<AccessibleDataset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
@@ -52,12 +51,12 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     
     try {
       setIsLoading(true);
-      console.log('Loading dataset summaries...');
+      console.log('Loading accessible datasets...');
       
-      const datasetSummaries = await getDatasetSummaries();
-      setDatasets(datasetSummaries);
+      const accessibleDatasets = await getAccessibleDatasets();
+      setDatasets(accessibleDatasets);
       
-      console.log(`Found ${datasetSummaries.length} datasets`);
+      console.log(`Found ${accessibleDatasets.length} accessible datasets`);
     } catch (error) {
       console.error('Error loading datasets:', error);
       toast({
@@ -71,7 +70,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   };
 
   const filteredDatasets = datasets.filter(dataset =>
-    dataset.dataset_name.toLowerCase().includes(searchTerm.toLowerCase())
+    dataset.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (!isOpen) return null;
@@ -86,7 +85,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
               Select Dataset to Manage
             </CardTitle>
             <CardDescription>
-              Choose which dataset you'd like to view and manage. Each dataset contains your uploaded loan records.
+              Choose which dataset you'd like to view and manage. This includes datasets you own and datasets shared with you.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -118,7 +117,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                 <p className="text-gray-500 mb-6">
                   {searchTerm 
                     ? 'No datasets match your search criteria.' 
-                    : 'You haven\'t uploaded any datasets yet. Upload your first dataset to get started.'
+                    : 'You haven\'t uploaded any datasets yet, and no datasets have been shared with you.'
                   }
                 </p>
                 <Button onClick={onClose} variant="outline">
@@ -136,29 +135,36 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Dataset Name</TableHead>
-                        <TableHead>Records</TableHead>
-                        <TableHead>Total Value</TableHead>
-                        <TableHead>Avg Interest Rate</TableHead>
-                        <TableHead>Created</TableHead>
+                        <TableHead>Access Type</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredDatasets.map((dataset) => (
-                        <TableRow key={dataset.dataset_name}>
+                        <TableRow key={dataset.name}>
                           <TableCell className="font-medium">
-                            {dataset.dataset_name}
+                            <div className="flex items-center gap-2">
+                              {dataset.name}
+                              {dataset.is_shared ? (
+                                <Badge variant="secondary" className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  Shared
+                                </Badge>
+                              ) : (
+                                <Badge variant="default" className="flex items-center gap-1">
+                                  <Crown className="h-3 w-3" />
+                                  Owned
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell>{dataset.record_count.toLocaleString()}</TableCell>
-                          <TableCell>${(dataset.total_value / 1000000).toFixed(1)}M</TableCell>
-                          <TableCell>{dataset.avg_interest_rate.toFixed(2)}%</TableCell>
                           <TableCell>
-                            {new Date(dataset.created_at).toLocaleDateString()}
+                            {dataset.is_shared ? 'Shared with you' : 'You own this dataset'}
                           </TableCell>
                           <TableCell>
                             <Button
                               size="sm"
-                              onClick={() => onSelectDataset(dataset.dataset_name)}
+                              onClick={() => onSelectDataset(dataset.name)}
                               className="flex items-center gap-2"
                             >
                               <FolderOpen className="h-4 w-4" />
