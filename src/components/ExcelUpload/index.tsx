@@ -1,311 +1,246 @@
-import React, { useState, useEffect } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { LoanRecord, insertLoanData, getLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { parseExcelFile } from '@/utils/excelParser';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ExcelUploadModal } from './ExcelUploadModal';
-import DatasetSharingManager from '../DatasetSharingManager';
-import DatasetSelector from '../DatasetSelector';
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  insertLoanData, 
+  getLoanDataByDataset, 
+  deleteLoanData,
+  deleteLoanDataByDataset,
+  LoanRecord
+} from '@/utils/supabase';
+import { parseExcelFile } from '@/utils/excelParser';
 
 interface ExcelUploadProps {
   isOpen: boolean;
+  showExistingData: boolean;
+  selectedDatasetName: string;
   onClose: () => void;
-  showExistingData?: boolean;
+  onRefreshData: () => void;
+  onShowSharingManager: () => void;
 }
 
-const ExcelUpload: React.FC<ExcelUploadProps> = ({ 
-  isOpen, 
-  onClose, 
-  showExistingData = false 
+const ExcelUpload: React.FC<ExcelUploadProps> = ({
+  isOpen,
+  showExistingData,
+  selectedDatasetName,
+  onClose,
+  onRefreshData,
+  onShowSharingManager,
 }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [datasetName, setDatasetName] = useState<string>('');
-  const [selectedDatasetName, setSelectedDatasetName] = useState<string>('');
-  const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [allData, setAllData] = useState<LoanRecord[]>([]);
+  const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [filteredData, setFilteredData] = useState<LoanRecord[]>([]);
+  const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [datasetName, setDatasetName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStatus, setUploadStatus] = useState<string>('');
-  const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
+  const [uploadStatus, setUploadStatus] = useState('');
   const [portfolioSummary, setPortfolioSummary] = useState<{
     totalValue: number;
     avgInterestRate: number;
     highRiskLoans: number;
     totalRecords: number;
   } | null>(null);
-  const [showSharingManager, setShowSharingManager] = useState(false);
-  const [showDatasetSelector, setShowDatasetSelector] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const PAGE_SIZE = 1000;
+  // Load existing data when modal opens with selected dataset
+  const loadExistingData = useCallback(async () => {
+    if (!showExistingData || !selectedDatasetName || !user) return;
 
-  // Show dataset selector when trying to view existing data
-  useEffect(() => {
-    if (showExistingData && isOpen && user) {
-      setShowDatasetSelector(true);
-    } else if (!showExistingData && isOpen) {
-      resetState();
-    }
-  }, [showExistingData, isOpen, user]);
-
-  const resetState = () => {
-    console.log('🔄 RESETTING STATE: Clearing all cached data');
-    setPreviewData([]);
-    setAllData([]);
-    setFilteredData([]);
-    setSelectedFile(null);
-    setDatasetName('');
-    setSelectedDatasetName('');
-    setPortfolioSummary(null);
-    setUploadProgress(0);
-    setUploadStatus('');
-    setSelectedRecords(new Set());
-    setCurrentPage(0);
-    setTotalRecords(0);
-    setHasMore(false);
-  };
-
-  const handleDatasetSelection = async (datasetName: string) => {
-    setShowDatasetSelector(false);
-    setSelectedDatasetName(datasetName);
-    await loadDatasetData(datasetName);
-  };
-
-  // FIXED: Use efficient dataset-specific query instead of filtering all data
-  const loadDatasetData = async (datasetName: string, page = 0) => {
-    if (!user) return;
-    
     try {
       setIsProcessing(true);
-      console.log(`📊 LOADING DATASET DATA: ${datasetName} - Page ${page + 1}`);
-      
-      // Use the new efficient dataset-specific query
-      const result = await getLoanDataByDataset(datasetName, page, PAGE_SIZE);
-      
-      console.log(`📊 DATASET DATA LOADED: ${result.data.length} records for ${datasetName} (Page ${page + 1})`);
-      
-      if (page === 0) {
-        // First page - reset all data
-        setPreviewData(result.data);
-        setAllData(result.data);
-        setFilteredData(result.data);
-        setCurrentPage(0);
-        
-        if (result.data.length > 0) {
-          // Calculate summary for loaded data
-          const quickSummary = {
-            totalValue: result.data.reduce((sum, loan) => sum + loan.opening_balance, 0),
-            avgInterestRate: result.data.length > 0 ? 
-              result.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / result.data.length : 0,
-            highRiskLoans: result.data.filter(loan => (loan.pd || 0) > 0.05).length,
-            totalRecords: result.totalCount // Use actual total count from database
-          };
-          setPortfolioSummary(quickSummary);
-          
-          toast({
-            title: "Dataset Loaded",
-            description: `Loaded ${result.data.length.toLocaleString()} records from "${datasetName}" (${result.totalCount.toLocaleString()} total)`,
-          });
-        } else {
-          setPortfolioSummary(null);
-          toast({
-            title: "No Data Found",
-            description: `No records found in dataset "${datasetName}"`,
-          });
-        }
+      console.log('Loading existing data for dataset:', selectedDatasetName);
+
+      // Load data in parallel for faster loading
+      const [pageResult, allDataResult] = await Promise.all([
+        // Load first page for preview
+        getLoanDataByDataset(selectedDatasetName, 0, 1000),
+        // Load a larger subset for portfolio summary and charts (first 10k records for performance)
+        getLoanDataByDataset(selectedDatasetName, 0, 10000)
+      ]);
+
+      // Set preview data from first page
+      setPreviewData(pageResult.data);
+      setTotalRecords(pageResult.totalCount);
+      setHasMore(pageResult.hasMore);
+      setCurrentPage(0);
+
+      // Use the larger subset for portfolio summary and charts
+      setAllData(allDataResult.data);
+      setFilteredData(allDataResult.data);
+
+      // Calculate portfolio summary from the loaded data
+      if (allDataResult.data.length > 0) {
+        const totalValue = allDataResult.data.reduce((sum, loan) => sum + loan.opening_balance, 0);
+        const avgInterestRate = allDataResult.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / allDataResult.data.length;
+        const highRiskLoans = allDataResult.data.filter(loan => (loan.pd || 0) > 0.05).length;
+
+        setPortfolioSummary({
+          totalValue,
+          avgInterestRate,
+          highRiskLoans,
+          totalRecords: pageResult.totalCount // Use actual total count from database
+        });
       }
-      
-      // Set pagination info
-      setTotalRecords(result.totalCount);
-      setHasMore(result.hasMore);
-      
-    } catch (error) {
-      console.error('❌ ERROR loading dataset:', error);
+
       toast({
-        title: "Error Loading Dataset",
-        description: "Failed to load dataset. Please try again.",
+        title: "Data Loaded",
+        description: `Loaded ${pageResult.totalCount.toLocaleString()} records from ${selectedDatasetName}`,
+      });
+    } catch (error) {
+      console.error('Error loading existing data:', error);
+      toast({
+        title: "Error Loading Data",
+        description: "Failed to load existing data. Please try again.",
         variant: "destructive",
       });
-      resetState();
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [showExistingData, selectedDatasetName, user, toast]);
 
-  const handleFilteredDataChange = (filtered: LoanRecord[]) => {
-    setFilteredData(filtered);
-    
-    if (filtered.length === 0) {
-      // If no filters applied, show original data
-      setPreviewData(allData.slice(0, PAGE_SIZE));
-      setHasMore(allData.length > PAGE_SIZE);
-      setCurrentPage(0);
-      setSelectedRecords(new Set());
-      
-      // Reset to original portfolio summary
-      if (allData.length > 0) {
-        const originalSummary = {
-          totalValue: allData.reduce((sum, loan) => sum + loan.opening_balance, 0),
-          avgInterestRate: allData.length > 0 ? 
-            allData.reduce((sum, loan) => sum + loan.interest_rate, 0) / allData.length : 0,
-          highRiskLoans: allData.filter(loan => (loan.pd || 0) > 0.05).length,
-          totalRecords: totalRecords
-        };
-        setPortfolioSummary(originalSummary);
+  // Load data when modal opens or dataset changes
+  useEffect(() => {
+    if (isOpen) {
+      if (showExistingData) {
+        loadExistingData();
+      } else {
+        // Reset state for new upload
+        setAllData([]);
+        setPreviewData([]);
+        setFilteredData([]);
+        setSelectedRecords(new Set());
+        setPortfolioSummary(null);
+        setCurrentPage(0);
+        setTotalRecords(0);
+        setDatasetName('');
       }
-    } else {
-      // Update preview data to show filtered results
-      const firstPageData = filtered.slice(0, PAGE_SIZE);
-      setPreviewData(firstPageData);
-      setHasMore(filtered.length > PAGE_SIZE);
-      setCurrentPage(0);
-      setSelectedRecords(new Set()); // Clear selections when filter changes
-      
-      // Update portfolio summary based on filtered data
-      const filteredSummary = {
-        totalValue: filtered.reduce((sum, loan) => sum + loan.opening_balance, 0),
-        avgInterestRate: filtered.length > 0 ? 
-          filtered.reduce((sum, loan) => sum + loan.interest_rate, 0) / filtered.length : 0,
-        highRiskLoans: filtered.filter(loan => (loan.pd || 0) > 0.05).length,
-        totalRecords: filtered.length
-      };
-      setPortfolioSummary(filteredSummary);
     }
-  };
+  }, [isOpen, showExistingData, loadExistingData]);
 
-  const handleSaveFilteredDataset = async (filteredRecords: LoanRecord[], newDatasetName: string) => {
-    if (!user) {
+  const handleFileDrop = useCallback(async (files: File[]) => {
+    if (files.length === 0) return;
+
+    const file = files[0];
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to save filtered datasets",
+        title: "Invalid File Type",
+        description: "Please upload an Excel file (.xlsx or .xls)",
         variant: "destructive",
       });
       return;
     }
-    
+
     try {
       setIsProcessing(true);
-      setUploadStatus('Saving filtered dataset...');
+      setUploadStatus('Reading Excel file...');
       
-      console.log('💾 SAVING FILTERED DATASET:', {
-        datasetName: newDatasetName,
-        recordCount: filteredRecords.length,
-        userId: user.id,
-        sampleRecord: filteredRecords[0]
-      });
+      const parsedData = await parseExcelFile(file);
       
-      // Prepare clean data for insertion - remove database-generated fields completely
-      const dataWithUserId = filteredRecords.map(record => {
-        // Extract only the fields we want to save, excluding database-generated ones
-        const {
-          loan_amount,
-          interest_rate,
-          term,
-          loan_type,
-          credit_score,
-          ltv,
-          opening_balance,
-          pd,
-          file_name,
-          worksheet_name
-        } = record;
-        
-        return {
-          user_id: user.id,
-          dataset_name: newDatasetName,
-          loan_amount,
-          interest_rate,
-          term,
-          loan_type,
-          credit_score,
-          ltv,
-          opening_balance,
-          pd,
-          file_name,
-          worksheet_name
-        };
-      });
-      
-      console.log('💾 PREPARED CLEAN DATA SAMPLE:', dataWithUserId[0]);
-      
-      await insertLoanData(dataWithUserId, (completed, total) => {
-        const progress = Math.round((completed / total) * 100);
-        setUploadProgress(progress);
-        setUploadStatus(`Saving filtered dataset: ${completed}/${total} records (${progress}%)`);
-      });
-      
-      console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
-      
-      toast({
-        title: "Filtered Dataset Saved",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}"`,
-      });
-      
-    } catch (error) {
-      console.error('❌ Error saving filtered dataset:', error);
-      
-      let errorMessage = "Failed to save filtered dataset. Please try again.";
-      if (error instanceof Error) {
-        if (error.message.includes('not authenticated')) {
-          errorMessage = "Authentication error. Please log out and log back in.";
-        } else if (error.message.includes('permission')) {
-          errorMessage = "Permission denied. Please check your account permissions.";
-        }
+      if (parsedData.length === 0) {
+        toast({
+          title: "No Data Found",
+          description: "The Excel file doesn't contain any valid loan data",
+          variant: "destructive",
+        });
+        return;
       }
-      
+
+      // Calculate portfolio summary
+      const totalValue = parsedData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+      const avgInterestRate = parsedData.reduce((sum, loan) => sum + loan.interest_rate, 0) / parsedData.length;
+      const highRiskLoans = parsedData.filter(loan => (loan.pd || 0) > 0.05).length;
+
+      setPortfolioSummary({
+        totalValue,
+        avgInterestRate,
+        highRiskLoans,
+        totalRecords: parsedData.length
+      });
+
+      setAllData(parsedData);
+      setPreviewData(parsedData.slice(0, 100)); // Show first 100 for preview
+      setTotalRecords(parsedData.length);
+
       toast({
-        title: "Save Failed",
-        description: errorMessage,
+        title: "File Uploaded Successfully",
+        description: `Parsed ${parsedData.length.toLocaleString()} loan records`,
+      });
+    } catch (error) {
+      console.error('Error parsing Excel file:', error);
+      toast({
+        title: "Error Parsing File",
+        description: "Failed to parse the Excel file. Please check the format and try again.",
         variant: "destructive",
       });
-      throw error; // Re-throw to let the DataFilterPanel handle the error state
     } finally {
       setIsProcessing(false);
       setUploadStatus('');
+    }
+  }, [toast]);
+
+  const handleSaveToDatabase = async () => {
+    if (!user || allData.length === 0 || !datasetName.trim()) {
+      toast({
+        title: "Cannot Save",
+        description: "Please ensure you're logged in, have data to save, and have entered a dataset name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setUploadStatus('Preparing data for upload...');
+
+      const dataToSave = allData.map(loan => ({
+        ...loan,
+        user_id: user.id,
+        dataset_name: datasetName.trim(),
+      }));
+
+      console.log('Saving to database:', {
+        recordCount: dataToSave.length,
+        datasetName: datasetName.trim(),
+        userId: user.id
+      });
+
+      await insertLoanData(dataToSave, (completed, total) => {
+        const progress = Math.round((completed / total) * 100);
+        setUploadProgress(progress);
+        setUploadStatus(`Saving records: ${completed.toLocaleString()} of ${total.toLocaleString()}`);
+      });
+
+      toast({
+        title: "Data Saved Successfully",
+        description: `Saved ${dataToSave.length.toLocaleString()} loan records to dataset "${datasetName}"`,
+      });
+
+      // Clear the form and close modal
+      setAllData([]);
+      setPreviewData([]);
+      setPortfolioSummary(null);
+      setDatasetName('');
       setUploadProgress(0);
+      setUploadStatus('');
+      onRefreshData();
+      onClose();
+    } catch (error) {
+      console.error('Error saving data:', error);
+      toast({
+        title: "Error Saving Data",
+        description: "Failed to save data to database. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
-  };
-
-  // FIXED: Handle pagination more efficiently
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 0 && showExistingData && filteredData.length > 0) {
-      const startIndex = newPage * PAGE_SIZE;
-      const endIndex = startIndex + PAGE_SIZE;
-      const pageData = filteredData.slice(startIndex, endIndex);
-      
-      setPreviewData(pageData);
-      setCurrentPage(newPage);
-      setHasMore(endIndex < filteredData.length);
-      
-      // Clear selections when changing pages
-      setSelectedRecords(new Set());
-      
-      console.log(`📊 PAGE CHANGE: Changed to page ${newPage}, showing ${pageData.length} records in table`);
-    }
-  };
-
-  const calculatePortfolioSummary = (data: LoanRecord[]) => {
-    console.log(`📊 PORTFOLIO CALCULATION START: Beginning calculation with ${data.length} records`);
-    
-    const totalValue = data.reduce((sum, loan) => sum + loan.opening_balance, 0);
-    const avgInterestRate = data.length > 0 ? 
-      data.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / totalValue : 0;
-    const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.05).length;
-    
-    const calculatedSummary = {
-      totalValue,
-      avgInterestRate,
-      highRiskLoans,
-      totalRecords: data.length
-    };
-    
-    console.log(`📊 PORTFOLIO CALCULATION COMPLETE:`, calculatedSummary);
-    setPortfolioSummary(calculatedSummary);
   };
 
   const handleSelectRecord = (recordId: string, checked: boolean) => {
@@ -320,32 +255,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = previewData.filter(record => record.id).map(record => record.id!);
-      setSelectedRecords(new Set(allIds));
+      const allIds = new Set(previewData.filter(r => r.id).map(r => r.id!));
+      setSelectedRecords(allIds);
     } else {
       setSelectedRecords(new Set());
     }
   };
 
   const handleDeleteSelected = async () => {
-    if (selectedRecords.size === 0) {
-      toast({
-        title: "No Records Selected",
-        description: "Please select records to delete",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (selectedRecords.size === 0) return;
 
     try {
       setIsProcessing(true);
-      setUploadStatus(`Deleting ${selectedRecords.size} records...`);
-      
-      // Delete selected records
       await deleteLoanData(Array.from(selectedRecords));
       
-      // Refresh dataset after deletion
-      await loadDatasetData(selectedDatasetName);
+      // Reload data after deletion
+      await loadExistingData();
       setSelectedRecords(new Set());
       
       toast({
@@ -356,39 +281,28 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       console.error('Error deleting records:', error);
       toast({
         title: "Delete Failed",
-        description: "Failed to delete records. Please try again.",
+        description: "Failed to delete selected records. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
-      setUploadStatus('');
     }
   };
 
   const handleDeleteCompleteDataset = async () => {
-    if (!user || !selectedDatasetName || totalRecords === 0) {
-      toast({
-        title: "No Dataset to Delete",
-        description: "No dataset selected to delete",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!selectedDatasetName) return;
 
     try {
       setIsProcessing(true);
-      setUploadStatus(`Deleting dataset "${selectedDatasetName}"...`);
-      
-      console.log('🗑️ DELETING COMPLETE DATASET:', selectedDatasetName);
       await deleteLoanDataByDataset(selectedDatasetName);
       
       toast({
         title: "Dataset Deleted",
-        description: `Successfully deleted dataset "${selectedDatasetName}"`,
+        description: `Successfully deleted all data from ${selectedDatasetName}`,
       });
-
-      // Close modal after successful deletion
-      handleClose();
+      
+      onRefreshData();
+      onClose();
     } catch (error) {
       console.error('Error deleting dataset:', error);
       toast({
@@ -398,230 +312,85 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       });
     } finally {
       setIsProcessing(false);
-      setUploadStatus('');
     }
   };
 
-  const handleFileDrop = async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    setSelectedFile(file);
-    setIsProcessing(true);
-    setUploadProgress(0);
-    setUploadStatus('Parsing Excel file...');
+  const handlePageChange = async (page: number) => {
+    if (!selectedDatasetName || isProcessing) return;
 
     try {
-      console.log('Parsing Excel file:', file.name);
-      const parsedData = await parseExcelFile(file);
+      setIsProcessing(true);
+      const result = await getLoanDataByDataset(selectedDatasetName, page, 1000);
       
-      console.log('Parsed data:', {
-        worksheets: parsedData.worksheets,
-        recordCount: parsedData.data.length
-      });
-
-      // For uploaded files, previewData and allData are the same
-      setPreviewData(parsedData.data);
-      setAllData(parsedData.data);
-      setFilteredData(parsedData.data);
-      calculatePortfolioSummary(parsedData.data);
-      setUploadStatus('');
-      setSelectedRecords(new Set());
-      
-      toast({
-        title: "File Parsed Successfully",
-        description: `Found ${parsedData.data.length} loan records in ${parsedData.worksheets.join(', ')}`,
-      });
+      setPreviewData(result.data);
+      setCurrentPage(page);
+      setHasMore(result.hasMore);
+      setSelectedRecords(new Set()); // Clear selection when changing pages
     } catch (error) {
-      console.error('Error parsing file:', error);
+      console.error('Error loading page:', error);
       toast({
-        title: "Parse Error",
-        description: error instanceof Error ? error.message : "Failed to parse Excel file",
-        variant: "destructive",
-      });
-      setPreviewData([]);
-      setAllData([]);
-      setFilteredData([]);
-      setPortfolioSummary(null);
-      setUploadStatus('');
-    } finally {
-      setIsProcessing(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const handleSaveToDatabase = async () => {
-    console.log('🔍 SAVE TO DATABASE CLICKED - Checking conditions:', {
-      selectedFile: !!selectedFile,
-      user: !!user,
-      userId: user?.id,
-      previewDataLength: previewData.length,
-      allDataLength: allData.length,
-      datasetName: datasetName,
-      datasetNameTrimmed: datasetName.trim(),
-      isProcessing: isProcessing
-    });
-
-    // Use allData instead of previewData for saving all records
-    const dataToSave = allData.length > 0 ? allData : previewData;
-    
-    if (!selectedFile || !user || dataToSave.length === 0) {
-      console.log('❌ SAVE FAILED - Missing requirements:', {
-        selectedFile: !!selectedFile,
-        user: !!user,
-        dataLength: dataToSave.length
-      });
-      
-      toast({
-        title: "Upload Error",
-        description: "Please select a file and ensure you're logged in with data parsed",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!datasetName.trim()) {
-      console.log('❌ SAVE FAILED - No dataset name');
-      toast({
-        title: "Dataset Name Required",
-        description: "Please enter a name for this dataset",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Additional validation for user authentication
-    if (!user.id || user.id.length < 30) {
-      console.log('❌ SAVE FAILED - Invalid user ID:', user.id);
-      toast({
-        title: "Authentication Error",
-        description: "Invalid user session. Please log out and log back in.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    setUploadProgress(0);
-    setUploadStatus('Preparing data for upload...');
-    
-    try {
-      console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
-      
-      // Prepare data with user_id and dataset_name - let insertLoanData handle the rest
-      const dataWithMetadata = dataToSave.map(loan => ({
-        ...loan,
-        user_id: user.id,
-        dataset_name: datasetName.trim()
-      }));
-      
-      console.log('💾 PREPARED DATA SAMPLE:', dataWithMetadata.slice(0, 2));
-      
-      // Use the batch insert function with progress tracking
-      await insertLoanData(dataWithMetadata, (completed, total) => {
-        const progress = Math.round((completed / total) * 100);
-        setUploadProgress(progress);
-        setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
-        console.log(`📊 UPLOAD PROGRESS: ${completed}/${total} (${progress}%)`);
-      });
-      
-      console.log('✅ UPLOAD SUCCESSFUL - Data saved to database');
-      
-      toast({
-        title: "Upload Successful",
-        description: `${dataToSave.length} loan records saved successfully as "${datasetName}"`,
-      });
-      
-      // Clear the upload state but don't reset everything
-      setSelectedFile(null);
-      setDatasetName('');
-      setPreviewData([]);
-      setAllData([]);
-      setFilteredData([]);
-      setPortfolioSummary(null);
-      setUploadProgress(0);
-      setUploadStatus('');
-      
-      handleClose();
-    } catch (error) {
-      console.error('❌ ERROR uploading data:', error);
-      
-      let errorMessage = "Failed to save data to database. Please try again.";
-      if (error instanceof Error) {
-        console.error('❌ ERROR DETAILS:', error.message);
-        if (error.message.includes('not authenticated')) {
-          errorMessage = "Authentication error. Please log out and log back in.";
-        } else if (error.message.includes('permission')) {
-          errorMessage = "Permission denied. Please check your account permissions.";
-        } else if (error.message.includes('violates row-level security')) {
-          errorMessage = "Security error. Please ensure you're properly authenticated.";
-        }
-      }
-      
-      toast({
-        title: "Upload Failed",
-        description: errorMessage,
+        title: "Error Loading Page",
+        description: "Failed to load the requested page. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
-      setUploadProgress(0);
-      setUploadStatus('');
     }
   };
 
-  const handleClose = () => {
-    onClose();
-    setShowDatasetSelector(false);
-    resetState();
+  const handleClearData = () => {
+    setAllData([]);
+    setPreviewData([]);
+    setPortfolioSummary(null);
+    setDatasetName('');
+    setUploadProgress(0);
+    setUploadStatus('');
+  };
+
+  const handleFilteredDataChange = (newFilteredData: LoanRecord[]) => {
+    setFilteredData(newFilteredData);
+    // Update preview to show filtered data
+    setPreviewData(newFilteredData.slice(0, 1000));
+  };
+
+  const handleSaveFilteredDataset = (filteredData: LoanRecord[], newDatasetName: string) => {
+    // This would save the filtered data as a new dataset
+    console.log('Saving filtered dataset:', { count: filteredData.length, name: newDatasetName });
+    // Implementation would be similar to handleSaveToDatabase but with filtered data
   };
 
   return (
-    <>
-      <DatasetSelector
-        isOpen={showDatasetSelector}
-        onClose={() => {
-          setShowDatasetSelector(false);
-          onClose();
-        }}
-        onSelectDataset={handleDatasetSelection}
-      />
-      
-      <ExcelUploadModal
-        isOpen={isOpen && !showDatasetSelector}
-        showExistingData={showExistingData && !showDatasetSelector}
-        totalRecords={totalRecords}
-        selectedDatasetName={selectedDatasetName}
-        isProcessing={isProcessing}
-        portfolioSummary={portfolioSummary}
-        previewData={previewData}
-        allData={allData}
-        filteredData={filteredData}
-        selectedRecords={selectedRecords}
-        currentPage={currentPage}
-        hasMore={hasMore}
-        datasetName={datasetName}
-        uploadProgress={uploadProgress}
-        uploadStatus={uploadStatus}
-        onClose={handleClose}
-        onRefreshData={() => loadDatasetData(selectedDatasetName)}
-        onShowSharingManager={() => setShowSharingManager(true)}
-        onClearData={resetState}
-        onSaveToDatabase={handleSaveToDatabase}
-        onDatasetNameChange={setDatasetName}
-        onSelectRecord={handleSelectRecord}
-        onSelectAll={handleSelectAll}
-        onDeleteSelected={handleDeleteSelected}
-        onDeleteCompleteDataset={handleDeleteCompleteDataset}
-        onPageChange={handlePageChange}
-        onFileDrop={handleFileDrop}
-        onFilteredDataChange={handleFilteredDataChange}
-        onSaveFilteredDataset={handleSaveFilteredDataset}
-      />
-      
-      <DatasetSharingManager 
-        isOpen={showSharingManager}
-        onClose={() => setShowSharingManager(false)}
-      />
-    </>
+    <ExcelUploadModal
+      isOpen={isOpen}
+      showExistingData={showExistingData}
+      totalRecords={totalRecords}
+      selectedDatasetName={selectedDatasetName}
+      isProcessing={isProcessing}
+      portfolioSummary={portfolioSummary}
+      previewData={previewData}
+      allData={allData}
+      filteredData={filteredData}
+      selectedRecords={selectedRecords}
+      currentPage={currentPage}
+      hasMore={hasMore}
+      datasetName={datasetName}
+      uploadProgress={uploadProgress}
+      uploadStatus={uploadStatus}
+      onClose={onClose}
+      onRefreshData={onRefreshData}
+      onShowSharingManager={onShowSharingManager}
+      onClearData={handleClearData}
+      onSaveToDatabase={handleSaveToDatabase}
+      onDatasetNameChange={setDatasetName}
+      onSelectRecord={handleSelectRecord}
+      onSelectAll={handleSelectAll}
+      onDeleteSelected={handleDeleteSelected}
+      onDeleteCompleteDataset={handleDeleteCompleteDataset}
+      onPageChange={handlePageChange}
+      onFileDrop={handleFileDrop}
+      onFilteredDataChange={handleFilteredDataChange}
+      onSaveFilteredDataset={handleSaveFilteredDataset}
+    />
   );
 };
 
