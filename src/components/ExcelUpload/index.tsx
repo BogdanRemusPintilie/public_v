@@ -36,6 +36,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   } | null>(null);
   const [showSharingManager, setShowSharingManager] = useState(false);
   const [showDatasetSelector, setShowDatasetSelector] = useState(false);
+  const [datasetRefreshTrigger, setDatasetRefreshTrigger] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -240,6 +241,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       });
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
+      
+      // Trigger dataset selector refresh
+      setDatasetRefreshTrigger(prev => prev + 1);
       
       toast({
         title: "Filtered Dataset Saved",
@@ -583,6 +587,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           onClose();
         }}
         onSelectDataset={handleDatasetSelection}
+        refreshTrigger={datasetRefreshTrigger}
       />
       
       <ExcelUploadModal
