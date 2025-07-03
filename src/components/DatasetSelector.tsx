@@ -67,15 +67,15 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     }
   }, [isOpen, user]);
 
-  // Handle refresh trigger changes
+  // Handle refresh trigger changes with improved logic
   useEffect(() => {
     if (refreshTrigger > 0 && refreshTrigger !== lastRefreshTrigger && isOpen && user) {
       console.log('🔄 DATASET SELECTOR - Refresh trigger changed:', lastRefreshTrigger, '->', refreshTrigger);
       setLastRefreshTrigger(refreshTrigger);
-      // Add a small delay to ensure database write is complete
+      // Add a longer delay to ensure database write is complete and consistent
       setTimeout(() => {
         loadDatasets(true);
-      }, 500);
+      }, 1500); // Increased delay for better database consistency
     }
   }, [refreshTrigger, lastRefreshTrigger, isOpen, user]);
 
