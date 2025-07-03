@@ -132,7 +132,9 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     throw new Error('User not authenticated');
   }
 
-  // Get owned datasets
+  console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
+
+  // Get owned datasets with more detailed logging
   const { data: ownedDatasets, error: ownedError } = await supabase
     .from('loan_data')
     .select('dataset_name, user_id')
@@ -140,9 +142,11 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     .not('dataset_name', 'is', null);
 
   if (ownedError) {
-    console.error('Error fetching owned datasets:', ownedError);
+    console.error('❌ Error fetching owned datasets:', ownedError);
     throw ownedError;
   }
+
+  console.log('📊 OWNED DATASETS RAW:', ownedDatasets);
 
   // Get shared datasets
   const { data: sharedDatasets, error: sharedError } = await supabase
@@ -151,16 +155,18 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`);
 
   if (sharedError) {
-    console.error('Error fetching shared datasets:', sharedError);
+    console.error('❌ Error fetching shared datasets:', sharedError);
     throw sharedError;
   }
+
+  console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
 
   // Combine and deduplicate datasets
   const datasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
 
   // Add owned datasets
   ownedDatasets?.forEach(dataset => {
-    if (dataset.dataset_name) {
+    if (dataset.dataset_name && dataset.dataset_name.trim()) {
       datasets.set(dataset.dataset_name, {
         name: dataset.dataset_name,
         owner_id: dataset.user_id,
@@ -171,7 +177,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
   // Add shared datasets (don't override owned ones)
   sharedDatasets?.forEach(share => {
-    if (share.dataset_name && !datasets.has(share.dataset_name)) {
+    if (share.dataset_name && share.dataset_name.trim() && !datasets.has(share.dataset_name)) {
       datasets.set(share.dataset_name, {
         name: share.dataset_name,
         owner_id: share.owner_id,
@@ -180,7 +186,10 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     }
   });
 
-  return Array.from(datasets.values());
+  const result = Array.from(datasets.values());
+  console.log('📊 FINAL ACCESSIBLE DATASETS:', result);
+
+  return result;
 };
 
 export const getUserDatasets = async (): Promise<{ name: string; owner_id: string }[]> => {

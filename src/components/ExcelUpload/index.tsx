@@ -242,12 +242,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Trigger dataset selector refresh
-      setDatasetRefreshTrigger(prev => prev + 1);
+      // Force refresh of dataset selector with a more significant trigger
+      const newTrigger = Date.now();
+      setDatasetRefreshTrigger(newTrigger);
+      
+      console.log('🔄 DATASET REFRESH TRIGGERED:', newTrigger);
       
       toast({
         title: "Filtered Dataset Saved",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}"`,
+        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". It will appear in the dataset selector.`,
       });
       
     } catch (error) {
@@ -267,7 +270,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         description: errorMessage,
         variant: "destructive",
       });
-      throw error; // Re-throw to let the DataFilterPanel handle the error state
+      throw error;
     } finally {
       setIsProcessing(false);
       setUploadStatus('');

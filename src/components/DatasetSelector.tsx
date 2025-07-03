@@ -11,7 +11,7 @@ interface DatasetSelectorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectDataset: (datasetName: string) => void;
-  refreshTrigger?: number; // Add trigger to force refresh
+  refreshTrigger?: number;
 }
 
 const DatasetSelector: React.FC<DatasetSelectorProps> = ({ 
@@ -30,14 +30,16 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     
     try {
       setIsLoading(true);
-      console.log('Loading accessible datasets...');
+      console.log('🔄 LOADING DATASETS - Refresh trigger:', refreshTrigger);
       
       const accessibleDatasets = await getAccessibleDatasets();
+      console.log('📊 DATASETS FETCHED:', accessibleDatasets);
+      
       setDatasets(accessibleDatasets);
       
-      console.log(`Loaded ${accessibleDatasets.length} accessible datasets`);
+      console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets`);
     } catch (error) {
-      console.error('Error loading datasets:', error);
+      console.error('❌ ERROR loading datasets:', error);
       toast({
         title: "Error Loading Datasets",
         description: "Failed to load datasets. Please try again.",
@@ -48,13 +50,16 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     }
   };
 
+  // Load datasets when modal opens or when refreshTrigger changes
   useEffect(() => {
     if (isOpen && user) {
+      console.log('🔄 DATASET SELECTOR - Modal opened or refresh triggered');
       loadDatasets();
     }
-  }, [isOpen, user, refreshTrigger]); // Add refreshTrigger to dependencies
+  }, [isOpen, user, refreshTrigger]);
 
   const handleSelectDataset = (datasetName: string) => {
+    console.log('📊 SELECTING DATASET:', datasetName);
     onSelectDataset(datasetName);
   };
 
@@ -111,8 +116,18 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             )}
           </CardContent>
           <div className="flex justify-end gap-4 p-6 border-t">
-            <Button variant="ghost" onClick={onClose}>
+            <Button 
+              variant="ghost" 
+              onClick={onClose}
+            >
               Cancel
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={loadDatasets}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
         </Card>
