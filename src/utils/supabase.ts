@@ -23,7 +23,6 @@ interface DatasetSummary {
   total_value: number;
   avg_interest_rate: number;
   created_at: string;
-  high_risk_count: number;
 }
 
 export const insertLoanData = async (
@@ -122,15 +121,7 @@ export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
     throw error;
   }
   
-  // Transform data to match expected interface
-  return (data || []).map(item => ({
-    dataset_name: item.dataset_name,
-    record_count: item.record_count,
-    total_value: item.total_value,
-    avg_interest_rate: item.avg_interest_rate,
-    created_at: item.created_at,
-    high_risk_count: item.high_risk_count
-  }));
+  return data || [];
 };
 
 // New function to get datasets including shared ones

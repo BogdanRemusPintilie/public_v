@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Filter, X, Save, CheckCircle, Loader2 } from 'lucide-react';
+import { Filter, X, Save, CheckCircle } from 'lucide-react';
 import { LoanRecord } from '@/utils/supabase';
 
 interface FilterCriteria {
@@ -49,71 +49,52 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [saveDatasetName, setSaveDatasetName] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [isFiltering, setIsFiltering] = useState(false);
 
-  const applyFilters = async () => {
-    console.log(`🔍 APPLYING FILTERS - Current data available: ${allData.length} records`);
-    
-    setIsFiltering(true);
-    
-    try {
-      // Trigger loading all data if not already loaded
-      if (allData.length === 0) {
-        console.log('🔍 No data available yet, triggering data load...');
-        // This will trigger the parent component to load all data
-        await onFilteredDataChange([]);
-        return;
+  const applyFilters = () => {
+    const filtered = allData.filter(record => {
+      // Loan amount filter
+      if (filterCriteria.minLoanAmount && record.opening_balance < parseFloat(filterCriteria.minLoanAmount)) {
+        return false;
       }
-      
-      const filtered = allData.filter(record => {
-        // Loan amount filter
-        if (filterCriteria.minLoanAmount && record.opening_balance < parseFloat(filterCriteria.minLoanAmount)) {
-          return false;
-        }
-        if (filterCriteria.maxLoanAmount && record.opening_balance > parseFloat(filterCriteria.maxLoanAmount)) {
-          return false;
-        }
+      if (filterCriteria.maxLoanAmount && record.opening_balance > parseFloat(filterCriteria.maxLoanAmount)) {
+        return false;
+      }
 
-        // Interest rate filter
-        if (filterCriteria.minInterestRate && record.interest_rate < parseFloat(filterCriteria.minInterestRate)) {
-          return false;
-        }
-        if (filterCriteria.maxInterestRate && record.interest_rate > parseFloat(filterCriteria.maxInterestRate)) {
-          return false;
-        }
+      // Interest rate filter
+      if (filterCriteria.minInterestRate && record.interest_rate < parseFloat(filterCriteria.minInterestRate)) {
+        return false;
+      }
+      if (filterCriteria.maxInterestRate && record.interest_rate > parseFloat(filterCriteria.maxInterestRate)) {
+        return false;
+      }
 
-        // Loan type filter
-        if (filterCriteria.loanType !== 'all' && record.loan_type !== filterCriteria.loanType) {
-          return false;
-        }
+      // Loan type filter
+      if (filterCriteria.loanType !== 'all' && record.loan_type !== filterCriteria.loanType) {
+        return false;
+      }
 
-        // Credit score filter
-        if (filterCriteria.minCreditScore && record.credit_score < parseFloat(filterCriteria.minCreditScore)) {
-          return false;
-        }
-        if (filterCriteria.maxCreditScore && record.credit_score > parseFloat(filterCriteria.maxCreditScore)) {
-          return false;
-        }
+      // Credit score filter
+      if (filterCriteria.minCreditScore && record.credit_score < parseFloat(filterCriteria.minCreditScore)) {
+        return false;
+      }
+      if (filterCriteria.maxCreditScore && record.credit_score > parseFloat(filterCriteria.maxCreditScore)) {
+        return false;
+      }
 
-        // LTV filter
-        if (filterCriteria.minLTV && record.ltv < parseFloat(filterCriteria.minLTV)) {
-          return false;
-        }
-        if (filterCriteria.maxLTV && record.ltv > parseFloat(filterCriteria.maxLTV)) {
-          return false;
-        }
+      // LTV filter
+      if (filterCriteria.minLTV && record.ltv < parseFloat(filterCriteria.minLTV)) {
+        return false;
+      }
+      if (filterCriteria.maxLTV && record.ltv > parseFloat(filterCriteria.maxLTV)) {
+        return false;
+      }
 
-        return true;
-      });
+      return true;
+    });
 
-      console.log(`🔍 FILTER RESULTS: ${filtered.length} records match criteria out of ${allData.length} total`);
-      
-      setFilteredData(filtered);
-      setShowFiltered(true);
-      onFilteredDataChange(filtered);
-    } finally {
-      setIsFiltering(false);
-    }
+    setFilteredData(filtered);
+    setShowFiltered(true);
+    onFilteredDataChange(filtered);
   };
 
   const clearFilters = () => {
@@ -130,7 +111,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     });
     setFilteredData([]);
     setShowFiltered(false);
-    onFilteredDataChange(allData.length > 0 ? allData : []);
+    onFilteredDataChange(allData);
   };
 
   const handleSaveFilteredDataset = async () => {
@@ -144,7 +125,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         
         // Prepare clean data without database-specific fields
         const cleanFilteredData = filteredData.map(record => {
-          const { id, created_at, ...cleanRecord } = record;
+          const { id, created_at, updated_at, ...cleanRecord } = record;
           return cleanRecord;
         });
         
@@ -183,11 +164,6 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           {showFiltered && (
             <span className="text-sm font-normal text-gray-600">
               ({filteredData.length} of {allData.length} records)
-            </span>
-          )}
-          {allData.length === 0 && (
-            <span className="text-sm font-normal text-yellow-600">
-              (Filters will load all data when applied)
             </span>
           )}
         </CardTitle>
@@ -287,23 +263,14 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={applyFilters} disabled={isProcessing || isFiltering}>
-            {isFiltering ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {allData.length === 0 ? 'Loading Data...' : 'Applying Filters...'}
-              </>
-            ) : (
-              <>
-                <Filter className="h-4 w-4 mr-2" />
-                Apply Filters
-              </>
-            )}
+          <Button onClick={applyFilters} disabled={isProcessing}>
+            <Filter className="h-4 w-4 mr-2" />
+            Apply Filters
           </Button>
           
           {showFiltered && (
             <>
-              <Button variant="outline" onClick={clearFilters} disabled={isProcessing || isFiltering}>
+              <Button variant="outline" onClick={clearFilters} disabled={isProcessing}>
                 <X className="h-4 w-4 mr-2" />
                 Clear Filters
               </Button>
@@ -312,7 +279,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
                 <Button 
                   variant="secondary" 
                   onClick={() => setShowSaveDialog(true)}
-                  disabled={isProcessing || isFiltering}
+                  disabled={isProcessing}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Filtered Dataset

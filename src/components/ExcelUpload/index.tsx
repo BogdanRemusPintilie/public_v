@@ -39,7 +39,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [datasetLoaded, setDatasetLoaded] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -69,51 +68,61 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setCurrentPage(0);
     setTotalRecords(0);
     setHasMore(false);
-    setDatasetLoaded(false);
   };
 
   const handleDatasetSelection = async (datasetName: string) => {
     setShowDatasetSelector(false);
     setSelectedDatasetName(datasetName);
-    await loadDatasetDataFast(datasetName);
+    await loadDatasetData(datasetName);
   };
 
-  // Fast loading - only load first page initially
-  const loadDatasetDataFast = async (datasetName: string) => {
+  // FIXED: Use efficient dataset-specific query instead of filtering all data
+  const loadDatasetData = async (datasetName: string, page = 0) => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log(`📊 FAST LOADING DATASET: ${datasetName} (first page only)`);
+      console.log(`📊 LOADING DATASET DATA: ${datasetName} - Page ${page + 1}`);
       
-      // Load only the first page for fast initial display
-      const firstPageResult = await getLoanDataByDataset(datasetName, 0, PAGE_SIZE);
-      setTotalRecords(firstPageResult.totalCount);
-      setPreviewData(firstPageResult.data);
-      setCurrentPage(0);
-      setHasMore(firstPageResult.hasMore);
-      setDatasetLoaded(true);
+      // Use the new efficient dataset-specific query
+      const result = await getLoanDataByDataset(datasetName, page, PAGE_SIZE);
       
-      // Initially set filtered data to first page only
-      setFilteredData(firstPageResult.data);
-      setAllData([]); // Don't load all data initially
+      console.log(`📊 DATASET DATA LOADED: ${result.data.length} records for ${datasetName} (Page ${page + 1})`);
       
-      // Calculate quick summary for first page only
-      if (firstPageResult.data.length > 0) {
-        const quickSummary = {
-          totalValue: firstPageResult.data.reduce((sum, loan) => sum + loan.opening_balance, 0),
-          avgInterestRate: firstPageResult.data.length > 0 ? 
-            firstPageResult.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / firstPageResult.data.length : 0,
-          highRiskLoans: firstPageResult.data.filter(loan => (loan.pd || 0) > 0.05).length,
-          totalRecords: firstPageResult.totalCount
-        };
-        setPortfolioSummary(quickSummary);
+      if (page === 0) {
+        // First page - reset all data
+        setPreviewData(result.data);
+        setAllData(result.data);
+        setFilteredData(result.data);
+        setCurrentPage(0);
+        
+        if (result.data.length > 0) {
+          // Calculate summary for loaded data
+          const quickSummary = {
+            totalValue: result.data.reduce((sum, loan) => sum + loan.opening_balance, 0),
+            avgInterestRate: result.data.length > 0 ? 
+              result.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / result.data.length : 0,
+            highRiskLoans: result.data.filter(loan => (loan.pd || 0) > 0.05).length,
+            totalRecords: result.totalCount // Use actual total count from database
+          };
+          setPortfolioSummary(quickSummary);
+          
+          toast({
+            title: "Dataset Loaded",
+            description: `Loaded ${result.data.length.toLocaleString()} records from "${datasetName}" (${result.totalCount.toLocaleString()} total)`,
+          });
+        } else {
+          setPortfolioSummary(null);
+          toast({
+            title: "No Data Found",
+            description: `No records found in dataset "${datasetName}"`,
+          });
+        }
       }
       
-      toast({
-        title: "Dataset Loaded",
-        description: `Loaded first page (${firstPageResult.data.length.toLocaleString()} of ${firstPageResult.totalCount.toLocaleString()} records) from "${datasetName}"`,
-      });
+      // Set pagination info
+      setTotalRecords(result.totalCount);
+      setHasMore(result.hasMore);
       
     } catch (error) {
       console.error('❌ ERROR loading dataset:', error);
@@ -125,61 +134,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       resetState();
     } finally {
       setIsProcessing(false);
-      setUploadStatus('');
     }
   };
 
-  // Load ALL data when filters are needed
-  const loadAllDataForFiltering = async () => {
-    if (!user || !selectedDatasetName || allData.length > 0) return;
-    
-    try {
-      setIsProcessing(true);
-      setUploadStatus('Loading all data for filtering...');
-      
-      console.log(`📊 LOADING ALL DATA FOR FILTERING: ${selectedDatasetName}`);
-      
-      const allPages = [];
-      const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
-      
-      // Load all pages
-      for (let i = 0; i < totalPages; i++) {
-        const pageResult = await getLoanDataByDataset(selectedDatasetName, i, PAGE_SIZE);
-        allPages.push(...pageResult.data);
-        
-        // Update progress
-        const progress = Math.round(((i + 1) / totalPages) * 100);
-        setUploadStatus(`Loading all data: Page ${i + 1}/${totalPages} (${progress}%)`);
-      }
-      
-      console.log(`📊 LOADED ALL DATA: ${allPages.length} records for filtering`);
-      setAllData(allPages);
-      
-      toast({
-        title: "All Data Loaded",
-        description: `Loaded all ${allPages.length.toLocaleString()} records for filtering`,
-      });
-      
-      return allPages;
-      
-    } catch (error) {
-      console.error('❌ ERROR loading all data:', error);
-      throw error;
-    } finally {
-      setIsProcessing(false);
-      setUploadStatus('');
-    }
-  };
-
-  const handleFilteredDataChange = async (filtered: LoanRecord[]) => {
-    // If we don't have all data loaded yet, load it first
-    let dataToFilter = allData;
-    if (allData.length === 0 && datasetLoaded) {
-      console.log('🔍 FILTERS APPLIED - Loading all data first for filtering');
-      dataToFilter = await loadAllDataForFiltering();
-    }
-    
-    console.log(`🔍 FILTER APPLIED: ${filtered.length} records from ${dataToFilter.length} total`);
+  const handleFilteredDataChange = (filtered: LoanRecord[]) => {
     setFilteredData(filtered);
     
     // Update preview data to show filtered results
@@ -290,7 +248,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
-  // Handle pagination more efficiently for filtered data
+  // FIXED: Handle pagination more efficiently
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && showExistingData && filteredData.length > 0) {
       const startIndex = newPage * PAGE_SIZE;
@@ -364,7 +322,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       await deleteLoanData(Array.from(selectedRecords));
       
       // Refresh dataset after deletion
-      await loadDatasetDataFast(selectedDatasetName);
+      await loadDatasetData(selectedDatasetName);
       setSelectedRecords(new Set());
       
       toast({
@@ -620,7 +578,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         uploadProgress={uploadProgress}
         uploadStatus={uploadStatus}
         onClose={handleClose}
-        onRefreshData={() => loadDatasetDataFast(selectedDatasetName)}
+        onRefreshData={() => loadDatasetData(selectedDatasetName)}
         onShowSharingManager={() => setShowSharingManager(true)}
         onClearData={resetState}
         onSaveToDatabase={handleSaveToDatabase}
