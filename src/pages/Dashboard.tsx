@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [showDatasetManager, setShowDatasetManager] = useState(false);
   const [showDataExtractor, setShowDataExtractor] = useState(false);
   const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
+  const [selectedDatasetName, setSelectedDatasetName] = useState('');
 
   const handleLogout = () => {
     logout();
@@ -56,6 +57,16 @@ const Dashboard = () => {
         description: `Selected: ${action}`,
       });
     }
+  };
+
+  const handleRefreshData = () => {
+    // Refresh data callback
+    console.log('Refreshing data...');
+  };
+
+  const handleShowSharingManager = () => {
+    // Show sharing manager callback
+    console.log('Showing sharing manager...');
   };
 
   return (
@@ -338,14 +349,21 @@ const Dashboard = () => {
       {/* Excel Upload Dialog for new uploads */}
       <ExcelUpload
         isOpen={showExcelUpload}
+        showExistingData={false}
+        selectedDatasetName=""
         onClose={() => setShowExcelUpload(false)}
+        onRefreshData={handleRefreshData}
+        onShowSharingManager={handleShowSharingManager}
       />
 
       {/* Excel Upload Dialog for existing data preview */}
       <ExcelUpload
         isOpen={showExistingData}
-        onClose={() => setShowExistingData(false)}
         showExistingData={true}
+        selectedDatasetName={selectedDatasetName}
+        onClose={() => setShowExistingData(false)}
+        onRefreshData={handleRefreshData}
+        onShowSharingManager={handleShowSharingManager}
       />
 
       {/* Dataset Manager Dialog */}

@@ -7,7 +7,8 @@ import {
   getLoanDataByDataset, 
   deleteLoanData,
   deleteLoanDataByDataset,
-  LoanRecord
+  LoanRecord,
+  getAccessibleDatasets
 } from '@/utils/supabase';
 import { parseExcelFile } from '@/utils/excelParser';
 
@@ -45,24 +46,51 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     highRiskLoans: number;
     totalRecords: number;
   } | null>(null);
+  const [availableDatasets, setAvailableDatasets] = useState<string[]>([]);
+  const [currentDataset, setCurrentDataset] = useState('');
 
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Load available datasets when modal opens
+  const loadAvailableDatasets = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const datasets = await getAccessibleDatasets();
+      const datasetNames = datasets.map(d => d.name);
+      setAvailableDatasets(datasetNames);
+      
+      // If we have a selected dataset, use it, otherwise use the first available
+      if (selectedDatasetName && datasetNames.includes(selectedDatasetName)) {
+        setCurrentDataset(selectedDatasetName);
+      } else if (datasetNames.length > 0) {
+        setCurrentDataset(datasetNames[0]);
+      }
+    } catch (error) {
+      console.error('Error loading available datasets:', error);
+      toast({
+        title: "Error Loading Datasets",
+        description: "Failed to load available datasets. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [user, selectedDatasetName, toast]);
+
   // Load existing data when modal opens with selected dataset
   const loadExistingData = useCallback(async () => {
-    if (!showExistingData || !selectedDatasetName || !user) return;
+    if (!showExistingData || !currentDataset || !user) return;
 
     try {
       setIsProcessing(true);
-      console.log('Loading existing data for dataset:', selectedDatasetName);
+      console.log('Loading existing data for dataset:', currentDataset);
 
       // Load data in parallel for faster loading
       const [pageResult, allDataResult] = await Promise.all([
         // Load first page for preview
-        getLoanDataByDataset(selectedDatasetName, 0, 1000),
+        getLoanDataByDataset(currentDataset, 0, 1000),
         // Load a larger subset for portfolio summary and charts (first 10k records for performance)
-        getLoanDataByDataset(selectedDatasetName, 0, 10000)
+        getLoanDataByDataset(currentDataset, 0, 10000)
       ]);
 
       // Set preview data from first page
@@ -85,13 +113,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           totalValue,
           avgInterestRate,
           highRiskLoans,
-          totalRecords: pageResult.totalCount // Use actual total count from database
+          totalRecords: pageResult.totalCount
         });
       }
 
       toast({
         title: "Data Loaded",
-        description: `Loaded ${pageResult.totalCount.toLocaleString()} records from ${selectedDatasetName}`,
+        description: `Loaded ${pageResult.totalCount.toLocaleString()} records from ${currentDataset}`,
       });
     } catch (error) {
       console.error('Error loading existing data:', error);
@@ -103,13 +131,29 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [showExistingData, selectedDatasetName, user, toast]);
+  }, [showExistingData, currentDataset, user, toast]);
+
+  // Load datasets when modal opens
+  useEffect(() => {
+    if (isOpen && showExistingData) {
+      loadAvailableDatasets();
+    }
+  }, [isOpen, showExistingData, loadAvailableDatasets]);
+
+  // Load data when dataset changes
+  useEffect(() => {
+    if (isOpen && showExistingData && currentDataset) {
+      loadExistingData();
+    }
+  }, [isOpen, showExistingData, currentDataset, loadExistingData]);
 
   // Load data when modal opens or dataset changes
   useEffect(() => {
     if (isOpen) {
       if (showExistingData) {
-        loadExistingData();
+        if (!currentDataset && availableDatasets.length > 0) {
+          setCurrentDataset(availableDatasets[0]);
+        }
       } else {
         // Reset state for new upload
         setAllData([]);
@@ -122,7 +166,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         setDatasetName('');
       }
     }
-  }, [isOpen, showExistingData, loadExistingData]);
+  }, [isOpen, showExistingData, availableDatasets, currentDataset]);
 
   const handleFileDrop = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
@@ -143,7 +187,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       const parsedData = await parseExcelFile(file);
       
-      if (parsedData.length === 0) {
+      if (!parsedData || !Array.isArray(parsedData) || parsedData.length === 0) {
         toast({
           title: "No Data Found",
           description: "The Excel file doesn't contain any valid loan data",
@@ -290,15 +334,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handleDeleteCompleteDataset = async () => {
-    if (!selectedDatasetName) return;
+    if (!currentDataset) return;
 
     try {
       setIsProcessing(true);
-      await deleteLoanDataByDataset(selectedDatasetName);
+      await deleteLoanDataByDataset(currentDataset);
       
       toast({
         title: "Dataset Deleted",
-        description: `Successfully deleted all data from ${selectedDatasetName}`,
+        description: `Successfully deleted all data from ${currentDataset}`,
       });
       
       onRefreshData();
@@ -316,11 +360,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handlePageChange = async (page: number) => {
-    if (!selectedDatasetName || isProcessing) return;
+    if (!currentDataset || isProcessing) return;
 
     try {
       setIsProcessing(true);
-      const result = await getLoanDataByDataset(selectedDatasetName, page, 1000);
+      const result = await getLoanDataByDataset(currentDataset, page, 1000);
       
       setPreviewData(result.data);
       setCurrentPage(page);
@@ -364,7 +408,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       isOpen={isOpen}
       showExistingData={showExistingData}
       totalRecords={totalRecords}
-      selectedDatasetName={selectedDatasetName}
+      selectedDatasetName={currentDataset}
       isProcessing={isProcessing}
       portfolioSummary={portfolioSummary}
       previewData={previewData}
