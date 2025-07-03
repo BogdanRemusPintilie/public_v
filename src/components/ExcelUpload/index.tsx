@@ -242,15 +242,19 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Force refresh of dataset selector with a more significant trigger
+      // Force refresh of dataset selector with timestamp to ensure uniqueness
       const newTrigger = Date.now();
       setDatasetRefreshTrigger(newTrigger);
       
       console.log('🔄 DATASET REFRESH TRIGGERED:', newTrigger);
       
+      // Wait a moment to ensure database consistency
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       toast({
         title: "Filtered Dataset Saved",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". It will appear in the dataset selector.`,
+        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". Click "Access Existing Data" to see it in the dataset selector.`,
+        duration: 5000,
       });
       
     } catch (error) {

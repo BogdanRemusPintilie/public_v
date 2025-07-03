@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { getAccessibleDatasets } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Database, Loader2 } from 'lucide-react';
+import { Database, Loader2, RefreshCw } from 'lucide-react';
 
 interface DatasetSelectorProps {
   isOpen: boolean;
@@ -22,22 +22,31 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
 }) => {
   const [datasets, setDatasets] = useState<{ name: string; owner_id: string; is_shared: boolean }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastRefreshTrigger, setLastRefreshTrigger] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const loadDatasets = async () => {
+  const loadDatasets = async (force = false) => {
     if (!user) return;
     
     try {
       setIsLoading(true);
-      console.log('🔄 LOADING DATASETS - Refresh trigger:', refreshTrigger);
+      console.log('🔄 LOADING DATASETS - Force:', force, 'Refresh trigger:', refreshTrigger);
       
       const accessibleDatasets = await getAccessibleDatasets();
       console.log('📊 DATASETS FETCHED:', accessibleDatasets);
       
-      setDatasets(accessibleDatasets);
+      // Always update datasets, even if the list looks the same
+      setDatasets([...accessibleDatasets]); // Create new array to force re-render
       
       console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets`);
+      
+      if (force) {
+        toast({
+          title: "Datasets Refreshed",
+          description: `Found ${accessibleDatasets.length} accessible datasets`,
+        });
+      }
     } catch (error) {
       console.error('❌ ERROR loading datasets:', error);
       toast({
@@ -50,17 +59,34 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     }
   };
 
-  // Load datasets when modal opens or when refreshTrigger changes
+  // Load datasets when modal opens
   useEffect(() => {
     if (isOpen && user) {
-      console.log('🔄 DATASET SELECTOR - Modal opened or refresh triggered');
+      console.log('🔄 DATASET SELECTOR - Modal opened, loading datasets');
       loadDatasets();
     }
-  }, [isOpen, user, refreshTrigger]);
+  }, [isOpen, user]);
+
+  // Handle refresh trigger changes
+  useEffect(() => {
+    if (refreshTrigger > 0 && refreshTrigger !== lastRefreshTrigger && isOpen && user) {
+      console.log('🔄 DATASET SELECTOR - Refresh trigger changed:', lastRefreshTrigger, '->', refreshTrigger);
+      setLastRefreshTrigger(refreshTrigger);
+      // Add a small delay to ensure database write is complete
+      setTimeout(() => {
+        loadDatasets(true);
+      }, 500);
+    }
+  }, [refreshTrigger, lastRefreshTrigger, isOpen, user]);
 
   const handleSelectDataset = (datasetName: string) => {
     console.log('📊 SELECTING DATASET:', datasetName);
     onSelectDataset(datasetName);
+  };
+
+  const handleManualRefresh = () => {
+    console.log('🔄 MANUAL REFRESH requested');
+    loadDatasets(true);
   };
 
   if (!isOpen) return null;
@@ -89,9 +115,9 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
               </div>
             ) : (
               <div className="grid gap-3 max-h-96 overflow-y-auto">
-                {datasets.map((dataset) => (
+                {datasets.map((dataset, index) => (
                   <div
-                    key={dataset.name}
+                    key={`${dataset.name}-${dataset.owner_id}-${index}`}
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center space-x-3">
@@ -124,9 +150,11 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             </Button>
             <Button 
               variant="outline" 
-              onClick={loadDatasets}
+              onClick={handleManualRefresh}
               disabled={isLoading}
+              className="flex items-center gap-2"
             >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
