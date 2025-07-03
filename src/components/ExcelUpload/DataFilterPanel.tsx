@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +22,14 @@ interface FilterCriteria {
 }
 
 interface DataFilterPanelProps {
-  allData: LoanRecord[];
+  datasetName: string;
   onFilteredDataChange: (filteredData: LoanRecord[]) => void;
   onSaveFilteredDataset: (filteredData: LoanRecord[], datasetName: string) => void;
   isProcessing: boolean;
 }
 
 export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
-  allData,
+  datasetName,
   onFilteredDataChange,
   onSaveFilteredDataset,
   isProcessing
@@ -49,52 +50,104 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [saveDatasetName, setSaveDatasetName] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLoadingAllData, setIsLoadingAllData] = useState(false);
+  const [allDataLoaded, setAllDataLoaded] = useState(false);
+  const [completeDataset, setCompleteDataset] = useState<LoanRecord[]>([]);
 
-  const applyFilters = () => {
-    const filtered = allData.filter(record => {
-      // Loan amount filter
-      if (filterCriteria.minLoanAmount && record.opening_balance < parseFloat(filterCriteria.minLoanAmount)) {
-        return false;
+  const loadCompleteDataset = async () => {
+    if (allDataLoaded) return completeDataset;
+    
+    try {
+      setIsLoadingAllData(true);
+      console.log('Loading complete dataset for filtering...');
+      
+      const { getLoanDataByDataset } = await import('@/utils/supabase');
+      let allRecords: LoanRecord[] = [];
+      let page = 0;
+      let hasMore = true;
+      const pageSize = 5000; // Larger page size for faster loading
+      
+      while (hasMore) {
+        const result = await getLoanDataByDataset(datasetName, page, pageSize);
+        allRecords = [...allRecords, ...result.data];
+        hasMore = result.hasMore;
+        page++;
+        
+        console.log(`Loaded ${allRecords.length} of ${result.totalCount} records...`);
       }
-      if (filterCriteria.maxLoanAmount && record.opening_balance > parseFloat(filterCriteria.maxLoanAmount)) {
-        return false;
-      }
+      
+      console.log(`Complete dataset loaded: ${allRecords.length} records`);
+      setCompleteDataset(allRecords);
+      setAllDataLoaded(true);
+      return allRecords;
+    } catch (error) {
+      console.error('Error loading complete dataset:', error);
+      throw error;
+    } finally {
+      setIsLoadingAllData(false);
+    }
+  };
 
-      // Interest rate filter
-      if (filterCriteria.minInterestRate && record.interest_rate < parseFloat(filterCriteria.minInterestRate)) {
-        return false;
-      }
-      if (filterCriteria.maxInterestRate && record.interest_rate > parseFloat(filterCriteria.maxInterestRate)) {
-        return false;
-      }
+  const applyFilters = async () => {
+    try {
+      setIsLoadingAllData(true);
+      
+      // Load complete dataset if not already loaded
+      const allData = await loadCompleteDataset();
+      
+      console.log(`Applying filters to ${allData.length} records`);
+      
+      const filtered = allData.filter(record => {
+        // Loan amount filter
+        if (filterCriteria.minLoanAmount && record.opening_balance < parseFloat(filterCriteria.minLoanAmount)) {
+          return false;
+        }
+        if (filterCriteria.maxLoanAmount && record.opening_balance > parseFloat(filterCriteria.maxLoanAmount)) {
+          return false;
+        }
 
-      // Loan type filter
-      if (filterCriteria.loanType !== 'all' && record.loan_type !== filterCriteria.loanType) {
-        return false;
-      }
+        // Interest rate filter
+        if (filterCriteria.minInterestRate && record.interest_rate < parseFloat(filterCriteria.minInterestRate)) {
+          return false;
+        }
+        if (filterCriteria.maxInterestRate && record.interest_rate > parseFloat(filterCriteria.maxInterestRate)) {
+          return false;
+        }
 
-      // Credit score filter
-      if (filterCriteria.minCreditScore && record.credit_score < parseFloat(filterCriteria.minCreditScore)) {
-        return false;
-      }
-      if (filterCriteria.maxCreditScore && record.credit_score > parseFloat(filterCriteria.maxCreditScore)) {
-        return false;
-      }
+        // Loan type filter
+        if (filterCriteria.loanType !== 'all' && record.loan_type !== filterCriteria.loanType) {
+          return false;
+        }
 
-      // LTV filter
-      if (filterCriteria.minLTV && record.ltv < parseFloat(filterCriteria.minLTV)) {
-        return false;
-      }
-      if (filterCriteria.maxLTV && record.ltv > parseFloat(filterCriteria.maxLTV)) {
-        return false;
-      }
+        // Credit score filter
+        if (filterCriteria.minCreditScore && record.credit_score < parseFloat(filterCriteria.minCreditScore)) {
+          return false;
+        }
+        if (filterCriteria.maxCreditScore && record.credit_score > parseFloat(filterCriteria.maxCreditScore)) {
+          return false;
+        }
 
-      return true;
-    });
+        // LTV filter
+        if (filterCriteria.minLTV && record.ltv < parseFloat(filterCriteria.minLTV)) {
+          return false;
+        }
+        if (filterCriteria.maxLTV && record.ltv > parseFloat(filterCriteria.maxLTV)) {
+          return false;
+        }
 
-    setFilteredData(filtered);
-    setShowFiltered(true);
-    onFilteredDataChange(filtered);
+        return true;
+      });
+
+      console.log(`Filter applied: ${filtered.length} records out of ${allData.length} total records`);
+      
+      setFilteredData(filtered);
+      setShowFiltered(true);
+      onFilteredDataChange(filtered);
+    } catch (error) {
+      console.error('Error applying filters:', error);
+    } finally {
+      setIsLoadingAllData(false);
+    }
   };
 
   const clearFilters = () => {
@@ -111,7 +164,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     });
     setFilteredData([]);
     setShowFiltered(false);
-    onFilteredDataChange(allData);
+    onFilteredDataChange([]);
   };
 
   const handleSaveFilteredDataset = async () => {
@@ -125,7 +178,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         
         // Prepare clean data without database-specific fields
         const cleanFilteredData = filteredData.map(record => {
-          const { id, created_at, updated_at, ...cleanRecord } = record;
+          const { id, created_at, ...cleanRecord } = record;
           return cleanRecord;
         });
         
@@ -150,7 +203,10 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   };
 
   const getUniqueValues = (field: keyof LoanRecord) => {
-    return [...new Set(allData.map(record => record[field]))].filter(Boolean);
+    if (!allDataLoaded || completeDataset.length === 0) {
+      return [];
+    }
+    return [...new Set(completeDataset.map(record => record[field]))].filter(Boolean);
   };
 
   const loanTypes = getUniqueValues('loan_type') as string[];
@@ -163,7 +219,12 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           Data Filters
           {showFiltered && (
             <span className="text-sm font-normal text-gray-600">
-              ({filteredData.length} of {allData.length} records)
+              ({filteredData.length.toLocaleString()} of 64,635 records)
+            </span>
+          )}
+          {!allDataLoaded && (
+            <span className="text-sm font-normal text-orange-600">
+              (Will load all 64,635 records for filtering)
             </span>
           )}
         </CardTitle>
@@ -263,14 +324,23 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={applyFilters} disabled={isProcessing}>
-            <Filter className="h-4 w-4 mr-2" />
-            Apply Filters
+          <Button onClick={applyFilters} disabled={isProcessing || isLoadingAllData}>
+            {isLoadingAllData ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Loading all data...
+              </>
+            ) : (
+              <>
+                <Filter className="h-4 w-4 mr-2" />
+                Apply Filters
+              </>
+            )}
           </Button>
           
           {showFiltered && (
             <>
-              <Button variant="outline" onClick={clearFilters} disabled={isProcessing}>
+              <Button variant="outline" onClick={clearFilters} disabled={isProcessing || isLoadingAllData}>
                 <X className="h-4 w-4 mr-2" />
                 Clear Filters
               </Button>
@@ -279,7 +349,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
                 <Button 
                   variant="secondary" 
                   onClick={() => setShowSaveDialog(true)}
-                  disabled={isProcessing}
+                  disabled={isProcessing || isLoadingAllData}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Filtered Dataset
@@ -293,7 +363,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           <div className="mt-4 p-4 border rounded-lg bg-gray-50">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Label>Save Filtered Dataset ({filteredData.length} records)</Label>
+                <Label>Save Filtered Dataset ({filteredData.length.toLocaleString()} records)</Label>
                 {saveSuccess && (
                   <div className="flex items-center gap-1 text-green-600">
                     <CheckCircle className="h-4 w-4" />

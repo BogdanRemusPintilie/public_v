@@ -25,6 +25,7 @@ interface ExcelUploadModalProps {
   isOpen: boolean;
   showExistingData: boolean;
   totalRecords: number;
+  selectedDatasetName: string;
   isProcessing: boolean;
   portfolioSummary: {
     totalValue: number;
@@ -61,6 +62,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   isOpen,
   showExistingData,
   totalRecords,
+  selectedDatasetName,
   isProcessing,
   portfolioSummary,
   previewData,
@@ -194,9 +196,9 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                 />
               )}
 
-              {showExistingData && allData.length > 0 && (
+              {showExistingData && selectedDatasetName && (
                 <DataFilterPanel
-                  allData={allData}
+                  datasetName={selectedDatasetName}
                   onFilteredDataChange={onFilteredDataChange}
                   onSaveFilteredDataset={onSaveFilteredDataset}
                   isProcessing={isProcessing}

@@ -140,18 +140,41 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const handleFilteredDataChange = (filtered: LoanRecord[]) => {
     setFilteredData(filtered);
     
-    // Update preview data to show filtered results
-    const firstPageData = filtered.slice(0, PAGE_SIZE);
-    setPreviewData(firstPageData);
-    setHasMore(filtered.length > PAGE_SIZE);
-    setCurrentPage(0);
-    setSelectedRecords(new Set()); // Clear selections when filter changes
-    
-    // Update portfolio summary based on filtered data
-    if (filtered.length > 0) {
-      calculatePortfolioSummary(filtered);
+    if (filtered.length === 0) {
+      // If no filters applied, show original data
+      setPreviewData(allData.slice(0, PAGE_SIZE));
+      setHasMore(allData.length > PAGE_SIZE);
+      setCurrentPage(0);
+      setSelectedRecords(new Set());
+      
+      // Reset to original portfolio summary
+      if (allData.length > 0) {
+        const originalSummary = {
+          totalValue: allData.reduce((sum, loan) => sum + loan.opening_balance, 0),
+          avgInterestRate: allData.length > 0 ? 
+            allData.reduce((sum, loan) => sum + loan.interest_rate, 0) / allData.length : 0,
+          highRiskLoans: allData.filter(loan => (loan.pd || 0) > 0.05).length,
+          totalRecords: totalRecords
+        };
+        setPortfolioSummary(originalSummary);
+      }
     } else {
-      setPortfolioSummary(null);
+      // Update preview data to show filtered results
+      const firstPageData = filtered.slice(0, PAGE_SIZE);
+      setPreviewData(firstPageData);
+      setHasMore(filtered.length > PAGE_SIZE);
+      setCurrentPage(0);
+      setSelectedRecords(new Set()); // Clear selections when filter changes
+      
+      // Update portfolio summary based on filtered data
+      const filteredSummary = {
+        totalValue: filtered.reduce((sum, loan) => sum + loan.opening_balance, 0),
+        avgInterestRate: filtered.length > 0 ? 
+          filtered.reduce((sum, loan) => sum + loan.interest_rate, 0) / filtered.length : 0,
+        highRiskLoans: filtered.filter(loan => (loan.pd || 0) > 0.05).length,
+        totalRecords: filtered.length
+      };
+      setPortfolioSummary(filteredSummary);
     }
   };
 
@@ -566,6 +589,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         isOpen={isOpen && !showDatasetSelector}
         showExistingData={showExistingData && !showDatasetSelector}
         totalRecords={totalRecords}
+        selectedDatasetName={selectedDatasetName}
         isProcessing={isProcessing}
         portfolioSummary={portfolioSummary}
         previewData={previewData}
