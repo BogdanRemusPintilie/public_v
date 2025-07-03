@@ -33,11 +33,16 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       setIsLoading(true);
       console.log('🔄 LOADING DATASETS - Force:', force, 'Refresh trigger:', refreshTrigger);
       
+      // Clear existing datasets first to ensure clean state
+      setDatasets([]);
+      
       const accessibleDatasets = await getAccessibleDatasets();
       console.log('📊 DATASETS FETCHED:', accessibleDatasets);
       
-      // Always update datasets, even if the list looks the same
-      setDatasets([...accessibleDatasets]); // Create new array to force re-render
+      // Set datasets with a small delay to ensure UI updates
+      setTimeout(() => {
+        setDatasets(accessibleDatasets);
+      }, 100);
       
       console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets`);
       
@@ -54,6 +59,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         description: "Failed to load datasets. Please try again.",
         variant: "destructive",
       });
+      setDatasets([]); // Clear datasets on error
     } finally {
       setIsLoading(false);
     }
@@ -72,10 +78,10 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     if (refreshTrigger > 0 && refreshTrigger !== lastRefreshTrigger && isOpen && user) {
       console.log('🔄 DATASET SELECTOR - Refresh trigger changed:', lastRefreshTrigger, '->', refreshTrigger);
       setLastRefreshTrigger(refreshTrigger);
-      // Add a longer delay to ensure database write is complete and consistent
+      // Increased delay to ensure database write is complete
       setTimeout(() => {
         loadDatasets(true);
-      }, 1500); // Increased delay for better database consistency
+      }, 2000);
     }
   }, [refreshTrigger, lastRefreshTrigger, isOpen, user]);
 

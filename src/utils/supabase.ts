@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface LoanRecord {
@@ -136,12 +135,13 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
 
   try {
-    // Get owned datasets with better error handling
+    // Get owned datasets with more specific query and better error handling
     const { data: ownedDatasets, error: ownedError } = await supabase
       .from('loan_data')
       .select('dataset_name, user_id')
       .eq('user_id', user.id)
-      .not('dataset_name', 'is', null);
+      .not('dataset_name', 'is', null)
+      .not('dataset_name', 'eq', '');
 
     if (ownedError) {
       console.error('❌ Error fetching owned datasets:', ownedError);
@@ -154,7 +154,9 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     const { data: sharedDatasets, error: sharedError } = await supabase
       .from('dataset_shares')
       .select('dataset_name, owner_id')
-      .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`);
+      .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`)
+      .not('dataset_name', 'is', null)
+      .not('dataset_name', 'eq', '');
 
     if (sharedError) {
       console.error('❌ Error fetching shared datasets:', sharedError);
@@ -164,47 +166,56 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
 
-    // Combine and deduplicate datasets with better logic
+    // Use a Map to store unique datasets by name (case-insensitive)
     const datasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
 
-    // Add owned datasets - get unique dataset names
-    const uniqueOwnedDatasets = new Map();
-    ownedDatasets?.forEach(dataset => {
-      if (dataset.dataset_name && dataset.dataset_name.trim()) {
-        uniqueOwnedDatasets.set(dataset.dataset_name, dataset);
-      }
-    });
-
-    // Add unique owned datasets to final result
-    uniqueOwnedDatasets.forEach((dataset, datasetName) => {
-      datasets.set(datasetName, {
-        name: datasetName,
-        owner_id: dataset.user_id,
-        is_shared: false
+    // Add owned datasets first - ensure we get all unique dataset names
+    if (ownedDatasets && ownedDatasets.length > 0) {
+      ownedDatasets.forEach(dataset => {
+        if (dataset.dataset_name && dataset.dataset_name.trim()) {
+          const normalizedName = dataset.dataset_name.trim();
+          // Use normalized name as key to avoid duplicates
+          datasets.set(normalizedName, {
+            name: normalizedName,
+            owner_id: dataset.user_id,
+            is_shared: false
+          });
+        }
       });
-    });
+    }
 
-    // Add shared datasets (don't override owned ones) - also deduplicate
-    const uniqueSharedDatasets = new Map();
-    sharedDatasets?.forEach(share => {
-      if (share.dataset_name && share.dataset_name.trim()) {
-        uniqueSharedDatasets.set(share.dataset_name, share);
-      }
-    });
+    // Add shared datasets (don't override owned ones)
+    if (sharedDatasets && sharedDatasets.length > 0) {
+      sharedDatasets.forEach(share => {
+        if (share.dataset_name && share.dataset_name.trim()) {
+          const normalizedName = share.dataset_name.trim();
+          // Only add if not already owned
+          if (!datasets.has(normalizedName)) {
+            datasets.set(normalizedName, {
+              name: normalizedName,
+              owner_id: share.owner_id,
+              is_shared: true
+            });
+          }
+        }
+      });
+    }
 
-    // Add unique shared datasets that aren't already owned
-    uniqueSharedDatasets.forEach((share, datasetName) => {
-      if (!datasets.has(datasetName)) {
-        datasets.set(datasetName, {
-          name: datasetName,
-          owner_id: share.owner_id,
-          is_shared: true
-        });
-      }
-    });
-
-    const result = Array.from(datasets.values());
+    const result = Array.from(datasets.values()).sort((a, b) => a.name.localeCompare(b.name));
     console.log('📊 FINAL ACCESSIBLE DATASETS:', result);
+
+    // Additional check: let's also verify if "Demo Filtered Data Set" exists in the database
+    if (result.length === 0 || !result.some(d => d.name.includes('Demo Filtered'))) {
+      console.log('🔍 CHECKING FOR DEMO FILTERED DATA SET specifically...');
+      const { data: specificCheck, error: specificError } = await supabase
+        .from('loan_data')
+        .select('dataset_name, user_id')
+        .eq('user_id', user.id)
+        .ilike('dataset_name', '%Demo Filtered%')
+        .limit(5);
+      
+      console.log('🔍 SPECIFIC CHECK RESULT:', specificCheck, 'ERROR:', specificError);
+    }
 
     return result;
   } catch (error) {
