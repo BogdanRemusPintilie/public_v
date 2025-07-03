@@ -46,7 +46,7 @@ interface DatasetSummary {
   total_value: number;
   avg_interest_rate: number;
   created_at: string;
-  record_ids: string[];
+  high_risk_count: number;
 }
 
 const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
@@ -123,16 +123,12 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       
-      // Get all record IDs for selected datasets
-      const recordIds: string[] = [];
-      datasets.forEach(dataset => {
-        if (selectedDatasets.has(dataset.dataset_name)) {
-          recordIds.push(...dataset.record_ids);
-        }
-      });
-      
-      console.log(`Deleting ${recordIds.length} records from ${selectedDatasets.size} datasets`);
-      await deleteLoanData(recordIds);
+      // Delete datasets by name instead of record IDs for efficiency
+      for (const datasetName of selectedDatasets) {
+        console.log(`Deleting dataset: ${datasetName}`);
+        // We'll need to add a function to delete by dataset name
+        await deleteLoanDataByDataset(datasetName);
+      }
       
       // Remove deleted datasets from local state
       const remainingDatasets = datasets.filter(dataset => !selectedDatasets.has(dataset.dataset_name));
@@ -141,7 +137,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
       
       toast({
         title: "Datasets Deleted",
-        description: `Successfully deleted ${selectedDatasets.size} datasets (${recordIds.length} records)`,
+        description: `Successfully deleted ${selectedDatasets.size} datasets`,
       });
     } catch (error) {
       console.error('Error deleting datasets:', error);
@@ -253,6 +249,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                         <TableHead>Records</TableHead>
                         <TableHead>Total Value</TableHead>
                         <TableHead>Avg Interest Rate</TableHead>
+                        <TableHead>High Risk Loans</TableHead>
                         <TableHead>Created</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -273,6 +270,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                           <TableCell>{dataset.record_count.toLocaleString()}</TableCell>
                           <TableCell>${(dataset.total_value / 1000000).toFixed(1)}M</TableCell>
                           <TableCell>{dataset.avg_interest_rate.toFixed(2)}%</TableCell>
+                          <TableCell>{dataset.high_risk_count.toLocaleString()}</TableCell>
                           <TableCell>
                             {new Date(dataset.created_at).toLocaleDateString()}
                           </TableCell>
