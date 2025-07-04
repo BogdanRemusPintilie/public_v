@@ -240,21 +240,9 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
       });
     }
 
+    // Don't filter out any datasets - let all user datasets appear
     const result = Array.from(datasets.values()).sort((a, b) => a.name.localeCompare(b.name));
-    console.log('📊 FINAL ACCESSIBLE DATASETS:', result);
-
-    // Additional check: let's also verify if "Demo Filtered Data Set" exists in the database
-    if (result.length === 0 || !result.some(d => d.name.includes('Demo Filtered'))) {
-      console.log('🔍 CHECKING FOR DEMO FILTERED DATA SET specifically...');
-      const { data: specificCheck, error: specificError } = await supabase
-        .from('loan_data')
-        .select('dataset_name, user_id')
-        .eq('user_id', user.id)
-        .ilike('dataset_name', '%Demo Filtered%')
-        .limit(5);
-      
-      console.log('🔍 SPECIFIC CHECK RESULT:', specificCheck, 'ERROR:', specificError);
-    }
+    console.log('📊 FINAL ACCESSIBLE DATASETS (unfiltered):', result);
 
     return result;
   } catch (error) {

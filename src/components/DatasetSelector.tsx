@@ -45,23 +45,18 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       const accessibleDatasets = await getAccessibleDatasets();
       console.log('📊 DATASETS FETCHED:', accessibleDatasets);
       
-      // Filter out "Unsecured consumer loans" dataset
-      const filteredDatasets = accessibleDatasets.filter(
-        dataset => dataset.name !== "Unsecured consumer loans"
-      );
-      
-      // Set filtered datasets
-      setDatasets(filteredDatasets);
+      // Don't filter out any datasets - show all user datasets
+      setDatasets(accessibleDatasets);
       setHasInitiallyLoaded(true);
       
-      console.log(`✅ LOADED ${filteredDatasets.length} accessible datasets (filtered out Unsecured consumer loans)`);
+      console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets`);
       
       if (force) {
         toast({
           title: "Datasets Refreshed",
-          description: filteredDatasets.length === 0 
+          description: accessibleDatasets.length === 0 
             ? "No datasets found. All data has been cleared."
-            : `Found ${filteredDatasets.length} accessible datasets`,
+            : `Found ${accessibleDatasets.length} accessible datasets`,
         });
       }
     } catch (error) {
@@ -180,7 +175,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
               <div className="text-center py-12">
                 <Database className="h-16 w-16 text-gray-300 mx-auto mb-6" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">No datasets available</h3>
-                <p className="text-gray-500 mb-4">All datasets have been cleared from the system.</p>
+                <p className="text-gray-500 mb-4">You haven't created any datasets yet.</p>
                 <p className="text-sm text-gray-400">Upload new data to get started with loan portfolio analysis.</p>
               </div>
             ) : (

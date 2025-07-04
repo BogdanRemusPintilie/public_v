@@ -245,7 +245,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Enhanced refresh mechanism with longer wait time
+      // Force an immediate refresh with a longer delay to ensure database consistency
       const newTrigger = Date.now();
       setDatasetRefreshTrigger(newTrigger);
       
@@ -256,13 +256,16 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('🔄 DATASET REFRESH TRIGGERED:', newTrigger);
       
-      // Wait even longer to ensure database consistency and indexing
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait longer to ensure database consistency and indexing
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // Trigger another refresh to be absolutely sure
+      setDatasetRefreshTrigger(Date.now());
       
       toast({
         title: "Filtered Dataset Saved",
         description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset should now appear in "Select Dataset to Manage".`,
-        duration: 8000,
+        duration: 10000,
       });
       
     } catch (error) {
