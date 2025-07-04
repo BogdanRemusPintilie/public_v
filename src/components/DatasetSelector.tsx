@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -129,12 +130,12 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+      <div className="relative top-20 mx-auto p-5 border w-full max-w-5xl shadow-lg rounded-md bg-white max-h-[80vh] overflow-y-auto">
         <Card>
           <CardHeader>
             <CardTitle>Select Dataset to Manage</CardTitle>
             <CardDescription>
-              Choose a dataset to view and manage its loan portfolio data
+              Choose a dataset to view and manage its loan portfolio data. All your datasets and shared datasets are shown below.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -151,31 +152,36 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                 <p className="text-sm text-gray-400">Upload new data to get started with loan portfolio analysis.</p>
               </div>
             ) : (
-              <div className="grid gap-3 max-h-96 overflow-y-auto">
-                {datasets.map((dataset, index) => (
-                  <div
-                    key={`${dataset.name}-${dataset.owner_id}-${index}`}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Database className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <h3 className="font-medium text-gray-900">{dataset.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => handleSelectDataset(dataset.name)}
-                      variant="outline"
-                      size="sm"
+              <>
+                <div className="mb-4 text-sm text-gray-600">
+                  Showing {datasets.length} dataset(s) - including your own datasets and those shared with you
+                </div>
+                <div className="space-y-3">
+                  {datasets.map((dataset, index) => (
+                    <div
+                      key={`${dataset.name}-${dataset.owner_id}-${index}`}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      Select
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                      <div className="flex items-center space-x-3">
+                        <Database className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{dataset.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleSelectDataset(dataset.name)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Select
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
           <div className="flex justify-end gap-4 p-6 border-t">
