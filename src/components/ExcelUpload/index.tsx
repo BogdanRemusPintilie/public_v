@@ -505,12 +505,25 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       return;
     }
 
-    // Additional validation for user authentication
+    // Enhanced user authentication validation
     if (!user.id || user.id.length < 30) {
       console.log('❌ SAVE FAILED - Invalid user ID:', user.id);
       toast({
         title: "Authentication Error",
         description: "Invalid user session. Please log out and log back in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Additional authentication check - verify user is still authenticated
+    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !currentUser || currentUser.id !== user.id) {
+      console.log('❌ SAVE FAILED - Authentication check failed:', authError);
+      toast({
+        title: "Authentication Error",
+        description: "Your session has expired. Please log out and log back in.",
         variant: "destructive",
       });
       return;
@@ -523,16 +536,16 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     try {
       console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
       
-      // Prepare data with user_id and dataset_name - let insertLoanData handle the rest
+      // Prepare data with user_id and dataset_name - let insertLoanData handle the user_id assignment
       const dataWithMetadata = dataToSave.map(loan => ({
         ...loan,
-        user_id: user.id,
         dataset_name: datasetName.trim()
+        // Don't set user_id here - let insertLoanData handle it for RLS compliance
       }));
       
       console.log('💾 PREPARED DATA SAMPLE:', dataWithMetadata.slice(0, 2));
       
-      // Use the batch insert function with progress tracking
+      // Use the updated batch insert function with enhanced authentication
       await insertLoanData(dataWithMetadata, (completed, total) => {
         const progress = Math.round((completed / total) * 100);
         setUploadProgress(progress);
@@ -577,12 +590,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       let errorMessage = "Failed to save data to database. Please try again.";
       if (error instanceof Error) {
         console.error('❌ ERROR DETAILS:', error.message);
-        if (error.message.includes('not authenticated')) {
+        if (error.message.includes('not authenticated') || error.message.includes('session')) {
           errorMessage = "Authentication error. Please log out and log back in.";
-        } else if (error.message.includes('permission')) {
-          errorMessage = "Permission denied. Please check your account permissions.";
+        } else if (error.message.includes('permission') || error.message.includes('policy')) {
+          errorMessage = "Permission denied. Please ensure you're properly authenticated.";
         } else if (error.message.includes('violates row-level security')) {
-          errorMessage = "Security error. Please ensure you're properly authenticated.";
+          errorMessage = "Security error. Please log out and log back in to refresh your session.";
         }
       }
       

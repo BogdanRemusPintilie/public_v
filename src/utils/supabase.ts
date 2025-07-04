@@ -29,6 +29,16 @@ export const insertLoanData = async (
   loanData: LoanRecord[],
   progressCallback?: (completed: number, total: number) => void
 ): Promise<void> => {
+  // Get the current user to ensure we have proper authentication
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    console.error('Authentication error during insert:', authError);
+    throw new Error('User not authenticated. Please log out and log back in.');
+  }
+
+  console.log('🔐 AUTHENTICATED USER FOR INSERT:', user.id);
+
   const BATCH_SIZE = 1000;
   const totalRecords = loanData.length;
   let completedRecords = 0;
@@ -36,13 +46,25 @@ export const insertLoanData = async (
   for (let i = 0; i < totalRecords; i += BATCH_SIZE) {
     const batch = loanData.slice(i, i + BATCH_SIZE);
 
+    // Ensure all records have the correct user_id
+    const batchWithUserId = batch.map(record => ({
+      ...record,
+      user_id: user.id // Explicitly set the user_id for RLS compliance
+    }));
+
+    console.log('💾 INSERTING BATCH:', {
+      batchSize: batchWithUserId.length,
+      userId: user.id,
+      sampleRecord: batchWithUserId[0]
+    });
+
     const { error } = await supabase
       .from('loan_data')
-      .insert(batch);
+      .insert(batchWithUserId);
 
     if (error) {
-      console.error('Error inserting loan data:', error);
-      throw error; // Re-throw to stop the process
+      console.error('Error inserting loan data batch:', error);
+      throw new Error(`Failed to insert data: ${error.message}`);
     }
 
     completedRecords += batch.length;
@@ -50,6 +72,8 @@ export const insertLoanData = async (
       progressCallback(completedRecords, totalRecords);
     }
   }
+
+  console.log('✅ ALL BATCHES INSERTED SUCCESSFULLY');
 };
 
 export const getLoanDataByDataset = async (
