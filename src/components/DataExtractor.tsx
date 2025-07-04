@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { getDatasetSummaries, getLoanDataByDataset } from '@/utils/supabase';
+import { getAccessibleDatasets, getLoanDataByDataset } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Table, 
@@ -30,16 +30,14 @@ interface DataExtractorProps {
   onClose: () => void;
 }
 
-interface DatasetSummary {
-  dataset_name: string;
-  record_count: number;
-  total_value: number;
-  avg_interest_rate: number;
-  created_at: string;
+interface AccessibleDataset {
+  name: string;
+  owner_id: string;
+  is_shared: boolean;
 }
 
 const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
-  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
+  const [datasets, setDatasets] = useState<AccessibleDataset[]>([]);
   const [selectedDatasets, setSelectedDatasets] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [extractedData, setExtractedData] = useState<any[]>([]);
@@ -58,16 +56,16 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     
     try {
       setIsLoading(true);
-      console.log('Loading dataset summaries using optimized database function...');
+      console.log('Loading accessible datasets for extraction...');
       
-      // Use the optimized database function for faster loading
-      const datasetSummaries = await getDatasetSummaries();
+      // Use the same function as DatasetSelector to get all accessible datasets
+      const accessibleDatasets = await getAccessibleDatasets();
       
-      setDatasets(datasetSummaries);
+      setDatasets(accessibleDatasets);
       
       toast({
         title: "Datasets Loaded",
-        description: `Found ${datasetSummaries.length} datasets`,
+        description: `Found ${accessibleDatasets.length} accessible datasets`,
       });
     } catch (error) {
       console.error('Error loading datasets:', error);
@@ -91,18 +89,18 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     setSelectedDatasets(newSelected);
   };
 
-  const handleDownloadDataset = async (dataset: DatasetSummary) => {
+  const handleDownloadDataset = async (dataset: AccessibleDataset) => {
     try {
       setIsLoading(true);
       
       // Get complete dataset data using the correct function
-      const result = await getLoanDataByDataset(dataset.dataset_name, 0, 10000);
+      const result = await getLoanDataByDataset(dataset.name, 0, 10000);
       let allRecords = result.data;
       
       // If there are more records, fetch them all
       let page = 1;
       while (result.hasMore) {
-        const nextResult = await getLoanDataByDataset(dataset.dataset_name, page, 10000);
+        const nextResult = await getLoanDataByDataset(dataset.name, page, 10000);
         allRecords = [...allRecords, ...nextResult.data];
         page++;
         if (!nextResult.hasMore) break;
@@ -128,13 +126,13 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${dataset.dataset_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `${dataset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
 
       toast({
         title: "Download Complete",
-        description: `Dataset "${dataset.dataset_name}" has been downloaded as CSV`,
+        description: `Dataset "${dataset.name}" has been downloaded as CSV`,
       });
     } catch (error) {
       console.error('Error downloading dataset:', error);
@@ -255,7 +253,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
   };
 
   const filteredDatasets = datasets.filter(dataset =>
-    dataset.dataset_name.toLowerCase().includes(searchTerm.toLowerCase())
+    dataset.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (!isOpen) return null;
@@ -302,20 +300,28 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     <span className="ml-2 text-gray-600">Loading datasets...</span>
                   </div>
+                ) : filteredDatasets.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-2">No datasets found</p>
+                    <p className="text-sm text-gray-400">
+                      {searchTerm ? 'No datasets match your search criteria' : 'Upload some data first to get started'}
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {filteredDatasets.map((dataset) => (
-                      <div key={dataset.dataset_name} className="flex items-center space-x-3 p-3 border rounded-lg">
+                      <div key={`${dataset.name}-${dataset.owner_id}`} className="flex items-center space-x-3 p-3 border rounded-lg">
                         <Checkbox
-                          checked={selectedDatasets.has(dataset.dataset_name)}
+                          checked={selectedDatasets.has(dataset.name)}
                           onCheckedChange={(checked) => 
-                            handleSelectDataset(dataset.dataset_name, checked as boolean)
+                            handleSelectDataset(dataset.name, checked as boolean)
                           }
                         />
                         <div className="flex-1">
-                          <div className="font-medium">{dataset.dataset_name}</div>
+                          <div className="font-medium">{dataset.name}</div>
                           <div className="text-sm text-gray-500">
-                            {dataset.record_count.toLocaleString()} records • ${(dataset.total_value / 1000000).toFixed(1)}M
+                            {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
                           </div>
                         </div>
                         <Button
