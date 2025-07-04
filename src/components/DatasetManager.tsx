@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Search } from 'lucide-react';
+import { Trash2, Search, Database } from 'lucide-react';
 
 interface DatasetManagerProps {
   isOpen: boolean;
@@ -74,7 +74,9 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
       
       toast({
         title: "Datasets Loaded",
-        description: `Found ${datasetSummaries.length} datasets`,
+        description: datasetSummaries.length === 0 
+          ? "No datasets found. All data has been cleared."
+          : `Found ${datasetSummaries.length} datasets`,
       });
     } catch (error) {
       console.error('Error loading datasets:', error);
@@ -193,10 +195,20 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                 <span className="ml-2 text-gray-600">Loading datasets...</span>
               </div>
             ) : filteredDatasets.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">
-                  {searchTerm ? 'No datasets found matching your search.' : 'No datasets found.'}
+              <div className="text-center py-12">
+                <Database className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  {searchTerm ? 'No datasets found matching your search' : 'No datasets available'}
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm 
+                    ? 'Try adjusting your search criteria.' 
+                    : 'All datasets have been cleared from the system.'
+                  }
                 </p>
+                {!searchTerm && (
+                  <p className="text-sm text-gray-400">Upload new data to populate the dataset manager.</p>
+                )}
               </div>
             ) : (
               <>

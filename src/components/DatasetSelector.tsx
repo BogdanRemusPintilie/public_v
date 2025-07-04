@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +52,9 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       if (force) {
         toast({
           title: "Datasets Refreshed",
-          description: `Found ${accessibleDatasets.length} accessible datasets`,
+          description: accessibleDatasets.length === 0 
+            ? "No datasets found. All data has been cleared."
+            : `Found ${accessibleDatasets.length} accessible datasets`,
         });
       }
     } catch (error) {
@@ -143,10 +144,11 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                 <span className="text-gray-600">Loading datasets...</span>
               </div>
             ) : datasets.length === 0 ? (
-              <div className="text-center py-8">
-                <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2">No datasets found</p>
-                <p className="text-sm text-gray-400">Upload some data first to get started</p>
+              <div className="text-center py-12">
+                <Database className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">No datasets available</h3>
+                <p className="text-gray-500 mb-4">All datasets have been cleared from the system.</p>
+                <p className="text-sm text-gray-400">Upload new data to get started with loan portfolio analysis.</p>
               </div>
             ) : (
               <div className="grid gap-3 max-h-96 overflow-y-auto">
