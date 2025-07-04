@@ -174,10 +174,10 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
 
   try {
-    // Get owned datasets with more comprehensive query to ensure we get ALL datasets
+    // Get ALL unique dataset names for this user with a more comprehensive query
     const { data: ownedDatasets, error: ownedError } = await supabase
       .from('loan_data')
-      .select('dataset_name, user_id')
+      .select('dataset_name, user_id, created_at')
       .eq('user_id', user.id)
       .not('dataset_name', 'is', null)
       .not('dataset_name', 'eq', '')
@@ -206,15 +206,18 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
 
-    // Use a Map to store unique datasets by name (case-sensitive to preserve exact names)
+    // Use a Set to track unique dataset names (case-sensitive)
+    const uniqueDatasetNames = new Set<string>();
     const datasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
 
-    // Add owned datasets first - get ALL unique dataset names
+    // Process ALL owned datasets to ensure we capture every unique dataset name
     if (ownedDatasets && ownedDatasets.length > 0) {
       ownedDatasets.forEach(dataset => {
         if (dataset.dataset_name && dataset.dataset_name.trim()) {
           const datasetName = dataset.dataset_name.trim();
-          // Only add if not already present (to avoid duplicates)
+          uniqueDatasetNames.add(datasetName);
+          
+          // Only add to map if not already present (to preserve first occurrence)
           if (!datasets.has(datasetName)) {
             datasets.set(datasetName, {
               name: datasetName,
@@ -225,6 +228,8 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
         }
       });
     }
+
+    console.log('🔍 UNIQUE DATASET NAMES FOUND:', Array.from(uniqueDatasetNames));
 
     // Add shared datasets (don't override owned ones)
     if (sharedDatasets && sharedDatasets.length > 0) {
@@ -238,6 +243,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
               owner_id: share.owner_id,
               is_shared: true
             });
+            uniqueDatasetNames.add(datasetName);
           }
         }
       });
@@ -247,7 +253,8 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     
     console.log('📊 FINAL ACCESSIBLE DATASETS:', {
       totalFound: result.length,
-      datasets: result.map(d => ({ name: d.name, isShared: d.is_shared }))
+      datasets: result.map(d => ({ name: d.name, isShared: d.is_shared })),
+      allUniqueNames: Array.from(uniqueDatasetNames)
     });
 
     return result;
