@@ -43,9 +43,12 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       setDatasets([]);
       
       const accessibleDatasets = await getAccessibleDatasets();
-      console.log('📊 DATASETS FETCHED:', accessibleDatasets);
+      console.log('📊 DATASETS FETCHED:', {
+        count: accessibleDatasets.length,
+        datasets: accessibleDatasets
+      });
       
-      // Don't filter out any datasets - show all user datasets
+      // Set all accessible datasets without any filtering
       setDatasets(accessibleDatasets);
       setHasInitiallyLoaded(true);
       
@@ -55,8 +58,8 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         toast({
           title: "Datasets Refreshed",
           description: accessibleDatasets.length === 0 
-            ? "No datasets found. All data has been cleared."
-            : `Found ${accessibleDatasets.length} accessible datasets`,
+            ? "No datasets found."
+            : `Found ${accessibleDatasets.length} accessible dataset${accessibleDatasets.length > 1 ? 's' : ''}`,
         });
       }
     } catch (error) {
@@ -162,7 +165,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
           <CardHeader>
             <CardTitle>Select Dataset to Manage</CardTitle>
             <CardDescription>
-              Choose a dataset to view and manage its loan portfolio data. All your datasets and shared datasets are shown below.
+              Choose a dataset to view and manage its loan portfolio data. All your datasets (including saved filtered datasets) and shared datasets are shown below.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -176,12 +179,12 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                 <Database className="h-16 w-16 text-gray-300 mx-auto mb-6" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">No datasets available</h3>
                 <p className="text-gray-500 mb-4">You haven't created any datasets yet.</p>
-                <p className="text-sm text-gray-400">Upload new data to get started with loan portfolio analysis.</p>
+                <p className="text-sm text-gray-400">Upload new data or save filtered datasets to get started.</p>
               </div>
             ) : (
               <>
                 <div className="mb-4 text-sm text-gray-600">
-                  Showing {datasets.length} dataset(s) - including your own datasets and those shared with you
+                  Showing {datasets.length} dataset(s) - including your datasets, saved filtered datasets, and shared datasets
                 </div>
                 <div className="space-y-3">
                   {datasets.map((dataset, index) => (

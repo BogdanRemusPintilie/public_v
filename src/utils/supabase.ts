@@ -174,20 +174,21 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
 
   try {
-    // Get owned datasets with more specific query and better error handling
+    // Get owned datasets with more comprehensive query to ensure we get ALL datasets
     const { data: ownedDatasets, error: ownedError } = await supabase
       .from('loan_data')
       .select('dataset_name, user_id')
       .eq('user_id', user.id)
       .not('dataset_name', 'is', null)
-      .not('dataset_name', 'eq', '');
+      .not('dataset_name', 'eq', '')
+      .order('created_at', { ascending: false });
 
     if (ownedError) {
       console.error('❌ Error fetching owned datasets:', ownedError);
       throw ownedError;
     }
 
-    console.log('📊 OWNED DATASETS RAW:', ownedDatasets);
+    console.log('📊 OWNED DATASETS RAW (all records):', ownedDatasets);
 
     // Get shared datasets with better error handling
     const { data: sharedDatasets, error: sharedError } = await supabase
@@ -205,20 +206,22 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
 
-    // Use a Map to store unique datasets by name (case-insensitive)
+    // Use a Map to store unique datasets by name (case-sensitive to preserve exact names)
     const datasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
 
-    // Add owned datasets first - ensure we get all unique dataset names
+    // Add owned datasets first - get ALL unique dataset names
     if (ownedDatasets && ownedDatasets.length > 0) {
       ownedDatasets.forEach(dataset => {
         if (dataset.dataset_name && dataset.dataset_name.trim()) {
-          const normalizedName = dataset.dataset_name.trim();
-          // Use normalized name as key to avoid duplicates
-          datasets.set(normalizedName, {
-            name: normalizedName,
-            owner_id: dataset.user_id,
-            is_shared: false
-          });
+          const datasetName = dataset.dataset_name.trim();
+          // Only add if not already present (to avoid duplicates)
+          if (!datasets.has(datasetName)) {
+            datasets.set(datasetName, {
+              name: datasetName,
+              owner_id: dataset.user_id,
+              is_shared: false
+            });
+          }
         }
       });
     }
@@ -227,11 +230,11 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     if (sharedDatasets && sharedDatasets.length > 0) {
       sharedDatasets.forEach(share => {
         if (share.dataset_name && share.dataset_name.trim()) {
-          const normalizedName = share.dataset_name.trim();
+          const datasetName = share.dataset_name.trim();
           // Only add if not already owned
-          if (!datasets.has(normalizedName)) {
-            datasets.set(normalizedName, {
-              name: normalizedName,
+          if (!datasets.has(datasetName)) {
+            datasets.set(datasetName, {
+              name: datasetName,
               owner_id: share.owner_id,
               is_shared: true
             });
@@ -240,9 +243,12 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
       });
     }
 
-    // Don't filter out any datasets - let all user datasets appear
     const result = Array.from(datasets.values()).sort((a, b) => a.name.localeCompare(b.name));
-    console.log('📊 FINAL ACCESSIBLE DATASETS (unfiltered):', result);
+    
+    console.log('📊 FINAL ACCESSIBLE DATASETS:', {
+      totalFound: result.length,
+      datasets: result.map(d => ({ name: d.name, isShared: d.is_shared }))
+    });
 
     return result;
   } catch (error) {
