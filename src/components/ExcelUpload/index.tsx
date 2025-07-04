@@ -11,12 +11,14 @@ interface ExcelUploadProps {
   isOpen: boolean;
   onClose: () => void;
   showExistingData?: boolean;
+  onDatasetUploaded?: () => void; // New prop to notify parent of dataset uploads
 }
 
 const ExcelUpload: React.FC<ExcelUploadProps> = ({ 
   isOpen, 
   onClose, 
-  showExistingData = false 
+  showExistingData = false,
+  onDatasetUploaded 
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [datasetName, setDatasetName] = useState<string>('');
@@ -242,19 +244,24 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Force refresh of dataset selector with timestamp to ensure uniqueness
+      // Enhanced refresh mechanism
       const newTrigger = Date.now();
       setDatasetRefreshTrigger(newTrigger);
       
+      // Notify parent component about the new dataset
+      if (onDatasetUploaded) {
+        onDatasetUploaded();
+      }
+      
       console.log('🔄 DATASET REFRESH TRIGGERED:', newTrigger);
       
-      // Wait a moment to ensure database consistency
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait longer to ensure database consistency
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
         title: "Filtered Dataset Saved",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". Click "Access Existing Data" to see it in the dataset selector.`,
-        duration: 5000,
+        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset will appear in "Access Existing Data" and "Extract Data" sections.`,
+        duration: 6000,
       });
       
     } catch (error) {
@@ -536,10 +543,23 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ UPLOAD SUCCESSFUL - Data saved to database');
       
+      // Enhanced refresh mechanism
+      const newTrigger = Date.now();
+      setDatasetRefreshTrigger(newTrigger);
+      
+      // Notify parent component about the new dataset
+      if (onDatasetUploaded) {
+        onDatasetUploaded();
+      }
+      
       toast({
         title: "Upload Successful",
-        description: `${dataToSave.length} loan records saved successfully as "${datasetName}"`,
+        description: `${dataToSave.length} loan records saved successfully as "${datasetName}". The dataset will appear in "Access Existing Data" and "Extract Data" sections.`,
+        duration: 6000,
       });
+      
+      // Wait longer to ensure the dataset appears in selectors
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Clear the upload state but don't reset everything
       setSelectedFile(null);

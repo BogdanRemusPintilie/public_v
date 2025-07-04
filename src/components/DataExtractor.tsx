@@ -21,13 +21,14 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Download, BarChart3, Database, FileText } from 'lucide-react';
+import { Search, Download, BarChart3, Database, FileText, RefreshCw } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface DataExtractorProps {
   isOpen: boolean;
   onClose: () => void;
+  refreshTrigger?: number;
 }
 
 interface AccessibleDataset {
@@ -36,12 +37,17 @@ interface AccessibleDataset {
   is_shared: boolean;
 }
 
-const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
+const DataExtractor: React.FC<DataExtractorProps> = ({ 
+  isOpen, 
+  onClose,
+  refreshTrigger = 0 
+}) => {
   const [datasets, setDatasets] = useState<AccessibleDataset[]>([]);
   const [selectedDatasets, setSelectedDatasets] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [extractedData, setExtractedData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastRefreshTrigger, setLastRefreshTrigger] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -51,29 +57,43 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen, user]);
 
+  useEffect(() => {
+    if (refreshTrigger > 0 && refreshTrigger !== lastRefreshTrigger && isOpen && user) {
+      console.log('🔄 DATA EXTRACTOR - Refresh trigger changed:', lastRefreshTrigger, '->', refreshTrigger);
+      setLastRefreshTrigger(refreshTrigger);
+      setTimeout(() => {
+        loadDatasets();
+      }, 2000);
+    }
+  }, [refreshTrigger, lastRefreshTrigger, isOpen, user]);
+
   const loadDatasets = async () => {
     if (!user) return;
     
     try {
       setIsLoading(true);
-      console.log('Loading accessible datasets for extraction...');
+      console.log('🔄 DATA EXTRACTOR - Loading accessible datasets for extraction...');
       
-      // Use the same function as DatasetSelector to get all accessible datasets
+      setDatasets([]);
+      
       const accessibleDatasets = await getAccessibleDatasets();
       
       setDatasets(accessibleDatasets);
+      
+      console.log(`✅ DATA EXTRACTOR - Loaded ${accessibleDatasets.length} accessible datasets`);
       
       toast({
         title: "Datasets Loaded",
         description: `Found ${accessibleDatasets.length} accessible datasets`,
       });
     } catch (error) {
-      console.error('Error loading datasets:', error);
+      console.error('❌ DATA EXTRACTOR - Error loading datasets:', error);
       toast({
         title: "Error Loading Datasets",
         description: "Failed to load datasets. Please try again.",
         variant: "destructive",
       });
+      setDatasets([]);
     } finally {
       setIsLoading(false);
     }
@@ -93,11 +113,9 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       
-      // Get complete dataset data using the correct function
       const result = await getLoanDataByDataset(dataset.name, 0, 10000);
       let allRecords = result.data;
       
-      // If there are more records, fetch them all
       let page = 1;
       while (result.hasMore) {
         const nextResult = await getLoanDataByDataset(dataset.name, page, 10000);
@@ -106,7 +124,6 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
         if (!nextResult.hasMore) break;
       }
       
-      // Convert dataset to CSV
       const headers = ['Dataset', 'Opening Balance', 'Interest Rate', 'Term', 'PD', 'Loan Type', 'Credit Score', 'LTV'];
       const csvContent = [
         headers.join(','),
@@ -159,14 +176,12 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       
-      // Get all records from selected datasets
       let combinedData: any[] = [];
       
       for (const datasetName of selectedDatasets) {
         const result = await getLoanDataByDataset(datasetName, 0, 10000);
         let datasetRecords = result.data;
         
-        // If there are more records, fetch them all
         let page = 1;
         while (result.hasMore) {
           const nextResult = await getLoanDataByDataset(datasetName, page, 10000);
@@ -206,7 +221,6 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Convert data to CSV
     const headers = ['Dataset', 'Opening Balance', 'Interest Rate', 'Term', 'PD', 'Loan Type', 'Credit Score', 'LTV'];
     const csvContent = [
       headers.join(','),
@@ -273,11 +287,21 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Dataset Selection and Download */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Available Datasets</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Available Datasets</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadDatasets}
+                    disabled={isLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
                 
-                {/* Search Bar */}
                 <div className="mb-4">
                   <Label htmlFor="search" className="text-sm font-medium">
                     Search Datasets
@@ -363,7 +387,6 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* Extracted Data Summary */}
               {getExtractSummary() && (
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg">
                   <h3 className="text-xl font-semibold mb-4 text-gray-800">Extract Summary</h3>
@@ -392,7 +415,6 @@ const DataExtractor: React.FC<DataExtractorProps> = ({ isOpen, onClose }) => {
                 </div>
               )}
 
-              {/* Extracted Data Preview */}
               {extractedData.length > 0 && (
                 <div>
                   <h3 className="text-xl font-semibold mb-4">Extracted Data Preview</h3>

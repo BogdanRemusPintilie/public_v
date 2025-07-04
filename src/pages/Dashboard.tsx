@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [showDatasetManager, setShowDatasetManager] = useState(false);
   const [showDataExtractor, setShowDataExtractor] = useState(false);
   const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
+  const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
 
   const handleLogout = () => {
     logout();
@@ -58,8 +59,15 @@ const Dashboard = () => {
     }
   };
 
+  const handleDatasetUploaded = () => {
+    // Trigger refresh across all components that show datasets
+    const newTrigger = Date.now();
+    setGlobalRefreshTrigger(newTrigger);
+    console.log('🔄 DASHBOARD - Global dataset refresh triggered:', newTrigger);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -335,29 +343,28 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* Excel Upload Dialog for new uploads */}
-      <ExcelUpload
-        isOpen={showExcelUpload}
-        onClose={() => setShowExcelUpload(false)}
+      <ExcelUpload 
+        isOpen={showExcelUpload} 
+        onClose={() => setShowExcelUpload(false)} 
+        onDatasetUploaded={handleDatasetUploaded}
       />
-
-      {/* Excel Upload Dialog for existing data preview */}
-      <ExcelUpload
-        isOpen={showExistingData}
-        onClose={() => setShowExistingData(false)}
+      
+      <ExcelUpload 
+        isOpen={showExistingData} 
+        onClose={() => setShowExistingData(false)} 
         showExistingData={true}
+        onDatasetUploaded={handleDatasetUploaded}
       />
-
-      {/* Dataset Manager Dialog */}
+      
+      <DataExtractor 
+        isOpen={showDataExtractor} 
+        onClose={() => setShowDataExtractor(false)}
+        refreshTrigger={globalRefreshTrigger}
+      />
+      
       <DatasetManager
         isOpen={showDatasetManager}
         onClose={() => setShowDatasetManager(false)}
-      />
-
-      {/* Data Extractor Dialog */}
-      <DataExtractor
-        isOpen={showDataExtractor}
-        onClose={() => setShowDataExtractor(false)}
       />
     </div>
   );
