@@ -174,8 +174,8 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
 
   try {
-    // Get ALL unique dataset names for this user with a more comprehensive query
-    const { data: ownedDatasets, error: ownedError } = await supabase
+    // Get ALL dataset records for this user (not just unique names)
+    const { data: allOwnedRecords, error: ownedError } = await supabase
       .from('loan_data')
       .select('dataset_name, user_id, created_at')
       .eq('user_id', user.id)
@@ -188,7 +188,20 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
       throw ownedError;
     }
 
-    console.log('📊 OWNED DATASETS RAW (all records):', ownedDatasets);
+    console.log('📊 ALL OWNED RECORDS (showing first 10):', allOwnedRecords?.slice(0, 10));
+    console.log('📊 TOTAL OWNED RECORDS:', allOwnedRecords?.length || 0);
+
+    // Extract all unique dataset names from the records
+    const allDatasetNames = new Set<string>();
+    if (allOwnedRecords && allOwnedRecords.length > 0) {
+      allOwnedRecords.forEach(record => {
+        if (record.dataset_name && record.dataset_name.trim()) {
+          allDatasetNames.add(record.dataset_name.trim());
+        }
+      });
+    }
+
+    console.log('🔍 ALL UNIQUE DATASET NAMES FROM RECORDS:', Array.from(allDatasetNames));
 
     // Get shared datasets with better error handling
     const { data: sharedDatasets, error: sharedError } = await supabase
@@ -206,30 +219,26 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
 
-    // Use a Set to track unique dataset names (case-sensitive)
-    const uniqueDatasetNames = new Set<string>();
+    // Build the final dataset list
     const datasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
 
-    // Process ALL owned datasets to ensure we capture every unique dataset name
-    if (ownedDatasets && ownedDatasets.length > 0) {
-      ownedDatasets.forEach(dataset => {
-        if (dataset.dataset_name && dataset.dataset_name.trim()) {
-          const datasetName = dataset.dataset_name.trim();
-          uniqueDatasetNames.add(datasetName);
-          
-          // Only add to map if not already present (to preserve first occurrence)
-          if (!datasets.has(datasetName)) {
-            datasets.set(datasetName, {
-              name: datasetName,
-              owner_id: dataset.user_id,
-              is_shared: false
-            });
-          }
-        }
-      });
-    }
+    // Add all owned datasets
+    Array.from(allDatasetNames).forEach(datasetName => {
+      // Find the first record for this dataset name to get the owner_id
+      const firstRecord = allOwnedRecords?.find(record => 
+        record.dataset_name && record.dataset_name.trim() === datasetName
+      );
+      
+      if (firstRecord) {
+        datasets.set(datasetName, {
+          name: datasetName,
+          owner_id: firstRecord.user_id,
+          is_shared: false
+        });
+      }
+    });
 
-    console.log('🔍 UNIQUE DATASET NAMES FOUND:', Array.from(uniqueDatasetNames));
+    console.log('📊 OWNED DATASETS PROCESSED:', Array.from(datasets.keys()));
 
     // Add shared datasets (don't override owned ones)
     if (sharedDatasets && sharedDatasets.length > 0) {
@@ -243,7 +252,6 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
               owner_id: share.owner_id,
               is_shared: true
             });
-            uniqueDatasetNames.add(datasetName);
           }
         }
       });
@@ -254,7 +262,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     console.log('📊 FINAL ACCESSIBLE DATASETS:', {
       totalFound: result.length,
       datasets: result.map(d => ({ name: d.name, isShared: d.is_shared })),
-      allUniqueNames: Array.from(uniqueDatasetNames)
+      allDatasetNames: Array.from(allDatasetNames)
     });
 
     return result;
