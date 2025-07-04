@@ -138,7 +138,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     // Get owned datasets with more specific query and better error handling
     const { data: ownedDatasets, error: ownedError } = await supabase
       .from('loan_data')
-      .select('dataset_name, user_id')
+      .select('dataset_name, user_id, created_at')
       .eq('user_id', user.id)
       .not('dataset_name', 'is', null)
       .not('dataset_name', 'eq', '')
