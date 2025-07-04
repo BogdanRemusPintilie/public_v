@@ -174,34 +174,41 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
 
   try {
-    // Get ALL dataset records for this user (not just unique names)
-    const { data: allOwnedRecords, error: ownedError } = await supabase
+    // Get distinct dataset names for this user with a simpler approach
+    const { data: ownedDatasets, error: ownedError } = await supabase
       .from('loan_data')
-      .select('dataset_name, user_id, created_at')
+      .select('dataset_name, user_id')
       .eq('user_id', user.id)
       .not('dataset_name', 'is', null)
-      .not('dataset_name', 'eq', '')
-      .order('created_at', { ascending: false });
+      .not('dataset_name', 'eq', '');
 
     if (ownedError) {
       console.error('❌ Error fetching owned datasets:', ownedError);
       throw ownedError;
     }
 
-    console.log('📊 ALL OWNED RECORDS (showing first 10):', allOwnedRecords?.slice(0, 10));
-    console.log('📊 TOTAL OWNED RECORDS:', allOwnedRecords?.length || 0);
+    console.log('📊 RAW OWNED DATASET RECORDS:', ownedDatasets?.length || 0);
+    console.log('📊 SAMPLE OWNED RECORDS:', ownedDatasets?.slice(0, 5));
 
-    // Extract all unique dataset names from the records
-    const allDatasetNames = new Set<string>();
-    if (allOwnedRecords && allOwnedRecords.length > 0) {
-      allOwnedRecords.forEach(record => {
+    // Extract unique dataset names manually to ensure we don't miss any
+    const uniqueOwnedDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
+    
+    if (ownedDatasets && ownedDatasets.length > 0) {
+      ownedDatasets.forEach(record => {
         if (record.dataset_name && record.dataset_name.trim()) {
-          allDatasetNames.add(record.dataset_name.trim());
+          const datasetName = record.dataset_name.trim();
+          if (!uniqueOwnedDatasets.has(datasetName)) {
+            uniqueOwnedDatasets.set(datasetName, {
+              name: datasetName,
+              owner_id: record.user_id,
+              is_shared: false
+            });
+          }
         }
       });
     }
 
-    console.log('🔍 ALL UNIQUE DATASET NAMES FROM RECORDS:', Array.from(allDatasetNames));
+    console.log('📊 UNIQUE OWNED DATASETS FOUND:', Array.from(uniqueOwnedDatasets.keys()));
 
     // Get shared datasets with better error handling
     const { data: sharedDatasets, error: sharedError } = await supabase
@@ -219,35 +226,14 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
 
-    // Build the final dataset list
-    const datasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
-
-    // Add all owned datasets
-    Array.from(allDatasetNames).forEach(datasetName => {
-      // Find the first record for this dataset name to get the owner_id
-      const firstRecord = allOwnedRecords?.find(record => 
-        record.dataset_name && record.dataset_name.trim() === datasetName
-      );
-      
-      if (firstRecord) {
-        datasets.set(datasetName, {
-          name: datasetName,
-          owner_id: firstRecord.user_id,
-          is_shared: false
-        });
-      }
-    });
-
-    console.log('📊 OWNED DATASETS PROCESSED:', Array.from(datasets.keys()));
-
     // Add shared datasets (don't override owned ones)
     if (sharedDatasets && sharedDatasets.length > 0) {
       sharedDatasets.forEach(share => {
         if (share.dataset_name && share.dataset_name.trim()) {
           const datasetName = share.dataset_name.trim();
           // Only add if not already owned
-          if (!datasets.has(datasetName)) {
-            datasets.set(datasetName, {
+          if (!uniqueOwnedDatasets.has(datasetName)) {
+            uniqueOwnedDatasets.set(datasetName, {
               name: datasetName,
               owner_id: share.owner_id,
               is_shared: true
@@ -257,13 +243,21 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
       });
     }
 
-    const result = Array.from(datasets.values()).sort((a, b) => a.name.localeCompare(b.name));
+    const result = Array.from(uniqueOwnedDatasets.values()).sort((a, b) => a.name.localeCompare(b.name));
     
     console.log('📊 FINAL ACCESSIBLE DATASETS:', {
       totalFound: result.length,
       datasets: result.map(d => ({ name: d.name, isShared: d.is_shared })),
-      allDatasetNames: Array.from(allDatasetNames)
+      allDatasetNames: result.map(d => d.name)
     });
+
+    // Additional debugging to help identify why Demo Data Lite might be missing
+    if (result.length > 0) {
+      console.log('🔍 DETAILED DATASET BREAKDOWN:');
+      result.forEach((dataset, index) => {
+        console.log(`  ${index + 1}. "${dataset.name}" (owner: ${dataset.owner_id}, shared: ${dataset.is_shared})`);
+      });
+    }
 
     return result;
   } catch (error) {
