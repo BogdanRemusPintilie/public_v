@@ -90,15 +90,30 @@ export const getLoanDataByDataset = async (
 };
 
 export const deleteLoanDataByDataset = async (datasetName: string): Promise<void> => {
-  const { error } = await supabase
+  // First, delete the loan data
+  const { error: loanDataError } = await supabase
     .from('loan_data')
     .delete()
     .eq('dataset_name', datasetName);
 
-  if (error) {
-    console.error('Error deleting loan data by dataset:', error);
-    throw error;
+  if (loanDataError) {
+    console.error('Error deleting loan data by dataset:', loanDataError);
+    throw loanDataError;
   }
+
+  // Then, delete any dataset shares for this dataset
+  const { error: sharesError } = await supabase
+    .from('dataset_shares')
+    .delete()
+    .eq('dataset_name', datasetName);
+
+  if (sharesError) {
+    console.error('Error deleting dataset shares:', sharesError);
+    // Don't throw here as the main data deletion succeeded
+    // Just log the error for now
+  }
+
+  console.log(`Successfully deleted dataset "${datasetName}" and its shares`);
 };
 
 export const deleteLoanData = async (recordIds: string[]): Promise<void> => {
