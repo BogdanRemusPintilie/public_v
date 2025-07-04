@@ -141,7 +141,8 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
       .select('dataset_name, user_id')
       .eq('user_id', user.id)
       .not('dataset_name', 'is', null)
-      .not('dataset_name', 'eq', '');
+      .not('dataset_name', 'eq', '')
+      .order('created_at', { ascending: false });
 
     if (ownedError) {
       console.error('❌ Error fetching owned datasets:', ownedError);
