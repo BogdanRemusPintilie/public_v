@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAccessibleDatasets } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Database, Loader2, RefreshCw } from 'lucide-react';
+import DatasetManagementInterface from './DatasetManagementInterface';
 
 interface DatasetSelectorProps {
   isOpen: boolean;
@@ -24,6 +24,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefreshTrigger, setLastRefreshTrigger] = useState(0);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const [selectedDatasetForManagement, setSelectedDatasetForManagement] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
 
@@ -79,6 +80,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       setDatasets([]);
       setHasInitiallyLoaded(false);
       setLastRefreshTrigger(0);
+      setSelectedDatasetForManagement(null);
     }
   }, [isOpen]);
 
@@ -102,7 +104,27 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
 
   const handleSelectDataset = (datasetName: string) => {
     console.log('📊 SELECTING DATASET:', datasetName);
-    onSelectDataset(datasetName);
+    
+    // Check if this is the "Unsecured consumer loans" dataset
+    if (datasetName === "Unsecured consumer loans") {
+      setSelectedDatasetForManagement(datasetName);
+    } else {
+      onSelectDataset(datasetName);
+    }
+  };
+
+  const handleBackToSelection = () => {
+    setSelectedDatasetForManagement(null);
+  };
+
+  const handleDatasetDeleted = () => {
+    setSelectedDatasetForManagement(null);
+    // Refresh the datasets list
+    loadDatasets(true);
+    toast({
+      title: "Dataset Deleted",
+      description: "The dataset has been successfully removed from your account.",
+    });
   };
 
   const handleManualRefresh = () => {
@@ -111,6 +133,17 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   };
 
   if (!isOpen) return null;
+
+  // Show management interface if a dataset is selected for management
+  if (selectedDatasetForManagement) {
+    return (
+      <DatasetManagementInterface
+        datasetName={selectedDatasetForManagement}
+        onBack={handleBackToSelection}
+        onDatasetDeleted={handleDatasetDeleted}
+      />
+    );
+  }
 
   // Show loading if auth is still loading
   if (authLoading) {
@@ -160,12 +193,21 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                   {datasets.map((dataset, index) => (
                     <div
                       key={`${dataset.name}-${dataset.owner_id}-${index}`}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors ${
+                        dataset.name === "Unsecured consumer loans" 
+                          ? "border-red-300 bg-red-50" 
+                          : "border-gray-200"
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <Database className="h-5 w-5 text-blue-600" />
                         <div>
-                          <h3 className="font-medium text-gray-900">{dataset.name}</h3>
+                          <h3 className="font-medium text-gray-900">
+                            {dataset.name}
+                            {dataset.name === "Unsecured consumer loans" && (
+                              <span className="ml-2 text-xs text-red-600">(Management Available)</span>
+                            )}
+                          </h3>
                           <p className="text-sm text-gray-500">
                             {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
                           </p>
@@ -173,10 +215,10 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                       </div>
                       <Button
                         onClick={() => handleSelectDataset(dataset.name)}
-                        variant="outline"
+                        variant={dataset.name === "Unsecured consumer loans" ? "destructive" : "outline"}
                         size="sm"
                       >
-                        Select
+                        {dataset.name === "Unsecured consumer loans" ? "Manage" : "Select"}
                       </Button>
                     </div>
                   ))}
