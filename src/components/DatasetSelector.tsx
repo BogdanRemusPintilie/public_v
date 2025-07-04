@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,21 +46,22 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       const accessibleDatasets = await getAccessibleDatasets();
       console.log('📊 DATASETS FETCHED:', {
         count: accessibleDatasets.length,
-        datasets: accessibleDatasets
+        datasets: accessibleDatasets,
+        datasetNames: accessibleDatasets.map(d => d.name)
       });
       
-      // Set all accessible datasets without any filtering
-      setDatasets(accessibleDatasets);
+      // Ensure we're setting ALL accessible datasets without any filtering or limiting
+      setDatasets([...accessibleDatasets]); // Use spread to ensure fresh array
       setHasInitiallyLoaded(true);
       
-      console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets`);
+      console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets:`, accessibleDatasets.map(d => d.name));
       
       if (force) {
         toast({
           title: "Datasets Refreshed",
           description: accessibleDatasets.length === 0 
             ? "No datasets found."
-            : `Found ${accessibleDatasets.length} accessible dataset${accessibleDatasets.length > 1 ? 's' : ''}`,
+            : `Found ${accessibleDatasets.length} accessible dataset${accessibleDatasets.length > 1 ? 's' : ''}: ${accessibleDatasets.map(d => d.name).join(', ')}`,
         });
       }
     } catch (error) {
@@ -184,34 +186,40 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             ) : (
               <>
                 <div className="mb-4 text-sm text-gray-600">
-                  Showing {datasets.length} dataset(s) - including your datasets, saved filtered datasets, and shared datasets
+                  Showing all {datasets.length} available dataset(s) - including your datasets, saved filtered datasets, and shared datasets
                 </div>
-                <div className="space-y-3">
-                  {datasets.map((dataset, index) => (
-                    <div
-                      key={`${dataset.name}-${dataset.owner_id}-${index}`}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors border-gray-200"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Database className="h-5 w-5 text-blue-600" />
-                        <div>
-                          <h3 className="font-medium text-gray-900">
-                            {dataset.name}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => handleSelectDataset(dataset.name)}
-                        variant="outline"
-                        size="sm"
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {datasets.map((dataset, index) => {
+                    console.log(`🔍 RENDERING DATASET ${index + 1}:`, dataset.name);
+                    return (
+                      <div
+                        key={`${dataset.name}-${dataset.owner_id}-${index}`}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors border-gray-200"
                       >
-                        Select
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="flex items-center space-x-3">
+                          <Database className="h-5 w-5 text-blue-600" />
+                          <div>
+                            <h3 className="font-medium text-gray-900">
+                              {dataset.name}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => handleSelectDataset(dataset.name)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Select
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 text-xs text-gray-500 text-center">
+                  Total datasets displayed: {datasets.length}
                 </div>
               </>
             )}
