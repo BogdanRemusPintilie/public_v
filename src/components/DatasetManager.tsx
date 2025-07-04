@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { getDatasetSummaries, deleteLoanData } from '@/utils/supabase';
+import { getDatasetSummaries, deleteLoanDataByDataset } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Table, 
@@ -72,6 +71,12 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
       const datasetSummaries = await getDatasetSummaries();
       setDatasets(datasetSummaries);
       
+      // Auto-select "Unsecured consumer loans" if it exists
+      const unsecuredLoansDataset = datasetSummaries.find(d => d.dataset_name === "Unsecured consumer loans");
+      if (unsecuredLoansDataset) {
+        setSelectedDatasets(new Set(["Unsecured consumer loans"]));
+      }
+      
       toast({
         title: "Datasets Loaded",
         description: datasetSummaries.length === 0 
@@ -124,10 +129,6 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       
-      // For each selected dataset, we need to get all record IDs and delete them
-      // Since we don't have record_ids in the summary anymore, we'll need to use deleteLoanDataByDataset
-      const { deleteLoanDataByDataset } = await import('@/utils/supabase');
-      
       for (const datasetName of selectedDatasets) {
         console.log(`Deleting dataset: ${datasetName}`);
         await deleteLoanDataByDataset(datasetName);
@@ -140,7 +141,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
       
       toast({
         title: "Datasets Deleted",
-        description: `Successfully deleted ${selectedDatasets.size} datasets`,
+        description: `Successfully deleted ${selectedDatasets.size} dataset${selectedDatasets.size > 1 ? 's' : ''}, including "Unsecured consumer loans"`,
       });
     } catch (error) {
       console.error('Error deleting datasets:', error);
@@ -167,7 +168,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
           <CardHeader>
             <CardTitle>Dataset Manager</CardTitle>
             <CardDescription>
-              Manage and delete your uploaded datasets. This will permanently remove all records associated with the selected datasets.
+              Manage and delete your uploaded datasets. The "Unsecured consumer loans" dataset has been pre-selected for deletion.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -216,7 +217,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                 <div className="flex justify-between items-center mb-4">
                   <div className="text-sm text-gray-600">
                     {selectedDatasets.size > 0 ? (
-                      `${selectedDatasets.size} dataset(s) selected`
+                      `${selectedDatasets.size} dataset(s) selected${selectedDatasets.has("Unsecured consumer loans") ? ' (including "Unsecured consumer loans")' : ''}`
                     ) : (
                       `${filteredDatasets.length} dataset(s) found`
                     )}
@@ -234,6 +235,9 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                           <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete {selectedDatasets.size} dataset(s) and all associated loan records from your account.
+                            {selectedDatasets.has("Unsecured consumer loans") && (
+                              <><br /><br />This includes the shared dataset "Unsecured consumer loans".</>
+                            )}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -267,7 +271,10 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                     </TableHeader>
                     <TableBody>
                       {filteredDatasets.map((dataset) => (
-                        <TableRow key={dataset.dataset_name}>
+                        <TableRow 
+                          key={dataset.dataset_name}
+                          className={dataset.dataset_name === "Unsecured consumer loans" ? "bg-red-50 border-red-200" : ""}
+                        >
                           <TableCell>
                             <Checkbox
                               checked={selectedDatasets.has(dataset.dataset_name)}
@@ -278,6 +285,9 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                           </TableCell>
                           <TableCell className="font-medium">
                             {dataset.dataset_name}
+                            {dataset.dataset_name === "Unsecured consumer loans" && (
+                              <span className="ml-2 text-xs text-red-600 font-normal">(Pre-selected for deletion)</span>
+                            )}
                           </TableCell>
                           <TableCell>{dataset.record_count.toLocaleString()}</TableCell>
                           <TableCell>${(dataset.total_value / 1000000).toFixed(1)}M</TableCell>
