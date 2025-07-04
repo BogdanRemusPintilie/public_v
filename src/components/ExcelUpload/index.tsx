@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { LoanRecord, insertLoanData, getLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ExcelUploadModal } from './ExcelUploadModal';
@@ -516,19 +517,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       return;
     }
 
-    // Additional authentication check - verify user is still authenticated
-    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !currentUser || currentUser.id !== user.id) {
-      console.log('❌ SAVE FAILED - Authentication check failed:', authError);
-      toast({
-        title: "Authentication Error",
-        description: "Your session has expired. Please log out and log back in.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsProcessing(true);
     setUploadProgress(0);
     setUploadStatus('Preparing data for upload...');
@@ -536,11 +524,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     try {
       console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
       
-      // Prepare data with user_id and dataset_name - let insertLoanData handle the user_id assignment
+      // Prepare data with dataset_name only - let insertLoanData handle user_id assignment
       const dataWithMetadata = dataToSave.map(loan => ({
         ...loan,
         dataset_name: datasetName.trim()
-        // Don't set user_id here - let insertLoanData handle it for RLS compliance
+        // Don't set user_id here - insertLoanData will handle it for RLS compliance
       }));
       
       console.log('💾 PREPARED DATA SAMPLE:', dataWithMetadata.slice(0, 2));
