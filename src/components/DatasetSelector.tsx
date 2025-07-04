@@ -45,18 +45,23 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       const accessibleDatasets = await getAccessibleDatasets();
       console.log('📊 DATASETS FETCHED:', accessibleDatasets);
       
-      // Set datasets immediately
-      setDatasets(accessibleDatasets);
+      // Filter out "Unsecured consumer loans" dataset
+      const filteredDatasets = accessibleDatasets.filter(
+        dataset => dataset.name !== "Unsecured consumer loans"
+      );
+      
+      // Set filtered datasets
+      setDatasets(filteredDatasets);
       setHasInitiallyLoaded(true);
       
-      console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets`);
+      console.log(`✅ LOADED ${filteredDatasets.length} accessible datasets (filtered out Unsecured consumer loans)`);
       
       if (force) {
         toast({
           title: "Datasets Refreshed",
-          description: accessibleDatasets.length === 0 
+          description: filteredDatasets.length === 0 
             ? "No datasets found. All data has been cleared."
-            : `Found ${accessibleDatasets.length} accessible datasets`,
+            : `Found ${filteredDatasets.length} accessible datasets`,
         });
       }
     } catch (error) {
@@ -104,13 +109,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
 
   const handleSelectDataset = (datasetName: string) => {
     console.log('📊 SELECTING DATASET:', datasetName);
-    
-    // Check if this is the "Unsecured consumer loans" dataset
-    if (datasetName === "Unsecured consumer loans") {
-      setSelectedDatasetForManagement(datasetName);
-    } else {
-      onSelectDataset(datasetName);
-    }
+    onSelectDataset(datasetName);
   };
 
   const handleBackToSelection = () => {
@@ -193,20 +192,13 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                   {datasets.map((dataset, index) => (
                     <div
                       key={`${dataset.name}-${dataset.owner_id}-${index}`}
-                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors ${
-                        dataset.name === "Unsecured consumer loans" 
-                          ? "border-red-300 bg-red-50" 
-                          : "border-gray-200"
-                      }`}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors border-gray-200"
                     >
                       <div className="flex items-center space-x-3">
                         <Database className="h-5 w-5 text-blue-600" />
                         <div>
                           <h3 className="font-medium text-gray-900">
                             {dataset.name}
-                            {dataset.name === "Unsecured consumer loans" && (
-                              <span className="ml-2 text-xs text-red-600">(Management Available)</span>
-                            )}
                           </h3>
                           <p className="text-sm text-gray-500">
                             {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
@@ -215,10 +207,10 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                       </div>
                       <Button
                         onClick={() => handleSelectDataset(dataset.name)}
-                        variant={dataset.name === "Unsecured consumer loans" ? "destructive" : "outline"}
+                        variant="outline"
                         size="sm"
                       >
-                        {dataset.name === "Unsecured consumer loans" ? "Manage" : "Select"}
+                        Select
                       </Button>
                     </div>
                   ))}
