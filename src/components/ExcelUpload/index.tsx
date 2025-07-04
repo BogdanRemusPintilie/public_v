@@ -244,7 +244,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Enhanced refresh mechanism
+      // Enhanced refresh mechanism with longer wait time
       const newTrigger = Date.now();
       setDatasetRefreshTrigger(newTrigger);
       
@@ -255,13 +255,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('🔄 DATASET REFRESH TRIGGERED:', newTrigger);
       
-      // Wait longer to ensure database consistency
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait even longer to ensure database consistency and indexing
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       toast({
         title: "Filtered Dataset Saved",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset will appear in "Access Existing Data" and "Extract Data" sections.`,
-        duration: 6000,
+        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset should now appear in "Select Dataset to Manage".`,
+        duration: 8000,
       });
       
     } catch (error) {
@@ -289,7 +289,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
-  // FIXED: Handle pagination more efficiently
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && showExistingData && filteredData.length > 0) {
       const startIndex = newPage * PAGE_SIZE;
