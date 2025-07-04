@@ -245,27 +245,39 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Force an immediate refresh with a longer delay to ensure database consistency
-      const newTrigger = Date.now();
-      setDatasetRefreshTrigger(newTrigger);
+      // Enhanced refresh mechanism with multiple triggers and longer delays
+      const timestamp = Date.now();
+      
+      // Trigger immediate refresh
+      setDatasetRefreshTrigger(timestamp);
       
       // Notify parent component about the new dataset
       if (onDatasetUploaded) {
         onDatasetUploaded();
       }
       
-      console.log('🔄 DATASET REFRESH TRIGGERED:', newTrigger);
+      console.log('🔄 DATASET REFRESH TRIGGERED (immediate):', timestamp);
       
-      // Wait longer to ensure database consistency and indexing
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Wait for database consistency
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // Trigger another refresh to be absolutely sure
-      setDatasetRefreshTrigger(Date.now());
+      // Trigger secondary refresh to ensure data appears
+      const secondaryTimestamp = timestamp + 1;
+      setDatasetRefreshTrigger(secondaryTimestamp);
+      console.log('🔄 DATASET REFRESH TRIGGERED (secondary):', secondaryTimestamp);
+      
+      // Wait a bit more and trigger final refresh
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Final refresh to be absolutely sure
+      const finalTimestamp = timestamp + 2;
+      setDatasetRefreshTrigger(finalTimestamp);
+      console.log('🔄 DATASET REFRESH TRIGGERED (final):', finalTimestamp);
       
       toast({
-        title: "Filtered Dataset Saved",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset should now appear in "Select Dataset to Manage".`,
-        duration: 10000,
+        title: "Filtered Dataset Saved Successfully",
+        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset should now appear in "Select Dataset to Manage" within a few seconds.`,
+        duration: 8000,
       });
       
     } catch (error) {
