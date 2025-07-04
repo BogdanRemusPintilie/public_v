@@ -23,11 +23,16 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   const [datasets, setDatasets] = useState<{ name: string; owner_id: string; is_shared: boolean }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefreshTrigger, setLastRefreshTrigger] = useState(0);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   const loadDatasets = async (force = false) => {
-    if (!user) return;
+    // Don't try to load if user is not authenticated or auth is still loading
+    if (!user || authLoading) {
+      console.log('🔄 SKIPPING DATASET LOAD - User not ready:', { user: !!user, authLoading });
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -39,10 +44,9 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       const accessibleDatasets = await getAccessibleDatasets();
       console.log('📊 DATASETS FETCHED:', accessibleDatasets);
       
-      // Set datasets with a small delay to ensure UI updates
-      setTimeout(() => {
-        setDatasets(accessibleDatasets);
-      }, 100);
+      // Set datasets immediately
+      setDatasets(accessibleDatasets);
+      setHasInitiallyLoaded(true);
       
       console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets`);
       
@@ -60,22 +64,33 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         variant: "destructive",
       });
       setDatasets([]); // Clear datasets on error
+      setHasInitiallyLoaded(true); // Mark as loaded even on error to prevent infinite retries
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Load datasets when modal opens
+  // Reset state when modal closes
   useEffect(() => {
-    if (isOpen && user) {
+    if (!isOpen) {
+      console.log('🔄 MODAL CLOSED - Resetting state');
+      setDatasets([]);
+      setHasInitiallyLoaded(false);
+      setLastRefreshTrigger(0);
+    }
+  }, [isOpen]);
+
+  // Load datasets when modal opens and user is ready
+  useEffect(() => {
+    if (isOpen && user && !authLoading && !hasInitiallyLoaded) {
       console.log('🔄 DATASET SELECTOR - Modal opened, loading datasets');
       loadDatasets();
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, authLoading, hasInitiallyLoaded]);
 
   // Handle refresh trigger changes with improved logic
   useEffect(() => {
-    if (refreshTrigger > 0 && refreshTrigger !== lastRefreshTrigger && isOpen && user) {
+    if (refreshTrigger > 0 && refreshTrigger !== lastRefreshTrigger && isOpen && user && !authLoading) {
       console.log('🔄 DATASET SELECTOR - Refresh trigger changed:', lastRefreshTrigger, '->', refreshTrigger);
       setLastRefreshTrigger(refreshTrigger);
       // Increased delay to ensure database write is complete
@@ -83,7 +98,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         loadDatasets(true);
       }, 2000);
     }
-  }, [refreshTrigger, lastRefreshTrigger, isOpen, user]);
+  }, [refreshTrigger, lastRefreshTrigger, isOpen, user, authLoading]);
 
   const handleSelectDataset = (datasetName: string) => {
     console.log('📊 SELECTING DATASET:', datasetName);
@@ -96,6 +111,22 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   };
 
   if (!isOpen) return null;
+
+  // Show loading if auth is still loading
+  if (authLoading) {
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span className="text-gray-600">Authenticating...</span>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
@@ -157,7 +188,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             <Button 
               variant="outline" 
               onClick={handleManualRefresh}
-              disabled={isLoading}
+              disabled={isLoading || authLoading}
               className="flex items-center gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
