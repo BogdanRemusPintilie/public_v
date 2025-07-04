@@ -199,6 +199,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
               {showExistingData && selectedDatasetName && (
                 <DataFilterPanel
                   datasetName={selectedDatasetName}
+                  totalRecords={totalRecords}
                   onFilteredDataChange={onFilteredDataChange}
                   onSaveFilteredDataset={onSaveFilteredDataset}
                   isProcessing={isProcessing}

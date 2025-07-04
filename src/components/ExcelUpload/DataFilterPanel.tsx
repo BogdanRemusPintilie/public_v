@@ -23,6 +23,7 @@ interface FilterCriteria {
 
 interface DataFilterPanelProps {
   datasetName: string;
+  totalRecords: number;
   onFilteredDataChange: (filteredData: LoanRecord[]) => void;
   onSaveFilteredDataset: (filteredData: LoanRecord[], datasetName: string) => void;
   isProcessing: boolean;
@@ -30,6 +31,7 @@ interface DataFilterPanelProps {
 
 export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   datasetName,
+  totalRecords,
   onFilteredDataChange,
   onSaveFilteredDataset,
   isProcessing
@@ -219,12 +221,12 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           Data Filters
           {showFiltered && (
             <span className="text-sm font-normal text-gray-600">
-              ({filteredData.length.toLocaleString()} of 64,635 records)
+              ({filteredData.length.toLocaleString()} of {totalRecords.toLocaleString()} records)
             </span>
           )}
           {!allDataLoaded && (
             <span className="text-sm font-normal text-orange-600">
-              (Will load all 64,635 records for filtering)
+              (Will load all {totalRecords.toLocaleString()} records for filtering)
             </span>
           )}
         </CardTitle>
