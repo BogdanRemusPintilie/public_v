@@ -174,46 +174,64 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
 
   try {
-    // Use a more comprehensive query to get ALL distinct dataset names
-    const { data: allDatasets, error: datasetsError } = await supabase
+    // First, let's get ALL records to see what's in the database
+    const { data: allUserRecords, error: allRecordsError } = await supabase
       .from('loan_data')
       .select('dataset_name, user_id, created_at')
       .eq('user_id', user.id)
-      .not('dataset_name', 'is', null)
-      .not('dataset_name', 'eq', '')
       .order('created_at', { ascending: false });
 
-    if (datasetsError) {
-      console.error('❌ Error fetching datasets:', datasetsError);
-      throw datasetsError;
+    if (allRecordsError) {
+      console.error('❌ Error fetching all user records:', allRecordsError);
+      throw allRecordsError;
     }
 
-    console.log('📊 ALL DATASET RECORDS FOUND:', allDatasets?.length || 0);
-    console.log('📊 SAMPLE RECORDS:', allDatasets?.slice(0, 10));
+    console.log('📊 ALL USER RECORDS FOUND:', allUserRecords?.length || 0);
+    
+    // Log ALL unique dataset names found (including null/empty ones)
+    const allDatasetNames = new Set();
+    allUserRecords?.forEach(record => {
+      allDatasetNames.add(record.dataset_name);
+    });
+    console.log('📊 ALL DATASET NAMES IN DATABASE (including null/empty):', Array.from(allDatasetNames));
+
+    // Filter out null/empty dataset names and get unique datasets
+    const validRecords = allUserRecords?.filter(record => 
+      record.dataset_name && record.dataset_name.trim()
+    ) || [];
+
+    console.log('📊 VALID RECORDS (non-null/empty dataset names):', validRecords.length);
 
     // Create a Map to store unique datasets with their metadata
     const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean; created_at: string }>();
     
-    // Process all records to extract unique dataset names
-    if (allDatasets && allDatasets.length > 0) {
-      allDatasets.forEach(record => {
-        if (record.dataset_name && record.dataset_name.trim()) {
-          const datasetName = record.dataset_name.trim();
-          
-          // Only add if we haven't seen this dataset before (keep the most recent one)
-          if (!uniqueDatasets.has(datasetName)) {
-            uniqueDatasets.set(datasetName, {
-              name: datasetName,
-              owner_id: record.user_id,
-              is_shared: false,
-              created_at: record.created_at
-            });
-          }
-        }
-      });
-    }
+    // Process all valid records to extract unique dataset names
+    validRecords.forEach(record => {
+      const datasetName = record.dataset_name.trim();
+      
+      // Only add if we haven't seen this dataset before (keep the most recent one)
+      if (!uniqueDatasets.has(datasetName)) {
+        uniqueDatasets.set(datasetName, {
+          name: datasetName,
+          owner_id: record.user_id,
+          is_shared: false,
+          created_at: record.created_at
+        });
+      }
+    });
 
     console.log('📊 UNIQUE OWNED DATASETS FOUND:', Array.from(uniqueDatasets.keys()));
+
+    // Check specifically for "Demo Data Lite"
+    const demoDataLiteExists = validRecords.some(record => 
+      record.dataset_name && record.dataset_name.includes('Demo Data Lite')
+    );
+    console.log('🔍 DEMO DATA LITE CHECK:', {
+      exists: demoDataLiteExists,
+      allRecordsWithDemoLite: validRecords.filter(record => 
+        record.dataset_name && record.dataset_name.toLowerCase().includes('demo data lite')
+      )
+    });
 
     // Get shared datasets
     const { data: sharedDatasets, error: sharedError } = await supabase
@@ -225,7 +243,6 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     if (sharedError) {
       console.error('❌ Error fetching shared datasets:', sharedError);
-      // Don't throw here, just log and continue with owned datasets
       console.log('⚠️ Continuing with owned datasets only due to sharing error');
     }
 
@@ -241,7 +258,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
               name: datasetName,
               owner_id: share.owner_id,
               is_shared: true,
-              created_at: new Date().toISOString() // Default for shared datasets
+              created_at: new Date().toISOString()
             });
           }
         }
@@ -259,28 +276,13 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
       allDatasetNames: result.map(d => d.name)
     });
 
-    // Detailed debugging
-    if (result.length > 0) {
-      console.log('🔍 DETAILED DATASET BREAKDOWN:');
-      result.forEach((dataset, index) => {
-        console.log(`  ${index + 1}. "${dataset.name}" (owner: ${dataset.owner_id}, shared: ${dataset.is_shared})`);
-      });
-    }
-
-    // Specific check for Demo Data 868
-    const demoData868 = result.find(d => d.name === 'Demo Data 868');
-    if (demoData868) {
-      console.log('✅ DEMO DATA 868 FOUND:', demoData868);
-    } else {
-      console.log('❌ DEMO DATA 868 NOT FOUND in results');
-      // Check if it exists in raw data
-      const rawDemo868 = allDatasets?.find(d => d.dataset_name === 'Demo Data 868');
-      if (rawDemo868) {
-        console.log('🔍 DEMO DATA 868 EXISTS IN RAW DATA:', rawDemo868);
-      } else {
-        console.log('❌ DEMO DATA 868 NOT FOUND IN RAW DATA');
-      }
-    }
+    // Enhanced debugging for missing datasets
+    console.log('🔍 DEBUGGING MISSING DATASETS:');
+    ['Demo Data Lite', 'Demo Data 868', 'Demo Data 943'].forEach(searchName => {
+      const found = result.find(d => d.name === searchName);
+      const inRawData = validRecords.find(r => r.dataset_name === searchName);
+      console.log(`  ${searchName}: ${found ? '✅ FOUND' : '❌ MISSING'} in results, ${inRawData ? '✅ EXISTS' : '❌ NOT FOUND'} in raw data`);
+    });
 
     return result;
   } catch (error) {
