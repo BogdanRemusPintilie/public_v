@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,6 @@ import { getAccessibleDatasets } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Database, Loader2, RefreshCw } from 'lucide-react';
 import DatasetManagementInterface from './DatasetManagementInterface';
-import { CreateDemoDataButton } from './CreateDemoDataButton';
 
 interface DatasetSelectorProps {
   isOpen: boolean;
@@ -131,11 +131,6 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     loadDatasets(true);
   };
 
-  const handleDemoDataCreated = () => {
-    console.log('🔄 DEMO DATA CREATED - Refreshing datasets');
-    loadDatasets(true);
-  };
-
   if (!isOpen) return null;
 
   // Show management interface if a dataset is selected for management
@@ -186,8 +181,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                 <Database className="h-16 w-16 text-gray-300 mx-auto mb-6" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">No datasets available</h3>
                 <p className="text-gray-500 mb-4">You haven't created any datasets yet.</p>
-                <p className="text-sm text-gray-400 mb-6">Upload new data or save filtered datasets to get started.</p>
-                <CreateDemoDataButton onDatasetCreated={handleDemoDataCreated} />
+                <p className="text-sm text-gray-400">Upload new data or save filtered datasets to get started.</p>
               </div>
             ) : (
               <>
@@ -246,9 +240,6 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </Button>
-            {datasets.length === 0 && !isLoading && (
-              <CreateDemoDataButton onDatasetCreated={handleDemoDataCreated} />
-            )}
           </div>
         </Card>
       </div>
