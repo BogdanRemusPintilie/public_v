@@ -44,6 +44,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
     { id: '2', name: 'Mezzanine', thickness: 20, costBps: 250, hedgedPercentage: 75 },
     { id: '3', name: 'First Loss', thickness: 10, costBps: 450, hedgedPercentage: 50 }
   ]);
+  const [additionalTransactionCosts, setAdditionalTransactionCosts] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [structureName, setStructureName] = useState('');
@@ -110,10 +111,15 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
         hedgedPercentage: tranche.hedgedPercentage || 0
       }));
       setTranches(loadedTranches);
+      
+      if (editingStructure.additional_transaction_costs) {
+        setAdditionalTransactionCosts(editingStructure.additional_transaction_costs);
+      }
     } else {
       setIsEditing(false);
       setEditingStructureId(null);
       setStructureName('');
+      setAdditionalTransactionCosts(0);
       setTranches([
         { id: '1', name: 'Senior', thickness: 70, costBps: 150, hedgedPercentage: 90 },
         { id: '2', name: 'Mezzanine', thickness: 20, costBps: 250, hedgedPercentage: 75 },
@@ -181,9 +187,10 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
   };
 
   const calculateTotalTransactionCost = () => {
-    return tranches.reduce((total, tranche) => {
+    const trancheCosts = tranches.reduce((total, tranche) => {
       return total + calculateTrancheCost(tranche.thickness, tranche.costBps, tranche.hedgedPercentage);
     }, 0);
+    return trancheCosts + additionalTransactionCosts;
   };
 
   const formatCurrency = (value: number) => {
@@ -233,6 +240,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
         total_cost: totalCost,
         weighted_avg_cost_bps: weightedAvgCostBps,
         cost_percentage: costPercentage,
+        additional_transaction_costs: additionalTransactionCosts,
         user_id: user.id
       };
 
@@ -508,7 +516,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
               </Card>
             )}
 
-            {/* Transaction Cost Summary */}
+            {/* Total Transaction Costs */}
             {selectedDataset && (
               <Card className="border-2 border-green-200 bg-green-50">
                 <CardHeader>
@@ -517,28 +525,59 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
                     <span>Total Transaction Costs</span>
                   </CardTitle>
                   <CardDescription className="text-green-700">
-                    Summary of all tranche costs for this transaction
+                    Summary of all costs for this transaction including tranches and additional costs
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-white rounded-lg border">
-                      <div className="text-2xl font-bold text-green-600">
-                        {formatCurrency(calculateTotalTransactionCost())}
-                      </div>
-                      <div className="text-sm text-gray-600">Total Cost</div>
+                  <div className="space-y-4">
+                    {/* Additional Transaction Costs Input */}
+                    <div className="p-4 bg-white rounded-lg border">
+                      <Label htmlFor="additional-costs" className="text-base font-medium">
+                        Additional Transaction Costs (Lawyers, Advisors, etc.)
+                      </Label>
+                      <Input
+                        id="additional-costs"
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={additionalTransactionCosts}
+                        onChange={(e) => setAdditionalTransactionCosts(parseFloat(e.target.value) || 0)}
+                        placeholder="Enter additional costs..."
+                        className="mt-2"
+                      />
+                      <p className="text-sm text-gray-600 mt-1">
+                        Enter costs for lawyers, advisors, and other transaction-related expenses
+                      </p>
                     </div>
-                    <div className="text-center p-4 bg-white rounded-lg border">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 10000).toFixed(0) : 0} BPS
+
+                    {/* Cost Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="text-center p-4 bg-white rounded-lg border">
+                        <div className="text-xl font-bold text-blue-600">
+                          {formatCurrency(tranches.reduce((total, tranche) => {
+                            return total + calculateTrancheCost(tranche.thickness, tranche.costBps, tranche.hedgedPercentage);
+                          }, 0))}
+                        </div>
+                        <div className="text-sm text-gray-600">Tranche Costs</div>
                       </div>
-                      <div className="text-sm text-gray-600">Weighted Avg Cost</div>
-                    </div>
-                    <div className="text-center p-4 bg-white rounded-lg border">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 100).toFixed(2) : 0}%
+                      <div className="text-center p-4 bg-white rounded-lg border">
+                        <div className="text-xl font-bold text-orange-600">
+                          {formatCurrency(additionalTransactionCosts)}
+                        </div>
+                        <div className="text-sm text-gray-600">Additional Costs</div>
                       </div>
-                      <div className="text-sm text-gray-600">Cost as % of Total</div>
+                      <div className="text-center p-4 bg-white rounded-lg border">
+                        <div className="text-2xl font-bold text-green-600">
+                          {formatCurrency(calculateTotalTransactionCost())}
+                        </div>
+                        <div className="text-sm text-gray-600">Total Cost</div>
+                      </div>
+                      <div className="text-center p-4 bg-white rounded-lg border">
+                        <div className="text-xl font-bold text-purple-600">
+                          {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 100).toFixed(2) : 0}%
+                        </div>
+                        <div className="text-sm text-gray-600">Cost as % of Total</div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
