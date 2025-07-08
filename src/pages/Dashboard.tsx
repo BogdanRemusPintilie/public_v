@@ -9,6 +9,7 @@ import { useState } from 'react';
 import ExcelUpload from '@/components/ExcelUpload';
 import DatasetManager from '@/components/DatasetManager';
 import DataExtractor from '@/components/DataExtractor';
+import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const [showExistingData, setShowExistingData] = useState(false);
   const [showDatasetManager, setShowDatasetManager] = useState(false);
   const [showDataExtractor, setShowDataExtractor] = useState(false);
+  const [showTrancheAnalysis, setShowTrancheAnalysis] = useState(false);
   const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
   const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
 
@@ -51,6 +53,8 @@ const Dashboard = () => {
       setShowDatasetManager(true);
     } else if (action === 'Extract Data') {
       setShowDataExtractor(true);
+    } else if (action === 'Tranche and Analyse Data') {
+      setShowTrancheAnalysis(true);
     } else {
       toast({
         title: "Pre-trade Action",
@@ -365,6 +369,11 @@ const Dashboard = () => {
       <DatasetManager
         isOpen={showDatasetManager}
         onClose={() => setShowDatasetManager(false)}
+      />
+      
+      <TrancheAnalysisDashboard
+        isOpen={showTrancheAnalysis}
+        onClose={() => setShowTrancheAnalysis(false)}
       />
     </div>
   );
