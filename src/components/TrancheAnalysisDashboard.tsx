@@ -93,7 +93,12 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         return;
       }
 
-      setTrancheStructures(data || []);
+      // Cast the Json tranches back to array type
+      const structures = (data || []).map(item => ({
+        ...item,
+        tranches: item.tranches as any[]
+      }));
+      setTrancheStructures(structures);
     } catch (error) {
       console.error('Error:', error);
       toast({

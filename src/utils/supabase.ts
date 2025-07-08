@@ -399,7 +399,12 @@ export const saveTrancheStructure = async (structure: TrancheStructure): Promise
   const { error } = await supabase
     .from('tranche_structures')
     .insert({
-      ...structure,
+      structure_name: structure.structure_name,
+      dataset_name: structure.dataset_name,
+      tranches: structure.tranches as any, // Cast to Json type for database
+      total_cost: structure.total_cost,
+      weighted_avg_cost_bps: structure.weighted_avg_cost_bps,
+      cost_percentage: structure.cost_percentage,
       user_id: user.id
     });
 
@@ -420,7 +425,11 @@ export const getTrancheStructures = async (): Promise<TrancheStructure[]> => {
     throw error;
   }
 
-  return (data || []) as TrancheStructure[];
+  // Cast the Json tranches back to array type
+  return (data || []).map(item => ({
+    ...item,
+    tranches: item.tranches as any[]
+  })) as TrancheStructure[];
 };
 
 export const deleteTrancheStructure = async (structureId: string): Promise<void> => {

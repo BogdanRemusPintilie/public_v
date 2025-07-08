@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Plus, Trash2, Save, Database, Calculator } from 'lucide-react';
+import { TrancheStructure } from '@/utils/supabase';
 
 interface DatasetSummary {
   dataset_name: string;
@@ -194,16 +195,25 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
       const weightedAvgCostBps = dataset ? (totalCost / dataset.total_value) * 10000 : 0;
       const costPercentage = dataset ? (totalCost / dataset.total_value) * 100 : 0;
 
+      const structureData: TrancheStructure = {
+        structure_name: structureName.trim(),
+        dataset_name: selectedDataset,
+        tranches: tranches,
+        total_cost: totalCost,
+        weighted_avg_cost_bps: weightedAvgCostBps,
+        cost_percentage: costPercentage
+      };
+
       const { error } = await supabase
         .from('tranche_structures')
         .insert({
-          user_id: user.id,
-          structure_name: structureName.trim(),
-          dataset_name: selectedDataset,
-          tranches: tranches,
-          total_cost: totalCost,
-          weighted_avg_cost_bps: weightedAvgCostBps,
-          cost_percentage: costPercentage
+          structure_name: structureData.structure_name,
+          dataset_name: structureData.dataset_name,
+          tranches: structureData.tranches as any,
+          total_cost: structureData.total_cost,
+          weighted_avg_cost_bps: structureData.weighted_avg_cost_bps,
+          cost_percentage: structureData.cost_percentage,
+          user_id: user.id
         });
 
       if (error) {
