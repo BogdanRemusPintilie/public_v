@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +31,8 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const [showStructureDataset, setShowStructureDataset] = useState(false);
   const [selectedDatasetForStructure, setSelectedDatasetForStructure] = useState<string>('');
   const [editingStructure, setEditingStructure] = useState<TrancheStructure | null>(null);
+  const [showManageStructure, setShowManageStructure] = useState(false);
+  const [selectedDatasetForManagement, setSelectedDatasetForManagement] = useState<string>('');
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -120,11 +121,8 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   };
 
   const handleManageStructure = (datasetName: string) => {
-    toast({
-      title: "Manage Structure",
-      description: `Opening structure management for ${datasetName}`,
-    });
-    // TODO: Implement structure management logic
+    setSelectedDatasetForManagement(datasetName);
+    setShowManageStructure(true);
   };
 
   const handleDeleteStructure = async (structureId: string, structureName: string) => {
@@ -169,6 +167,13 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     fetchTrancheStructures();
   };
 
+  const handleCloseManageStructure = () => {
+    setShowManageStructure(false);
+    setSelectedDatasetForManagement('');
+    // Refresh structures when returning from management
+    fetchTrancheStructures();
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -184,6 +189,11 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  // Get structures for the selected dataset
+  const getStructuresForDataset = (datasetName: string) => {
+    return trancheStructures.filter(structure => structure.dataset_name === datasetName);
   };
 
   return (
@@ -274,7 +284,7 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                                 className="flex items-center space-x-2 border-indigo-200 hover:bg-indigo-50"
                               >
                                 <Settings className="h-4 w-4" />
-                                <span>Manage Structure</span>
+                                <span>Manage Structure ({getStructuresForDataset(dataset.dataset_name).length})</span>
                               </Button>
                               
                               <Button
@@ -283,91 +293,6 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                               >
                                 <TrendingUp className="h-4 w-4" />
                                 <span>View Analytics</span>
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Saved Tranche Structures Section */}
-                {trancheStructures.length > 0 && (
-                  <div className="space-y-4">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Saved Tranche Structures</h3>
-                      <p className="text-gray-600">Your previously saved tranche structures</p>
-                    </div>
-
-                    <div className="grid gap-4">
-                      {trancheStructures.map((structure) => (
-                        <Card key={structure.id} className="border-0 shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500">
-                          <CardHeader className="pb-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <CardTitle className="text-lg font-semibold text-gray-900 mb-1 flex items-center space-x-2">
-                                  <FileText className="h-5 w-5 text-green-600" />
-                                  <span>{structure.structure_name}</span>
-                                </CardTitle>
-                                <CardDescription className="text-gray-600">
-                                  Based on {structure.dataset_name} • Created on {formatDate(structure.created_at)}
-                                </CardDescription>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="outline" className="ml-4">
-                                  {structure.tranches.length} tranches
-                                </Badge>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteStructure(structure.id, structure.structure_name)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          
-                          <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div className="text-center p-3 bg-green-50 rounded-lg">
-                                <div className="text-lg font-bold text-green-600">
-                                  {formatCurrency(structure.total_cost)}
-                                </div>
-                                <div className="text-sm text-green-700">Total Cost</div>
-                              </div>
-                              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                                <div className="text-lg font-bold text-blue-600">
-                                  {structure.weighted_avg_cost_bps.toFixed(0)} BPS
-                                </div>
-                                <div className="text-sm text-blue-700">Weighted Avg Cost</div>
-                              </div>
-                              <div className="text-center p-3 bg-purple-50 rounded-lg">
-                                <div className="text-lg font-bold text-purple-600">
-                                  {structure.cost_percentage.toFixed(2)}%
-                                </div>
-                                <div className="text-sm text-purple-700">Cost as % of Total</div>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-3 pt-4 border-t">
-                              <Button
-                                onClick={() => handleEditStructure(structure)}
-                                variant="outline"
-                                className="flex items-center space-x-2 border-green-200 hover:bg-green-50"
-                              >
-                                <Settings className="h-4 w-4" />
-                                <span>Edit Structure</span>
-                              </Button>
-                              
-                              <Button
-                                variant="ghost"
-                                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
-                              >
-                                <TrendingUp className="h-4 w-4" />
-                                <span>View Details</span>
                               </Button>
                             </div>
                           </CardContent>
@@ -397,6 +322,112 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         selectedDatasetName={selectedDatasetForStructure}
         editingStructure={editingStructure}
       />
+
+      {/* Manage Structure Dialog */}
+      <Dialog open={showManageStructure} onOpenChange={handleCloseManageStructure}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Settings className="h-6 w-6 text-indigo-600" />
+              <span>Manage Structures for {selectedDatasetForManagement}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {getStructuresForDataset(selectedDatasetForManagement).length > 0 ? (
+              <div className="grid gap-4">
+                {getStructuresForDataset(selectedDatasetForManagement).map((structure) => (
+                  <Card key={structure.id} className="border-0 shadow-md hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg font-semibold text-gray-900 mb-1 flex items-center space-x-2">
+                            <FileText className="h-5 w-5 text-green-600" />
+                            <span>{structure.structure_name}</span>
+                          </CardTitle>
+                          <CardDescription className="text-gray-600">
+                            Created on {formatDate(structure.created_at)}
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="ml-4">
+                            {structure.tranches.length} tranches
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteStructure(structure.id, structure.structure_name)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-lg font-bold text-green-600">
+                            {formatCurrency(structure.total_cost)}
+                          </div>
+                          <div className="text-sm text-green-700">Total Cost</div>
+                        </div>
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-lg font-bold text-blue-600">
+                            {structure.weighted_avg_cost_bps.toFixed(0)} BPS
+                          </div>
+                          <div className="text-sm text-blue-700">Weighted Avg Cost</div>
+                        </div>
+                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                          <div className="text-lg font-bold text-purple-600">
+                            {structure.cost_percentage.toFixed(2)}%
+                          </div>
+                          <div className="text-sm text-purple-700">Cost as % of Total</div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3 pt-4 border-t">
+                        <Button
+                          onClick={() => handleEditStructure(structure)}
+                          variant="outline"
+                          className="flex items-center space-x-2 border-green-200 hover:bg-green-50"
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Edit Structure</span>
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+                        >
+                          <TrendingUp className="h-4 w-4" />
+                          <span>View Details</span>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Saved Structures</h3>
+                <p className="text-gray-500">No tranche structures have been saved for this dataset yet.</p>
+                <Button
+                  onClick={() => {
+                    handleCloseManageStructure();
+                    handleStructureDataset(selectedDatasetForManagement);
+                  }}
+                  className="mt-4 bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Create New Structure
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
