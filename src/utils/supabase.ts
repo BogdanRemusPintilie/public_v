@@ -25,6 +25,19 @@ interface DatasetSummary {
   created_at: string;
 }
 
+export interface TrancheStructure {
+  id?: string;
+  user_id?: string;
+  structure_name: string;
+  dataset_name: string;
+  tranches: any[];
+  total_cost: number;
+  weighted_avg_cost_bps: number;
+  cost_percentage: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const insertLoanData = async (
   loanData: LoanRecord[],
   progressCallback?: (completed: number, total: number) => void
@@ -371,6 +384,53 @@ export const removeDatasetShare = async (shareId: string): Promise<void> => {
 
   if (error) {
     console.error('Error removing dataset share:', error);
+    throw error;
+  }
+};
+
+// Tranche structure functions
+export const saveTrancheStructure = async (structure: TrancheStructure): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { error } = await supabase
+    .from('tranche_structures')
+    .insert({
+      ...structure,
+      user_id: user.id
+    });
+
+  if (error) {
+    console.error('Error saving tranche structure:', error);
+    throw error;
+  }
+};
+
+export const getTrancheStructures = async (): Promise<TrancheStructure[]> => {
+  const { data, error } = await supabase
+    .from('tranche_structures')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching tranche structures:', error);
+    throw error;
+  }
+
+  return (data || []) as TrancheStructure[];
+};
+
+export const deleteTrancheStructure = async (structureId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('tranche_structures')
+    .delete()
+    .eq('id', structureId);
+
+  if (error) {
+    console.error('Error deleting tranche structure:', error);
     throw error;
   }
 };

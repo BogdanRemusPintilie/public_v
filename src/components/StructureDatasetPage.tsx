@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +43,9 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
     { id: '3', name: 'Subordinate', thickness: 10, costBps: 450, hedgedPercentage: 50 }
   ]);
   const [loading, setLoading] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [structureName, setStructureName] = useState('');
+  const [saving, setSaving] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -166,7 +168,75 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
     return totalThickness === 100 && tranches.length >= 3 && tranches.length <= 10;
   };
 
-  const saveStructure = () => {
+  const saveStructure = async () => {
+    if (!user || !selectedDataset || !structureName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a structure name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isValidStructure()) {
+      toast({
+        title: "Invalid Structure",
+        description: "Tranche thickness must sum to 100% and you need 3-10 tranches",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const dataset = getSelectedDataset();
+      const totalCost = calculateTotalTransactionCost();
+      const weightedAvgCostBps = dataset ? (totalCost / dataset.total_value) * 10000 : 0;
+      const costPercentage = dataset ? (totalCost / dataset.total_value) * 100 : 0;
+
+      const { error } = await supabase
+        .from('tranche_structures')
+        .insert({
+          user_id: user.id,
+          structure_name: structureName.trim(),
+          dataset_name: selectedDataset,
+          tranches: tranches,
+          total_cost: totalCost,
+          weighted_avg_cost_bps: weightedAvgCostBps,
+          cost_percentage: costPercentage
+        });
+
+      if (error) {
+        console.error('Error saving tranche structure:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save tranche structure",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Structure Saved",
+        description: `Tranche structure "${structureName}" has been saved successfully`,
+      });
+
+      setShowSaveDialog(false);
+      setStructureName('');
+      onClose();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save tranche structure",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveClick = () => {
     if (!selectedDataset) {
       toast({
         title: "No Dataset Selected",
@@ -185,252 +255,283 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
       return;
     }
 
-    // TODO: Save tranche structure to database
-    toast({
-      title: "Structure Saved",
-      description: `Tranche structure for ${selectedDataset} has been saved successfully`,
-    });
+    setShowSaveDialog(true);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center space-x-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onClose}
-              className="p-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <DialogTitle className="flex items-center space-x-2">
-              <Database className="h-6 w-6 text-indigo-600" />
-              <span>Structure Dataset</span>
-            </DialogTitle>
-          </div>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onClose}
+                className="p-1"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <DialogTitle className="flex items-center space-x-2">
+                <Database className="h-6 w-6 text-indigo-600" />
+                <span>Structure Dataset</span>
+              </DialogTitle>
+            </div>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Dataset Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Dataset</CardTitle>
-              <CardDescription>Choose the dataset you want to create a tranche structure for</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Select value={selectedDataset} onValueChange={setSelectedDataset}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a dataset..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {datasets.map((dataset) => (
-                      <SelectItem key={dataset.dataset_name} value={dataset.dataset_name}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{dataset.dataset_name}</span>
-                          <Badge variant="outline" className="ml-2">
-                            {formatCurrency(dataset.total_value)}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {selectedDataset && getSelectedDataset() && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-blue-600">
-                        {formatCurrency(getSelectedDataset()!.total_value)}
-                      </div>
-                      <div className="text-sm text-gray-600">Total Value</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-green-600">
-                        {getSelectedDataset()!.record_count}
-                      </div>
-                      <div className="text-sm text-gray-600">Total Loans</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-orange-600">
-                        {getSelectedDataset()!.avg_interest_rate.toFixed(2)}%
-                      </div>
-                      <div className="text-sm text-gray-600">Avg Rate</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-purple-600">
-                        {getSelectedDataset()!.high_risk_count}
-                      </div>
-                      <div className="text-sm text-gray-600">High Risk</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tranche Structure */}
-          {selectedDataset && (
+          <div className="space-y-6">
+            {/* Dataset Selection */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Tranche Structure</CardTitle>
-                    <CardDescription>Design your tranche structure (3-10 tranches, thickness must sum to 100%)</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant={getTotalThickness() === 100 ? "default" : "destructive"}
-                    >
-                      Total: {getTotalThickness()}%
-                    </Badge>
-                    <Button
-                      onClick={addTranche}
-                      disabled={tranches.length >= 10}
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Tranche
-                    </Button>
-                  </div>
-                </div>
+                <CardTitle>Select Dataset</CardTitle>
+                <CardDescription>Choose the dataset you want to create a tranche structure for</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {tranches.map((tranche, index) => (
-                    <div key={tranche.id} className="grid grid-cols-12 gap-4 p-4 border rounded-lg">
-                      <div className="col-span-2">
-                        <Label htmlFor={`name-${tranche.id}`}>Tranche Name</Label>
-                        <Input
-                          id={`name-${tranche.id}`}
-                          value={tranche.name}
-                          onChange={(e) => updateTranche(tranche.id, 'name', e.target.value)}
-                          placeholder="Tranche name"
-                        />
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <Label htmlFor={`thickness-${tranche.id}`}>Thickness (%)</Label>
-                        <Input
-                          id={`thickness-${tranche.id}`}
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={tranche.thickness}
-                          onChange={(e) => updateTranche(tranche.id, 'thickness', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <Label htmlFor={`cost-${tranche.id}`}>Cost (BPS)</Label>
-                        <Input
-                          id={`cost-${tranche.id}`}
-                          type="number"
-                          min="0"
-                          value={tranche.costBps}
-                          onChange={(e) => updateTranche(tranche.id, 'costBps', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <Label htmlFor={`hedged-${tranche.id}`}>Hedged (%)</Label>
-                        <Input
-                          id={`hedged-${tranche.id}`}
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={tranche.hedgedPercentage}
-                          onChange={(e) => updateTranche(tranche.id, 'hedgedPercentage', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <Label>Tranche Value</Label>
-                        <div className="text-sm font-medium text-green-600 mt-1">
-                          {formatCurrency(calculateTrancheValue(tranche.thickness))}
+                  <Select value={selectedDataset} onValueChange={setSelectedDataset}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a dataset..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {datasets.map((dataset) => (
+                        <SelectItem key={dataset.dataset_name} value={dataset.dataset_name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{dataset.dataset_name}</span>
+                            <Badge variant="outline" className="ml-2">
+                              {formatCurrency(dataset.total_value)}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedDataset && getSelectedDataset() && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-blue-600">
+                          {formatCurrency(getSelectedDataset()!.total_value)}
                         </div>
+                        <div className="text-sm text-gray-600">Total Value</div>
                       </div>
-                      
-                      <div className="col-span-1">
-                        <Label>Tranche Cost</Label>
-                        <div className="text-sm font-medium text-orange-600 mt-1">
-                          {formatCurrency(calculateTrancheCost(tranche.thickness, tranche.costBps))}
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-green-600">
+                          {getSelectedDataset()!.record_count}
                         </div>
+                        <div className="text-sm text-gray-600">Total Loans</div>
                       </div>
-                      
-                      <div className="col-span-1 flex items-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeTranche(tranche.id)}
-                          disabled={tranches.length <= 3}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-orange-600">
+                          {getSelectedDataset()!.avg_interest_rate.toFixed(2)}%
+                        </div>
+                        <div className="text-sm text-gray-600">Avg Rate</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-purple-600">
+                          {getSelectedDataset()!.high_risk_count}
+                        </div>
+                        <div className="text-sm text-gray-600">High Risk</div>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-end space-x-4 pt-6 border-t">
-                  <Button variant="outline" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={saveStructure}
-                    disabled={!isValidStructure()}
-                    className="bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Structure
-                  </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Transaction Cost Summary */}
-          {selectedDataset && (
-            <Card className="border-2 border-green-200 bg-green-50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-green-800">
-                  <Calculator className="h-5 w-5" />
-                  <span>Total Transaction Costs</span>
-                </CardTitle>
-                <CardDescription className="text-green-700">
-                  Summary of all tranche costs for this transaction
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-white rounded-lg border">
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(calculateTotalTransactionCost())}
+            {/* Tranche Structure */}
+            {selectedDataset && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Tranche Structure</CardTitle>
+                      <CardDescription>Design your tranche structure (3-10 tranches, thickness must sum to 100%)</CardDescription>
                     </div>
-                    <div className="text-sm text-gray-600">Total Cost</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg border">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 10000).toFixed(0) : 0} BPS
+                    <div className="flex items-center space-x-2">
+                      <Badge 
+                        variant={getTotalThickness() === 100 ? "default" : "destructive"}
+                      >
+                        Total: {getTotalThickness()}%
+                      </Badge>
+                      <Button
+                        onClick={addTranche}
+                        disabled={tranches.length >= 10}
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Tranche
+                      </Button>
                     </div>
-                    <div className="text-sm text-gray-600">Weighted Avg Cost</div>
                   </div>
-                  <div className="text-center p-4 bg-white rounded-lg border">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 100).toFixed(2) : 0}%
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {tranches.map((tranche, index) => (
+                      <div key={tranche.id} className="grid grid-cols-12 gap-4 p-4 border rounded-lg">
+                        <div className="col-span-2">
+                          <Label htmlFor={`name-${tranche.id}`}>Tranche Name</Label>
+                          <Input
+                            id={`name-${tranche.id}`}
+                            value={tranche.name}
+                            onChange={(e) => updateTranche(tranche.id, 'name', e.target.value)}
+                            placeholder="Tranche name"
+                          />
+                        </div>
+                        
+                        <div className="col-span-2">
+                          <Label htmlFor={`thickness-${tranche.id}`}>Thickness (%)</Label>
+                          <Input
+                            id={`thickness-${tranche.id}`}
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={tranche.thickness}
+                            onChange={(e) => updateTranche(tranche.id, 'thickness', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        
+                        <div className="col-span-2">
+                          <Label htmlFor={`cost-${tranche.id}`}>Cost (BPS)</Label>
+                          <Input
+                            id={`cost-${tranche.id}`}
+                            type="number"
+                            min="0"
+                            value={tranche.costBps}
+                            onChange={(e) => updateTranche(tranche.id, 'costBps', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        
+                        <div className="col-span-2">
+                          <Label htmlFor={`hedged-${tranche.id}`}>Hedged (%)</Label>
+                          <Input
+                            id={`hedged-${tranche.id}`}
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={tranche.hedgedPercentage}
+                            onChange={(e) => updateTranche(tranche.id, 'hedgedPercentage', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                        
+                        <div className="col-span-2">
+                          <Label>Tranche Value</Label>
+                          <div className="text-sm font-medium text-green-600 mt-1">
+                            {formatCurrency(calculateTrancheValue(tranche.thickness))}
+                          </div>
+                        </div>
+                        
+                        <div className="col-span-1">
+                          <Label>Tranche Cost</Label>
+                          <div className="text-sm font-medium text-orange-600 mt-1">
+                            {formatCurrency(calculateTrancheCost(tranche.thickness, tranche.costBps))}
+                          </div>
+                        </div>
+                        
+                        <div className="col-span-1 flex items-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeTranche(tranche.id)}
+                            disabled={tranches.length <= 3}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end space-x-4 pt-6 border-t">
+                    <Button variant="outline" onClick={onClose}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveClick}
+                      disabled={!isValidStructure()}
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Structure
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Transaction Cost Summary */}
+            {selectedDataset && (
+              <Card className="border-2 border-green-200 bg-green-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-green-800">
+                    <Calculator className="h-5 w-5" />
+                    <span>Total Transaction Costs</span>
+                  </CardTitle>
+                  <CardDescription className="text-green-700">
+                    Summary of all tranche costs for this transaction
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-white rounded-lg border">
+                      <div className="text-2xl font-bold text-green-600">
+                        {formatCurrency(calculateTotalTransactionCost())}
+                      </div>
+                      <div className="text-sm text-gray-600">Total Cost</div>
                     </div>
-                    <div className="text-sm text-gray-600">Cost as % of Total</div>
+                    <div className="text-center p-4 bg-white rounded-lg border">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 10000).toFixed(0) : 0} BPS
+                      </div>
+                      <div className="text-sm text-gray-600">Weighted Avg Cost</div>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-lg border">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 100).toFixed(2) : 0}%
+                      </div>
+                      <div className="text-sm text-gray-600">Cost as % of Total</div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Structure Name Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save Tranche Structure</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="structure-name">Structure Name</Label>
+              <Input
+                id="structure-name"
+                value={structureName}
+                onChange={(e) => setStructureName(e.target.value)}
+                placeholder="Enter structure name..."
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={saveStructure} 
+                disabled={!structureName.trim() || saving}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                {saving ? 'Saving...' : 'Save Structure'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

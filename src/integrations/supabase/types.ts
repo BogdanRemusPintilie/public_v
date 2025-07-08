@@ -98,6 +98,45 @@ export type Database = {
         }
         Relationships: []
       }
+      tranche_structures: {
+        Row: {
+          cost_percentage: number
+          created_at: string
+          dataset_name: string
+          id: string
+          structure_name: string
+          total_cost: number
+          tranches: Json
+          updated_at: string
+          user_id: string
+          weighted_avg_cost_bps: number
+        }
+        Insert: {
+          cost_percentage?: number
+          created_at?: string
+          dataset_name: string
+          id?: string
+          structure_name: string
+          total_cost?: number
+          tranches: Json
+          updated_at?: string
+          user_id: string
+          weighted_avg_cost_bps?: number
+        }
+        Update: {
+          cost_percentage?: number
+          created_at?: string
+          dataset_name?: string
+          id?: string
+          structure_name?: string
+          total_cost?: number
+          tranches?: Json
+          updated_at?: string
+          user_id?: string
+          weighted_avg_cost_bps?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
