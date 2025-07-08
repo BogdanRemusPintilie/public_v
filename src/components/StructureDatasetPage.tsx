@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -163,6 +165,12 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
   const updateTranche = (id: string, field: keyof Tranche, value: string | number) => {
     setTranches(tranches.map(t => 
       t.id === id ? { ...t, [field]: value } : t
+    ));
+  };
+
+  const updateTrancheFromSlider = (id: string, field: keyof Tranche, values: number[]) => {
+    setTranches(tranches.map(t => 
+      t.id === id ? { ...t, [field]: values[0] } : t
     ));
   };
 
@@ -437,37 +445,67 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
                         
                         <div className="col-span-2">
                           <Label htmlFor={`thickness-${tranche.id}`}>Thickness (%)</Label>
-                          <Input
-                            id={`thickness-${tranche.id}`}
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={tranche.thickness}
-                            onChange={(e) => updateTranche(tranche.id, 'thickness', parseFloat(e.target.value) || 0)}
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              id={`thickness-${tranche.id}`}
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={tranche.thickness}
+                              onChange={(e) => updateTranche(tranche.id, 'thickness', parseFloat(e.target.value) || 0)}
+                            />
+                            <Slider
+                              value={[tranche.thickness]}
+                              onValueChange={(values) => updateTrancheFromSlider(tranche.id, 'thickness', values)}
+                              max={100}
+                              min={0}
+                              step={1}
+                              className="w-full"
+                            />
+                          </div>
                         </div>
                         
                         <div className="col-span-2">
                           <Label htmlFor={`cost-${tranche.id}`}>Coupon (BPS)</Label>
-                          <Input
-                            id={`cost-${tranche.id}`}
-                            type="number"
-                            min="0"
-                            value={tranche.costBps}
-                            onChange={(e) => updateTranche(tranche.id, 'costBps', parseFloat(e.target.value) || 0)}
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              id={`cost-${tranche.id}`}
+                              type="number"
+                              min="0"
+                              value={tranche.costBps}
+                              onChange={(e) => updateTranche(tranche.id, 'costBps', parseFloat(e.target.value) || 0)}
+                            />
+                            <Slider
+                              value={[tranche.costBps]}
+                              onValueChange={(values) => updateTrancheFromSlider(tranche.id, 'costBps', values)}
+                              max={1000}
+                              min={0}
+                              step={5}
+                              className="w-full"
+                            />
+                          </div>
                         </div>
                         
                         <div className="col-span-2">
                           <Label htmlFor={`hedged-${tranche.id}`}>Hedged (%)</Label>
-                          <Input
-                            id={`hedged-${tranche.id}`}
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={tranche.hedgedPercentage}
-                            onChange={(e) => updateTranche(tranche.id, 'hedgedPercentage', parseFloat(e.target.value) || 0)}
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              id={`hedged-${tranche.id}`}
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={tranche.hedgedPercentage}
+                              onChange={(e) => updateTranche(tranche.id, 'hedgedPercentage', parseFloat(e.target.value) || 0)}
+                            />
+                            <Slider
+                              value={[tranche.hedgedPercentage]}
+                              onValueChange={(values) => updateTrancheFromSlider(tranche.id, 'hedgedPercentage', values)}
+                              max={100}
+                              min={0}
+                              step={1}
+                              className="w-full"
+                            />
+                          </div>
                         </div>
                         
                         <div className="col-span-2">
@@ -535,16 +573,25 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
                       <Label htmlFor="additional-costs" className="text-base font-medium">
                         Additional Transaction Costs (Lawyers, Advisors, etc.)
                       </Label>
-                      <Input
-                        id="additional-costs"
-                        type="number"
-                        min="0"
-                        step="1000"
-                        value={additionalTransactionCosts}
-                        onChange={(e) => setAdditionalTransactionCosts(parseFloat(e.target.value) || 0)}
-                        placeholder="Enter additional costs..."
-                        className="mt-2"
-                      />
+                      <div className="space-y-2 mt-2">
+                        <Input
+                          id="additional-costs"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          value={additionalTransactionCosts}
+                          onChange={(e) => setAdditionalTransactionCosts(parseFloat(e.target.value) || 0)}
+                          placeholder="Enter additional costs..."
+                        />
+                        <Slider
+                          value={[additionalTransactionCosts]}
+                          onValueChange={(values) => setAdditionalTransactionCosts(values[0])}
+                          max={1000000}
+                          min={0}
+                          step={1000}
+                          className="w-full"
+                        />
+                      </div>
                       <p className="text-sm text-gray-600 mt-1">
                         Enter costs for lawyers, advisors, and other transaction-related expenses
                       </p>

@@ -26,16 +26,17 @@ interface DatasetSummary {
 }
 
 export interface TrancheStructure {
-  id?: string;
-  user_id?: string;
+  id: string;
   structure_name: string;
   dataset_name: string;
   tranches: any[];
   total_cost: number;
   weighted_avg_cost_bps: number;
   cost_percentage: number;
-  created_at?: string;
-  updated_at?: string;
+  additional_transaction_costs?: number;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const insertLoanData = async (
