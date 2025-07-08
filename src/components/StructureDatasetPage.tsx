@@ -40,9 +40,9 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [selectedDataset, setSelectedDataset] = useState<string>(selectedDatasetName || '');
   const [tranches, setTranches] = useState<Tranche[]>([
-    { id: '1', name: 'Senior A', thickness: 70, costBps: 150, hedgedPercentage: 90 },
-    { id: '2', name: 'Senior B', thickness: 20, costBps: 250, hedgedPercentage: 75 },
-    { id: '3', name: 'Subordinate', thickness: 10, costBps: 450, hedgedPercentage: 50 }
+    { id: '1', name: 'Senior', thickness: 70, costBps: 150, hedgedPercentage: 90 },
+    { id: '2', name: 'Mezzanine', thickness: 20, costBps: 250, hedgedPercentage: 75 },
+    { id: '3', name: 'First Loss', thickness: 10, costBps: 450, hedgedPercentage: 50 }
   ]);
   const [loading, setLoading] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -115,9 +115,9 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
       setEditingStructureId(null);
       setStructureName('');
       setTranches([
-        { id: '1', name: 'Senior A', thickness: 70, costBps: 150, hedgedPercentage: 90 },
-        { id: '2', name: 'Senior B', thickness: 20, costBps: 250, hedgedPercentage: 75 },
-        { id: '3', name: 'Subordinate', thickness: 10, costBps: 450, hedgedPercentage: 50 }
+        { id: '1', name: 'Senior', thickness: 70, costBps: 150, hedgedPercentage: 90 },
+        { id: '2', name: 'Mezzanine', thickness: 20, costBps: 250, hedgedPercentage: 75 },
+        { id: '3', name: 'First Loss', thickness: 10, costBps: 450, hedgedPercentage: 50 }
       ]);
     }
   }, [editingStructure]);
