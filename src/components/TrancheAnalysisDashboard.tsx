@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2 } from 'lucide-react';
 import StructureDatasetPage from './StructureDatasetPage';
+import { TrancheStructure } from '@/utils/supabase';
 
 interface DatasetSummary {
   dataset_name: string;
@@ -16,17 +17,6 @@ interface DatasetSummary {
   total_value: number;
   avg_interest_rate: number;
   high_risk_count: number;
-  created_at: string;
-}
-
-interface TrancheStructure {
-  id: string;
-  structure_name: string;
-  dataset_name: string;
-  tranches: any[];
-  total_cost: number;
-  weighted_avg_cost_bps: number;
-  cost_percentage: number;
   created_at: string;
 }
 
