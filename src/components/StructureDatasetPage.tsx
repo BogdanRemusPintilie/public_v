@@ -174,14 +174,15 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
     return (dataset.total_value * thickness) / 100;
   };
 
-  const calculateTrancheCost = (thickness: number, costBps: number) => {
+  const calculateTrancheCost = (thickness: number, costBps: number, hedgedPercentage: number) => {
     const trancheValue = calculateTrancheValue(thickness);
-    return (trancheValue * costBps) / 10000;
+    const couponCost = (trancheValue * costBps) / 10000;
+    return couponCost * (hedgedPercentage / 100);
   };
 
   const calculateTotalTransactionCost = () => {
     return tranches.reduce((total, tranche) => {
-      return total + calculateTrancheCost(tranche.thickness, tranche.costBps);
+      return total + calculateTrancheCost(tranche.thickness, tranche.costBps, tranche.hedgedPercentage);
     }, 0);
   };
 
@@ -439,7 +440,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
                         </div>
                         
                         <div className="col-span-2">
-                          <Label htmlFor={`cost-${tranche.id}`}>Cost (BPS)</Label>
+                          <Label htmlFor={`cost-${tranche.id}`}>Coupon (BPS)</Label>
                           <Input
                             id={`cost-${tranche.id}`}
                             type="number"
@@ -471,7 +472,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
                         <div className="col-span-1">
                           <Label>Tranche Cost</Label>
                           <div className="text-sm font-medium text-orange-600 mt-1">
-                            {formatCurrency(calculateTrancheCost(tranche.thickness, tranche.costBps))}
+                            {formatCurrency(calculateTrancheCost(tranche.thickness, tranche.costBps, tranche.hedgedPercentage))}
                           </div>
                         </div>
                         
