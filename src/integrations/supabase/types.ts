@@ -100,6 +100,7 @@ export type Database = {
       }
       tranche_structures: {
         Row: {
+          additional_transaction_costs: number | null
           cost_percentage: number
           created_at: string
           dataset_name: string
@@ -112,6 +113,7 @@ export type Database = {
           weighted_avg_cost_bps: number
         }
         Insert: {
+          additional_transaction_costs?: number | null
           cost_percentage?: number
           created_at?: string
           dataset_name: string
@@ -124,6 +126,7 @@ export type Database = {
           weighted_avg_cost_bps?: number
         }
         Update: {
+          additional_transaction_costs?: number | null
           cost_percentage?: number
           created_at?: string
           dataset_name?: string
