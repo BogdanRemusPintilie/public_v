@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -270,43 +271,6 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
             </CardContent>
           </Card>
 
-          {/* Transaction Cost Summary */}
-          {selectedDataset && (
-            <Card className="border-2 border-green-200 bg-green-50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-green-800">
-                  <Calculator className="h-5 w-5" />
-                  <span>Total Transaction Costs</span>
-                </CardTitle>
-                <CardDescription className="text-green-700">
-                  Summary of all tranche costs for this transaction
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-white rounded-lg border">
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(calculateTotalTransactionCost())}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Cost</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg border">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 10000).toFixed(0) : 0} BPS
-                    </div>
-                    <div className="text-sm text-gray-600">Weighted Avg Cost</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-lg border">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 100).toFixed(2) : 0}%
-                    </div>
-                    <div className="text-sm text-gray-600">Cost as % of Total</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Tranche Structure */}
           {selectedDataset && (
             <Card>
@@ -423,6 +387,43 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
                     <Save className="h-4 w-4 mr-2" />
                     Save Structure
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Transaction Cost Summary */}
+          {selectedDataset && (
+            <Card className="border-2 border-green-200 bg-green-50">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-green-800">
+                  <Calculator className="h-5 w-5" />
+                  <span>Total Transaction Costs</span>
+                </CardTitle>
+                <CardDescription className="text-green-700">
+                  Summary of all tranche costs for this transaction
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-white rounded-lg border">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(calculateTotalTransactionCost())}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Cost</div>
+                  </div>
+                  <div className="text-center p-4 bg-white rounded-lg border">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 10000).toFixed(0) : 0} BPS
+                    </div>
+                    <div className="text-sm text-gray-600">Weighted Avg Cost</div>
+                  </div>
+                  <div className="text-center p-4 bg-white rounded-lg border">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {getSelectedDataset() ? ((calculateTotalTransactionCost() / getSelectedDataset()!.total_value) * 100).toFixed(2) : 0}%
+                    </div>
+                    <div className="text-sm text-gray-600">Cost as % of Total</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
