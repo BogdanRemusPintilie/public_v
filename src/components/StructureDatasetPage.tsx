@@ -33,9 +33,10 @@ interface StructureDatasetPageProps {
   isOpen: boolean;
   onClose: () => void;
   selectedDatasetName?: string;
+  editingStructure?: TrancheStructure | null;
 }
 
-const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: StructureDatasetPageProps) => {
+const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStructure }: StructureDatasetPageProps) => {
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [selectedDataset, setSelectedDataset] = useState<string>(selectedDatasetName || '');
   const [tranches, setTranches] = useState<Tranche[]>([
@@ -47,6 +48,8 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [structureName, setStructureName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingStructureId, setEditingStructureId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -91,6 +94,33 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
       setSelectedDataset(selectedDatasetName);
     }
   }, [selectedDatasetName]);
+
+  useEffect(() => {
+    if (editingStructure) {
+      setSelectedDataset(editingStructure.dataset_name);
+      setStructureName(editingStructure.structure_name);
+      setIsEditing(true);
+      setEditingStructureId(editingStructure.id);
+      
+      const loadedTranches = editingStructure.tranches.map((tranche: any, index: number) => ({
+        id: tranche.id || (index + 1).toString(),
+        name: tranche.name || `Tranche ${index + 1}`,
+        thickness: tranche.thickness || 0,
+        costBps: tranche.costBps || 0,
+        hedgedPercentage: tranche.hedgedPercentage || 0
+      }));
+      setTranches(loadedTranches);
+    } else {
+      setIsEditing(false);
+      setEditingStructureId(null);
+      setStructureName('');
+      setTranches([
+        { id: '1', name: 'Senior A', thickness: 70, costBps: 150, hedgedPercentage: 90 },
+        { id: '2', name: 'Senior B', thickness: 20, costBps: 250, hedgedPercentage: 75 },
+        { id: '3', name: 'Subordinate', thickness: 10, costBps: 450, hedgedPercentage: 50 }
+      ]);
+    }
+  }, [editingStructure]);
 
   const addTranche = () => {
     if (tranches.length >= 10) {
@@ -195,26 +225,30 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
       const weightedAvgCostBps = dataset ? (totalCost / dataset.total_value) * 10000 : 0;
       const costPercentage = dataset ? (totalCost / dataset.total_value) * 100 : 0;
 
-      const structureData: TrancheStructure = {
+      const structureData = {
         structure_name: structureName.trim(),
         dataset_name: selectedDataset,
-        tranches: tranches,
+        tranches: tranches as any,
         total_cost: totalCost,
         weighted_avg_cost_bps: weightedAvgCostBps,
-        cost_percentage: costPercentage
+        cost_percentage: costPercentage,
+        user_id: user.id
       };
 
-      const { error } = await supabase
-        .from('tranche_structures')
-        .insert({
-          structure_name: structureData.structure_name,
-          dataset_name: structureData.dataset_name,
-          tranches: structureData.tranches as any,
-          total_cost: structureData.total_cost,
-          weighted_avg_cost_bps: structureData.weighted_avg_cost_bps,
-          cost_percentage: structureData.cost_percentage,
-          user_id: user.id
-        });
+      let error;
+      
+      if (isEditing && editingStructureId) {
+        const { error: updateError } = await supabase
+          .from('tranche_structures')
+          .update(structureData)
+          .eq('id', editingStructureId);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('tranche_structures')
+          .insert(structureData);
+        error = insertError;
+      }
 
       if (error) {
         console.error('Error saving tranche structure:', error);
@@ -227,8 +261,8 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
       }
 
       toast({
-        title: "Structure Saved",
-        description: `Tranche structure "${structureName}" has been saved successfully`,
+        title: isEditing ? "Structure Updated" : "Structure Saved",
+        description: `Tranche structure "${structureName}" has been ${isEditing ? 'updated' : 'saved'} successfully`,
       });
 
       setShowSaveDialog(false);
@@ -265,7 +299,11 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
       return;
     }
 
-    setShowSaveDialog(true);
+    if (isEditing) {
+      saveStructure();
+    } else {
+      setShowSaveDialog(true);
+    }
   };
 
   return (
@@ -284,7 +322,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
               </Button>
               <DialogTitle className="flex items-center space-x-2">
                 <Database className="h-6 w-6 text-indigo-600" />
-                <span>Structure Dataset</span>
+                <span>{isEditing ? `Edit Structure: ${structureName}` : 'Structure Dataset'}</span>
               </DialogTitle>
             </div>
           </DialogHeader>
@@ -298,7 +336,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Select value={selectedDataset} onValueChange={setSelectedDataset}>
+                  <Select value={selectedDataset} onValueChange={setSelectedDataset} disabled={isEditing}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a dataset..." />
                     </SelectTrigger>
@@ -462,7 +500,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
                       className="bg-indigo-600 hover:bg-indigo-700"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      Save Structure
+                      {isEditing ? 'Update Structure' : 'Save Structure'}
                     </Button>
                   </div>
                 </CardContent>
@@ -509,8 +547,8 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName }: Structur
         </DialogContent>
       </Dialog>
 
-      {/* Save Structure Name Dialog */}
-      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+      {/* Save Structure Name Dialog - Only show when creating new structure */}
+      <Dialog open={showSaveDialog && !isEditing} onOpenChange={setShowSaveDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Save Tranche Structure</DialogTitle>

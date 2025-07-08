@@ -41,6 +41,7 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const [loading, setLoading] = useState(false);
   const [showStructureDataset, setShowStructureDataset] = useState(false);
   const [selectedDatasetForStructure, setSelectedDatasetForStructure] = useState<string>('');
+  const [editingStructure, setEditingStructure] = useState<TrancheStructure | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -118,6 +119,13 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
 
   const handleStructureDataset = (datasetName: string) => {
     setSelectedDatasetForStructure(datasetName);
+    setEditingStructure(null);
+    setShowStructureDataset(true);
+  };
+
+  const handleEditStructure = (structure: TrancheStructure) => {
+    setSelectedDatasetForStructure(structure.dataset_name);
+    setEditingStructure(structure);
     setShowStructureDataset(true);
   };
 
@@ -166,6 +174,7 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const handleCloseStructureDataset = () => {
     setShowStructureDataset(false);
     setSelectedDatasetForStructure('');
+    setEditingStructure(null);
     // Refresh structures when returning from structure creation
     fetchTrancheStructures();
   };
@@ -355,6 +364,7 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
 
                             <div className="flex flex-wrap gap-3 pt-4 border-t">
                               <Button
+                                onClick={() => handleEditStructure(structure)}
                                 variant="outline"
                                 className="flex items-center space-x-2 border-green-200 hover:bg-green-50"
                               >
@@ -395,6 +405,7 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         isOpen={showStructureDataset}
         onClose={handleCloseStructureDataset}
         selectedDatasetName={selectedDatasetForStructure}
+        editingStructure={editingStructure}
       />
     </>
   );
