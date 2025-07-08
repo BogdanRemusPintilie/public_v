@@ -290,7 +290,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                             )}
                           </TableCell>
                           <TableCell>{dataset.record_count.toLocaleString()}</TableCell>
-                          <TableCell>${(dataset.total_value / 1000000).toFixed(1)}M</TableCell>
+                          <TableCell>€{(dataset.total_value / 1000000).toFixed(1)}M</TableCell>
                           <TableCell>{dataset.avg_interest_rate.toFixed(2)}%</TableCell>
                           <TableCell>
                             {new Date(dataset.created_at).toLocaleDateString()}

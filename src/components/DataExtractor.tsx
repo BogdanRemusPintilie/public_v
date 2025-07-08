@@ -397,7 +397,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
                     </div>
                     <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                       <div className="text-2xl font-bold text-green-600">
-                        ${(getExtractSummary()!.totalValue / 1000000).toFixed(1)}M
+                        €{(getExtractSummary()!.totalValue / 1000000).toFixed(1)}M
                       </div>
                       <div className="text-sm text-gray-600">Portfolio Value</div>
                     </div>
@@ -438,7 +438,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
                             <TableCell className="font-medium">
                               {row.dataset_name || 'Unnamed Dataset'}
                             </TableCell>
-                            <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
+                            <TableCell>€{row.opening_balance.toLocaleString()}</TableCell>
                             <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
                             <TableCell>{row.term}</TableCell>
                             <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>

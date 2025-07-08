@@ -157,7 +157,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                       {row.dataset_name || 'Unnamed Dataset'}
                     </TableCell>
                   )}
-                  <TableCell>${row.opening_balance.toLocaleString()}</TableCell>
+                  <TableCell>€{row.opening_balance.toLocaleString()}</TableCell>
                   <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
                   <TableCell>{row.term}</TableCell>
                   <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>

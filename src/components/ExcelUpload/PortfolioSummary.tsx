@@ -21,7 +21,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolioSum
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-green-600">
-            ${(portfolioSummary.totalValue / 1000000).toFixed(1)}M
+            €{(portfolioSummary.totalValue / 1000000).toFixed(1)}M
           </div>
           <div className="text-sm text-gray-600">Portfolio Value</div>
         </div>
