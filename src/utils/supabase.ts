@@ -177,7 +177,7 @@ export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
   return data || [];
 };
 
-// Enhanced function to get datasets including shared ones with better error handling
+// Simplified function to get datasets including shared ones
 export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id: string; is_shared: boolean }[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -188,64 +188,42 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id);
 
   try {
-    // First, let's get ALL records to see what's in the database
-    const { data: allUserRecords, error: allRecordsError } = await supabase
+    // Get all datasets owned by the user
+    const { data: ownedDatasets, error: ownedError } = await supabase
       .from('loan_data')
       .select('dataset_name, user_id, created_at')
       .eq('user_id', user.id)
+      .not('dataset_name', 'is', null)
+      .not('dataset_name', 'eq', '')
       .order('created_at', { ascending: false });
 
-    if (allRecordsError) {
-      console.error('❌ Error fetching all user records:', allRecordsError);
-      throw allRecordsError;
+    if (ownedError) {
+      console.error('❌ Error fetching owned datasets:', ownedError);
+      throw ownedError;
     }
 
-    console.log('📊 ALL USER RECORDS FOUND:', allUserRecords?.length || 0);
+    console.log('📊 OWNED DATASETS RAW:', ownedDatasets);
+
+    // Create a Map to store unique datasets
+    const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
     
-    // Log ALL unique dataset names found (including null/empty ones)
-    const allDatasetNames = new Set();
-    allUserRecords?.forEach(record => {
-      allDatasetNames.add(record.dataset_name);
-    });
-    console.log('📊 ALL DATASET NAMES IN DATABASE (including null/empty):', Array.from(allDatasetNames));
+    // Process owned datasets
+    if (ownedDatasets && ownedDatasets.length > 0) {
+      ownedDatasets.forEach(record => {
+        if (record.dataset_name && record.dataset_name.trim()) {
+          const datasetName = record.dataset_name.trim();
+          if (!uniqueDatasets.has(datasetName)) {
+            uniqueDatasets.set(datasetName, {
+              name: datasetName,
+              owner_id: record.user_id,
+              is_shared: false
+            });
+          }
+        }
+      });
+    }
 
-    // Filter out null/empty dataset names and get unique datasets
-    const validRecords = allUserRecords?.filter(record => 
-      record.dataset_name && record.dataset_name.trim()
-    ) || [];
-
-    console.log('📊 VALID RECORDS (non-null/empty dataset names):', validRecords.length);
-
-    // Create a Map to store unique datasets with their metadata
-    const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean; created_at: string }>();
-    
-    // Process all valid records to extract unique dataset names
-    validRecords.forEach(record => {
-      const datasetName = record.dataset_name.trim();
-      
-      // Only add if we haven't seen this dataset before (keep the most recent one)
-      if (!uniqueDatasets.has(datasetName)) {
-        uniqueDatasets.set(datasetName, {
-          name: datasetName,
-          owner_id: record.user_id,
-          is_shared: false,
-          created_at: record.created_at
-        });
-      }
-    });
-
-    console.log('📊 UNIQUE OWNED DATASETS FOUND:', Array.from(uniqueDatasets.keys()));
-
-    // Check specifically for "Demo Data Lite"
-    const demoDataLiteExists = validRecords.some(record => 
-      record.dataset_name && record.dataset_name.includes('Demo Data Lite')
-    );
-    console.log('🔍 DEMO DATA LITE CHECK:', {
-      exists: demoDataLiteExists,
-      allRecordsWithDemoLite: validRecords.filter(record => 
-        record.dataset_name && record.dataset_name.toLowerCase().includes('demo data lite')
-      )
-    });
+    console.log('📊 UNIQUE OWNED DATASETS:', Array.from(uniqueDatasets.keys()));
 
     // Get shared datasets
     const { data: sharedDatasets, error: sharedError } = await supabase
@@ -257,45 +235,34 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     if (sharedError) {
       console.error('❌ Error fetching shared datasets:', sharedError);
-      console.log('⚠️ Continuing with owned datasets only due to sharing error');
-    }
+      // Continue with owned datasets only
+    } else {
+      console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
 
-    console.log('📊 SHARED DATASETS RAW:', sharedDatasets);
-
-    // Add shared datasets that aren't already owned
-    if (sharedDatasets && sharedDatasets.length > 0) {
-      sharedDatasets.forEach(share => {
-        if (share.dataset_name && share.dataset_name.trim()) {
-          const datasetName = share.dataset_name.trim();
-          if (!uniqueDatasets.has(datasetName)) {
-            uniqueDatasets.set(datasetName, {
-              name: datasetName,
-              owner_id: share.owner_id,
-              is_shared: true,
-              created_at: new Date().toISOString()
-            });
+      // Add shared datasets that aren't already owned
+      if (sharedDatasets && sharedDatasets.length > 0) {
+        sharedDatasets.forEach(share => {
+          if (share.dataset_name && share.dataset_name.trim()) {
+            const datasetName = share.dataset_name.trim();
+            if (!uniqueDatasets.has(datasetName)) {
+              uniqueDatasets.set(datasetName, {
+                name: datasetName,
+                owner_id: share.owner_id,
+                is_shared: true
+              });
+            }
           }
-        }
-      });
+        });
+      }
     }
 
     // Convert to array and sort by name
     const result = Array.from(uniqueDatasets.values())
-      .map(({ name, owner_id, is_shared }) => ({ name, owner_id, is_shared }))
       .sort((a, b) => a.name.localeCompare(b.name));
     
     console.log('📊 FINAL ACCESSIBLE DATASETS:', {
       totalFound: result.length,
-      datasets: result.map(d => ({ name: d.name, isShared: d.is_shared })),
-      allDatasetNames: result.map(d => d.name)
-    });
-
-    // Enhanced debugging for missing datasets
-    console.log('🔍 DEBUGGING MISSING DATASETS:');
-    ['Demo Data Lite', 'Demo Data 868', 'Demo Data 943'].forEach(searchName => {
-      const found = result.find(d => d.name === searchName);
-      const inRawData = validRecords.find(r => r.dataset_name === searchName);
-      console.log(`  ${searchName}: ${found ? '✅ FOUND' : '❌ MISSING'} in results, ${inRawData ? '✅ EXISTS' : '❌ NOT FOUND'} in raw data`);
+      datasetNames: result.map(d => d.name)
     });
 
     return result;
