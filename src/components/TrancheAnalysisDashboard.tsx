@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2 } from 'lucide-react';
 import StructureDatasetPage from './StructureDatasetPage';
+import TrancheAnalyticsView from './TrancheAnalyticsView';
 import { TrancheStructure } from '@/utils/supabase';
 
 interface DatasetSummary {
@@ -33,6 +34,8 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const [editingStructure, setEditingStructure] = useState<TrancheStructure | null>(null);
   const [showManageStructure, setShowManageStructure] = useState(false);
   const [selectedDatasetForManagement, setSelectedDatasetForManagement] = useState<string>('');
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedStructureForAnalytics, setSelectedStructureForAnalytics] = useState<TrancheStructure | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -157,6 +160,11 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         variant: "destructive",
       });
     }
+  };
+
+  const handleViewAnalytics = (structure: TrancheStructure) => {
+    setSelectedStructureForAnalytics(structure);
+    setShowAnalytics(true);
   };
 
   const handleCloseStructureDataset = () => {
@@ -286,14 +294,6 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                                 <Settings className="h-4 w-4" />
                                 <span>Manage Structure ({getStructuresForDataset(dataset.dataset_name).length})</span>
                               </Button>
-                              
-                              <Button
-                                variant="ghost"
-                                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
-                              >
-                                <TrendingUp className="h-4 w-4" />
-                                <span>View Analytics</span>
-                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -398,11 +398,12 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                         </Button>
                         
                         <Button
+                          onClick={() => handleViewAnalytics(structure)}
                           variant="ghost"
                           className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
                         >
                           <TrendingUp className="h-4 w-4" />
-                          <span>View Details</span>
+                          <span>View Analytics</span>
                         </Button>
                       </div>
                     </CardContent>
@@ -428,6 +429,12 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
           </div>
         </DialogContent>
       </Dialog>
+
+      <TrancheAnalyticsView
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        structure={selectedStructureForAnalytics}
+      />
     </>
   );
 };
