@@ -92,35 +92,26 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     // Base calculations from dataset
     const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const averageRate = datasetData.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetData.length;
-    const highRiskCount = datasetData.filter(loan => (loan.pd || 0) > 0.05).length;
     const riskRatio = 8; // Fixed to 8%
 
-    // Scenario multipliers
-    const multipliers = {
-      current: { notional: 1, cost: 1, yield: 1 },
-      postHedge: { notional: 1, cost: 1.15, yield: 0.95 }, // Higher costs, lower yield due to hedging
-      futureUpsize: { notional: 1.5, cost: 0.9, yield: 1.1 }, // Larger size, economies of scale
-    };
-
-    const mult = multipliers[scenario];
-    
-    const adjustedNotional = totalNotional * mult.notional;
-    const adjustedYield = averageRate * mult.yield;
-    const riskWeightedAssets = adjustedNotional * (riskRatio / 100) * 1.2; // Risk weighting factor
+    // No multipliers - same calculations for all scenarios
+    const notionalLent = totalNotional;
+    const netYield = averageRate; // Same for all scenarios
+    const riskWeightedAssets = notionalLent * (riskRatio / 100) * 1.2; // Risk weighting factor
     const internalCapitalRequired = riskWeightedAssets * 0.08; // 8% capital requirement
-    const revenue = adjustedNotional * (adjustedYield / 100);
-    const adjustedTradeCosts = structure.total_cost * mult.cost;
-    const netEarnings = revenue - adjustedTradeCosts;
+    const revenue = notionalLent * (netYield / 100);
+    const tradeCosts = structure.total_cost;
+    const netEarnings = revenue - tradeCosts;
     const roe = internalCapitalRequired > 0 ? (netEarnings / internalCapitalRequired) * 100 : 0;
 
     return {
       riskRatio,
       riskWeightedAssets,
       internalCapitalRequired,
-      netYield: adjustedYield,
-      notionalLent: adjustedNotional,
+      netYield,
+      notionalLent,
       revenue,
-      tradeCosts: adjustedTradeCosts,
+      tradeCosts,
       netEarnings,
       roe,
     };
