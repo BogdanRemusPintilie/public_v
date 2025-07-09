@@ -93,7 +93,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const averageRate = datasetData.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetData.length;
     const highRiskCount = datasetData.filter(loan => (loan.pd || 0) > 0.05).length;
-    const riskRatio = (highRiskCount / datasetData.length) * 100;
+    const riskRatio = 8; // Fixed to 8%
 
     // Scenario multipliers
     const multipliers = {
