@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -130,8 +130,17 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'EUR',
-      notation: 'compact',
-      maximumFractionDigits: 1,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatCurrencyDetailed = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
@@ -139,58 +148,95 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     return `${value.toFixed(2)}%`;
   };
 
-  const AnalyticsSection = ({ title, scenario, icon: Icon }: { 
-    title: string; 
-    scenario: 'current' | 'postHedge' | 'futureUpsize';
-    icon: any;
-  }) => {
-    const metrics = calculateAnalytics(scenario);
+  const getSummaryData = () => {
+    if (!datasetData.length || !structure) return null;
+
+    const currentMetrics = calculateAnalytics('current');
+    const futureMetrics = calculateAnalytics('futureUpsize');
+    const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+
+    return {
+      portfolioProtected: totalNotional,
+      totalCostOfTransaction: structure.total_cost,
+      initialCapitalReleased: {
+        original: currentMetrics.internalCapitalRequired,
+        improvement: futureMetrics.internalCapitalRequired
+      },
+      newLoanAmount: {
+        original: futureMetrics.notionalLent,
+        improvement: futureMetrics.notionalLent - currentMetrics.notionalLent
+      },
+      newRevenue: {
+        original: futureMetrics.revenue,
+        improvement: futureMetrics.revenue - currentMetrics.revenue
+      },
+      newROE: {
+        original: futureMetrics.roe,
+        improvement: currentMetrics.roe
+      }
+    };
+  };
+
+  const SummarySection = () => {
+    const summaryData = getSummaryData();
+    if (!summaryData) return null;
 
     return (
-      <Card className="border-0 shadow-md">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-            <Icon className="h-5 w-5 text-indigo-600" />
-            <span>{title}</span>
-          </CardTitle>
+      <Card className="border border-blue-200 rounded-lg">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-sm text-blue-700 font-medium mb-1">Risk Ratio</div>
-              <div className="text-xl font-bold text-blue-600">{formatPercentage(metrics.riskRatio)}</div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left column */}
+            <div className="space-y-4">
+              <div className="text-center p-4">
+                <div className="text-sm text-muted-foreground mb-1">Portfolio protected</div>
+                <div className="text-xl font-semibold">{formatCurrency(summaryData.portfolioProtected)}</div>
+              </div>
+              <div className="text-center p-4">
+                <div className="text-sm text-muted-foreground mb-1">Total cost of transaction</div>
+                <div className="text-xl font-semibold">{formatCurrencyDetailed(summaryData.totalCostOfTransaction)}</div>
+              </div>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="text-sm text-purple-700 font-medium mb-1">Risk Weighted Assets</div>
-              <div className="text-xl font-bold text-purple-600">{formatCurrency(metrics.riskWeightedAssets)}</div>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <div className="text-sm text-orange-700 font-medium mb-1">Internal Capital Required</div>
-              <div className="text-xl font-bold text-orange-600">{formatCurrency(metrics.internalCapitalRequired)}</div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-sm text-green-700 font-medium mb-1">Net Yield</div>
-              <div className="text-xl font-bold text-green-600">{formatPercentage(metrics.netYield)}</div>
-            </div>
-            <div className="bg-cyan-50 p-4 rounded-lg">
-              <div className="text-sm text-cyan-700 font-medium mb-1">Notional Lent</div>
-              <div className="text-xl font-bold text-cyan-600">{formatCurrency(metrics.notionalLent)}</div>
-            </div>
-            <div className="bg-indigo-50 p-4 rounded-lg">
-              <div className="text-sm text-indigo-700 font-medium mb-1">Revenue</div>
-              <div className="text-xl font-bold text-indigo-600">{formatCurrency(metrics.revenue)}</div>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="text-sm text-red-700 font-medium mb-1">Trade Costs</div>
-              <div className="text-xl font-bold text-red-600">{formatCurrency(metrics.tradeCosts)}</div>
-            </div>
-            <div className="bg-emerald-50 p-4 rounded-lg">
-              <div className="text-sm text-emerald-700 font-medium mb-1">Net Earnings</div>
-              <div className="text-xl font-bold text-emerald-600">{formatCurrency(metrics.netEarnings)}</div>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-sm text-yellow-700 font-medium mb-1">ROE</div>
-              <div className="text-xl font-bold text-yellow-600">{formatPercentage(metrics.roe)}</div>
+
+            {/* Right column */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center text-sm font-medium text-muted-foreground">
+                  {/* Empty cell for spacing */}
+                </div>
+                <div className="text-center text-sm font-medium text-muted-foreground">
+                  Original
+                </div>
+                <div className="text-center text-sm font-medium text-blue-600">
+                  Improvement
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 py-2 border-b">
+                <div className="text-sm">Initial capital released</div>
+                <div className="text-right">{formatCurrency(summaryData.initialCapitalReleased.original)}</div>
+                <div className="text-right text-blue-600">{formatCurrency(summaryData.initialCapitalReleased.improvement)}</div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 py-2 border-b">
+                <div className="text-sm">New loan amount</div>
+                <div className="text-right">{formatCurrency(summaryData.newLoanAmount.original)}</div>
+                <div className="text-right text-blue-600">{formatCurrency(summaryData.newLoanAmount.improvement)}</div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 py-2 border-b">
+                <div className="text-sm">New revenue</div>
+                <div className="text-right">{formatCurrencyDetailed(summaryData.newRevenue.original)}</div>
+                <div className="text-right text-blue-600">{formatCurrencyDetailed(summaryData.newRevenue.improvement)}</div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 py-2">
+                <div className="text-sm">New ROE</div>
+                <div className="text-right">{formatPercentage(summaryData.newROE.original)}</div>
+                <div className="text-right text-blue-600">{formatPercentage(summaryData.newROE.improvement)}</div>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -233,85 +279,168 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
             </div>
           ) : (
             <>
-              <Tabs defaultValue="current" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="current" className="flex items-center space-x-2">
-                    <Target className="h-4 w-4" />
-                    <span>Current</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="postHedge" className="flex items-center space-x-2">
-                    <Shield className="h-4 w-4" />
-                    <span>Post Hedge</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="futureUpsize" className="flex items-center space-x-2">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>Future Upsize</span>
-                  </TabsTrigger>
-                </TabsList>
+              {/* Summary Section */}
+              <SummarySection />
 
-                <TabsContent value="current" className="mt-6">
-                  <AnalyticsSection 
-                    title="Current Analysis" 
-                    scenario="current" 
-                    icon={Target}
-                  />
-                </TabsContent>
+              {/* Analytics Table */}
+              <Card>
+                <CardContent className="p-0">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+                    {/* Current */}
+                    <div className="border-r border-border">
+                      <div className="p-4 bg-muted/30">
+                        <h3 className="font-semibold text-lg">Current</h3>
+                      </div>
+                      <div className="p-4 space-y-4">
+                        {(() => {
+                          const metrics = calculateAnalytics('current');
+                          return (
+                            <>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Risk ratio</div>
+                                <div className="text-base">{formatPercentage(metrics.riskRatio)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Risk weighted assets</div>
+                                <div className="text-base">{formatCurrency(metrics.riskWeightedAssets)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Internal capital required</div>
+                                <div className="text-base">{formatCurrency(metrics.internalCapitalRequired)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Net yield</div>
+                                <div className="text-base">{formatPercentage(metrics.netYield)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Notional lent</div>
+                                <div className="text-base">{formatCurrency(metrics.notionalLent)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Revenue</div>
+                                <div className="text-base">{formatCurrency(metrics.revenue)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Trade costs</div>
+                                <div className="text-base">{formatCurrency(metrics.tradeCosts)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Net earnings</div>
+                                <div className="text-base">{formatCurrency(metrics.netEarnings)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">ROE</div>
+                                <div className="text-base">{formatPercentage(metrics.roe)}</div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
 
-                <TabsContent value="postHedge" className="mt-6">
-                  <AnalyticsSection 
-                    title="Post Hedge Analysis" 
-                    scenario="postHedge" 
-                    icon={Shield}
-                  />
-                </TabsContent>
+                    {/* Post hedge, no upsize */}
+                    <div className="border-r border-border">
+                      <div className="p-4 bg-muted/30">
+                        <h3 className="font-semibold text-lg">Post hedge, no upsize</h3>
+                      </div>
+                      <div className="p-4 space-y-4">
+                        {(() => {
+                          const metrics = calculateAnalytics('postHedge');
+                          return (
+                            <>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Risk ratio</div>
+                                <div className="text-base">{formatPercentage(metrics.riskRatio)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Risk weighted assets</div>
+                                <div className="text-base">{formatCurrency(metrics.riskWeightedAssets)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Internal capital required</div>
+                                <div className="text-base">{formatCurrency(metrics.internalCapitalRequired)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Net yield</div>
+                                <div className="text-base">{formatPercentage(metrics.netYield)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Notional lent</div>
+                                <div className="text-base">{formatCurrency(metrics.notionalLent)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Revenue</div>
+                                <div className="text-base">{formatCurrency(metrics.revenue)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Trade costs</div>
+                                <div className="text-base">{formatCurrency(metrics.tradeCosts)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Net earnings</div>
+                                <div className="text-base">{formatCurrency(metrics.netEarnings)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">ROE</div>
+                                <div className="text-base">{formatPercentage(metrics.roe)}</div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
 
-                <TabsContent value="futureUpsize" className="mt-6">
-                  <AnalyticsSection 
-                    title="Future Upsize Analysis" 
-                    scenario="futureUpsize" 
-                    icon={TrendingUp}
-                  />
-                </TabsContent>
-              </Tabs>
-
-              {/* Summary Comparison */}
-              <Card className="border-0 shadow-md bg-gradient-to-r from-indigo-50 to-purple-50">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-gray-900">Scenario Comparison</CardTitle>
-                  <CardDescription>Key metrics across all scenarios</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-3">Metric</th>
-                          <th className="text-center py-2 px-3">Current</th>
-                          <th className="text-center py-2 px-3">Post Hedge</th>
-                          <th className="text-center py-2 px-3">Future Upsize</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-b">
-                          <td className="py-2 px-3 font-medium">ROE</td>
-                          <td className="text-center py-2 px-3">{formatPercentage(calculateAnalytics('current').roe)}</td>
-                          <td className="text-center py-2 px-3">{formatPercentage(calculateAnalytics('postHedge').roe)}</td>
-                          <td className="text-center py-2 px-3">{formatPercentage(calculateAnalytics('futureUpsize').roe)}</td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="py-2 px-3 font-medium">Net Earnings</td>
-                          <td className="text-center py-2 px-3">{formatCurrency(calculateAnalytics('current').netEarnings)}</td>
-                          <td className="text-center py-2 px-3">{formatCurrency(calculateAnalytics('postHedge').netEarnings)}</td>
-                          <td className="text-center py-2 px-3">{formatCurrency(calculateAnalytics('futureUpsize').netEarnings)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 font-medium">Risk Ratio</td>
-                          <td className="text-center py-2 px-3">{formatPercentage(calculateAnalytics('current').riskRatio)}</td>
-                          <td className="text-center py-2 px-3">{formatPercentage(calculateAnalytics('postHedge').riskRatio)}</td>
-                          <td className="text-center py-2 px-3">{formatPercentage(calculateAnalytics('futureUpsize').riskRatio)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    {/* Future upsize */}
+                    <div>
+                      <div className="p-4 bg-muted/30">
+                        <h3 className="font-semibold text-lg">Future upsize</h3>
+                      </div>
+                      <div className="p-4 space-y-4">
+                        {(() => {
+                          const metrics = calculateAnalytics('futureUpsize');
+                          return (
+                            <>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Risk ratio</div>
+                                <div className="text-base">{formatPercentage(metrics.riskRatio)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Risk weighted assets</div>
+                                <div className="text-base">{formatCurrency(metrics.riskWeightedAssets)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Internal capital required</div>
+                                <div className="text-base">{formatCurrency(metrics.internalCapitalRequired)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Net yield</div>
+                                <div className="text-base">{formatPercentage(metrics.netYield)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Notional lent</div>
+                                <div className="text-base">{formatCurrency(metrics.notionalLent)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Revenue</div>
+                                <div className="text-base">{formatCurrency(metrics.revenue)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Trade costs</div>
+                                <div className="text-base">{formatCurrency(metrics.tradeCosts)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">Net earnings</div>
+                                <div className="text-base">{formatCurrency(metrics.netEarnings)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-muted-foreground">ROE</div>
+                                <div className="text-base">{formatPercentage(metrics.roe)}</div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
