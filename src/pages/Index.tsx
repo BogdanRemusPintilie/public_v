@@ -57,7 +57,7 @@ const Index = () => {
             <div className="space-y-8">
               <div className="space-y-4">
                 <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                  Transaction
+                  SRT Transaction
                   <span className="text-blue-600 block">Management Platform</span>
                 </h1>
                 <p className="text-xl text-gray-600 max-w-lg">Advanced risk analytics and transaction management for issues, investors, lenders and advisors. Streamline transaction ops with AI-powered insights.</p>
