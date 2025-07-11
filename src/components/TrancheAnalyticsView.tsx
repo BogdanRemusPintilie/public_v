@@ -113,8 +113,8 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
       // RWEA before sharing
       const rweaBeforeSharing = (trancheAmount || 0) * ((rwArt2635 || 0) / 100);
       
-      // Shared percentage (assume 0% if not specified)
-      const sharedPercentage = tranche.shared_percentage || 0;
+      // Use hedged percentage from tranche structure as shared percentage
+      const sharedPercentage = tranche.hedged || tranche.hedged_percentage || 0;
       
       // Final RWEA after sharing
       const finalRWEA = (1 - (sharedPercentage || 0) / 100) * (rweaBeforeSharing || 0);
