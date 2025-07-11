@@ -231,15 +231,19 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     if (!datasetData.length || !structure) return null;
 
     const currentMetrics = calculateAnalytics('current');
+    const postHedgeMetrics = calculateAnalytics('postHedge');
     const futureMetrics = calculateAnalytics('futureUpsize');
     const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+
+    // Calculate initial capital released: current - post hedge
+    const initialCapitalReleased = currentMetrics.internalCapitalRequired - postHedgeMetrics.internalCapitalRequired;
 
     return {
       portfolioProtected: totalNotional,
       totalCostOfTransaction: structure.total_cost,
       initialCapitalReleased: {
-        original: currentMetrics.internalCapitalRequired,
-        improvement: futureMetrics.internalCapitalRequired
+        original: initialCapitalReleased,
+        improvement: initialCapitalReleased
       },
       newLoanAmount: {
         original: futureMetrics.notionalLent,
