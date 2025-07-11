@@ -86,7 +86,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     
     const breakdown = tranches.map((tranche: any, index: number) => {
       const trancheAmount = (tranche.percentage / 100) * totalNotional;
-      const trancheThickness = tranche.percentage;
+      const trancheThickness = tranche.percentage || 0;
       
       // Initial risk weights before Art. 263.5
       let initialRW: number;
@@ -109,23 +109,23 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
       }
       
       // RWEA before sharing
-      const rweaBeforeSharing = trancheAmount * (rwArt2635 / 100);
+      const rweaBeforeSharing = (trancheAmount || 0) * ((rwArt2635 || 0) / 100);
       
       // Shared percentage (assume 0% if not specified)
       const sharedPercentage = tranche.shared_percentage || 0;
       
       // Final RWEA after sharing
-      const finalRWEA = (1 - sharedPercentage / 100) * rweaBeforeSharing;
+      const finalRWEA = (1 - (sharedPercentage || 0) / 100) * (rweaBeforeSharing || 0);
       
       return {
         trancheName: tranche.name || `Tranche ${index + 1}`,
-        amount: trancheAmount,
-        thickness: trancheThickness,
-        initialRW,
-        rwArt2635,
-        rweaBeforeSharing,
-        sharedPercentage,
-        finalRWEA
+        amount: trancheAmount || 0,
+        thickness: trancheThickness || 0,
+        initialRW: initialRW || 0,
+        rwArt2635: rwArt2635 || 0,
+        rweaBeforeSharing: rweaBeforeSharing || 0,
+        sharedPercentage: sharedPercentage || 0,
+        finalRWEA: finalRWEA || 0
       };
     });
     
@@ -552,12 +552,12 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
                           <TableRow key={index}>
                             <TableCell className="font-medium">{tranche.trancheName}</TableCell>
                             <TableCell>{formatCurrency(tranche.amount)}</TableCell>
-                            <TableCell>{tranche.thickness.toFixed(2)}%</TableCell>
-                            <TableCell>{tranche.initialRW}%</TableCell>
-                            <TableCell>{tranche.rwArt2635.toFixed(2)}%</TableCell>
-                            <TableCell>{formatCurrency(tranche.rweaBeforeSharing)}</TableCell>
-                            <TableCell>{tranche.sharedPercentage}%</TableCell>
-                            <TableCell className="font-semibold">{formatCurrency(tranche.finalRWEA)}</TableCell>
+                            <TableCell>{(tranche.thickness || 0).toFixed(2)}%</TableCell>
+                            <TableCell>{(tranche.initialRW || 0)}%</TableCell>
+                            <TableCell>{(tranche.rwArt2635 || 0).toFixed(2)}%</TableCell>
+                            <TableCell>{formatCurrency(tranche.rweaBeforeSharing || 0)}</TableCell>
+                            <TableCell>{(tranche.sharedPercentage || 0)}%</TableCell>
+                            <TableCell className="font-semibold">{formatCurrency(tranche.finalRWEA || 0)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -566,7 +566,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
                     <div className="border-t pt-4">
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-semibold">Total RWA (Post Hedge):</span>
-                        <span className="text-lg font-bold">{formatCurrency(finalRWA)}</span>
+                        <span className="text-lg font-bold">{formatCurrency(finalRWA || 0)}</span>
                       </div>
                     </div>
                     
