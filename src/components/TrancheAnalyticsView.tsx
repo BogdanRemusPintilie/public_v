@@ -83,10 +83,12 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
 
     const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const tranches = structure.tranches;
+    console.log('Tranches structure:', tranches);
     
     const breakdown = tranches.map((tranche: any, index: number) => {
-      const trancheAmount = (tranche.percentage / 100) * totalNotional;
-      const trancheThickness = tranche.percentage || 0;
+      // Extract thickness and amount from the actual tranche structure
+      const trancheThickness = tranche.thickness || tranche.percentage || 0;
+      const trancheAmount = tranche.amount || tranche.value || ((trancheThickness / 100) * totalNotional);
       
       // Initial risk weights before Art. 263.5
       let initialRW: number;
