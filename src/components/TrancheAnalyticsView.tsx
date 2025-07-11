@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, TrendingUp, Shield, DollarSign, Target } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Shield, DollarSign, Target, Info } from 'lucide-react';
 import { TrancheStructure } from '@/utils/supabase';
 
 interface AnalyticsMetrics {
@@ -32,6 +32,7 @@ interface TrancheAnalyticsViewProps {
 const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsViewProps) => {
   const [loading, setLoading] = useState(false);
   const [datasetData, setDatasetData] = useState<any[]>([]);
+  const [showRWABreakdown, setShowRWABreakdown] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -74,6 +75,62 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     }
   }, [isOpen, structure]);
 
+  const calculatePostHedgeRWA = () => {
+    if (!datasetData.length || !structure) return { finalRWA: 0, breakdown: [] };
+
+    const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    const tranches = structure.tranches;
+    
+    const breakdown = tranches.map((tranche: any, index: number) => {
+      const trancheAmount = (tranche.percentage / 100) * totalNotional;
+      const trancheThickness = tranche.percentage;
+      
+      // Initial risk weights before Art. 263.5
+      let initialRW: number;
+      if (index === 0) { // Senior tranche
+        initialRW = 20;
+      } else if (index === 1) { // Second tranche
+        initialRW = 90;
+      } else { // Third/Non-rated tranche
+        initialRW = 1250;
+      }
+      
+      // Apply Art. 263.5 formulas
+      let rwArt2635: number;
+      if (index === 0) { // Senior
+        rwArt2635 = Math.max(20 * (1 - Math.min(trancheThickness / 100, 0.5)), 20);
+      } else if (index === 1) { // Second
+        rwArt2635 = Math.max(90 * (1 - Math.min(trancheThickness / 100, 0.5)), 15);
+      } else { // Third
+        rwArt2635 = Math.max(1250 * (1 - Math.min(trancheThickness / 100, 0.5)), 15);
+      }
+      
+      // RWEA before sharing
+      const rweaBeforeSharing = trancheAmount * (rwArt2635 / 100);
+      
+      // Shared percentage (assume 0% if not specified)
+      const sharedPercentage = tranche.shared_percentage || 0;
+      
+      // Final RWEA after sharing
+      const finalRWEA = (1 - sharedPercentage / 100) * rweaBeforeSharing;
+      
+      return {
+        trancheName: tranche.name || `Tranche ${index + 1}`,
+        amount: trancheAmount,
+        thickness: trancheThickness,
+        initialRW,
+        rwArt2635,
+        rweaBeforeSharing,
+        sharedPercentage,
+        finalRWEA
+      };
+    });
+    
+    const finalRWA = breakdown.reduce((sum, t) => sum + t.finalRWEA, 0);
+    
+    return { finalRWA, breakdown };
+  };
+
   const calculateAnalytics = (scenario: 'current' | 'postHedge' | 'futureUpsize'): AnalyticsMetrics => {
     if (!datasetData.length || !structure) {
       return {
@@ -94,10 +151,17 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     const averageRate = datasetData.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetData.length;
     const riskRatio = 8; // Fixed to 8%
 
-    // No multipliers - same calculations for all scenarios
     const notionalLent = totalNotional;
-    const netYield = averageRate; // Same for all scenarios
-    const riskWeightedAssets = totalNotional; // 100% * Portfolio Protected
+    const netYield = averageRate;
+    
+    let riskWeightedAssets: number;
+    if (scenario === 'postHedge') {
+      const { finalRWA } = calculatePostHedgeRWA();
+      riskWeightedAssets = finalRWA;
+    } else {
+      riskWeightedAssets = totalNotional; // 100% * Portfolio Protected for other scenarios
+    }
+    
     const internalCapitalRequired = riskWeightedAssets * 0.08; // 8% capital requirement
     const revenue = notionalLent * (netYield / 100);
     const tradeCosts = structure.total_cost;
@@ -345,7 +409,17 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-muted-foreground">Risk weighted assets</div>
-                                <div className="text-base">{formatCurrency(metrics.riskWeightedAssets)}</div>
+                                <div className="flex items-center space-x-2">
+                                  <div className="text-base">{formatCurrency(metrics.riskWeightedAssets)}</div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowRWABreakdown(true)}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Info className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-muted-foreground">Internal capital required</div>
@@ -438,6 +512,69 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
             </>
           )}
         </div>
+
+        {/* RWA Breakdown Dialog */}
+        <Dialog open={showRWABreakdown} onOpenChange={setShowRWABreakdown}>
+          <DialogContent className="max-w-6xl">
+            <DialogHeader>
+              <DialogTitle>Risk Weighted Assets Calculation Breakdown</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                This calculation follows the three-step process for post hedge RWA calculation:
+              </div>
+              
+              {(() => {
+                const { finalRWA, breakdown } = calculatePostHedgeRWA();
+                return (
+                  <div className="space-y-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Tranche</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Thickness</TableHead>
+                          <TableHead>Initial RW</TableHead>
+                          <TableHead>RW (Art. 263.5)</TableHead>
+                          <TableHead>RWEA Before Sharing</TableHead>
+                          <TableHead>Shared %</TableHead>
+                          <TableHead>Final RWEA</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {breakdown.map((tranche, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{tranche.trancheName}</TableCell>
+                            <TableCell>{formatCurrency(tranche.amount)}</TableCell>
+                            <TableCell>{tranche.thickness.toFixed(2)}%</TableCell>
+                            <TableCell>{tranche.initialRW}%</TableCell>
+                            <TableCell>{tranche.rwArt2635.toFixed(2)}%</TableCell>
+                            <TableCell>{formatCurrency(tranche.rweaBeforeSharing)}</TableCell>
+                            <TableCell>{tranche.sharedPercentage}%</TableCell>
+                            <TableCell className="font-semibold">{formatCurrency(tranche.finalRWEA)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold">Total RWA (Post Hedge):</span>
+                        <span className="text-lg font-bold">{formatCurrency(finalRWA)}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <div><strong>Step 1:</strong> Initial risk weights - Senior: 20%, Second: 90%, Third: 1250%</div>
+                      <div><strong>Step 2:</strong> Apply Art. 263.5 formulas based on tranche thickness</div>
+                      <div><strong>Step 3:</strong> Calculate final RWEA after sharing: (1 - shared%) × RWEA before sharing</div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
