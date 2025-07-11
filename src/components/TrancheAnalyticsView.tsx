@@ -30,6 +30,7 @@ interface TrancheAnalyticsViewProps {
 }
 
 const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsViewProps) => {
+  console.log('TrancheAnalyticsView rendered', { isOpen, structure });
   const [loading, setLoading] = useState(false);
   const [datasetData, setDatasetData] = useState<any[]>([]);
   const [showRWABreakdown, setShowRWABreakdown] = useState(false);
@@ -37,6 +38,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   const { toast } = useToast();
 
   const fetchDatasetData = async () => {
+    console.log('fetchDatasetData called', { structure, user });
     if (!structure || !user) return;
     
     setLoading(true);
@@ -76,6 +78,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   }, [isOpen, structure]);
 
   const calculatePostHedgeRWA = () => {
+    console.log('calculatePostHedgeRWA called', { datasetData, structure });
     if (!datasetData.length || !structure) return { finalRWA: 0, breakdown: [] };
 
     const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
@@ -299,7 +302,10 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     );
   };
 
-  if (!structure) return null;
+  if (!structure) {
+    console.log('TrancheAnalyticsView: structure is null, returning null');
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
