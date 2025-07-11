@@ -264,7 +264,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     }
     
     const revenue = notionalLent * (netYield / 100);
-    const tradeCosts = scenario === 'current' ? 0 : structure.total_cost;
+    const tradeCosts = scenario === 'current' ? 0 : calculateTotalTransactionCost();
     const netEarnings = revenue - tradeCosts;
     const roe = internalCapitalRequired > 0 ? (netEarnings / internalCapitalRequired) * 100 : 0;
 
@@ -318,7 +318,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
 
     return {
       portfolioProtected: totalNotional,
-      totalCostOfTransaction: structure.total_cost,
+      totalCostOfTransaction: calculateTotalTransactionCost(),
       initialCapitalReleased: {
         original: initialCapitalReleased,
         improvement: initialCapitalReleased
