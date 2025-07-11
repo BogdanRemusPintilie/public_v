@@ -251,7 +251,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
       },
       newROE: {
         original: futureMetrics.roe,
-        improvement: currentMetrics.roe
+        improvement: currentMetrics.roe > 0 ? ((futureMetrics.roe / currentMetrics.roe) - 1) * 100 : 0
       }
     };
   };
