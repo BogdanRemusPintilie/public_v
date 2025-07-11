@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, sanitizeInput } from '@/utils/validation';
 import { useEffect } from 'react';
-
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,35 +17,39 @@ const Auth = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
-  const { login, signup, isAuthenticated } = useAuth();
-  const { toast } = useToast();
+  const {
+    login,
+    signup,
+    isAuthenticated
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const [searchParams] = useSearchParams();
 
   // Check for verification errors in URL parameters
   useEffect(() => {
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
-    
     if (error) {
       console.log('URL contains auth error:', error, errorDescription);
-      
       if (error === 'access_denied' && errorDescription?.includes('Email link is invalid')) {
         toast({
           title: "Email Verification Failed",
           description: "The verification link has expired or has already been used. Please try signing up again or contact support if you continue to have issues.",
-          variant: "destructive",
+          variant: "destructive"
         });
       } else if (error === 'server_error') {
         toast({
           title: "Authentication Error",
           description: "There was a server error during authentication. Please try again or contact support.",
-          variant: "destructive",
+          variant: "destructive"
         });
       } else {
         toast({
           title: "Authentication Error",
           description: errorDescription || "An error occurred during authentication. Please try again.",
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     }
@@ -60,30 +62,32 @@ const Auth = () => {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
-
   const handleSubmit = async (e: React.FormEvent, isSignup: boolean = false) => {
     e.preventDefault();
-    console.log('Form submitted:', { isSignup, email });
+    console.log('Form submitted:', {
+      isSignup,
+      email
+    });
     setIsLoading(true);
     setErrors({});
-
     try {
       // Sanitize inputs
       const sanitizedEmail = sanitizeInput(email);
       const sanitizedPassword = sanitizeInput(password);
-
-      console.log('Sanitized inputs:', { email: sanitizedEmail, passwordLength: sanitizedPassword.length });
+      console.log('Sanitized inputs:', {
+        email: sanitizedEmail,
+        passwordLength: sanitizedPassword.length
+      });
 
       // Validate inputs
       const validationResult = loginSchema.safeParse({
         email: sanitizedEmail,
         password: sanitizedPassword
       });
-
       if (!validationResult.success) {
         console.log('Validation failed:', validationResult.error.errors);
         const fieldErrors: Record<string, string> = {};
-        validationResult.error.errors.forEach((error) => {
+        validationResult.error.errors.forEach(error => {
           if (error.path[0]) {
             fieldErrors[error.path[0] as string] = error.message;
           }
@@ -92,46 +96,44 @@ const Auth = () => {
         setIsLoading(false);
         return;
       }
-
       console.log('Validation passed, attempting auth...');
 
       // Attempt login or signup
-      const { error } = isSignup 
-        ? await signup(sanitizedEmail, sanitizedPassword)
-        : await login(sanitizedEmail, sanitizedPassword);
-      
+      const {
+        error
+      } = isSignup ? await signup(sanitizedEmail, sanitizedPassword) : await login(sanitizedEmail, sanitizedPassword);
       if (error) {
         console.error('Auth error:', error);
         if (error.message?.includes('Invalid login credentials')) {
           toast({
             title: "Authentication Failed",
             description: "Invalid email or password. Please try again.",
-            variant: "destructive",
+            variant: "destructive"
           });
         } else if (error.message?.includes('User already registered')) {
           toast({
-            title: "Account Exists", 
+            title: "Account Exists",
             description: "An account with this email already exists. Please sign in instead, or use a different email address if you want to create a new account.",
-            variant: "destructive",
+            variant: "destructive"
           });
           setActiveTab('login');
         } else if (error.message?.includes('Signup not allowed')) {
           toast({
             title: "Signup Disabled",
             description: "New user registration is currently disabled. Please contact support.",
-            variant: "destructive",
+            variant: "destructive"
           });
         } else if (error.message?.includes('Email not confirmed')) {
           toast({
             title: "Email Not Verified",
             description: "Please check your email and click the verification link before signing in. If the link has expired, try signing up again.",
-            variant: "destructive",
+            variant: "destructive"
           });
         } else {
           toast({
             title: isSignup ? "Signup Failed" : "Login Failed",
             description: error.message || "An unexpected error occurred. Please try again.",
-            variant: "destructive",
+            variant: "destructive"
           });
         }
       } else {
@@ -139,7 +141,7 @@ const Auth = () => {
         if (isSignup) {
           toast({
             title: "Account Created",
-            description: "Please check your email to verify your account before signing in. The verification link will expire in 24 hours.",
+            description: "Please check your email to verify your account before signing in. The verification link will expire in 24 hours."
           });
           setActiveTab('login');
           // Clear the form
@@ -148,7 +150,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Login Successful",
-            description: "Welcome to RiskBlocs Platform",
+            description: "Welcome to RiskBlocs Platform"
           });
           navigate('/dashboard');
         }
@@ -158,15 +160,13 @@ const Auth = () => {
       toast({
         title: "Authentication Error",
         description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
@@ -190,7 +190,7 @@ const Auth = () => {
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-amber-800">
-                <p className="font-medium">Email Alias Notice:</p>
+                <p className="font-medium">Email Notice:</p>
                 <p>If you're using an email alias, make sure to use the same email address consistently for both signup and login.</p>
               </div>
             </div>
@@ -202,121 +202,61 @@ const Auth = () => {
               </TabsList>
               
               <TabsContent value="login">
-                <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
+                <form onSubmit={e => handleSubmit(e, false)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email" className="text-sm font-medium text-gray-700 flex items-center">
                       <Mail className="h-4 w-4 mr-2" />
                       Email Address
                     </Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={`h-11 ${errors.email ? 'border-red-500' : ''}`}
-                      required
-                      disabled={isLoading}
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-red-600">{errors.email}</p>
-                    )}
+                    <Input id="login-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} className={`h-11 ${errors.email ? 'border-red-500' : ''}`} required disabled={isLoading} />
+                    {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="login-password" className="text-sm font-medium text-gray-700 flex items-center">
                       <Lock className="h-4 w-4 mr-2" />
                       Password
                     </Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className={`h-11 ${errors.password ? 'border-red-500' : ''}`}
-                      required
-                      disabled={isLoading}
-                    />
-                    {errors.password && (
-                      <p className="text-sm text-red-600">{errors.password}</p>
-                    )}
+                    <Input id="login-password" type="password" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} className={`h-11 ${errors.password ? 'border-red-500' : ''}`} required disabled={isLoading} />
+                    {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
+                  <Button type="submit" className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium" disabled={isLoading}>
+                    {isLoading ? <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Signing In...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         Sign In
                         <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
+                      </>}
                   </Button>
                 </form>
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-4">
+                <form onSubmit={e => handleSubmit(e, true)} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-email" className="text-sm font-medium text-gray-700 flex items-center">
                       <Mail className="h-4 w-4 mr-2" />
                       Email Address
                     </Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={`h-11 ${errors.email ? 'border-red-500' : ''}`}
-                      required
-                      disabled={isLoading}
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-red-600">{errors.email}</p>
-                    )}
+                    <Input id="signup-email" type="email" placeholder="Enter your email" value={email} onChange={e => setEmail(e.target.value)} className={`h-11 ${errors.email ? 'border-red-500' : ''}`} required disabled={isLoading} />
+                    {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password" className="text-sm font-medium text-gray-700 flex items-center">
                       <Lock className="h-4 w-4 mr-2" />
                       Password
                     </Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Create a password (min. 6 characters)"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className={`h-11 ${errors.password ? 'border-red-500' : ''}`}
-                      required
-                      disabled={isLoading}
-                    />
-                    {errors.password && (
-                      <p className="text-sm text-red-600">{errors.password}</p>
-                    )}
+                    <Input id="signup-password" type="password" placeholder="Create a password (min. 6 characters)" value={password} onChange={e => setPassword(e.target.value)} className={`h-11 ${errors.password ? 'border-red-500' : ''}`} required disabled={isLoading} />
+                    {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-medium"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
+                  <Button type="submit" className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-medium" disabled={isLoading}>
+                    {isLoading ? <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Creating Account...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         Create Account
                         <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
+                      </>}
                   </Button>
                 </form>
               </TabsContent>
@@ -330,8 +270,6 @@ const Auth = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Auth;
