@@ -389,18 +389,8 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
 
                       <div className="flex flex-wrap gap-3 pt-4 border-t">
                         <Button
-                          onClick={() => handleEditStructure(structure)}
-                          variant="outline"
-                          className="flex items-center space-x-2 border-green-200 hover:bg-green-50"
-                        >
-                          <Settings className="h-4 w-4" />
-                          <span>Edit Structure</span>
-                        </Button>
-                        
-                        <Button
                           onClick={() => handleViewAnalytics(structure)}
-                          variant="ghost"
-                          className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+                          className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700"
                         >
                           <TrendingUp className="h-4 w-4" />
                           <span>View Analytics</span>

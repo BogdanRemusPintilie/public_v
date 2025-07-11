@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, TrendingUp, Shield, DollarSign, Target, Info } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Shield, DollarSign, Target, Info, Plus, Trash2, Save, Database, Calculator } from 'lucide-react';
 import { TrancheStructure } from '@/utils/supabase';
 
 interface AnalyticsMetrics {
@@ -22,6 +25,23 @@ interface AnalyticsMetrics {
   tradeCosts: number;
   netEarnings: number;
   roe: number;
+}
+
+interface DatasetSummary {
+  dataset_name: string;
+  record_count: number;
+  total_value: number;
+  avg_interest_rate: number;
+  high_risk_count: number;
+  created_at: string;
+}
+
+interface Tranche {
+  id: string;
+  name: string;
+  thickness: number;
+  costBps: number;
+  hedgedPercentage: number;
 }
 
 interface TrancheAnalyticsViewProps {
@@ -37,6 +57,15 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   const [showRWABreakdown, setShowRWABreakdown] = useState(false);
   const [manualTotalValue, setManualTotalValue] = useState<number | null>(null);
   const [isEditingTotalValue, setIsEditingTotalValue] = useState(false);
+  
+  // Edit Structure states
+  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
+  const [tranches, setTranches] = useState<Tranche[]>([]);
+  const [additionalTransactionCosts, setAdditionalTransactionCosts] = useState<number>(0);
+  const [structureName, setStructureName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -74,9 +103,47 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     }
   };
 
+  const fetchDatasets = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('get_dataset_summaries');
+      
+      if (error) {
+        console.error('Error fetching datasets:', error);
+        return;
+      }
+
+      setDatasets(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && structure) {
       fetchDatasetData();
+      fetchDatasets();
+      
+      // Initialize edit structure data
+      if (structure) {
+        setStructureName(structure.structure_name);
+        setIsEditing(true);
+        
+        const loadedTranches = structure.tranches.map((tranche: any, index: number) => ({
+          id: tranche.id || (index + 1).toString(),
+          name: tranche.name || `Tranche ${index + 1}`,
+          thickness: tranche.thickness || 0,
+          costBps: tranche.costBps || 0,
+          hedgedPercentage: tranche.hedgedPercentage || 0
+        }));
+        setTranches(loadedTranches);
+        
+        if (structure.additional_transaction_costs) {
+          setAdditionalTransactionCosts(structure.additional_transaction_costs);
+        }
+      }
+      
       // Reset manual total value when opening
       setManualTotalValue(null);
       setIsEditingTotalValue(false);
@@ -379,6 +446,351 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     );
   };
 
+  // Edit Structure functions
+  const addTranche = () => {
+    if (tranches.length >= 10) {
+      toast({
+        title: "Maximum Tranches",
+        description: "You can have a maximum of 10 tranches",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newTranche: Tranche = {
+      id: Date.now().toString(),
+      name: `Tranche ${tranches.length + 1}`,
+      thickness: 0,
+      costBps: 0,
+      hedgedPercentage: 0
+    };
+    setTranches([...tranches, newTranche]);
+  };
+
+  const removeTranche = (id: string) => {
+    if (tranches.length <= 3) {
+      toast({
+        title: "Minimum Tranches",
+        description: "You must have at least 3 tranches",
+        variant: "destructive",
+      });
+      return;
+    }
+    setTranches(tranches.filter(t => t.id !== id));
+  };
+
+  const updateTranche = (id: string, field: keyof Tranche, value: string | number) => {
+    setTranches(tranches.map(t => 
+      t.id === id ? { ...t, [field]: value } : t
+    ));
+  };
+
+  const updateTrancheFromSlider = (id: string, field: keyof Tranche, values: number[]) => {
+    setTranches(tranches.map(t => 
+      t.id === id ? { ...t, [field]: values[0] } : t
+    ));
+  };
+
+  const getTotalThickness = () => {
+    return tranches.reduce((sum, tranche) => sum + tranche.thickness, 0);
+  };
+
+  const getSelectedDataset = () => {
+    return datasets.find(d => d.dataset_name === structure?.dataset_name);
+  };
+
+  const calculateTrancheValue = (thickness: number) => {
+    const dataset = getSelectedDataset();
+    if (!dataset) return 0;
+    return (dataset.total_value * thickness) / 100;
+  };
+
+  const calculateTrancheCost = (thickness: number, costBps: number, hedgedPercentage: number) => {
+    const trancheValue = calculateTrancheValue(thickness);
+    const couponCost = (trancheValue * costBps) / 10000;
+    return couponCost * (hedgedPercentage / 100);
+  };
+
+  const calculateTotalTransactionCost = () => {
+    const trancheCosts = tranches.reduce((total, tranche) => {
+      return total + calculateTrancheCost(tranche.thickness, tranche.costBps, tranche.hedgedPercentage);
+    }, 0);
+    return trancheCosts + additionalTransactionCosts;
+  };
+
+  const isValidStructure = () => {
+    const totalThickness = getTotalThickness();
+    return totalThickness === 100 && tranches.length >= 3 && tranches.length <= 10;
+  };
+
+  const saveStructure = async () => {
+    if (!user || !structure || !structureName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a structure name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isValidStructure()) {
+      toast({
+        title: "Invalid Structure",
+        description: "Tranche thickness must sum to 100% and you need 3-10 tranches",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const dataset = getSelectedDataset();
+      const totalCost = calculateTotalTransactionCost();
+      const weightedAvgCostBps = dataset ? (totalCost / dataset.total_value) * 10000 : 0;
+      const costPercentage = dataset ? (totalCost / dataset.total_value) * 100 : 0;
+
+      const structureData = {
+        structure_name: structureName.trim(),
+        dataset_name: structure.dataset_name,
+        tranches: tranches as any,
+        total_cost: totalCost,
+        weighted_avg_cost_bps: weightedAvgCostBps,
+        cost_percentage: costPercentage,
+        additional_transaction_costs: additionalTransactionCosts,
+        user_id: user.id
+      };
+
+      const { error } = await supabase
+        .from('tranche_structures')
+        .update(structureData)
+        .eq('id', structure.id);
+
+      if (error) {
+        console.error('Error saving tranche structure:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save tranche structure",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Structure Updated",
+        description: `Tranche structure "${structureName}" has been updated successfully`,
+      });
+
+      // Update the structure object with new values for immediate reflection in analytics
+      Object.assign(structure, structureData);
+      
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save tranche structure",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const EditStructureSection = () => {
+    if (!structure) return null;
+
+    const dataset = getSelectedDataset();
+
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Edit Tranche Structure</CardTitle>
+              <CardDescription>Modify your tranche structure (3-10 tranches, thickness must sum to 100%)</CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge 
+                variant={getTotalThickness() === 100 ? "default" : "destructive"}
+              >
+                Total: {getTotalThickness()}%
+              </Badge>
+              <Button
+                onClick={addTranche}
+                disabled={tranches.length >= 10}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Tranche
+              </Button>
+              <Button
+                onClick={saveStructure}
+                disabled={saving || !isValidStructure()}
+                size="sm"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Structure Name */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="structure-name">Structure Name</Label>
+                <Input
+                  id="structure-name"
+                  value={structureName}
+                  onChange={(e) => setStructureName(e.target.value)}
+                  placeholder="Enter structure name"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="additional-costs">Additional Transaction Costs (€)</Label>
+                <Input
+                  id="additional-costs"
+                  type="number"
+                  min="0"
+                  value={additionalTransactionCosts}
+                  onChange={(e) => setAdditionalTransactionCosts(parseFloat(e.target.value) || 0)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            {/* Tranches */}
+            {tranches.map((tranche, index) => (
+              <div key={tranche.id} className="grid grid-cols-12 gap-4 p-4 border rounded-lg">
+                <div className="col-span-2">
+                  <Label htmlFor={`name-${tranche.id}`}>Tranche Name</Label>
+                  <Input
+                    id={`name-${tranche.id}`}
+                    value={tranche.name}
+                    onChange={(e) => updateTranche(tranche.id, 'name', e.target.value)}
+                    placeholder="Tranche name"
+                  />
+                </div>
+                
+                <div className="col-span-2">
+                  <Label htmlFor={`thickness-${tranche.id}`}>Thickness (%)</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id={`thickness-${tranche.id}`}
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={tranche.thickness}
+                      onChange={(e) => updateTranche(tranche.id, 'thickness', parseFloat(e.target.value) || 0)}
+                    />
+                    <Slider
+                      value={[tranche.thickness]}
+                      onValueChange={(values) => updateTrancheFromSlider(tranche.id, 'thickness', values)}
+                      max={100}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="col-span-2">
+                  <Label htmlFor={`cost-${tranche.id}`}>Coupon (BPS)</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id={`cost-${tranche.id}`}
+                      type="number"
+                      min="0"
+                      value={tranche.costBps}
+                      onChange={(e) => updateTranche(tranche.id, 'costBps', parseFloat(e.target.value) || 0)}
+                    />
+                    <Slider
+                      value={[tranche.costBps]}
+                      onValueChange={(values) => updateTrancheFromSlider(tranche.id, 'costBps', values)}
+                      max={1000}
+                      min={0}
+                      step={5}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="col-span-2">
+                  <Label htmlFor={`hedged-${tranche.id}`}>Hedged (%)</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id={`hedged-${tranche.id}`}
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={tranche.hedgedPercentage}
+                      onChange={(e) => updateTranche(tranche.id, 'hedgedPercentage', parseFloat(e.target.value) || 0)}
+                    />
+                    <Slider
+                      value={[tranche.hedgedPercentage]}
+                      onValueChange={(values) => updateTrancheFromSlider(tranche.id, 'hedgedPercentage', values)}
+                      max={100}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="col-span-2">
+                  <Label>Tranche Value</Label>
+                  <div className="text-lg font-semibold text-green-600">
+                    {formatCurrency(calculateTrancheValue(tranche.thickness))}
+                  </div>
+                  <Label className="text-sm">Tranche Cost</Label>
+                  <div className="text-base font-medium text-orange-600">
+                    {formatCurrency(calculateTrancheCost(tranche.thickness, tranche.costBps, tranche.hedgedPercentage))}
+                  </div>
+                </div>
+                
+                <div className="col-span-2 flex items-center justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeTranche(tranche.id)}
+                    disabled={tranches.length <= 3}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {/* Summary */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-gray-900">
+                    {formatCurrency(calculateTotalTransactionCost())}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Transaction Cost</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-blue-600">
+                    {dataset ? ((calculateTotalTransactionCost() / dataset.total_value) * 10000).toFixed(0) : 0} BPS
+                  </div>
+                  <div className="text-sm text-gray-600">Weighted Avg Cost</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-600">
+                    {dataset ? ((calculateTotalTransactionCost() / dataset.total_value) * 100).toFixed(2) : 0}%
+                  </div>
+                  <div className="text-sm text-gray-600">Cost as % of Total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   if (!structure) {
     console.log('TrancheAnalyticsView: structure is null, returning null');
     return null;
@@ -419,6 +831,9 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
             <>
               {/* Summary Section */}
               <SummarySection />
+
+              {/* Edit Structure Section */}
+              <EditStructureSection />
 
               {/* Analytics Table */}
               <Card>
