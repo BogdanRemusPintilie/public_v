@@ -112,9 +112,7 @@ const Index = () => {
                   <CardTitle className="text-2xl font-bold text-gray-900">
                     Ready to Get Started?
                   </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Join hundreds of enterprises using RiskBlocs for comprehensive risk management.
-                  </CardDescription>
+                  <CardDescription className="text-gray-600">Join the network using RiskBlocs for comprehensive transaction management.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button onClick={handleGetStarted} className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium">
