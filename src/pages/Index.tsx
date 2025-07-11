@@ -148,12 +148,8 @@ const Index = () => {
       <section id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-              Comprehensive Risk Management
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to identify, assess, and mitigate risks across your organization
-            </p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Comprehensive Transaction Management</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Everything you need to prepare, analyse and speed to market</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
