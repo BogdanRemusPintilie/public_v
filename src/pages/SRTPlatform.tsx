@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import LoginPopup from '@/components/LoginPopup';
-
 const SRTPlatform = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
@@ -12,14 +11,25 @@ const SRTPlatform = () => {
   const navigate = useNavigate();
 
   // Sample data for the analytics chart
-  const chartData = [
-    { name: 'Jan', value: 2200 },
-    { name: 'Feb', value: 2350 },
-    { name: 'Mar', value: 2400 },
-    { name: 'Apr', value: 2280 },
-    { name: 'May', value: 2450 },
-    { name: 'Jun', value: 2400 },
-  ];
+  const chartData = [{
+    name: 'Jan',
+    value: 2200
+  }, {
+    name: 'Feb',
+    value: 2350
+  }, {
+    name: 'Mar',
+    value: 2400
+  }, {
+    name: 'Apr',
+    value: 2280
+  }, {
+    name: 'May',
+    value: 2450
+  }, {
+    name: 'Jun',
+    value: 2400
+  }];
 
   // Demo data
   const demoPortfolios = {
@@ -28,28 +38,62 @@ const SRTPlatform = () => {
       size: '€2.4B',
       rwa: '€480M',
       rating: 'BBB+',
-      data: [
-        { month: 'Jan', value: 2400, rwa: 480 },
-        { month: 'Feb', value: 2350, rwa: 470 },
-        { month: 'Mar', value: 2420, rwa: 485 },
-        { month: 'Apr', value: 2380, rwa: 475 },
-        { month: 'May', value: 2450, rwa: 490 },
-        { month: 'Jun', value: 2500, rwa: 495 },
-      ]
+      data: [{
+        month: 'Jan',
+        value: 2400,
+        rwa: 480
+      }, {
+        month: 'Feb',
+        value: 2350,
+        rwa: 470
+      }, {
+        month: 'Mar',
+        value: 2420,
+        rwa: 485
+      }, {
+        month: 'Apr',
+        value: 2380,
+        rwa: 475
+      }, {
+        month: 'May',
+        value: 2450,
+        rwa: 490
+      }, {
+        month: 'Jun',
+        value: 2500,
+        rwa: 495
+      }]
     },
     retail: {
       name: 'Retail Mortgage Portfolio',
       size: '€1.8B',
       rwa: '€360M',
       rating: 'A-',
-      data: [
-        { month: 'Jan', value: 1800, rwa: 360 },
-        { month: 'Feb', value: 1820, rwa: 365 },
-        { month: 'Mar', value: 1780, rwa: 355 },
-        { month: 'Apr', value: 1850, rwa: 370 },
-        { month: 'May', value: 1900, rwa: 380 },
-        { month: 'Jun', value: 1950, rwa: 390 },
-      ]
+      data: [{
+        month: 'Jan',
+        value: 1800,
+        rwa: 360
+      }, {
+        month: 'Feb',
+        value: 1820,
+        rwa: 365
+      }, {
+        month: 'Mar',
+        value: 1780,
+        rwa: 355
+      }, {
+        month: 'Apr',
+        value: 1850,
+        rwa: 370
+      }, {
+        month: 'May',
+        value: 1900,
+        rwa: 380
+      }, {
+        month: 'Jun',
+        value: 1950,
+        rwa: 390
+      }]
     }
   };
 
@@ -71,14 +115,23 @@ const SRTPlatform = () => {
       capitalFreed: 320
     }
   };
-
-  const riskDistribution = [
-    { name: 'AAA-AA', value: 30, color: '#22c55e' },
-    { name: 'A-BBB', value: 45, color: '#3b82f6' },
-    { name: 'BB-B', value: 20, color: '#f59e0b' },
-    { name: 'Below B', value: 5, color: '#ef4444' }
-  ];
-
+  const riskDistribution = [{
+    name: 'AAA-AA',
+    value: 30,
+    color: '#22c55e'
+  }, {
+    name: 'A-BBB',
+    value: 45,
+    color: '#3b82f6'
+  }, {
+    name: 'BB-B',
+    value: 20,
+    color: '#f59e0b'
+  }, {
+    name: 'Below B',
+    value: 5,
+    color: '#ef4444'
+  }];
   useEffect(() => {
     // Check if user is already authenticated
     const authenticated = localStorage.getItem('homepageAuthenticated') === 'true';
@@ -86,45 +139,34 @@ const SRTPlatform = () => {
     setShowLoginPopup(!authenticated);
     setIsLoading(false);
   }, []);
-
   const handleLogin = (success: boolean) => {
     if (success) {
       setIsAuthenticated(true);
       setShowLoginPopup(false);
     }
   };
-
   const handleLogout = () => {
     localStorage.removeItem('homepageAuthenticated');
     setIsAuthenticated(false);
     setShowLoginPopup(true);
   };
-
   const handleLogoClick = () => {
     navigate('/');
   };
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <LoginPopup isOpen={showLoginPopup} onLogin={handleLogin} />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center items-center gap-5">
@@ -140,25 +182,23 @@ const SRTPlatform = () => {
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <button 
-              onClick={handleLogoClick}
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none p-0"
-            >
+            <button onClick={handleLogoClick} className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none p-0">
               <img src="/lovable-uploads/e976cf33-12c9-4927-8899-fd3e3963f4f7.png" alt="RiskBlocs Logo" className="h-6 w-6" />
               <span className="text-lg font-semibold text-gray-900">RiskBlocs</span>
             </button>
             <div className="flex items-center space-x-8">
               <button onClick={() => window.location.hash = 'home'} className="text-blue-600 font-medium bg-transparent border-none cursor-pointer">Home</button>
-              <button onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })} className="text-gray-600 hover:text-gray-900 bg-transparent border-none cursor-pointer">Demo</button>
-              <button onClick={() => document.getElementById('example')?.scrollIntoView({ behavior: 'smooth' })} className="text-gray-600 hover:text-gray-900 bg-transparent border-none cursor-pointer">Worked Example</button>
+              <button onClick={() => document.getElementById('demo')?.scrollIntoView({
+              behavior: 'smooth'
+            })} className="text-gray-600 hover:text-gray-900 bg-transparent border-none cursor-pointer">Demo</button>
+              <button onClick={() => document.getElementById('example')?.scrollIntoView({
+              behavior: 'smooth'
+            })} className="text-gray-600 hover:text-gray-900 bg-transparent border-none cursor-pointer">Worked Example</button>
               <a href="/dashboard" className="text-gray-600 hover:text-gray-900">RiskBlocs</a>
             </div>
             <div className="flex items-center space-x-4">
               <a href="/apps" className="text-sm text-blue-600 hover:text-blue-800">Access Apps</a>
-              <button
-                onClick={handleLogout}
-                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-all"
-              >
+              <button onClick={handleLogout} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-all">
                 Sign Out
               </button>
             </div>
@@ -174,9 +214,7 @@ const SRTPlatform = () => {
               <h1 className="text-5xl font-bold text-gray-900 mb-6">
                 Transform Risk into <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Opportunity</span>
               </h1>
-              <p className="text-xl text-gray-600 mb-8">
-                The comprehensive platform for Significant Risk Transfer transactions. Optimize capital efficiency, manage credit risk, and unlock growth potential with cutting-edge analytics and regulatory-compliant solutions.
-              </p>
+              <p className="text-xl text-gray-600 mb-8">RiskBlocs is the comprehensive platform for Significant Risk Transfer transactions. Optimize capital efficiency, manage transaction data flows, and unlock growth potential with cutting-edge analytics and regulatory-compliant solutions.</p>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 <div className="text-center">
@@ -237,13 +275,10 @@ const SRTPlatform = () => {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
-                        <Line 
-                          type="monotone" 
-                          dataKey="value" 
-                          stroke="#2563eb" 
-                          strokeWidth={2}
-                          dot={{ fill: '#2563eb', strokeWidth: 2 }}
-                        />
+                        <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{
+                        fill: '#2563eb',
+                        strokeWidth: 2
+                      }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -269,19 +304,9 @@ const SRTPlatform = () => {
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Portfolio</h3>
               <div className="flex gap-4">
-                {Object.entries(demoPortfolios).map(([key, portfolio]) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedPortfolio(key)}
-                    className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                      selectedPortfolio === key
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
+                {Object.entries(demoPortfolios).map(([key, portfolio]) => <button key={key} onClick={() => setSelectedPortfolio(key)} className={`px-6 py-3 rounded-lg font-medium transition-all ${selectedPortfolio === key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                     {portfolio.name}
-                  </button>
-                ))}
+                  </button>)}
               </div>
             </div>
 
@@ -350,7 +375,7 @@ const SRTPlatform = () => {
                   <h5 className="font-medium text-gray-700 mb-2">Expected Benefits</h5>
                   <ul className="space-y-1 text-sm text-gray-600">
                     <li>• Capital Relief: €{(parseFloat(demoPortfolios[selectedPortfolio].rwa.replace('€', '').replace('M', '')) * 0.65 * 0.08).toFixed(0)}M</li>
-                    <li>• ROE Improvement: +{((parseFloat(demoPortfolios[selectedPortfolio].rwa.replace('€', '').replace('M', '')) * 0.65 * 0.08) / 1000 * 15).toFixed(1)}%</li>
+                    <li>• ROE Improvement: +{(parseFloat(demoPortfolios[selectedPortfolio].rwa.replace('€', '').replace('M', '')) * 0.65 * 0.08 / 1000 * 15).toFixed(1)}%</li>
                     <li>• Regulatory Compliance: ✓</li>
                   </ul>
                 </div>
@@ -448,10 +473,15 @@ const SRTPlatform = () => {
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Capital Impact</h4>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: 'Before SRT', capital: sampleTransaction.original.capitalRequired, freed: 0 },
-                      { name: 'After SRT', capital: sampleTransaction.postSRT.capitalRequired, freed: sampleTransaction.postSRT.capitalFreed }
-                    ]}>
+                    <BarChart data={[{
+                    name: 'Before SRT',
+                    capital: sampleTransaction.original.capitalRequired,
+                    freed: 0
+                  }, {
+                    name: 'After SRT',
+                    capital: sampleTransaction.postSRT.capitalRequired,
+                    freed: sampleTransaction.postSRT.capitalFreed
+                  }]}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
@@ -467,17 +497,11 @@ const SRTPlatform = () => {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={riskDistribution}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        dataKey="value"
-                        label={({ name, value }) => `${name}: ${value}%`}
-                      >
-                        {riskDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
+                      <Pie data={riskDistribution} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({
+                      name,
+                      value
+                    }) => `${name}: ${value}%`}>
+                        {riskDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
@@ -646,8 +670,6 @@ const SRTPlatform = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default SRTPlatform;
