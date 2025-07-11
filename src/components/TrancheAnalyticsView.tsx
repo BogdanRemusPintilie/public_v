@@ -188,7 +188,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     }
     
     const revenue = notionalLent * (netYield / 100);
-    const tradeCosts = structure.total_cost;
+    const tradeCosts = scenario === 'current' ? 0 : structure.total_cost;
     const netEarnings = revenue - tradeCosts;
     const roe = internalCapitalRequired > 0 ? (netEarnings / internalCapitalRequired) * 100 : 0;
 
