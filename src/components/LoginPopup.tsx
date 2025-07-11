@@ -92,7 +92,7 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ isOpen, onLogin }) => {
         </form>
         
         <div className="text-center text-sm text-gray-500 mt-4">
-          Demo credentials required for access
+          Contact RiskBlocs for access credentials
         </div>
       </DialogContent>
     </Dialog>
