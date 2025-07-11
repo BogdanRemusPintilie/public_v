@@ -156,18 +156,37 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     const averageRate = datasetData.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetData.length;
     const riskRatio = 8; // Fixed to 8%
 
-    const notionalLent = totalNotional;
+    let notionalLent = totalNotional;
     const netYield = averageRate;
     
     let riskWeightedAssets: number;
+    let internalCapitalRequired: number;
+    
     if (scenario === 'postHedge') {
       const { finalRWA } = calculatePostHedgeRWA();
       riskWeightedAssets = finalRWA;
+      internalCapitalRequired = riskWeightedAssets * 0.08;
+    } else if (scenario === 'futureUpsize') {
+      // Calculate metrics for both current and post hedge scenarios
+      const currentRWA = totalNotional; // 100% * Portfolio Protected
+      const currentInternalCapitalRequired = currentRWA * 0.08;
+      
+      const { finalRWA } = calculatePostHedgeRWA();
+      const postHedgeInternalCapitalRequired = finalRWA * 0.08;
+      
+      // Apply the Future Upsize formula for Notional lent:
+      // =(1-Internal capital required post hedge/Internal capital required current)*Portfolio protected + Notional lent current
+      const ratio = postHedgeInternalCapitalRequired / currentInternalCapitalRequired;
+      notionalLent = (1 - ratio) * totalNotional + totalNotional;
+      
+      // Use current scenario calculations for other metrics
+      riskWeightedAssets = currentRWA;
+      internalCapitalRequired = currentInternalCapitalRequired;
     } else {
-      riskWeightedAssets = totalNotional; // 100% * Portfolio Protected for other scenarios
+      riskWeightedAssets = totalNotional; // 100% * Portfolio Protected for current scenario
+      internalCapitalRequired = riskWeightedAssets * 0.08;
     }
     
-    const internalCapitalRequired = riskWeightedAssets * 0.08; // 8% capital requirement
     const revenue = notionalLent * (netYield / 100);
     const tradeCosts = structure.total_cost;
     const netEarnings = revenue - tradeCosts;
