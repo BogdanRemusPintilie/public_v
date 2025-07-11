@@ -5,15 +5,18 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-
 const Index = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
+  const {
+    isAuthenticated
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -21,13 +24,10 @@ const Index = () => {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
-
   const handleGetStarted = () => {
     navigate('/auth');
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,10 +41,7 @@ const Index = () => {
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
               <a href="#security" className="text-gray-600 hover:text-blue-600 transition-colors">Security</a>
               <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
-              <Button 
-                onClick={handleGetStarted}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
+              <Button onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700 text-white">
                 Get Started
               </Button>
             </div>
@@ -63,10 +60,7 @@ const Index = () => {
                   Enterprise Risk
                   <span className="text-blue-600 block">Management Platform</span>
                 </h1>
-                <p className="text-xl text-gray-600 max-w-lg">
-                  Advanced risk analytics and compliance management for modern enterprises. 
-                  Streamline your risk operations with AI-powered insights.
-                </p>
+                <p className="text-xl text-gray-600 max-w-lg">Advanced risk analytics and transaction management for issues, investors, lenders and advisors. Streamline transaction ops with AI-powered insights.</p>
               </div>
               
               <div className="flex flex-wrap gap-4">
@@ -100,20 +94,11 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  onClick={handleGetStarted}
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
-                >
+                <Button onClick={handleGetStarted} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg">
                   Get Started Today
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Button 
-                  onClick={() => navigate('/')}
-                  variant="outline"
-                  size="lg"
-                  className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-3 text-lg"
-                >
+                <Button onClick={() => navigate('/')} variant="outline" size="lg" className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-3 text-lg">
                   Explore SRT Platform
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -132,10 +117,7 @@ const Index = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button 
-                    onClick={handleGetStarted}
-                    className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                  >
+                  <Button onClick={handleGetStarted} className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium">
                     Access Platform
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -143,10 +125,7 @@ const Index = () => {
                   <div className="text-center">
                     <p className="text-sm text-gray-600">
                       Already have an account?{' '}
-                      <button 
-                        onClick={handleGetStarted}
-                        className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
-                      >
+                      <button onClick={handleGetStarted} className="text-blue-600 hover:text-blue-700 hover:underline font-medium">
                         Sign In
                       </button>
                     </p>
@@ -183,7 +162,7 @@ const Index = () => {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3 h-8 w-8 text-blue-600"><path d="M3 3v18h18"/><path d="M7 17V7"/><path d="M11 17V3"/><path d="M15 17v-7"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3 h-8 w-8 text-blue-600"><path d="M3 3v18h18" /><path d="M7 17V7" /><path d="M11 17V3" /><path d="M15 17v-7" /></svg>
                 </div>
                 <CardTitle className="text-xl font-bold text-gray-900">Risk Analytics</CardTitle>
               </CardHeader>
@@ -197,7 +176,7 @@ const Index = () => {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-8 w-8 text-green-600"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-8 w-8 text-green-600"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>
                 </div>
                 <CardTitle className="text-xl font-bold text-gray-900">Compliance Monitoring</CardTitle>
               </CardHeader>
@@ -211,7 +190,7 @@ const Index = () => {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center pb-4">
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users h-8 w-8 text-purple-600"><path d="M15.9 16.3c.2-.7.4-1.4.4-2.1 0-4.1-2.7-6.8-6.8-6.8S2.7 10.1 2.7 14.2c0 .7.2 1.4.4 2.1"/><circle cx="5" cy="7" r="2"/><path d="M22 16.6c-.6-.9-1.3-1.7-2.1-2.3-2.7-2-5.9-3.1-9.1-3.1-3.2 0-6.3 1.1-9 3.1-.8.6-1.5 1.4-2.1 2.3"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="7" r="2"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users h-8 w-8 text-purple-600"><path d="M15.9 16.3c.2-.7.4-1.4.4-2.1 0-4.1-2.7-6.8-6.8-6.8S2.7 10.1 2.7 14.2c0 .7.2 1.4.4 2.1" /><circle cx="5" cy="7" r="2" /><path d="M22 16.6c-.6-.9-1.3-1.7-2.1-2.3-2.7-2-5.9-3.1-9.1-3.1-3.2 0-6.3 1.1-9 3.1-.8.6-1.5 1.4-2.1 2.3" /><circle cx="12" cy="7" r="2" /><circle cx="19" cy="7" r="2" /></svg>
                 </div>
                 <CardTitle className="text-xl font-bold text-gray-900">Team Collaboration</CardTitle>
               </CardHeader>
@@ -238,15 +217,15 @@ const Index = () => {
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock h-5 w-5 text-blue-400"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock h-5 w-5 text-blue-400"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                   <span className="text-blue-100">End-to-end encryption</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-5 w-5 text-blue-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-5 w-5 text-blue-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>
                   <span className="text-blue-100">Multi-factor authentication</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trending-up h-5 w-5 text-blue-400"><path d="M3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trending-up h-5 w-5 text-blue-400"><path d="M3 17 9 11 13 15 21 7" /><polyline points="14 7 21 7 21 14" /></svg>
                   <span className="text-blue-100">Continuous monitoring</span>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -257,7 +236,7 @@ const Index = () => {
             </div>
             <div className="flex justify-center">
               <div className="w-64 h-64 bg-blue-800/30 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-32 w-32 text-blue-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield h-32 w-32 text-blue-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>
               </div>
             </div>
           </div>
@@ -312,8 +291,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
