@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +35,8 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   const [loading, setLoading] = useState(false);
   const [datasetData, setDatasetData] = useState<any[]>([]);
   const [showRWABreakdown, setShowRWABreakdown] = useState(false);
+  const [manualTotalValue, setManualTotalValue] = useState<number | null>(null);
+  const [isEditingTotalValue, setIsEditingTotalValue] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -74,6 +77,9 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   useEffect(() => {
     if (isOpen && structure) {
       fetchDatasetData();
+      // Reset manual total value when opening
+      setManualTotalValue(null);
+      setIsEditingTotalValue(false);
     }
   }, [isOpen, structure]);
 
@@ -81,7 +87,9 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     console.log('calculatePostHedgeRWA called', { datasetData, structure });
     if (!datasetData.length || !structure) return { finalRWA: 0, breakdown: [] };
 
-    const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    // Use manual total value if provided, otherwise calculate from dataset
+    const datasetTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    const totalNotional = manualTotalValue !== null ? manualTotalValue : datasetTotal;
     const tranches = structure.tranches;
     console.log('Tranches structure:', tranches);
     
@@ -151,8 +159,9 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
       };
     }
 
-    // Base calculations from dataset
-    const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    // Base calculations from dataset - use manual value if provided
+    const datasetTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    const totalNotional = manualTotalValue !== null ? manualTotalValue : datasetTotal;
     const averageRate = datasetData.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetData.length;
     const riskRatio = 8; // Fixed to 8%
 
@@ -233,7 +242,9 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     const currentMetrics = calculateAnalytics('current');
     const postHedgeMetrics = calculateAnalytics('postHedge');
     const futureMetrics = calculateAnalytics('futureUpsize');
-    const totalNotional = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    // Use manual total value if provided, otherwise calculate from dataset
+    const datasetTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    const totalNotional = manualTotalValue !== null ? manualTotalValue : datasetTotal;
 
     // Calculate initial capital released: current - post hedge
     const initialCapitalReleased = currentMetrics.internalCapitalRequired - postHedgeMetrics.internalCapitalRequired;
@@ -264,6 +275,22 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     const summaryData = getSummaryData();
     if (!summaryData) return null;
 
+    const handleTotalValueEdit = () => {
+      setIsEditingTotalValue(true);
+    };
+
+    const handleTotalValueSave = (value: string) => {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue > 0) {
+        setManualTotalValue(numValue);
+      }
+      setIsEditingTotalValue(false);
+    };
+
+    const handleTotalValueCancel = () => {
+      setIsEditingTotalValue(false);
+    };
+
     return (
       <Card className="border border-blue-200 rounded-lg">
         <CardHeader>
@@ -275,7 +302,32 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
             <div className="space-y-4">
               <div className="text-center p-4">
                 <div className="text-sm text-muted-foreground mb-1">Portfolio protected</div>
-                <div className="text-xl font-semibold">{formatCurrency(summaryData.portfolioProtected)}</div>
+                {isEditingTotalValue ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <Input
+                      type="number"
+                      defaultValue={summaryData.portfolioProtected.toString()}
+                      className="w-32 text-center"
+                      onBlur={(e) => handleTotalValueSave(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleTotalValueSave(e.currentTarget.value);
+                        } else if (e.key === 'Escape') {
+                          handleTotalValueCancel();
+                        }
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div 
+                    className="text-xl font-semibold cursor-pointer hover:bg-muted/20 p-1 rounded"
+                    onClick={handleTotalValueEdit}
+                    title="Click to edit"
+                  >
+                    {formatCurrency(summaryData.portfolioProtected)}
+                  </div>
+                )}
               </div>
               <div className="text-center p-4">
                 <div className="text-sm text-muted-foreground mb-1">Total cost of transaction</div>
