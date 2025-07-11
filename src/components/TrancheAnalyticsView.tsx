@@ -502,7 +502,9 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   const calculateTrancheValue = (thickness: number) => {
     const dataset = getSelectedDataset();
     if (!dataset) return 0;
-    return (dataset.total_value * thickness) / 100;
+    // Use manual total value if provided, otherwise use dataset value
+    const totalValue = manualTotalValue !== null ? manualTotalValue : dataset.total_value;
+    return (totalValue * thickness) / 100;
   };
 
   const calculateTrancheCost = (thickness: number, costBps: number, hedgedPercentage: number) => {
@@ -546,8 +548,10 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     try {
       const dataset = getSelectedDataset();
       const totalCost = calculateTotalTransactionCost();
-      const weightedAvgCostBps = dataset ? (totalCost / dataset.total_value) * 10000 : 0;
-      const costPercentage = dataset ? (totalCost / dataset.total_value) * 100 : 0;
+      // Use manual total value if provided for cost calculations
+      const totalValue = manualTotalValue !== null ? manualTotalValue : (dataset?.total_value || 0);
+      const weightedAvgCostBps = totalValue > 0 ? (totalCost / totalValue) * 10000 : 0;
+      const costPercentage = totalValue > 0 ? (totalCost / totalValue) * 100 : 0;
 
       const structureData = {
         structure_name: structureName.trim(),
@@ -773,13 +777,19 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-blue-600">
-                    {dataset ? ((calculateTotalTransactionCost() / dataset.total_value) * 10000).toFixed(0) : 0} BPS
+                    {(() => {
+                      const totalValue = manualTotalValue !== null ? manualTotalValue : (dataset?.total_value || 0);
+                      return totalValue > 0 ? ((calculateTotalTransactionCost() / totalValue) * 10000).toFixed(0) : 0;
+                    })()} BPS
                   </div>
                   <div className="text-sm text-gray-600">Weighted Avg Cost</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-purple-600">
-                    {dataset ? ((calculateTotalTransactionCost() / dataset.total_value) * 100).toFixed(2) : 0}%
+                    {(() => {
+                      const totalValue = manualTotalValue !== null ? manualTotalValue : (dataset?.total_value || 0);
+                      return totalValue > 0 ? ((calculateTotalTransactionCost() / totalValue) * 100).toFixed(2) : 0;
+                    })()}%
                   </div>
                   <div className="text-sm text-gray-600">Cost as % of Total</div>
                 </div>
