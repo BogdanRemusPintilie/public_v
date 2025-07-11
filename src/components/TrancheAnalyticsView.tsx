@@ -97,7 +97,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     // No multipliers - same calculations for all scenarios
     const notionalLent = totalNotional;
     const netYield = averageRate; // Same for all scenarios
-    const riskWeightedAssets = notionalLent * (riskRatio / 100) * 1.2; // Risk weighting factor
+    const riskWeightedAssets = totalNotional; // 100% * Portfolio Protected
     const internalCapitalRequired = riskWeightedAssets * 0.08; // 8% capital requirement
     const revenue = notionalLent * (netYield / 100);
     const tradeCosts = structure.total_cost;
