@@ -151,19 +151,21 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   }, [isOpen, structure]);
 
   const calculatePostHedgeRWA = () => {
-    console.log('calculatePostHedgeRWA called', { datasetData, structure });
+    console.log('calculatePostHedgeRWA called', { datasetData, structure, tranches });
     if (!datasetData.length || !structure) return { finalRWA: 0, breakdown: [] };
 
     // Use manual total value if provided, otherwise calculate from dataset
     const datasetTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const totalNotional = manualTotalValue !== null ? manualTotalValue : datasetTotal;
-    const tranches = structure.tranches;
-    console.log('Tranches structure:', tranches);
     
-    const breakdown = tranches.map((tranche: any, index: number) => {
-      // Extract thickness and amount from the actual tranche structure
-      const trancheThickness = tranche.thickness || tranche.percentage || 0;
-      const trancheAmount = tranche.amount || tranche.value || ((trancheThickness / 100) * totalNotional);
+    // Use current tranches state for dynamic calculations, not structure.tranches
+    const currentTranches = tranches.length > 0 ? tranches : structure.tranches;
+    console.log('Tranches structure:', currentTranches);
+    
+    const breakdown = currentTranches.map((tranche: any, index: number) => {
+      // Extract thickness and amount from the current tranche state
+      const trancheThickness = tranche.thickness || 0;
+      const trancheAmount = (trancheThickness / 100) * totalNotional;
       
       // Initial risk weights before Art. 263.5
       let initialRW: number;
@@ -186,23 +188,23 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
       }
       
       // RWEA before sharing
-      const rweaBeforeSharing = (trancheAmount || 0) * ((rwArt2635 || 0) / 100);
+      const rweaBeforeSharing = trancheAmount * (rwArt2635 / 100);
       
-      // Use hedged percentage from tranche structure as shared percentage
-      const sharedPercentage = tranche.hedgedPercentage || tranche.hedged || tranche.hedged_percentage || 0;
+      // Use hedged percentage from current tranche state as shared percentage
+      const sharedPercentage = tranche.hedgedPercentage || 0;
       
       // Final RWEA after sharing
-      const finalRWEA = (1 - (sharedPercentage || 0) / 100) * (rweaBeforeSharing || 0);
+      const finalRWEA = (1 - sharedPercentage / 100) * rweaBeforeSharing;
       
       return {
         trancheName: tranche.name || `Tranche ${index + 1}`,
-        amount: trancheAmount || 0,
-        thickness: trancheThickness || 0,
-        initialRW: initialRW || 0,
-        rwArt2635: rwArt2635 || 0,
-        rweaBeforeSharing: rweaBeforeSharing || 0,
-        sharedPercentage: sharedPercentage || 0,
-        finalRWEA: finalRWEA || 0
+        amount: trancheAmount,
+        thickness: trancheThickness,
+        initialRW: initialRW,
+        rwArt2635: rwArt2635,
+        rweaBeforeSharing: rweaBeforeSharing,
+        sharedPercentage: sharedPercentage,
+        finalRWEA: finalRWEA
       };
     });
     
