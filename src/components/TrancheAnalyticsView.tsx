@@ -90,6 +90,11 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
         return;
       }
 
+      console.log('Dataset data fetched:', { 
+        dataLength: data?.length, 
+        totalValue: data?.reduce((sum, loan) => sum + loan.opening_balance, 0),
+        dataset_name: structure.dataset_name
+      });
       setDatasetData(data || []);
     } catch (error) {
       console.error('Error:', error);
