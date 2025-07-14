@@ -159,9 +159,13 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     console.log('calculatePostHedgeRWA called', { datasetData, structure, tranches });
     if (!datasetData.length || !structure) return { finalRWA: 0, breakdown: [] };
 
-    // Use manual total value if provided, otherwise calculate from dataset
-    const datasetTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
-    const totalNotional = manualTotalValue !== null ? manualTotalValue : datasetTotal;
+    // Use manual total value if provided, otherwise use dataset summary total (same as tranche calculations)
+    const selectedDataset = datasets.find(d => d.dataset_name === structure.dataset_name);
+    const datasetSummaryTotal = selectedDataset?.total_value || 0;
+    const datasetRecordsTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    const totalNotional = manualTotalValue !== null 
+      ? manualTotalValue 
+      : (datasetSummaryTotal > 0 ? datasetSummaryTotal : datasetRecordsTotal);
     
     // Use current tranches state for dynamic calculations, not structure.tranches
     const currentTranches = tranches.length > 0 ? tranches : structure.tranches;
