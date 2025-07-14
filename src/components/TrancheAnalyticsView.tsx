@@ -233,9 +233,13 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
       };
     }
 
-    // Base calculations from dataset - use manual value if provided
-    const datasetTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
-    const totalNotional = manualTotalValue !== null ? manualTotalValue : datasetTotal;
+    // Base calculations from dataset - use manual value if provided, otherwise prefer dataset summary
+    const selectedDataset = datasets.find(d => d.dataset_name === structure.dataset_name);
+    const datasetSummaryTotal = selectedDataset?.total_value || 0;
+    const datasetRecordsTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    const totalNotional = manualTotalValue !== null 
+      ? manualTotalValue 
+      : (datasetSummaryTotal > 0 ? datasetSummaryTotal : datasetRecordsTotal);
     const averageRate = datasetData.reduce((sum, loan) => sum + loan.interest_rate, 0) / datasetData.length;
     const riskRatio = 8; // Fixed to 8%
 
@@ -316,9 +320,24 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     const currentMetrics = calculateAnalytics('current');
     const postHedgeMetrics = calculateAnalytics('postHedge');
     const futureMetrics = calculateAnalytics('futureUpsize');
-    // Use manual total value if provided, otherwise calculate from dataset
-    const datasetTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
-    const totalNotional = manualTotalValue !== null ? manualTotalValue : datasetTotal;
+    // Use manual total value if provided, otherwise get from dataset summary (same as Complete loan tape)
+    const selectedDataset = datasets.find(d => d.dataset_name === structure.dataset_name);
+    const datasetSummaryTotal = selectedDataset?.total_value || 0;
+    const datasetRecordsTotal = datasetData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+    
+    console.log('Portfolio protected calculation:', { 
+      datasetDataLength: datasetData.length, 
+      datasetRecordsTotal, 
+      datasetSummaryTotal,
+      manualTotalValue, 
+      structure_dataset_name: structure.dataset_name,
+      selectedDataset: selectedDataset ? `Found: ${selectedDataset.dataset_name}` : 'Not found'
+    });
+    
+    // Use the same logic as Complete loan tape - prefer dataset summary total
+    const totalNotional = manualTotalValue !== null 
+      ? manualTotalValue 
+      : (datasetSummaryTotal > 0 ? datasetSummaryTotal : datasetRecordsTotal);
 
     // Calculate initial capital released: current - post hedge
     const initialCapitalReleased = currentMetrics.internalCapitalRequired - postHedgeMetrics.internalCapitalRequired;
