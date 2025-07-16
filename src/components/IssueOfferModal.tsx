@@ -50,7 +50,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
   const { toast } = useToast();
   const [structures, setStructures] = useState<Structure[]>([]);
   const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
-  const [datasetTotalValue, setDatasetTotalValue] = useState<number>(0);
+  const [selectedDataset, setSelectedDataset] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
@@ -97,20 +97,16 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
     }
   };
 
-  const fetchDatasetValue = async (datasetName: string) => {
+  const fetchDatasetSummary = async (datasetName: string) => {
     try {
-      const { data, error } = await supabase
-        .from('loan_data')
-        .select('opening_balance')
-        .eq('dataset_name', datasetName)
-        .eq('user_id', user?.id);
-
+      const { data, error } = await supabase.rpc('get_dataset_summaries');
+      
       if (error) throw error;
       
-      const totalValue = data?.reduce((sum, loan) => sum + (loan.opening_balance || 0), 0) || 0;
-      setDatasetTotalValue(totalValue);
+      const dataset = data?.find((d: any) => d.dataset_name === datasetName);
+      setSelectedDataset(dataset);
     } catch (error) {
-      console.error('Error fetching dataset value:', error);
+      console.error('Error fetching dataset summary:', error);
     }
   };
 
@@ -118,7 +114,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
     const structure = structures.find(s => s.id === structureId);
     setSelectedStructure(structure || null);
     if (structure) {
-      fetchDatasetValue(structure.dataset_name);
+      fetchDatasetSummary(structure.dataset_name);
     }
   };
 
@@ -231,10 +227,10 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               )}
             />
 
-            {selectedStructure && (
+            {selectedStructure && selectedDataset && (
               <StructureSummary 
                 structure={selectedStructure} 
-                datasetTotalValue={datasetTotalValue}
+                dataset={selectedDataset}
               />
             )}
 
@@ -334,10 +330,10 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
 
 interface StructureSummaryProps {
   structure: Structure;
-  datasetTotalValue: number;
+  dataset: any;
 }
 
-function StructureSummary({ structure, datasetTotalValue }: StructureSummaryProps) {
+function StructureSummary({ structure, dataset }: StructureSummaryProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -348,7 +344,8 @@ function StructureSummary({ structure, datasetTotalValue }: StructureSummaryProp
   };
 
   const calculateTrancheValue = (thickness: number) => {
-    return (datasetTotalValue * thickness) / 100;
+    if (!dataset) return 0;
+    return (dataset.total_value * thickness) / 100;
   };
 
   const getTranchePosition = (index: number) => {
@@ -383,7 +380,7 @@ function StructureSummary({ structure, datasetTotalValue }: StructureSummaryProp
           Structure Summary: {structure.structure_name}
         </CardTitle>
         <CardDescription>
-          Dataset: {structure.dataset_name} | Total Value: {formatCurrency(datasetTotalValue)}
+          Dataset: {structure.dataset_name} | Total Value: {formatCurrency(dataset?.total_value || 0)}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
