@@ -125,10 +125,10 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
         }
       });
       
-      // Validate date format (CMRL6 - Cut-off date)
+      // Validate date format (CMRL6 - Cut-off date) - Accept both ISO and German formats
       const cutOffDate = record.cmrl6;
-      if (cutOffDate && !cutOffDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        errors.push(`Row ${index + 1}: Invalid date format in CMRL6. Expected YYYY-MM-DD`);
+      if (cutOffDate && !cutOffDate.match(/^(\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})$/)) {
+        errors.push(`Row ${index + 1}: Invalid date format in CMRL6. Expected YYYY-MM-DD or DD.MM.YYYY`);
         recordValid = false;
       }
       
@@ -223,10 +223,13 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
             return;
           }
           
-          const headers = lines[0].split('\t').map(h => h.trim());
+          // Handle both tab-separated and comma-separated files
+          const headerLine = lines[0];
+          const delimiter = headerLine.includes('\t') ? '\t' : ',';
+          const headers = headerLine.split(delimiter).map(h => h.trim().toLowerCase());
           const data: ESMARecord[] = [];
           
-          // Validate headers contain CMRL fields
+          // Validate headers contain CMRL fields (case-insensitive)
           const requiredHeaders = ['cmrl1', 'cmrl2', 'cmrl3', 'cmrl4', 'cmrl5', 'cmrl6'];
           const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
           
@@ -235,14 +238,17 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
             return;
           }
           
+          // Store original headers for data mapping
+          const originalHeaders = headerLine.split(delimiter).map(h => h.trim());
+          
           for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (line) {
-              const values = line.split('\t');
+              const values = line.split(delimiter);
               const record: ESMARecord = {} as ESMARecord;
               
-              headers.forEach((header, index) => {
-                record[header] = values[index]?.trim() || '';
+              originalHeaders.forEach((header, index) => {
+                record[header.toLowerCase()] = values[index]?.trim() || '';
               });
               
               data.push(record);
