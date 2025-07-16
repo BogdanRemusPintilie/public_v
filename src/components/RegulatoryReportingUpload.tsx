@@ -229,9 +229,18 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
           const headers = headerLine.split(delimiter).map(h => h.trim().toLowerCase());
           const data: ESMARecord[] = [];
           
+          // Debug logging
+          console.log('Header line:', headerLine);
+          console.log('Delimiter:', delimiter);
+          console.log('Parsed headers:', headers);
+          console.log('First 10 headers:', headers.slice(0, 10));
+          
           // Validate headers contain CMRL fields (case-insensitive)
           const requiredHeaders = ['cmrl1', 'cmrl2', 'cmrl3', 'cmrl4', 'cmrl5', 'cmrl6'];
           const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+          
+          console.log('Required headers:', requiredHeaders);
+          console.log('Missing headers:', missingHeaders);
           
           if (missingHeaders.length > 0) {
             reject(new Error(`Missing required CMRL fields: ${missingHeaders.join(', ')}`));
