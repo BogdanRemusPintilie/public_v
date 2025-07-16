@@ -391,6 +391,80 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
     return `ESMABank_Annex6_Consumer_Initial_${cutOffDate}_Demo.csv`;
   };
 
+  const exportRawCSV = () => {
+    if (parsedData.length === 0) return;
+    
+    const headers = Object.keys(parsedData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...parsedData.map(row => 
+        headers.map(header => `"${row[header] || ''}"`).join(',')
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = generateFileName().replace('.csv', '_raw.csv');
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const exportESMAXML = () => {
+    if (parsedData.length === 0) return;
+    
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<ESMAReport xmlns="http://www.esma.europa.eu/schema/2021">
+  <Header>
+    <ReportingDate>${new Date().toISOString().split('T')[0]}</ReportingDate>
+    <RecordCount>${parsedData.length}</RecordCount>
+  </Header>
+  <Data>
+${parsedData.map(record => `    <Record>
+${Object.entries(record).map(([key, value]) => `      <${key}>${value}</${key}>`).join('\n')}
+    </Record>`).join('\n')}
+  </Data>
+</ESMAReport>`;
+    
+    const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = generateFileName().replace('.csv', '_esma.xml');
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const exportExcelPivot = () => {
+    if (parsedData.length === 0) return;
+    
+    // Create a simplified pivot table structure
+    const pivotData = [
+      ['Metric', 'Value'],
+      ['Total Exposures', parsedData.length],
+      ['Total Balance (€)', keyMetrics?.totalCurrentBalance?.toFixed(2) || '0'],
+      ['WA Interest Rate (%)', keyMetrics?.waInterestRate ? (keyMetrics.waInterestRate / 100).toFixed(2) : '0'],
+      ['WA Remaining Term (months)', keyMetrics?.waRemainingTerm?.toFixed(0) || '0'],
+      ['Fixed Rate Loans (%)', keyMetrics?.fixedRatePercentage?.toFixed(1) || '0'],
+      [],
+      ['Top 10 Sample Records'],
+      ['CMRL1', 'CMRL2', 'CMRL27', 'CMRL28', 'CMRL36'],
+      ...parsedData.slice(0, 10).map(record => [
+        record.cmrl1, record.cmrl2, record.cmrl27, record.cmrl28, record.cmrl36
+      ])
+    ];
+    
+    const csvContent = pivotData.map(row => 
+      row.map(cell => `"${cell || ''}"`).join(',')
+    ).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = generateFileName().replace('.csv', '_pivot.csv');
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   const downloadSampleFile = () => {
     const sampleData = `cmrl1\tcmrl2\tcmrl3\tcmrl4\tcmrl5\tcmrl6\tcmrl7\tcmrl8\tcmrl9\tcmrl10_1\tcmrl10_2\tcmrl27\tcmrl28\tcmrl32\tcmrl36\tcmrl43
 529900CLVK38HUKPKF71N202101\t3607404\t3607404\t8188053\t8188053\t2021-12-31\tND5\tND5\tND5\tDE\t87600\t10029.60\t1205.40\tFRXX\t80.00\t84
@@ -721,6 +795,7 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
                         variant="outline"
                         disabled={parsedData.length === 0}
                         className="flex items-center gap-2"
+                        onClick={exportRawCSV}
                       >
                         <Download className="h-4 w-4" />
                         Raw CSV
@@ -729,6 +804,7 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
                         variant="outline"
                         disabled={parsedData.length === 0}
                         className="flex items-center gap-2"
+                        onClick={exportESMAXML}
                       >
                         <Download className="h-4 w-4" />
                         ESMA-compliant XML
@@ -737,6 +813,7 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
                         variant="outline"
                         disabled={parsedData.length === 0}
                         className="flex items-center gap-2"
+                        onClick={exportExcelPivot}
                       >
                         <Download className="h-4 w-4" />
                         Sample Excel Pivot
