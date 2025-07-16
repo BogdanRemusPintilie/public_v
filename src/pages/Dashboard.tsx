@@ -12,6 +12,7 @@ import DatasetManager from '@/components/DatasetManager';
 import DataExtractor from '@/components/DataExtractor';
 import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
 import { IssueOfferModal } from '@/components/IssueOfferModal';
+import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -25,6 +26,7 @@ const Dashboard = () => {
   const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
   const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
   const [showIssueOfferModal, setShowIssueOfferModal] = useState(false);
+  const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -74,10 +76,14 @@ const Dashboard = () => {
   };
 
   const handlePostTradeAnalytics = (action: string) => {
-    toast({
-      title: "Post-trade Analytics",
-      description: `Selected: ${action}`,
-    });
+    if (action === 'Regulatory Reporting') {
+      setShowRegulatoryReporting(true);
+    } else {
+      toast({
+        title: "Post-trade Analytics",
+        description: `Selected: ${action}`,
+      });
+    }
   };
 
   const handleMatchedMarket = (action: string) => {
@@ -460,6 +466,11 @@ const Dashboard = () => {
       <IssueOfferModal
         open={showIssueOfferModal}
         onOpenChange={setShowIssueOfferModal}
+      />
+      
+      <RegulatoryReportingUpload
+        isOpen={showRegulatoryReporting}
+        onClose={() => setShowRegulatoryReporting(false)}
       />
     </div>
   );
