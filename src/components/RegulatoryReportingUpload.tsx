@@ -223,9 +223,15 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
             return;
           }
           
-          // Handle both tab-separated and comma-separated files
+          // Handle different delimiter types
           const headerLine = lines[0];
-          const delimiter = headerLine.includes('\t') ? '\t' : ',';
+          let delimiter = ',';
+          if (headerLine.includes('\t')) {
+            delimiter = '\t';
+          } else if (headerLine.includes(';')) {
+            delimiter = ';';
+          }
+          
           const headers = headerLine.split(delimiter).map(h => h.trim().toLowerCase());
           const data: ESMARecord[] = [];
           
