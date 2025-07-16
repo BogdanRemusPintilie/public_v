@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown } from 'lucide-react';
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -74,6 +74,13 @@ const Dashboard = () => {
   const handlePostTradeAnalytics = (action: string) => {
     toast({
       title: "Post-trade Analytics",
+      description: `Selected: ${action}`,
+    });
+  };
+
+  const handleMatchedMarket = (action: string) => {
+    toast({
+      title: "Matched Market",
       description: `Selected: ${action}`,
     });
   };
@@ -241,9 +248,28 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="pt-2">
-                <Button className="w-full bg-green-600 hover:bg-green-700">
-                  Manage Market Transactions
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="w-full bg-green-600 hover:bg-green-700">
+                      Manage Market Transactions
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-64">
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Issue Offer')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Issue Offer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manage Offer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Review Completed Transactions')}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Review Completed Transactions
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardContent>
           </Card>
