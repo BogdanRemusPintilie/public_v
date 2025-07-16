@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -68,6 +69,13 @@ const Dashboard = () => {
     const newTrigger = Date.now();
     setGlobalRefreshTrigger(newTrigger);
     console.log('🔄 DASHBOARD - Global dataset refresh triggered:', newTrigger);
+  };
+
+  const handlePostTradeAnalytics = (action: string) => {
+    toast({
+      title: "Post-trade Analytics",
+      description: `Selected: ${action}`,
+    });
   };
 
   return (
@@ -316,9 +324,28 @@ const Dashboard = () => {
                 <span className="text-gray-900 font-medium">1 hour ago</span>
               </div>
               <div className="pt-2">
-                <Button className="w-full bg-orange-600 hover:bg-orange-700">
-                  View Post-trade Analytics
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                      View Post-trade Analytics
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-64">
+                    <DropdownMenuItem onClick={() => handlePostTradeAnalytics('Regulatory Reporting')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Regulatory Reporting
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePostTradeAnalytics('Investor Reporting')}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Investor Reporting
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePostTradeAnalytics('Valuation Analyses')}>
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Valuation Analyses
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardContent>
           </Card>
