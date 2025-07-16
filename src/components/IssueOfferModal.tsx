@@ -349,8 +349,12 @@ function StructureSummary({ structure, dataset }: StructureSummaryProps) {
   };
 
   const getTranchePosition = (index: number) => {
-    const startPosition = structure.tranches
-      .slice(0, index)
+    // Calculate from bottom to top (reverse order)
+    const reversedTranches = [...structure.tranches].reverse();
+    const reversedIndex = structure.tranches.length - 1 - index;
+    
+    const startPosition = reversedTranches
+      .slice(0, reversedIndex)
       .reduce((sum, tranche) => sum + tranche.thickness, 0);
     const endPosition = startPosition + structure.tranches[index].thickness;
     return { start: startPosition, end: endPosition };
@@ -391,7 +395,8 @@ function StructureSummary({ structure, dataset }: StructureSummaryProps) {
             {structure.tranches.map((tranche, index) => {
               const position = getTranchePosition(index);
               const height = (tranche.thickness / 100) * 100;
-              const top = (position.start / 100) * 100;
+              // Display from bottom to top
+              const bottom = (position.start / 100) * 100;
               
               return (
                 <div
@@ -399,7 +404,7 @@ function StructureSummary({ structure, dataset }: StructureSummaryProps) {
                   className={`absolute w-full ${getTrancheColor(index)} flex items-center justify-center text-white font-medium text-xs`}
                   style={{
                     height: `${height}%`,
-                    top: `${top}%`,
+                    bottom: `${bottom}%`,
                   }}
                 >
                   <div className="text-center">
