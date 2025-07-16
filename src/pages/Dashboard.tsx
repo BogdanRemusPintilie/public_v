@@ -11,6 +11,7 @@ import ExcelUpload from '@/components/ExcelUpload';
 import DatasetManager from '@/components/DatasetManager';
 import DataExtractor from '@/components/DataExtractor';
 import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
+import { IssueOfferModal } from '@/components/IssueOfferModal';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const [showTrancheAnalysis, setShowTrancheAnalysis] = useState(false);
   const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
   const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
+  const [showIssueOfferModal, setShowIssueOfferModal] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -79,10 +81,14 @@ const Dashboard = () => {
   };
 
   const handleMatchedMarket = (action: string) => {
-    toast({
-      title: "Matched Market",
-      description: `Selected: ${action}`,
-    });
+    if (action === 'Issue Offer') {
+      setShowIssueOfferModal(true);
+    } else {
+      toast({
+        title: "Matched Market",
+        description: `Selected: ${action}`,
+      });
+    }
   };
 
   const handleMarketplace = (action: string) => {
@@ -449,6 +455,11 @@ const Dashboard = () => {
       <TrancheAnalysisDashboard
         isOpen={showTrancheAnalysis}
         onClose={() => setShowTrancheAnalysis(false)}
+      />
+      
+      <IssueOfferModal
+        open={showIssueOfferModal}
+        onOpenChange={setShowIssueOfferModal}
       />
     </div>
   );

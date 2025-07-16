@@ -98,6 +98,50 @@ export type Database = {
         }
         Relationships: []
       }
+      offers: {
+        Row: {
+          comments: string | null
+          created_at: string
+          id: string
+          offer_name: string
+          shared_with_emails: string[] | null
+          status: string | null
+          structure_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          offer_name: string
+          shared_with_emails?: string[] | null
+          status?: string | null
+          structure_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          offer_name?: string
+          shared_with_emails?: string[] | null
+          status?: string | null
+          structure_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_offers_structure_id"
+            columns: ["structure_id"]
+            isOneToOne: false
+            referencedRelation: "tranche_structures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tranche_structures: {
         Row: {
           additional_transaction_costs: number | null
