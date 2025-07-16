@@ -181,24 +181,46 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
     let totalBalance = 0;
     let totalInterestRate = 0;
     let totalTerm = 0;
+    let validTermCount = 0;
     let fixedRateCount = 0;
     let gracePeriodCount = 0;
     
     data.forEach(record => {
       const balance = parseFloat(record.cmrl28?.replace(',', '.') || '0');
-      const interestRate = parseFloat(record.cmrl36?.replace(',', '.') || '0');
-      const term = parseFloat(record.cmrl43 || '0');
+      const interestRateStr = record.cmrl36?.replace(',', '.') || '0';
+      const termStr = record.cmrl43 || '0';
+      
+      // Parse interest rate - check if it's in decimal format or percentage format
+      const interestRate = parseFloat(interestRateStr);
+      
+      // Parse term and filter out non-numeric values like "ND5"
+      const term = parseFloat(termStr);
+      const isValidTerm = !isNaN(term) && term > 0 && !termStr.includes('ND');
       
       totalBalance += balance;
-      totalInterestRate += interestRate * balance;
-      totalTerm += term * balance;
+      
+      // Only include valid interest rates and balances in weighted average
+      if (!isNaN(interestRate) && balance > 0) {
+        totalInterestRate += interestRate * balance;
+      }
+      
+      // Only include valid terms and balances in weighted average
+      if (isValidTerm && balance > 0) {
+        totalTerm += term * balance;
+        validTermCount += balance;
+      }
       
       if (record.cmrl32 === 'FRXX') fixedRateCount++;
       // Add grace period logic based on your business rules
     });
     
+    // Calculate weighted averages
     const weightedAvgRate = totalBalance > 0 ? totalInterestRate / totalBalance : 0;
-    const weightedAvgTerm = totalBalance > 0 ? totalTerm / totalBalance : 0;
+    const weightedAvgTerm = validTermCount > 0 ? totalTerm / validTermCount : 0;
+    
+    console.log('Sample interest rates:', data.slice(0, 5).map(r => r.cmrl36));
+    console.log('Calculated weighted avg rate:', weightedAvgRate);
+    console.log('Calculated weighted avg term:', weightedAvgTerm);
     
     setKeyMetrics({
       exposureCount: data.length,
@@ -567,18 +589,18 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
                         </p>
                         <p className="text-sm text-gray-600">Total Balance</p>
                       </div>
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <p className="text-2xl font-bold text-purple-600">
-                          {keyMetrics.waInterestRate.toFixed(2)}%
-                        </p>
-                        <p className="text-sm text-gray-600">WA Coupon</p>
-                      </div>
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <p className="text-2xl font-bold text-orange-600">
-                          {keyMetrics.waRemainingTerm.toFixed(0)}
-                        </p>
-                        <p className="text-sm text-gray-600">WA Remaining Term</p>
-                      </div>
+                       <div className="text-center p-4 bg-purple-50 rounded-lg">
+                         <p className="text-2xl font-bold text-purple-600">
+                           {(keyMetrics.waInterestRate / 100).toFixed(2)}%
+                         </p>
+                         <p className="text-sm text-gray-600">WA Coupon</p>
+                       </div>
+                       <div className="text-center p-4 bg-orange-50 rounded-lg">
+                         <p className="text-2xl font-bold text-orange-600">
+                           {isNaN(keyMetrics.waRemainingTerm) ? 'N/A' : keyMetrics.waRemainingTerm.toFixed(0)}
+                         </p>
+                         <p className="text-sm text-gray-600">WA Remaining Term (months)</p>
+                       </div>
                       <div className="text-center p-4 bg-red-50 rounded-lg">
                         <p className="text-2xl font-bold text-red-600">
                           {keyMetrics.fixedRatePercentage.toFixed(1)}%
