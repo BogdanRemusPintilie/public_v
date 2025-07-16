@@ -12,7 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, BarChart3 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const offerSchema = z.object({
   offer_name: z.string().min(1, 'Offer name is required'),
@@ -27,6 +28,16 @@ interface Structure {
   id: string;
   structure_name: string;
   dataset_name: string;
+  tranches: Array<{
+    id: string;
+    name: string;
+    thickness: number;
+    costBps: number;
+    hedgedPercentage: number;
+  }>;
+  total_cost: number;
+  weighted_avg_cost_bps: number;
+  cost_percentage: number;
 }
 
 interface IssueOfferModalProps {
@@ -38,6 +49,8 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [structures, setStructures] = useState<Structure[]>([]);
+  const [selectedStructure, setSelectedStructure] = useState<Structure | null>(null);
+  const [datasetTotalValue, setDatasetTotalValue] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
@@ -63,11 +76,17 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
     try {
       const { data, error } = await supabase
         .from('tranche_structures')
-        .select('id, structure_name, dataset_name')
+        .select('*')
         .eq('user_id', user?.id);
 
       if (error) throw error;
-      setStructures(data || []);
+      
+      // Cast the Json tranches back to array type
+      const structures = (data || []).map(item => ({
+        ...item,
+        tranches: item.tranches as any[]
+      }));
+      setStructures(structures);
     } catch (error) {
       console.error('Error fetching structures:', error);
       toast({
@@ -75,6 +94,31 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
         description: 'Failed to load structures',
         variant: 'destructive',
       });
+    }
+  };
+
+  const fetchDatasetValue = async (datasetName: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('loan_data')
+        .select('opening_balance')
+        .eq('dataset_name', datasetName)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      
+      const totalValue = data?.reduce((sum, loan) => sum + (loan.opening_balance || 0), 0) || 0;
+      setDatasetTotalValue(totalValue);
+    } catch (error) {
+      console.error('Error fetching dataset value:', error);
+    }
+  };
+
+  const handleStructureSelect = (structureId: string) => {
+    const structure = structures.find(s => s.id === structureId);
+    setSelectedStructure(structure || null);
+    if (structure) {
+      fetchDatasetValue(structure.dataset_name);
     }
   };
 
@@ -152,7 +196,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Issue New Offer</DialogTitle>
         </DialogHeader>
@@ -165,7 +209,10 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Structure *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={(value) => {
+                    field.onChange(value);
+                    handleStructureSelect(value);
+                  }} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Choose a structure" />
@@ -183,6 +230,13 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                 </FormItem>
               )}
             />
+
+            {selectedStructure && (
+              <StructureSummary 
+                structure={selectedStructure} 
+                datasetTotalValue={datasetTotalValue}
+              />
+            )}
 
             <FormField
               control={form.control}
@@ -275,5 +329,131 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
         </Form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface StructureSummaryProps {
+  structure: Structure;
+  datasetTotalValue: number;
+}
+
+function StructureSummary({ structure, datasetTotalValue }: StructureSummaryProps) {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'EUR',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value);
+  };
+
+  const calculateTrancheValue = (thickness: number) => {
+    return (datasetTotalValue * thickness) / 100;
+  };
+
+  const getTranchePosition = (index: number) => {
+    const startPosition = structure.tranches
+      .slice(0, index)
+      .reduce((sum, tranche) => sum + tranche.thickness, 0);
+    const endPosition = startPosition + structure.tranches[index].thickness;
+    return { start: startPosition, end: endPosition };
+  };
+
+  const getTrancheColor = (index: number) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-yellow-500',
+      'bg-red-500',
+      'bg-purple-500',
+      'bg-indigo-500',
+      'bg-pink-500',
+      'bg-orange-500',
+      'bg-teal-500',
+      'bg-cyan-500'
+    ];
+    return colors[index % colors.length];
+  };
+
+  return (
+    <Card className="border-2 border-primary/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" />
+          Structure Summary: {structure.structure_name}
+        </CardTitle>
+        <CardDescription>
+          Dataset: {structure.dataset_name} | Total Value: {formatCurrency(datasetTotalValue)}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Column Graphic */}
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm">Tranche Structure</h4>
+          <div className="relative bg-gray-100 rounded-lg overflow-hidden h-48">
+            {structure.tranches.map((tranche, index) => {
+              const position = getTranchePosition(index);
+              const height = (tranche.thickness / 100) * 100;
+              const top = (position.start / 100) * 100;
+              
+              return (
+                <div
+                  key={tranche.id}
+                  className={`absolute w-full ${getTrancheColor(index)} flex items-center justify-center text-white font-medium text-xs`}
+                  style={{
+                    height: `${height}%`,
+                    top: `${top}%`,
+                  }}
+                >
+                  <div className="text-center">
+                    <div className="font-semibold">{tranche.name}</div>
+                    <div>{tranche.thickness}%</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tranche Details */}
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm">Tranche Details</h4>
+          <div className="grid gap-2">
+            {structure.tranches.map((tranche, index) => {
+              const position = getTranchePosition(index);
+              const trancheValue = calculateTrancheValue(tranche.thickness);
+              
+              return (
+                <div key={tranche.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded ${getTrancheColor(index)}`}></div>
+                    <span className="font-medium">{tranche.name}</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {formatCurrency(trancheValue)} ({position.start.toFixed(1)}% - {position.end.toFixed(1)}%)
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+          <div className="text-center">
+            <div className="text-lg font-bold text-primary">
+              {structure.tranches.length}
+            </div>
+            <div className="text-sm text-gray-600">Total Tranches</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-primary">
+              {structure.weighted_avg_cost_bps.toFixed(0)} BPS
+            </div>
+            <div className="text-sm text-gray-600">Weighted Avg Cost</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
