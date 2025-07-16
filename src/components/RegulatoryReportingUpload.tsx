@@ -161,12 +161,29 @@ const RegulatoryReportingUpload: React.FC<RegulatoryReportingUploadProps> = ({ i
       warnings.push(`High ND code ratio: ${ndRatio.toFixed(1)}% (recommended: ≤5%)`);
     }
     
-    // Data quality assessment
+    // Data quality assessment - calculate real percentages
+    const calculateFieldCompleteness = (fieldNames: string[]) => {
+      let totalFields = 0;
+      let completedFields = 0;
+      
+      data.forEach(record => {
+        fieldNames.forEach(fieldName => {
+          totalFields++;
+          const value = record[fieldName];
+          if (value && value.trim() !== '' && !value.startsWith('ND')) {
+            completedFields++;
+          }
+        });
+      });
+      
+      return totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
+    };
+
     const dataQuality = {
-      idFields: Math.floor(Math.random() * 10) + 90, // Mock data quality scores
-      obligorFields: Math.floor(Math.random() * 15) + 85,
-      loanFields: Math.floor(Math.random() * 20) + 80,
-      performanceFields: Math.floor(Math.random() * 25) + 75
+      idFields: calculateFieldCompleteness(['cmrl1', 'cmrl2', 'cmrl3', 'cmrl4', 'cmrl5', 'cmrl6']),
+      obligorFields: calculateFieldCompleteness(['cmrl10_1', 'cmrl10_2', 'cmrl11', 'cmrl12', 'cmrl13', 'cmrl14']),
+      loanFields: calculateFieldCompleteness(['cmrl27', 'cmrl28', 'cmrl29', 'cmrl30', 'cmrl31', 'cmrl32', 'cmrl36']),
+      performanceFields: calculateFieldCompleteness(['cmrl40', 'cmrl41', 'cmrl42', 'cmrl43', 'cmrl44', 'cmrl45'])
     };
     
     return {
