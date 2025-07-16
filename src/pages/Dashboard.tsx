@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye } from 'lucide-react';
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -81,6 +81,13 @@ const Dashboard = () => {
   const handleMatchedMarket = (action: string) => {
     toast({
       title: "Matched Market",
+      description: `Selected: ${action}`,
+    });
+  };
+
+  const handleMarketplace = (action: string) => {
+    toast({
+      title: "Marketplace",
       description: `Selected: ${action}`,
     });
   };
@@ -313,9 +320,24 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="pt-2">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  Enter Marketplace
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                      Enter Marketplace
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-64">
+                    <DropdownMenuItem onClick={() => handleMarketplace('Access Market')}>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Access Market
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMarketplace('Market Data')}>
+                      <Database className="h-4 w-4 mr-2" />
+                      Market Data
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardContent>
           </Card>
