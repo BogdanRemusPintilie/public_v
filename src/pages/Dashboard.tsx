@@ -13,6 +13,7 @@ import DataExtractor from '@/components/DataExtractor';
 import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
 import { IssueOfferModal } from '@/components/IssueOfferModal';
 import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
+import InvestorReportingUpload from '@/components/InvestorReportingUpload';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
   const [showIssueOfferModal, setShowIssueOfferModal] = useState(false);
   const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
+  const [showInvestorReporting, setShowInvestorReporting] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -78,6 +80,8 @@ const Dashboard = () => {
   const handlePostTradeAnalytics = (action: string) => {
     if (action === 'Regulatory Reporting') {
       setShowRegulatoryReporting(true);
+    } else if (action === 'Investor Reporting') {
+      setShowInvestorReporting(true);
     } else {
       toast({
         title: "Post-trade Analytics",
@@ -471,6 +475,11 @@ const Dashboard = () => {
       <RegulatoryReportingUpload
         isOpen={showRegulatoryReporting}
         onClose={() => setShowRegulatoryReporting(false)}
+      />
+      
+      <InvestorReportingUpload
+        isOpen={showInvestorReporting}
+        onClose={() => setShowInvestorReporting(false)}
       />
     </div>
   );
