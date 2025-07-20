@@ -85,25 +85,41 @@ export class DocumentExtractor {
     }
   }
 
-  // Helper method to convert PDF to text (simplified approach)
+  // Helper method to convert PDF to text using pdf-parse
   private static async pdfToText(file: File): Promise<string> {
-    // For now, we'll use a basic approach that works with simple PDFs
-    // In production, you might want to use pdf-parse or similar library
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          // This is a simplified text extraction
-          // Real implementation would use proper PDF parsing
-          const text = reader.result as string;
-          resolve(text || '');
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
+    try {
+      console.log('🔍 Starting PDF text extraction...');
+      const pdfParse = await import('pdf-parse');
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      console.log('📄 PDF buffer created, size:', buffer.length);
+      
+      const data = await pdfParse.default(buffer);
+      console.log('✅ PDF parsed successfully, text length:', data.text.length);
+      console.log('📝 First 200 chars:', data.text.substring(0, 200));
+      
+      return data.text;
+    } catch (error) {
+      console.error('❌ PDF parsing failed:', error);
+      console.log('🔄 Falling back to basic text extraction');
+      
+      // Fallback to basic text extraction
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const text = reader.result as string || '';
+          console.log('📄 Fallback extraction completed, length:', text.length);
+          resolve(text);
+        };
+        reader.onerror = () => {
+          console.log('❌ Fallback also failed, returning empty string');
+          resolve('');
+        };
+        reader.readAsText(file);
+      });
+    }
   }
 
   // Helper method to read Excel file
