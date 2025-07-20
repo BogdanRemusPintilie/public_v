@@ -1,0 +1,357 @@
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload, Download, FileText, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface ExtractionToolProps {
+  onClose: () => void;
+}
+
+const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [extractedData, setExtractedData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  // Demo data that matches the image structure
+  const demoData = {
+    portfolioSize: 1100000000,
+    trancheF: {
+      size: 19250000,
+      ftBalance: 10000000,
+      attachmentDetachment: "2.75-4.5%",
+      coupon: "10.00%"
+    },
+    trancheG: {
+      size: 8250000,
+      ftBalance: 30000,
+      attachmentDetachment: "2-2.75%",
+      coupon: "21%"
+    },
+    dates: {
+      closing: "15.06.2023",
+      purchase: "15.06.2023",
+      purchasePrice: "100%",
+      maturity: "",
+      call: ""
+    },
+    reporting: {
+      howToGetReports: "Citi® Investor Reporting for Structured Finance (citidirect.com)",
+      password: "Spring2025."
+    },
+    summary: {
+      origination: {
+        new: "86.40%",
+        used: "13.60%",
+        waIR: "6.00%",
+        waLTV: "95.20%",
+        waFICO: 758,
+        waRemainingTerm: 66.55
+      },
+      monthlyData: [
+        { period: "Jan 24", waIR: "5.81%", waRemainingTerm: 59.09, delinquency: "1.58%", cumulativeLosses: 2571183, monthlyDefaults: 705755.13, portfolioBalance: 873956666.75, loans: 23998 },
+        { period: "Feb 24", waIR: "5.80%", waRemainingTerm: 58.18, delinquency: "1.62%", cumulativeLosses: 3146990, monthlyDefaults: 1009749.52, portfolioBalance: 848901455.14, loans: 23619 },
+        { period: "Mar 24", waIR: "5.78%", waRemainingTerm: 57.25, delinquency: "", cumulativeLosses: 3466270, monthlyDefaults: 814458.58, portfolioBalance: 824229126.33, loans: null },
+        { period: "Apr 24", waIR: "5.77%", waRemainingTerm: 56.29, delinquency: "1.50%", cumulativeLosses: 4442136, monthlyDefaults: 1750907.88, portfolioBalance: 797163097.29, loans: null },
+        { period: "May 24", waIR: "5.76%", waRemainingTerm: 55.34, delinquency: "1.53%", cumulativeLosses: 5101943, monthlyDefaults: 1312505.90, portfolioBalance: 771869079.81, loans: 22132 }
+      ]
+    },
+    balances: {
+      fBalance: 19250000,
+      gBalance: 8250000
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      toast({
+        title: "File Selected",
+        description: `${selectedFile.name} is ready for processing`,
+      });
+    }
+  };
+
+  const handleExtraction = async () => {
+    if (!file) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a PDF or Excel file to extract data from",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Simulate extraction process
+    setTimeout(() => {
+      setExtractedData(demoData);
+      setIsLoading(false);
+      toast({
+        title: "Extraction Complete",
+        description: "Financial data has been successfully extracted from your file",
+      });
+    }, 2000);
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat('en-US').format(value);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
+      <Card className="w-full max-w-7xl mt-4 mb-4 bg-white">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-2xl font-bold">Extraction Tool</CardTitle>
+            <CardDescription>Upload PDF or Excel files to extract financial data</CardDescription>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* File Upload Section */}
+          <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 transition-colors">
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <Upload className="h-12 w-12 text-gray-400 mx-auto" />
+                <div>
+                  <Label htmlFor="file-upload" className="cursor-pointer">
+                    <span className="text-lg font-medium text-gray-900">Upload your file</span>
+                    <p className="text-sm text-gray-500 mt-1">Supports PDF and Excel files</p>
+                  </Label>
+                  <Input
+                    id="file-upload"
+                    type="file"
+                    accept=".pdf,.xlsx,.xls"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
+                {file && (
+                  <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
+                    <FileText className="h-4 w-4" />
+                    <span>{file.name}</span>
+                  </div>
+                )}
+                <Button 
+                  onClick={handleExtraction} 
+                  disabled={!file || isLoading}
+                  className="w-40"
+                >
+                  {isLoading ? "Extracting..." : "Extract Data"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Extracted Data Display */}
+          {extractedData && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Extracted Financial Data</h3>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Results
+                </Button>
+              </div>
+
+              {/* Portfolio Overview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Portfolio Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Portfolio Size</span>
+                        <span>{formatCurrency(extractedData.portfolioSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Closing Date</span>
+                        <span>{extractedData.dates.closing}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Purchase Date</span>
+                        <span>{extractedData.dates.purchase}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Purchase Price</span>
+                        <span>{extractedData.dates.purchasePrice}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-blue-600">Tranche F</h4>
+                      <div className="flex justify-between">
+                        <span>Tranche Size F</span>
+                        <span>{formatCurrency(extractedData.trancheF.size)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>FT Balance F</span>
+                        <span>{formatCurrency(extractedData.trancheF.ftBalance)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Attachment/Detachment</span>
+                        <span>{extractedData.trancheF.attachmentDetachment}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Coupon</span>
+                        <span>{extractedData.trancheF.coupon}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-green-600">Tranche G</h4>
+                      <div className="flex justify-between">
+                        <span>Tranche Size G</span>
+                        <span>{formatCurrency(extractedData.trancheG.size)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>FT Balance G</span>
+                        <span>{formatNumber(extractedData.trancheG.ftBalance)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Attachment/Detachment</span>
+                        <span>{extractedData.trancheG.attachmentDetachment}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Coupon</span>
+                        <span>{extractedData.trancheG.coupon}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Reporting Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reporting Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">How to get Reports</span>
+                      <span className="text-blue-600 underline cursor-pointer">{extractedData.reporting.howToGetReports}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Password</span>
+                      <span className="font-mono">{extractedData.reporting.password}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Summary Data */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Portfolio Summary & Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Origination Summary */}
+                  <div className="mb-6">
+                    <h4 className="font-semibold mb-3">Origination Summary</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <div className="text-lg font-bold text-blue-600">{extractedData.summary.origination.new}</div>
+                        <div className="text-sm text-blue-700">New</div>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="text-lg font-bold text-green-600">{extractedData.summary.origination.used}</div>
+                        <div className="text-sm text-green-700">Used</div>
+                      </div>
+                      <div className="text-center p-3 bg-purple-50 rounded-lg">
+                        <div className="text-lg font-bold text-purple-600">{extractedData.summary.origination.waIR}</div>
+                        <div className="text-sm text-purple-700">WA IR</div>
+                      </div>
+                      <div className="text-center p-3 bg-orange-50 rounded-lg">
+                        <div className="text-lg font-bold text-orange-600">{extractedData.summary.origination.waLTV}</div>
+                        <div className="text-sm text-orange-700">WA LTV</div>
+                      </div>
+                      <div className="text-center p-3 bg-teal-50 rounded-lg">
+                        <div className="text-lg font-bold text-teal-600">{extractedData.summary.origination.waFICO}</div>
+                        <div className="text-sm text-teal-700">WA FICO</div>
+                      </div>
+                      <div className="text-center p-3 bg-red-50 rounded-lg">
+                        <div className="text-lg font-bold text-red-600">{extractedData.summary.origination.waRemainingTerm}</div>
+                        <div className="text-sm text-red-700">WA Remaining Term</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Monthly Performance Data */}
+                  <div className="overflow-x-auto">
+                    <h4 className="font-semibold mb-3">Monthly Performance</h4>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Period</th>
+                          <th className="text-right p-2">WA IR</th>
+                          <th className="text-right p-2">WA Remaining Term</th>
+                          <th className="text-right p-2">Delinquency %</th>
+                          <th className="text-right p-2">Cumulative Losses</th>
+                          <th className="text-right p-2">Monthly Defaults</th>
+                          <th className="text-right p-2">Portfolio Balance</th>
+                          <th className="text-right p-2">Loans</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {extractedData.summary.monthlyData.map((month: any, index: number) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="p-2 font-medium">{month.period}</td>
+                            <td className="p-2 text-right">{month.waIR}</td>
+                            <td className="p-2 text-right">{month.waRemainingTerm}</td>
+                            <td className="p-2 text-right">{month.delinquency || "-"}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.cumulativeLosses)}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.monthlyDefaults)}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.portfolioBalance)}</td>
+                            <td className="p-2 text-right">{month.loans ? formatNumber(month.loans) : "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Balance Information */}
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-3">Current Balances</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(extractedData.balances.fBalance)}</div>
+                        <div className="text-sm text-blue-700">F Balance</div>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{formatCurrency(extractedData.balances.gBalance)}</div>
+                        <div className="text-sm text-green-700">G Balance</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ExtractionTool;

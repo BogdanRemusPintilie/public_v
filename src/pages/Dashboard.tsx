@@ -14,6 +14,7 @@ import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
 import { IssueOfferModal } from '@/components/IssueOfferModal';
 import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
 import InvestorReportingUpload from '@/components/InvestorReportingUpload';
+import ExtractionTool from '@/components/ExtractionTool';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -29,6 +30,7 @@ const Dashboard = () => {
   const [showIssueOfferModal, setShowIssueOfferModal] = useState(false);
   const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
   const [showInvestorReporting, setShowInvestorReporting] = useState(false);
+  const [showExtractionTool, setShowExtractionTool] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -82,6 +84,8 @@ const Dashboard = () => {
       setShowRegulatoryReporting(true);
     } else if (action === 'Investor Reporting') {
       setShowInvestorReporting(true);
+    } else if (action === 'Extraction Tool') {
+      setShowExtractionTool(true);
     } else {
       toast({
         title: "Post-trade Analytics",
@@ -404,6 +408,10 @@ const Dashboard = () => {
                       <Users className="h-4 w-4 mr-2" />
                       Investor Reporting
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePostTradeAnalytics('Extraction Tool')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Extraction Tool
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handlePostTradeAnalytics('Valuation Analyses')}>
                       <TrendingUp className="h-4 w-4 mr-2" />
                       Valuation Analyses
@@ -481,6 +489,10 @@ const Dashboard = () => {
         isOpen={showInvestorReporting}
         onClose={() => setShowInvestorReporting(false)}
       />
+      
+      {showExtractionTool && (
+        <ExtractionTool onClose={() => setShowExtractionTool(false)} />
+      )}
     </div>
   );
 };
