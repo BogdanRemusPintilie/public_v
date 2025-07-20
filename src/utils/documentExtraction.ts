@@ -47,9 +47,9 @@ export class DocumentExtractor {
         throw new Error(`Server processing failed: ${error.message}`);
       }
       
-      if (!data.success) {
-        console.error('❌ Server extraction failed:', data.error);
-        throw new Error(`PDF extraction failed: ${data.error}`);
+      if (!data || !data.success) {
+        console.error('❌ Server extraction failed:', data);
+        throw new Error(`PDF extraction failed: ${data?.error || 'Unknown error'}`);
       }
       
       console.log('✅ Server-side extraction completed');
