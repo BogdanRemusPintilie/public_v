@@ -392,71 +392,44 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                   </div>
 
                   {/* Monthly Performance Data */}
-                  <div className="mt-6">
-                    <h4 className="font-semibold mb-4 flex items-center text-lg">
-                      <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                      Monthly Performance History
-                    </h4>
-                    <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-muted/50 border-b">
-                              <th className="px-4 py-3 text-left font-semibold text-sm text-muted-foreground">Period</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">WA IR</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">WA Term</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">Delinq %</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">Cumul. Losses</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">Loss %</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">Monthly Def.</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">Portfolio Bal.</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">Pool Factor</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">Loans</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">F Balance</th>
-                              <th className="px-4 py-3 text-right font-semibold text-sm text-muted-foreground">G Balance</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {extractedData.summary.monthlyData.map((month: any, index: number) => (
-                              <tr key={index} className={`border-b hover:bg-muted/30 transition-colors ${index % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
-                                <td className="px-4 py-3 font-medium text-sm">{month.period}</td>
-                                <td className="px-4 py-3 text-sm text-right">{month.waIR}</td>
-                                <td className="px-4 py-3 text-sm text-right">{month.waRemainingTerm}</td>
-                                <td className="px-4 py-3 text-sm text-right">
-                                  {month.delinquency ? (
-                                    <span className={`font-medium ${parseFloat(month.delinquency) > 2 ? 'text-destructive' : parseFloat(month.delinquency) > 1.5 ? 'text-orange-600' : 'text-green-600'}`}>
-                                      {month.delinquency}
-                                    </span>
-                                  ) : '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right font-mono">
-                                  ${(month.cumulativeLosses / 1000000).toFixed(1)}M
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right">
-                                  <span className={`font-medium ${parseFloat(month.cumulativeLossesPercent) > 0.7 ? 'text-destructive' : parseFloat(month.cumulativeLossesPercent) > 0.5 ? 'text-orange-600' : 'text-green-600'}`}>
-                                    {month.cumulativeLossesPercent}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right font-mono">
-                                  ${(month.monthlyDefaults / 1000000).toFixed(1)}M
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right font-mono">
-                                  ${(month.portfolioBalance / 1000000000).toFixed(2)}B
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right">{month.poolFactor?.toFixed(2) || "-"}</td>
-                                <td className="px-4 py-3 text-sm text-right">{month.loans ? formatNumber(month.loans) : "-"}</td>
-                                <td className="px-4 py-3 text-sm text-right font-mono">
-                                  ${(month.fBalance / 1000000).toFixed(1)}M
-                                </td>
-                                <td className="px-4 py-3 text-sm text-right font-mono">
-                                  ${(month.gBalance / 1000000).toFixed(1)}M
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <h4 className="font-semibold mb-3">Monthly Performance</h4>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Period</th>
+                          <th className="text-right p-2">WA IR</th>
+                          <th className="text-right p-2">WA Remaining Term</th>
+                          <th className="text-right p-2">Delinquency %</th>
+                          <th className="text-right p-2">Cumulative Losses</th>
+                          <th className="text-right p-2">Losses %</th>
+                          <th className="text-right p-2">Monthly Defaults</th>
+                          <th className="text-right p-2">Portfolio Balance</th>
+                          <th className="text-right p-2">Pool Factor</th>
+                          <th className="text-right p-2">Loans</th>
+                          <th className="text-right p-2">F Balance</th>
+                          <th className="text-right p-2">G Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {extractedData.summary.monthlyData.map((month: any, index: number) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="p-2 font-medium">{month.period}</td>
+                            <td className="p-2 text-right">{month.waIR}</td>
+                            <td className="p-2 text-right">{month.waRemainingTerm}</td>
+                            <td className="p-2 text-right">{month.delinquency || "-"}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.cumulativeLosses)}</td>
+                            <td className="p-2 text-right">{month.cumulativeLossesPercent}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.monthlyDefaults)}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.portfolioBalance)}</td>
+                            <td className="p-2 text-right">{month.poolFactor?.toFixed(2) || "-"}</td>
+                            <td className="p-2 text-right">{month.loans ? formatNumber(month.loans) : "-"}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.fBalance)}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.gBalance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Interactive Chart Visualization */}
