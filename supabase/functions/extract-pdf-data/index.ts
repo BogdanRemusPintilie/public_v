@@ -1,6 +1,6 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { PDFDocument } from 'https://esm.sh/pdf-lib@1.17.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,7 +36,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Enhanced PDF extraction request received');
+    console.log('🚀 Starting enhanced PDF extraction...');
     
     // Get the file from the request
     const formData = await req.formData();
@@ -46,80 +46,51 @@ serve(async (req) => {
       throw new Error('No file provided');
     }
     
-    console.log(`📄 Processing file: ${file.name}, size: ${file.size}`);
+    console.log(`📄 Processing file: ${file.name}, size: ${file.size} bytes`);
     
-    // Convert file to ArrayBuffer for PDF-lib
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
+    const arrayBuffer = await file?.arrayBuffer();
+    const pdfBuffer = new Uint8Array(arrayBuffer);
     
-    console.log('🔍 Starting PDF-lib text extraction...');
+    console.log('🔍 Starting PDF text extraction...');
     
-    // Enhanced PDF parsing with PDF-lib
+    // Enhanced PDF text extraction using multiple strategies
     let extractedText = '';
-    let structuredData: any = {};
+    let extractionMethod = 'unknown';
     
     try {
-      // Use PDF-lib for proper PDF text extraction
-      const pdfDoc = await PDFDocument.load(uint8Array);
-      const pages = pdfDoc.getPages();
+      // Primary extraction method using pdf-parse equivalent
+      const textResult = await extractTextWithPdfParse(pdfBuffer);
+      extractedText = textResult.text;
+      extractionMethod = 'pdf-parse';
       
-      console.log(`📊 Found ${pages.length} pages in PDF`);
+      console.log(`✅ PDF-parse extraction successful: ${extractedText.length} characters`);
       
-      const allText: string[] = [];
+    } catch (pdfParseError) {
+      console.warn('⚠️ PDF-parse failed, trying fallback method:', pdfParseError.message);
       
-      for (let i = 0; i < pages.length; i++) {
-        console.log(`📄 Processing page ${i + 1}/${pages.length}`);
-        
-        try {
-          // Extract text content from each page
-          const page = pages[i];
-          const { width, height } = page.getSize();
-          
-          console.log(`📐 Page ${i + 1} dimensions: ${width}x${height}`);
-          
-          // Get page content and try to extract text
-          const pageText = await extractTextFromPage(page, uint8Array, i);
-          if (pageText && pageText.trim().length > 0) {
-            allText.push(pageText);
-            console.log(`✅ Extracted ${pageText.length} characters from page ${i + 1}`);
-          }
-          
-        } catch (pageError) {
-          console.warn(`⚠️ Error processing page ${i + 1}:`, pageError.message);
-          // Continue with other pages
-        }
-      }
+      // Fallback to enhanced binary extraction
+      const fallbackResult = await extractTextWithFallback(pdfBuffer);
+      extractedText = fallbackResult.text;
+      extractionMethod = 'fallback';
       
-      extractedText = allText.join('\n\n');
-      
-      // If PDF-lib extraction didn't work well, fall back to enhanced binary parsing
-      if (extractedText.length < 100) {
-        console.log('🔄 PDF-lib extraction insufficient, using fallback method...');
-        const fallbackResult = await extractPDFContentFallback(uint8Array);
-        extractedText = fallbackResult.cleanText;
-        structuredData = fallbackResult.structuredData;
-      } else {
-        // Structure the extracted text for better parsing
-        structuredData = structureExtractedText(extractedText);
-      }
-      
-      console.log(`✅ Total text extracted: ${extractedText.length} characters`);
-      console.log(`📝 Sample text: ${extractedText.substring(0, 300)}`);
-      console.log(`🏗️ Structured sections found: ${Object.keys(structuredData).length}`);
-      
-    } catch (error) {
-      console.error('❌ PDF-lib extraction failed:', error);
-      // Fallback to enhanced binary parsing
-      console.log('🔄 Using fallback extraction method...');
-      const fallbackResult = await extractPDFContentFallback(uint8Array);
-      extractedText = fallbackResult.cleanText;
-      structuredData = fallbackResult.structuredData;
+      console.log(`✅ Fallback extraction completed: ${extractedText.length} characters`);
     }
     
-    // Parse the extracted text for financial data with enhanced algorithms
-    const financialData = parseEnhancedFinancialText(extractedText, structuredData);
+    // If still no meaningful text, try OCR-like approach
+    if (extractedText.length < 100) {
+      console.log('🔄 Text extraction insufficient, trying enhanced binary parsing...');
+      const enhancedResult = await extractTextEnhanced(pdfBuffer);
+      extractedText = enhancedResult.text;
+      extractionMethod = 'enhanced-binary';
+    }
     
-    console.log('💰 Enhanced financial data extracted:', financialData);
+    console.log(`📝 Final extracted text length: ${extractedText.length}`);
+    console.log(`📋 Sample text: ${extractedText.substring(0, 300)}`);
+    
+    // Parse the extracted text for financial data
+    const financialData = parseFinancialData(extractedText);
+    
+    console.log('💰 Extracted financial data:', JSON.stringify(financialData, null, 2));
     
     return new Response(
       JSON.stringify({
@@ -127,8 +98,8 @@ serve(async (req) => {
         extractedData: financialData,
         textLength: extractedText.length,
         sampleText: extractedText.substring(0, 500),
-        structuredSections: Object.keys(structuredData).length,
-        extractionMethod: extractedText.length > 100 ? 'pdf-lib' : 'fallback'
+        extractionMethod: extractionMethod,
+        fileName: file.name
       }),
       {
         headers: { 
@@ -158,524 +129,325 @@ serve(async (req) => {
   }
 });
 
-async function extractTextFromPage(page: any, pdfBytes: Uint8Array, pageIndex: number): Promise<string> {
+// Enhanced PDF text extraction using pdf-parse equivalent approach
+async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: string, pages: number}> {
   try {
-    // This is a simplified approach - PDF-lib doesn't directly expose text extraction
-    // We'll implement a hybrid approach using the raw PDF content analysis
-    
-    // Convert PDF bytes to text for this page's content
+    // Convert buffer to string for processing
     const textDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false });
-    const rawText = textDecoder.decode(pdfBytes);
+    const pdfString = textDecoder.decode(pdfBuffer);
     
-    // Look for page-specific content markers
-    const pageMarkers = [
-      `${pageIndex} 0 obj`,
-      `Page ${pageIndex + 1}`,
-      `/Page ${pageIndex + 1}/`
-    ];
+    console.log('🔍 Analyzing PDF structure...');
     
-    // Extract text using enhanced methods focused on this page
-    const pageText = extractEnhancedPageText(rawText, pageIndex);
-    return cleanExtractedText(pageText);
+    // Look for PDF objects and streams
+    const streamRegex = /stream\s+([\s\S]*?)\s+endstream/g;
+    const textObjects: string[] = [];
+    let match;
     
-  } catch (error) {
-    console.warn(`Failed to extract text from page ${pageIndex + 1}:`, error);
-    return '';
-  }
-}
-
-function extractEnhancedPageText(rawText: string, pageIndex: number): string {
-  const texts: string[] = [];
-  
-  // Enhanced literal string extraction with better decoding
-  const literalRegex = /\(([^)]{3,})\)/g;
-  let match;
-  while ((match = literalRegex.exec(rawText)) !== null) {
-    const content = unescapePDFString(match[1]);
-    if (content && isLikelyFinancialText(content)) {
-      texts.push(content);
-    }
-  }
-  
-  // Enhanced hex string extraction
-  const hexRegex = /<([0-9A-Fa-f\s]{6,})>/g;
-  while ((match = hexRegex.exec(rawText)) !== null) {
-    try {
-      const hexContent = match[1].replace(/\s/g, '');
-      if (hexContent.length % 2 === 0 && hexContent.length > 6) {
-        const decoded = hexToString(hexContent);
-        if (decoded && isLikelyFinancialText(decoded)) {
-          texts.push(decoded);
-        }
-      }
-    } catch (e) {
-      // Skip invalid hex strings
-    }
-  }
-  
-  // Look for financial keywords and extract surrounding context
-  const financialKeywords = [
-    'tranche', 'balance', 'outstanding', 'rate', 'payment', 'senior', 'protected',
-    'mezzanine', 'junior', 'class', 'coupon', 'yield', 'maturity', 'wal',
-    'cpr', 'losses', 'prepayment', 'currency', 'portfolio', 'weighted'
-  ];
-  
-  for (const keyword of financialKeywords) {
-    const keywordRegex = new RegExp(`.{0,100}${keyword}.{0,100}`, 'gi');
-    const matches = rawText.match(keywordRegex) || [];
-    for (const match of matches) {
-      const cleaned = cleanExtractedText(match);
-      if (cleaned.length > 10 && isLikelyFinancialText(cleaned)) {
-        texts.push(cleaned);
+    // Extract content from PDF streams
+    while ((match = streamRegex.exec(pdfString)) !== null) {
+      const streamContent = match[1];
+      
+      // Try to decode the stream content
+      const decodedText = decodeStreamContent(streamContent);
+      if (decodedText && decodedText.length > 10) {
+        textObjects.push(decodedText);
       }
     }
-  }
-  
-  return texts.join(' ');
-}
-
-function structureExtractedText(text: string): any {
-  const sections: any = {};
-  
-  // Look for structured sections in the text
-  const sectionPatterns = [
-    { name: 'tranches', regex: /(?:tranche|class)\s+[a-z]\s*(?:information|details|data)[\s\S]{0,1000}/gi },
-    { name: 'payment_info', regex: /payment\s+(?:date|information|schedule)[\s\S]{0,500}/gi },
-    { name: 'portfolio_summary', regex: /portfolio\s+(?:summary|balance|information)[\s\S]{0,800}/gi },
-    { name: 'financial_metrics', regex: /(?:cpr|losses|rate|yield)[\s\S]{0,400}/gi },
-    { name: 'waterfall', regex: /waterfall[\s\S]{0,600}/gi }
-  ];
-  
-  sectionPatterns.forEach(pattern => {
-    const matches = text.match(pattern.regex) || [];
-    if (matches.length > 0) {
-      sections[pattern.name] = matches.map(match => 
-        cleanExtractedText(match).substring(0, 800)
-      );
+    
+    // Also extract literal strings (text in parentheses)
+    const literalRegex = /\(([^)]{3,})\)/g;
+    while ((match = literalRegex.exec(pdfString)) !== null) {
+      const literalText = unescapePDFString(match[1]);
+      if (literalText && isLikelyFinancialText(literalText)) {
+        textObjects.push(literalText);
+      }
     }
-  });
-  
-  return sections;
-}
-
-async function extractPDFContentFallback(uint8Array: Uint8Array) {
-  console.log('🔧 Enhanced fallback PDF content extraction...');
-  
-  const results = {
-    cleanText: '',
-    structuredData: {} as any
-  };
-  
-  try {
-    const textDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false });
-    const rawText = textDecoder.decode(uint8Array);
     
-    // Multiple extraction strategies
-    const extractionMethods = [
-      () => extractFromStreamsEnhanced(rawText),
-      () => extractLiteralStringsEnhanced(rawText),
-      () => extractStructuredContentEnhanced(rawText),
-      () => extractTabularPatternsEnhanced(rawText)
-    ];
-    
-    const allTexts: string[] = [];
-    
-    for (const method of extractionMethods) {
+    // Extract hex strings
+    const hexRegex = /<([0-9A-Fa-f\s]{6,})>/g;
+    while ((match = hexRegex.exec(pdfString)) !== null) {
       try {
-        const methodResults = method();
-        if (Array.isArray(methodResults)) {
-          allTexts.push(...methodResults);
-        } else if (typeof methodResults === 'string') {
-          allTexts.push(methodResults);
+        const hexContent = match[1].replace(/\s/g, '');
+        if (hexContent.length % 2 === 0) {
+          const decodedHex = hexToString(hexContent);
+          if (decodedHex && isLikelyFinancialText(decodedHex)) {
+            textObjects.push(decodedHex);
+          }
         }
       } catch (e) {
-        console.warn('Extraction method failed:', e.message);
+        // Skip invalid hex strings
       }
     }
     
-    // Clean and deduplicate
-    const cleanedTexts = allTexts
-      .map(text => cleanExtractedText(text))
-      .filter(text => text.length > 5 && isLikelyFinancialText(text))
-      .filter((text, index, array) => array.indexOf(text) === index);
+    const fullText = textObjects.join(' ').trim();
+    console.log(`📊 Extracted ${textObjects.length} text objects, total length: ${fullText.length}`);
     
-    results.cleanText = cleanedTexts.join(' ');
-    results.structuredData = structureExtractedText(results.cleanText);
-    
-    console.log(`✨ Fallback extraction completed: ${results.cleanText.length} characters`);
+    return { text: fullText, pages: 1 };
     
   } catch (error) {
-    console.error('❌ Fallback extraction failed:', error);
-    results.cleanText = 'Extraction failed';
+    console.error('❌ PDF-parse extraction failed:', error);
+    throw error;
   }
-  
-  return results;
 }
 
-function extractFromStreamsEnhanced(rawText: string): string[] {
-  const streamRegex = /stream\s+([\s\S]*?)\s+endstream/g;
-  const streams: string[] = [];
-  let match;
+// Fallback extraction method
+async function extractTextWithFallback(pdfBuffer: Uint8Array): Promise<{text: string}> {
+  const textDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false });
+  const pdfString = textDecoder.decode(pdfBuffer);
   
-  while ((match = streamRegex.exec(rawText)) !== null) {
-    const streamContent = match[1];
-    
-    // Multiple decoding strategies
-    const decodedOptions = [
-      extractReadableChars(streamContent),
-      decodeBase64IfPossible(streamContent),
-      extractNumericPatterns(streamContent)
-    ];
-    
-    decodedOptions.forEach(decoded => {
-      if (decoded && decoded.length > 10 && isLikelyFinancialText(decoded)) {
-        streams.push(decoded);
-      }
-    });
-  }
+  console.log('🔧 Using fallback extraction method...');
   
-  return streams;
+  // Multiple extraction strategies
+  const extractedTexts: string[] = [];
+  
+  // Strategy 1: Look for readable ASCII text
+  const readableText = pdfString.match(/[a-zA-Z0-9\s.,;:!?€$£¥%()[\]{}_+=|\\/"'-]{10,}/g) || [];
+  extractedTexts.push(...readableText.filter(text => isLikelyFinancialText(text)));
+  
+  // Strategy 2: Extract numbers and financial patterns
+  const financialPatterns = pdfString.match(/\d+[.,]\d+|\d+%|[€$£¥]\s*\d+/g) || [];
+  extractedTexts.push(...financialPatterns);
+  
+  // Strategy 3: Look for common financial keywords with surrounding context
+  const keywordContext = extractKeywordContext(pdfString);
+  extractedTexts.push(...keywordContext);
+  
+  const combinedText = extractedTexts.join(' ').trim();
+  console.log(`🔧 Fallback extraction found ${extractedTexts.length} text segments`);
+  
+  return { text: combinedText };
 }
 
-function extractLiteralStringsEnhanced(rawText: string): string[] {
-  const literals: string[] = [];
+// Enhanced binary parsing for difficult PDFs
+async function extractTextEnhanced(pdfBuffer: Uint8Array): Promise<{text: string}> {
+  console.log('⚡ Using enhanced binary parsing...');
   
-  // Enhanced parentheses extraction with better filtering
-  const literalRegex = /\(([^)]{2,})\)/g;
-  let match;
+  // Convert to different encodings and try to extract readable text
+  const encodings = ['utf-8', 'latin1', 'ascii'];
+  const allTexts: string[] = [];
   
-  while ((match = literalRegex.exec(rawText)) !== null) {
-    const content = unescapePDFString(match[1]);
-    if (content && content.length > 2 && isLikelyFinancialText(content)) {
-      literals.push(content);
-    }
-  }
-  
-  // Enhanced hex string extraction with validation
-  const hexRegex = /<([0-9A-Fa-f\s]+)>/g;
-  while ((match = hexRegex.exec(rawText)) !== null) {
+  for (const encoding of encodings) {
     try {
-      const hexContent = match[1].replace(/\s/g, '');
-      if (hexContent.length >= 6 && hexContent.length % 2 === 0) {
-        const decoded = hexToString(hexContent);
-        if (decoded && decoded.length > 2 && isLikelyFinancialText(decoded)) {
-          literals.push(decoded);
+      const textDecoder = new TextDecoder(encoding, { fatal: false });
+      const decodedText = textDecoder.decode(pdfBuffer);
+      
+      // Extract sequences of readable characters
+      const readableSequences = decodedText.match(/[a-zA-Z0-9\s.,;:!?€$£¥%()[\]{}_+=|\\/"'-]{5,}/g) || [];
+      
+      for (const sequence of readableSequences) {
+        const cleaned = cleanExtractedText(sequence);
+        if (cleaned.length > 5 && isLikelyFinancialText(cleaned)) {
+          allTexts.push(cleaned);
         }
       }
     } catch (e) {
-      // Skip invalid hex
+      // Skip failed encodings
+      continue;
     }
   }
   
-  return literals;
+  // Remove duplicates and combine
+  const uniqueTexts = [...new Set(allTexts)];
+  const combinedText = uniqueTexts.join(' ').trim();
+  
+  console.log(`⚡ Enhanced binary parsing extracted ${uniqueTexts.length} unique text segments`);
+  
+  return { text: combinedText };
 }
 
-function extractStructuredContentEnhanced(rawText: string): any {
-  const sections: any = {};
+// Decode PDF stream content
+function decodeStreamContent(streamContent: string): string {
+  // Remove common PDF encoding artifacts
+  let cleaned = streamContent
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ') // Remove control characters
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
   
-  // Enhanced financial document patterns
-  const enhancedPatterns = [
-    { name: 'tranche_data', regex: /(?:tranche|class)\s+[a-z]+[\s\S]{0,800}/gi },
-    { name: 'payment_dates', regex: /(?:payment|pay)\s+date[\s\S]{0,300}/gi },
-    { name: 'balances', regex: /(?:balance|outstanding|amount)[\s\S]{0,400}/gi },
-    { name: 'rates_yields', regex: /(?:rate|yield|coupon|interest)[\s\S]{0,300}/gi },
-    { name: 'losses_prepayments', regex: /(?:loss|prepayment|cpr)[\s\S]{0,300}/gi },
-    { name: 'currency_amounts', regex: /(?:eur|usd|gbp|jpy|\$|€|£|¥)\s*[\d,]+/gi }
+  // Try to extract readable text patterns
+  const readablePatterns = cleaned.match(/[a-zA-Z][a-zA-Z0-9\s.,;:!?€$£¥%()[\]{}_+=|\\/"'-]{3,}/g) || [];
+  
+  return readablePatterns.join(' ');
+}
+
+// Extract context around financial keywords
+function extractKeywordContext(text: string): string[] {
+  const financialKeywords = [
+    'tranche', 'senior', 'protected', 'mezzanine', 'junior',
+    'balance', 'outstanding', 'payment', 'rate', 'coupon',
+    'yield', 'maturity', 'wal', 'cpr', 'losses', 'prepayment',
+    'portfolio', 'weighted', 'currency', 'class'
   ];
   
-  enhancedPatterns.forEach(pattern => {
-    const matches = rawText.match(pattern.regex) || [];
-    if (matches.length > 0) {
-      sections[pattern.name] = matches
-        .map(match => cleanExtractedText(match))
-        .filter(text => text.length > 5)
-        .slice(0, 20); // Limit to prevent overflow
+  const contexts: string[] = [];
+  
+  for (const keyword of financialKeywords) {
+    const regex = new RegExp(`.{0,50}${keyword}.{0,50}`, 'gi');
+    const matches = text.match(regex) || [];
+    
+    for (const match of matches) {
+      const cleaned = cleanExtractedText(match);
+      if (cleaned.length > 10) {
+        contexts.push(cleaned);
+      }
     }
-  });
+  }
   
-  return sections;
+  return contexts;
 }
 
-function extractTabularPatternsEnhanced(rawText: string): string[] {
-  const tables: string[] = [];
-  
-  // Enhanced table detection patterns
-  const tablePatterns = [
-    // Financial data rows: Name | Amount | Rate | Rating
-    /([A-Za-z\s]+(?:tranche|class|senior|protected|mezzanine))\s+([\d,]+\.?\d*)\s+([\d.]+%?)\s+([A-Za-z]{1,4})/gi,
-    // Amount sequences with currency
-    /(?:€|$|£|¥)\s*([\d,]+\.?\d*)\s+([\d,]+\.?\d*)\s+([\d.]+%?)/g,
-    // Percentage and number combinations
-    /([\d.]+%)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)/g,
-    // Date and amount patterns
-    /(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\s+([\d,]+\.?\d*)/g
-  ];
-  
-  tablePatterns.forEach(pattern => {
-    const matches = rawText.match(pattern) || [];
-    tables.push(...matches.slice(0, 50)); // Limit matches
-  });
-  
-  return tables;
-}
-
-function parseEnhancedFinancialText(text: string, structuredData: any): ExtractedFinancialData {
+// Enhanced financial data parsing
+function parseFinancialData(text: string): ExtractedFinancialData {
   const result: ExtractedFinancialData = {};
   
   if (!text || text.length < 10) {
-    console.log('⚠️ Insufficient text for parsing');
+    console.log('⚠️ Insufficient text for parsing, returning default values');
     return { currency: 'EUR', tranches: [] };
   }
   
-  console.log('🔍 Enhanced financial data parsing...');
-  console.log(`📊 Text length: ${text.length}, Structured sections: ${Object.keys(structuredData).length}`);
+  console.log('🔍 Starting enhanced financial data parsing...');
+  console.log(`📊 Input text length: ${text.length} characters`);
   
-  // Enhanced parsing patterns with multiple variations
-  const enhancedPatterns = {
-    payment_date: [
-      /payment\s+date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4})/gi,
-      /pay\s+date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4})/gi,
-      /reporting\s+date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4})/gi,
-      /(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4})\s*payment/gi
-    ],
-    next_payment_date: [
-      /next\s+payment[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4})/gi,
-      /following\s+payment[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4})/gi
-    ],
-    senior_tranche: [
-      /senior.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi,
-      /class\s*a.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi,
-      /tranche\s*a.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi
-    ],
-    protected_tranche: [
-      /protected.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi,
-      /mezzanine.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi,
-      /class\s*b.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi
-    ],
-    cpr: [
-      /cpr[:\s]*([\d.]+)%?/gi,
-      /prepayment\s+rate[:\s]*([\d.]+)%?/gi,
-      /voluntary\s+prepayment[:\s]*([\d.]+)%?/gi
-    ],
-    losses: [
-      /(?:cumulative\s+)?losses?[:\s]*([\d,]+\.?\d*)/gi,
-      /total\s+losses?[:\s]*([\d,]+\.?\d*)/gi,
-      /cum\s+losses?[:\s]*([\d,]+\.?\d*)/gi
-    ],
-    portfolio_balance: [
-      /portfolio\s+balance[:\s]*([\d,]+\.?\d*)/gi,
-      /total\s+balance[:\s]*([\d,]+\.?\d*)/gi,
-      /outstanding\s+balance[:\s]*([\d,]+\.?\d*)/gi
-    ],
-    weighted_rate: [
-      /weighted.*?rate[:\s]*([\d.]+)%?/gi,
-      /w\.?a\.?r\.?[:\s]*([\d.]+)%?/gi,
-      /average\s+rate[:\s]*([\d.]+)%?/gi
-    ]
-  };
-
-  // Extract using enhanced patterns with validation
-  Object.entries(enhancedPatterns).forEach(([key, patterns]) => {
-    for (const pattern of patterns) {
-      const matches = text.match(pattern);
-      if (matches && matches.length > 0) {
-        const value = matches[0].match(/[\d.]+/)?.[0];
-        if (value) {
-          switch (key) {
-            case 'payment_date':
-            case 'next_payment_date':
-              result[key as keyof ExtractedFinancialData] = standardizeDate(matches[0]) as any;
-              console.log(`📅 Found ${key}:`, result[key as keyof ExtractedFinancialData]);
-              break;
-            case 'senior_tranche':
-              result.senior_tranche_os = parseEnhancedNumber(value);
-              console.log('💰 Found senior tranche:', result.senior_tranche_os);
-              break;
-            case 'protected_tranche':
-              result.protected_tranche = parseEnhancedNumber(value);
-              console.log('💰 Found protected tranche:', result.protected_tranche);
-              break;
-            case 'cpr':
-              result.cpr_annualised = parseFloat(value);
-              console.log('📊 Found CPR:', result.cpr_annualised);
-              break;
-            case 'losses':
-              result.cum_losses = parseEnhancedNumber(value);
-              console.log('📉 Found losses:', result.cum_losses);
-              break;
-            case 'portfolio_balance':
-              result.portfolio_balance = parseEnhancedNumber(value);
-              console.log('💼 Found portfolio balance:', result.portfolio_balance);
-              break;
-            case 'weighted_rate':
-              result.weighted_avg_rate = parseFloat(value);
-              console.log('📈 Found weighted rate:', result.weighted_avg_rate);
-              break;
-          }
-          break; // Use first match found
+  // Enhanced date extraction patterns
+  const datePatterns = [
+    /(?:payment|pay|reporting)\s*date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
+    /(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})\s*(?:payment|pay)/gi,
+    /(?:next|following)\s*payment[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi
+  ];
+  
+  for (const pattern of datePatterns) {
+    const matches = text.match(pattern);
+    if (matches && matches.length > 0) {
+      const dateStr = matches[0].match(/\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4}/)?.[0];
+      if (dateStr) {
+        if (!result.payment_date && matches[0].toLowerCase().includes('payment')) {
+          result.payment_date = standardizeDate(dateStr);
+        }
+        if (!result.next_payment_date && matches[0].toLowerCase().includes('next')) {
+          result.next_payment_date = standardizeDate(dateStr);
         }
       }
     }
-  });
-
-  // Enhanced tranche extraction
-  result.tranches = extractEnhancedTranches(text, structuredData);
-  if (result.tranches && result.tranches.length > 0) {
-    console.log('🎯 Found tranches:', result.tranches.length);
-    result.tranches.forEach((tranche, i) => {
-      console.log(`  Tranche ${i + 1}: ${tranche.name} - Balance: ${tranche.balance}, Rate: ${tranche.interest_rate}%`);
-    });
   }
-
-  // Currency detection with better accuracy
-  result.currency = detectCurrencyEnhanced(text) || 'EUR';
-  console.log('💱 Detected currency:', result.currency);
-
-  // Data validation and consistency checks
-  validateAndCleanData(result);
-
+  
+  // Enhanced tranche extraction
+  result.tranches = extractTranches(text);
+  
+  // Extract financial metrics with improved patterns
+  const metrics = [
+    { key: 'senior_tranche_os', patterns: [/senior.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi] },
+    { key: 'protected_tranche', patterns: [/(?:protected|mezzanine).*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi] },
+    { key: 'cpr_annualised', patterns: [/cpr[:\s]*([\d.]+)%?/gi, /prepayment\s*rate[:\s]*([\d.]+)%?/gi] },
+    { key: 'cum_losses', patterns: [/(?:cumulative\s*)?losses?[:\s]*([\d,]+\.?\d*)/gi] },
+    { key: 'portfolio_balance', patterns: [/portfolio\s*balance[:\s]*([\d,]+\.?\d*)/gi, /total\s*balance[:\s]*([\d,]+\.?\d*)/gi] },
+    { key: 'weighted_avg_rate', patterns: [/weighted.*?rate[:\s]*([\d.]+)%?/gi, /w\.?a\.?r\.?[:\s]*([\d.]+)%?/gi] }
+  ];
+  
+  for (const metric of metrics) {
+    for (const pattern of metric.patterns) {
+      const matches = text.match(pattern);
+      if (matches && matches.length > 0) {
+        const value = matches[0].match(/[\d.,]+/)?.[0];
+        if (value) {
+          const numValue = parseFinancialNumber(value);
+          if (numValue > 0) {
+            if (metric.key === 'cpr_annualised' || metric.key === 'weighted_avg_rate') {
+              (result as any)[metric.key] = numValue;
+            } else {
+              (result as any)[metric.key] = numValue;
+            }
+            console.log(`✅ Found ${metric.key}:`, numValue);
+            break;
+          }
+        }
+      }
+    }
+  }
+  
+  // Currency detection
+  result.currency = detectCurrency(text) || 'EUR';
+  
+  console.log('💰 Final parsed financial data:', result);
   return result;
 }
 
-function extractEnhancedTranches(text: string, structuredData: any): TrancheData[] {
+// Enhanced tranche extraction
+function extractTranches(text: string): TrancheData[] {
   const tranches: TrancheData[] = [];
   
-  // Enhanced tranche patterns with better structure recognition
+  console.log('🎯 Extracting tranche data...');
+  
+  // Enhanced tranche patterns
   const tranchePatterns = [
     // Pattern: Class/Tranche Name Balance Rate Rating
-    /(?:class|tranche)\s+([a-z]+)\s+(?:balance[:\s]*)?([€$£¥]?[\d,]+\.?\d*)\s+(?:rate[:\s]*)?([\d.]+%?)\s*(?:rating[:\s]*)?([a-z]{1,4})?/gi,
-    // Pattern: Senior/Protected with financial data
-    /(senior|protected|mezzanine|junior)(?:\s+tranche|\s+class)?\s*([€$£¥]?[\d,]+\.?\d*)\s+([\d.]+%?)/gi,
-    // Pattern: Named tranche with detailed info
-    /([a-z]+\s+(?:tranche|class|notes))\s*([€$£¥]?[\d,]+\.?\d*)\s+([\d.]+%?)\s*([a-z]{1,4})?/gi
+    /(?:class|tranche)\s+([a-z]+)\s*(?:.*?)?([€$£¥]?[\d,]+\.?\d*)\s*(?:.*?)?(?:([\d.]+)%?)?\s*(?:.*?)?([a-z]{1,4})?/gi,
+    // Pattern: Senior/Protected with amounts
+    /(senior|protected|mezzanine|junior)(?:\s+(?:tranche|class|notes))?\s*[:\s]*([€$£¥]?[\d,]+\.?\d*)\s*(?:.*?)?([\d.]+%?)?/gi,
+    // Pattern: Named sections with financial data
+    /([a-z]+\s*(?:tranche|class|notes))\s*([€$£¥]?[\d,]+\.?\d*)\s*([\d.]+%?)?/gi
   ];
+  
+  const foundTranches = new Map<string, TrancheData>();
   
   for (const pattern of tranchePatterns) {
     let match;
     while ((match = pattern.exec(text)) !== null) {
-      const tranche: TrancheData = {
-        name: (match[1] || 'Unknown').trim(),
-        balance: parseEnhancedNumber(match[2] || '0'),
-        interest_rate: parseFloat((match[3] || '0').replace('%', '')),
-        wal: 0, // Will be filled if found separately
-        rating: (match[4] || 'NR').toUpperCase()
-      };
+      const name = (match[1] || 'Unknown').trim().toLowerCase();
+      const balanceStr = match[2] || '0';
+      const rateStr = match[3] || '0';
+      const rating = (match[4] || 'NR').toUpperCase();
       
-      // Validate tranche data quality
-      if (tranche.balance >= 1000 && tranche.interest_rate >= 0) {
-        tranches.push(tranche);
+      const balance = parseFinancialNumber(balanceStr);
+      const rate = parseFloat(rateStr.replace('%', '')) || 0;
+      
+      if (balance > 1000 && name.length > 1) { // Minimum thresholds for valid data
+        const key = name.replace(/\s+/g, '_');
+        
+        if (!foundTranches.has(key) || foundTranches.get(key)!.balance < balance) {
+          foundTranches.set(key, {
+            name: capitalizeWords(name),
+            balance: balance,
+            interest_rate: rate,
+            wal: 0, // Will be populated separately if found
+            rating: rating
+          });
+          
+          console.log(`🎯 Found tranche: ${name} - Balance: ${balance}, Rate: ${rate}%`);
+        }
       }
     }
   }
   
-  // Look for additional tranche information in structured data
-  if (structuredData.tranche_data) {
-    for (const section of structuredData.tranche_data) {
-      const sectionTranches = parseTrancheSection(section);
-      tranches.push(...sectionTranches);
-    }
-  }
+  const trancheArray = Array.from(foundTranches.values());
+  console.log(`🎯 Total tranches extracted: ${trancheArray.length}`);
   
-  // Remove duplicates and validate
-  return deduplicateAndValidateTranches(tranches);
-}
-
-function parseTrancheSection(section: string): TrancheData[] {
-  const tranches: TrancheData[] = [];
-  const lines = section.split(/[\n\r]+/);
-  
-  for (const line of lines) {
-    if (line.length < 10) continue;
-    
-    // Extract numeric values and text
-    const numbers = line.match(/[\d,]+\.?\d*/g) || [];
-    const words = line.match(/[a-zA-Z]+/g) || [];
-    
-    if (numbers.length >= 2 && words.length >= 1) {
-      const tranche: TrancheData = {
-        name: words.find(w => /^(senior|protected|mezzanine|junior|class|tranche)/i.test(w)) || words[0],
-        balance: parseEnhancedNumber(numbers[0]),
-        interest_rate: parseFloat(numbers[1]),
-        wal: numbers[2] ? parseFloat(numbers[2]) : 0,
-        rating: words.find(w => /^[A-Z]{1,4}$/i.test(w)) || 'NR'
-      };
-      
-      if (tranche.balance >= 1000) {
-        tranches.push(tranche);
-      }
-    }
-  }
-  
-  return tranches;
-}
-
-function deduplicateAndValidateTranches(tranches: TrancheData[]): TrancheData[] {
-  const seen = new Map<string, TrancheData>();
-  
-  for (const tranche of tranches) {
-    const key = `${tranche.name.toLowerCase().replace(/\s+/g, '_')}_${Math.round(tranche.balance)}`;
-    
-    if (!seen.has(key) || seen.get(key)!.balance < tranche.balance) {
-      // Keep the tranche with more complete data
-      seen.set(key, tranche);
-    }
-  }
-  
-  return Array.from(seen.values())
-    .filter(t => t.balance > 0 && t.name.length > 1)
-    .sort((a, b) => b.balance - a.balance); // Sort by balance descending
-}
-
-function validateAndCleanData(data: ExtractedFinancialData): void {
-  // Validate numeric ranges
-  if (data.cpr_annualised && (data.cpr_annualised < 0 || data.cpr_annualised > 100)) {
-    console.warn('⚠️ CPR value seems invalid:', data.cpr_annualised);
-    delete data.cpr_annualised;
-  }
-  
-  if (data.weighted_avg_rate && (data.weighted_avg_rate < 0 || data.weighted_avg_rate > 50)) {
-    console.warn('⚠️ Interest rate seems invalid:', data.weighted_avg_rate);
-    delete data.weighted_avg_rate;
-  }
-  
-  // Validate date formats
-  if (data.payment_date && !isValidDate(data.payment_date)) {
-    console.warn('⚠️ Payment date format invalid:', data.payment_date);
-    delete data.payment_date;
-  }
-  
-  if (data.next_payment_date && !isValidDate(data.next_payment_date)) {
-    console.warn('⚠️ Next payment date format invalid:', data.next_payment_date);
-    delete data.next_payment_date;
-  }
-}
-
-function isValidDate(dateStr: string): boolean {
-  const date = new Date(dateStr);
-  return !isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100;
+  return trancheArray.sort((a, b) => b.balance - a.balance); // Sort by balance descending
 }
 
 // Helper functions
 function cleanExtractedText(text: string): string {
   return text
-    .replace(/[^\x20-\x7E\s€£¥$]/g, ' ') // Keep currency symbols
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .replace(/(.)\1{3,}/g, '$1') // Remove excessive repetition
+    .replace(/[^\x20-\x7E\s€£¥$]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/(.)\1{4,}/g, '$1')
     .trim();
 }
 
 function isLikelyFinancialText(text: string): boolean {
   if (text.length < 3) return false;
   
-  const financialKeywords = ['tranche', 'balance', 'rate', 'payment', 'class', 'senior', 'protected', 'amount', 'outstanding', 'coupon', 'yield', 'loss', 'cpr'];
-  const hasFinancialKeyword = financialKeywords.some(keyword => 
-    text.toLowerCase().includes(keyword)
-  );
+  const financialKeywords = [
+    'tranche', 'balance', 'rate', 'payment', 'class', 'senior', 
+    'protected', 'amount', 'outstanding', 'coupon', 'yield', 
+    'loss', 'cpr', 'portfolio', 'currency', 'mezzanine'
+  ];
   
-  const alphabeticRatio = (text.match(/[a-zA-Z]/g) || []).length / text.length;
-  const digitRatio = (text.match(/\d/g) || []).length / text.length;
+  const lowerText = text.toLowerCase();
+  const hasKeyword = financialKeywords.some(keyword => lowerText.includes(keyword));
   
-  return hasFinancialKeyword || (alphabeticRatio > 0.3 && digitRatio > 0.1);
+  const hasNumbers = /\d/.test(text);
+  const hasReasonableLength = text.length >= 3 && text.length <= 1000;
+  
+  return (hasKeyword || hasNumbers) && hasReasonableLength;
 }
 
 function unescapePDFString(str: string): string {
@@ -683,8 +455,6 @@ function unescapePDFString(str: string): string {
     .replace(/\\n/g, '\n')
     .replace(/\\r/g, '\r')
     .replace(/\\t/g, '\t')
-    .replace(/\\b/g, '\b')
-    .replace(/\\f/g, '\f')
     .replace(/\\\(/g, '(')
     .replace(/\\\)/g, ')')
     .replace(/\\\\/g, '\\');
@@ -703,42 +473,16 @@ function hexToString(hex: string): string {
   return result;
 }
 
-function extractReadableChars(text: string): string {
-  const readablePattern = /[a-zA-Z0-9\s.,;:!?%$€£¥@#&*()[\]{}_+=|\\/"'-]{3,}/g;
-  const matches = text.match(readablePattern) || [];
-  return matches.join(' ');
-}
-
-function decodeBase64IfPossible(text: string): string {
-  try {
-    if (text.length > 0 && text.length % 4 === 0) {
-      const decoded = atob(text);
-      return extractReadableChars(decoded);
-    }
-  } catch (e) {
-    // Not base64
-  }
-  return '';
-}
-
-function extractNumericPatterns(text: string): string {
-  const numericPattern = /[\d,]+\.?\d*\s*[%€$£¥]?/g;
-  const matches = text.match(numericPattern) || [];
-  return matches.join(' ');
-}
-
-function parseEnhancedNumber(value: any): number {
-  if (typeof value === 'number') return value;
-  
-  const str = String(value)
+function parseFinancialNumber(value: string): number {
+  const cleaned = value
     .replace(/[€$£¥,\s]/g, '')
     .replace(/[%]/g, '');
   
-  const num = parseFloat(str);
+  const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
 }
 
-function detectCurrencyEnhanced(text: string): string | undefined {
+function detectCurrency(text: string): string | undefined {
   const currencyPatterns = [
     { symbols: ['€', 'eur', 'euro'], code: 'EUR' },
     { symbols: ['$', 'usd', 'dollar'], code: 'USD' },
@@ -756,20 +500,27 @@ function detectCurrencyEnhanced(text: string): string | undefined {
     }
   }
   
-  return undefined;
+  return 'EUR'; // Default fallback
 }
 
 function standardizeDate(dateStr: string): string {
   try {
-    const dateMatch = dateStr.match(/\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4}/);
-    if (dateMatch) {
-      const parts = dateMatch[0].split(/[-\/\.]/);
+    const parts = dateStr.split(/[-\/\.]/);
+    if (parts.length === 3) {
       // Assume DD/MM/YYYY or MM/DD/YYYY format
-      const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      const year = parseInt(parts[2]);
+      const month = parseInt(parts[1]) - 1; // JavaScript months are 0-based
+      const day = parseInt(parts[0]);
+      
+      const date = new Date(year, month, day);
       return date.toISOString().split('T')[0];
     }
     return dateStr;
   } catch {
     return dateStr;
   }
+}
+
+function capitalizeWords(str: string): string {
+  return str.replace(/\b\w/g, l => l.toUpperCase());
 }
