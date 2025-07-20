@@ -44,12 +44,47 @@ export type Database = {
         }
         Relationships: []
       }
+      etl_jobs: {
+        Row: {
+          created_at: string | null
+          file_url: string
+          id: string
+          mime_type: string
+          needs_ocr: boolean | null
+          status: string | null
+          updated_at: string | null
+          warnings: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_url: string
+          id?: string
+          mime_type: string
+          needs_ocr?: boolean | null
+          status?: string | null
+          updated_at?: string | null
+          warnings?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          file_url?: string
+          id?: string
+          mime_type?: string
+          needs_ocr?: boolean | null
+          status?: string | null
+          updated_at?: string | null
+          warnings?: Json | null
+        }
+        Relationships: []
+      }
       investor_reports: {
         Row: {
           asset_class: string | null
           created_at: string
           currency: string | null
           deal_name: string
+          etl_job_id: string | null
+          extract_json_id: string | null
           extracted_data: Json | null
           file_name: string
           file_path: string
@@ -63,6 +98,7 @@ export type Database = {
           period_end: string | null
           period_start: string | null
           publish_date: string | null
+          raw_pdf_id: string | null
           report_type: string | null
           sts_compliant: boolean | null
           sustainability_labelled: boolean | null
@@ -74,6 +110,8 @@ export type Database = {
           created_at?: string
           currency?: string | null
           deal_name: string
+          etl_job_id?: string | null
+          extract_json_id?: string | null
           extracted_data?: Json | null
           file_name: string
           file_path: string
@@ -87,6 +125,7 @@ export type Database = {
           period_end?: string | null
           period_start?: string | null
           publish_date?: string | null
+          raw_pdf_id?: string | null
           report_type?: string | null
           sts_compliant?: boolean | null
           sustainability_labelled?: boolean | null
@@ -98,6 +137,8 @@ export type Database = {
           created_at?: string
           currency?: string | null
           deal_name?: string
+          etl_job_id?: string | null
+          extract_json_id?: string | null
           extracted_data?: Json | null
           file_name?: string
           file_path?: string
@@ -111,6 +152,7 @@ export type Database = {
           period_end?: string | null
           period_start?: string | null
           publish_date?: string | null
+          raw_pdf_id?: string | null
           report_type?: string | null
           sts_compliant?: boolean | null
           sustainability_labelled?: boolean | null

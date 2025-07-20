@@ -26,6 +26,7 @@ import {
   type ReportMetadata as ImportedReportMetadata
 } from "@/utils/investorReports";
 import { DocumentExtractor, type ExtractedFinancialData } from "@/utils/documentExtraction";
+import { ETLJobStatus } from "./ETLJobStatus";
 
 interface InvestorReportingUploadProps {
   isOpen: boolean;
@@ -362,11 +363,12 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
         </DialogHeader>
         
         <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="upload">Upload & Metadata</TabsTrigger>
             <TabsTrigger value="preview">Preview Widgets</TabsTrigger>
             <TabsTrigger value="reports">Manage Reports</TabsTrigger>
             <TabsTrigger value="export">Export & Share</TabsTrigger>
+            <TabsTrigger value="jobs">Job Status</TabsTrigger>
           </TabsList>
           
           <TabsContent value="upload" className="space-y-6">
@@ -881,6 +883,10 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="jobs" className="space-y-6">
+            <ETLJobStatus />
           </TabsContent>
         </Tabs>
       </DialogContent>

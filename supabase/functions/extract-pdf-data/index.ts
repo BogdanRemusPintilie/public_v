@@ -36,19 +36,47 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Starting enhanced PDF extraction...');
+    console.log('🚀 Starting enhanced PDF extraction with job tracking...');
+    
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Get the file from the request
     const formData = await req.formData();
     const file = formData.get('file') as File;
+    const fileUrl = formData.get('fileUrl') as string;
     
-    if (!file) {
-      throw new Error('No file provided');
+    if (!file && !fileUrl) {
+      throw new Error('No file or file URL provided');
     }
     
-    console.log(`📄 Processing file: ${file.name}, size: ${file.size} bytes`);
+    const fileName = file?.name || fileUrl?.split('/').pop() || 'unknown.pdf';
+    const mimeType = file?.type || 'application/pdf';
     
-    const arrayBuffer = await file?.arrayBuffer();
+    console.log(`📄 Processing file: ${fileName}, size: ${file?.size || 'unknown'} bytes`);
+    
+    // Create ETL job record
+    const { data: jobData, error: jobError } = await supabase
+      .from('etl_jobs')
+      .insert({
+        file_url: fileUrl || fileName,
+        mime_type: mimeType,
+        needs_ocr: false, // Will be updated after text detection
+        status: 'running'
+      })
+      .select()
+      .single();
+    
+    if (jobError || !jobData) {
+      throw new Error(`Failed to create ETL job: ${jobError?.message}`);
+    }
+    
+    const jobId = jobData.id;
+    console.log(`📝 Created ETL job: ${jobId}`);
+    
+    const arrayBuffer = file ? await file.arrayBuffer() : await fetch(fileUrl).then(r => r.arrayBuffer());
     const pdfBuffer = new Uint8Array(arrayBuffer);
     
     console.log('🔍 Starting PDF text extraction...');
@@ -56,6 +84,8 @@ serve(async (req) => {
     // Enhanced PDF text extraction using multiple strategies
     let extractedText = '';
     let extractionMethod = 'unknown';
+    let needsOcr = false;
+    const warnings: string[] = [];
     
     try {
       // Primary extraction method using pdf-parse equivalent
@@ -65,8 +95,15 @@ serve(async (req) => {
       
       console.log(`✅ PDF-parse extraction successful: ${extractedText.length} characters`);
       
+      // Detect if OCR might be needed based on text content
+      if (extractedText.length < 500 || !/[a-zA-Z]{10,}/.test(extractedText)) {
+        needsOcr = true;
+        warnings.push('Limited text found - document may need OCR processing');
+      }
+      
     } catch (pdfParseError) {
       console.warn('⚠️ PDF-parse failed, trying fallback method:', pdfParseError.message);
+      warnings.push(`PDF parsing failed: ${pdfParseError.message}`);
       
       // Fallback to enhanced binary extraction
       const fallbackResult = await extractTextWithFallback(pdfBuffer);
@@ -76,13 +113,22 @@ serve(async (req) => {
       console.log(`✅ Fallback extraction completed: ${extractedText.length} characters`);
     }
     
-    // If still no meaningful text, try OCR-like approach
+    // If still no meaningful text, mark for OCR
     if (extractedText.length < 100) {
-      console.log('🔄 Text extraction insufficient, trying enhanced binary parsing...');
+      console.log('🔄 Text extraction insufficient, marking for OCR...');
+      needsOcr = true;
+      warnings.push('Minimal text extracted - OCR processing recommended');
+      
       const enhancedResult = await extractTextEnhanced(pdfBuffer);
       extractedText = enhancedResult.text;
       extractionMethod = 'enhanced-binary';
     }
+    
+    // Update job with OCR flag
+    await supabase
+      .from('etl_jobs')
+      .update({ needs_ocr: needsOcr })
+      .eq('id', jobId);
     
     console.log(`📝 Final extracted text length: ${extractedText.length}`);
     console.log(`📋 Sample text: ${extractedText.substring(0, 300)}`);
@@ -92,14 +138,41 @@ serve(async (req) => {
     
     console.log('💰 Extracted financial data:', JSON.stringify(financialData, null, 2));
     
+    // Validate extraction quality
+    const hasValidTranches = financialData.tranches && financialData.tranches.length > 0;
+    const hasFinancialMetrics = financialData.portfolio_balance || financialData.senior_notes_outstanding;
+    
+    // Determine job status
+    let jobStatus: 'done' | 'failed' = 'done';
+    if (!hasValidTranches && !hasFinancialMetrics) {
+      jobStatus = 'failed';
+      warnings.push('No meaningful financial data extracted');
+    }
+    
+    if (!hasValidTranches) {
+      warnings.push('No tranche information found');
+    }
+    
+    // Update job status and warnings
+    await supabase
+      .from('etl_jobs')
+      .update({ 
+        status: jobStatus, 
+        warnings: warnings 
+      })
+      .eq('id', jobId);
+    
     return new Response(
       JSON.stringify({
-        success: true,
+        success: jobStatus === 'done',
+        job_id: jobId,
         extractedData: financialData,
         textLength: extractedText.length,
         sampleText: extractedText.substring(0, 500),
         extractionMethod: extractionMethod,
-        fileName: file.name
+        fileName: fileName,
+        warnings: warnings,
+        needsOcr: needsOcr
       }),
       {
         headers: { 
@@ -111,6 +184,27 @@ serve(async (req) => {
     
   } catch (error) {
     console.error('❌ PDF extraction error:', error);
+    
+    // Update job status to failed if job was created
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Try to find and update the job - this is best effort
+      const errorMessage = error.message || 'Unknown extraction error';
+      await supabase
+        .from('etl_jobs')
+        .update({ 
+          status: 'failed', 
+          warnings: [errorMessage] 
+        })
+        .eq('status', 'running')
+        .order('created_at', { ascending: false })
+        .limit(1);
+    } catch (updateError) {
+      console.error('Failed to update job status:', updateError);
+    }
     
     return new Response(
       JSON.stringify({

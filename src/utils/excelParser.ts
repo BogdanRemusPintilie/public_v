@@ -24,13 +24,13 @@ interface ColumnMap {
   pd?: number;
 }
 
-// Securitization-focused sheet detection
+// Enhanced securitization-focused sheet detection with better heuristics
 function findSecuritizationSheet(worksheets: string[], workbook: XLSX.WorkBook): SheetInfo {
   const sheetPriority = [
-    { patterns: ['loan_tape', 'loantape', 'loan tape'], type: 'loan_tape' as const },
-    { patterns: ['tranche', 'tranches', 'structure'], type: 'tranche_summary' as const },
-    { patterns: ['portfolio', 'pool', 'collateral'], type: 'portfolio_stats' as const },
-    { patterns: ['data', 'loans', 'assets'], type: 'loan_tape' as const }
+    { patterns: ['loan_tape', 'loantape', 'loan tape', 'asset tape', 'pool tape'], type: 'loan_tape' as const },
+    { patterns: ['tranche', 'tranches', 'structure', 'notes', 'bonds', 'classes'], type: 'tranche_summary' as const },
+    { patterns: ['portfolio', 'pool', 'collateral', 'summary', 'overview'], type: 'portfolio_stats' as const },
+    { patterns: ['data', 'loans', 'assets', 'receivables', 'mortgages'], type: 'loan_tape' as const }
   ];
 
   for (const priority of sheetPriority) {
@@ -68,15 +68,16 @@ function findSecuritizationSheet(worksheets: string[], workbook: XLSX.WorkBook):
 function createFlexibleColumnMap(headers: string[]): ColumnMap {
   const map: ColumnMap = {};
   
+  // Enhanced patterns for securitization data
   const patterns = {
-    loan_amount: /(?:loan.*amount|principal|original.*balance|initial.*amount)/i,
-    opening_balance: /(?:opening.*balance|current.*balance|outstanding|balance)/i,
-    interest_rate: /(?:interest.*rate|rate|coupon|margin|yield)/i,
-    term: /(?:term|maturity|duration|months)/i,
-    loan_type: /(?:type|product|category)/i,
-    credit_score: /(?:credit.*score|score|rating)/i,
-    ltv: /(?:ltv|loan.*to.*value|l\.t\.v)/i,
-    pd: /(?:pd|probability.*default|default.*rate|risk)/i
+    loan_amount: /(?:loan.*amount|principal|original.*balance|initial.*amount|gross.*amount)/i,
+    opening_balance: /(?:opening.*balance|current.*balance|outstanding.*balance|balance|outstanding|unpaid.*balance)/i,
+    interest_rate: /(?:interest.*rate|rate|coupon|margin|yield|gross.*rate|contract.*rate)/i,
+    term: /(?:term|maturity|duration|months|original.*term|remaining.*term)/i,
+    loan_type: /(?:type|product|category|purpose|loan.*purpose)/i,
+    credit_score: /(?:credit.*score|score|rating|fico|beacon)/i,
+    ltv: /(?:ltv|loan.*to.*value|l\.t\.v|cltv|combined.*ltv)/i,
+    pd: /(?:pd|probability.*default|default.*rate|risk.*score|credit.*risk)/i
   };
 
   headers.forEach((header, index) => {
@@ -125,9 +126,10 @@ function parseStringValue(value: any): string {
   return value.toString().trim();
 }
 
-export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
+export const parseExcelFile = async (file: File): Promise<ParsedExcelData & { warnings: string[] }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    const warnings: string[] = [];
     
     reader.onload = (e) => {
       try {
@@ -137,10 +139,14 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
         const worksheets = workbook.SheetNames;
         console.log('Available worksheets:', worksheets);
         
-        // Securitization-focused sheet detection
+        // Enhanced securitization-focused sheet detection
         const targetSheet = findSecuritizationSheet(worksheets, workbook);
         
         console.log(`Processing sheet: "${targetSheet.name}" (detected as: ${targetSheet.type})`);
+        
+        if (targetSheet.type === 'unknown') {
+          warnings.push(`Could not identify sheet type for "${targetSheet.name}" - proceeding with basic parsing`);
+        }
         
         const worksheet = workbook.Sheets[targetSheet.name];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -159,6 +165,26 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
         const headers = jsonData[0] as string[];
         const columnMap = createFlexibleColumnMap(headers);
         console.log('Column mapping:', columnMap);
+        
+        // Validate essential columns are present
+        const essentialColumns = ['opening_balance', 'loan_amount'];
+        const missingEssentials = essentialColumns.filter(col => 
+          columnMap[col] === undefined
+        );
+        
+        if (missingEssentials.length > 0) {
+          warnings.push(`Missing essential columns: ${missingEssentials.join(', ')}`);
+        }
+        
+        // Check for securitization-specific columns
+        const securitizationColumns = ['interest_rate', 'term', 'ltv'];
+        const missingSecurity = securitizationColumns.filter(col => 
+          columnMap[col] === undefined
+        );
+        
+        if (missingSecurity.length > 0) {
+          warnings.push(`Missing recommended securitization columns: ${missingSecurity.join(', ')}`);
+        }
         
         // Process data rows (skip header row)
         const dataRows = jsonData.slice(1);
@@ -189,22 +215,36 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
           return isValid;
         });
         
+        // Generate parsing quality warnings
+        if (mappedData.length === 0) {
+          warnings.push('No valid data rows found in the sheet');
+        } else if (mappedData.length < dataRows.length * 0.5) {
+          warnings.push(`High data rejection rate: ${dataRows.length - mappedData.length} of ${dataRows.length} rows rejected`);
+        }
+        
+        const portfolioValue = mappedData.reduce((sum, loan) => sum + loan.opening_balance, 0);
+        if (portfolioValue === 0) {
+          warnings.push('Portfolio has zero total value - check balance columns');
+        }
+        
         console.log('Final parsing result:', {
           totalWorksheets: worksheets.length,
           targetWorksheet: targetSheet.name,
           sheetType: targetSheet.type,
           totalDataRows: dataRows.length,
           validRecords: mappedData.length,
-          portfolioValue: mappedData.reduce((sum, loan) => sum + loan.opening_balance, 0),
+          portfolioValue,
           avgInterestRate: mappedData.length > 0 ? 
             mappedData.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / 
             mappedData.reduce((sum, loan) => sum + loan.opening_balance, 0) : 0,
-          higherRiskLoans: mappedData.filter(loan => loan.pd > 0.05).length
+          higherRiskLoans: mappedData.filter(loan => loan.pd > 0.05).length,
+          warnings: warnings.length
         });
         
         resolve({
           worksheets: [targetSheet.name],
-          data: mappedData
+          data: mappedData,
+          warnings
         });
       } catch (error) {
         console.error('Error in parseExcelFile:', error);
