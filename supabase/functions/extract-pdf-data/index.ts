@@ -95,10 +95,15 @@ serve(async (req) => {
       
       console.log(`✅ PDF-parse extraction successful: ${extractedText.length} characters`);
       
-      // Detect if OCR might be needed based on text content
-      if (extractedText.length < 500 || !/[a-zA-Z]{10,}/.test(extractedText)) {
+      // Enhanced OCR detection - check for meaningful text patterns
+      const meaningfulTextRatio = calculateTextQuality(extractedText);
+      const hasReadableWords = /\b[a-zA-Z]{3,}\b/.test(extractedText);
+      const hasFinancialTerms = /\b(tranche|senior|balance|rate|payment|class|outstanding)\b/i.test(extractedText);
+      
+      if (extractedText.length < 500 || meaningfulTextRatio < 0.3 || !hasReadableWords || !hasFinancialTerms) {
         needsOcr = true;
-        warnings.push('Limited text found - document may need OCR processing');
+        warnings.push('Document appears to contain scanned/encoded content - OCR processing recommended');
+        console.log(`📊 Text quality metrics: length=${extractedText.length}, ratio=${meaningfulTextRatio}, readable=${hasReadableWords}, financial=${hasFinancialTerms}`);
       }
       
     } catch (pdfParseError) {
@@ -748,6 +753,22 @@ function standardizeDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+// Calculate text quality ratio (meaningful characters vs total)
+function calculateTextQuality(text: string): number {
+  if (!text || text.length === 0) return 0;
+  
+  // Count meaningful characters (letters, numbers, common punctuation)
+  const meaningfulChars = text.match(/[a-zA-Z0-9\s.,;:!?€$£¥%()[\]{}_+=|\\/"'-]/g) || [];
+  const meaningfulRatio = meaningfulChars.length / text.length;
+  
+  // Check for readable word patterns
+  const readableWords = text.match(/\b[a-zA-Z]{2,}\b/g) || [];
+  const wordDensity = readableWords.length / (text.length / 100); // words per 100 chars
+  
+  // Combined quality score
+  return Math.min(meaningfulRatio + (wordDensity * 0.1), 1.0);
 }
 
 function capitalizeWords(str: string): string {
