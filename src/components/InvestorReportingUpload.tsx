@@ -25,6 +25,7 @@ import {
   type InvestorReport,
   type ReportMetadata as ImportedReportMetadata
 } from "@/utils/investorReports";
+import { DocumentExtractor, type ExtractedFinancialData } from "@/utils/documentExtraction";
 
 interface InvestorReportingUploadProps {
   isOpen: boolean;
@@ -54,7 +55,9 @@ interface UploadedFile {
   uploadDate: Date;
   file: File;
   metadata: LocalReportMetadata;
-  extractedData?: any;
+  extractedData?: ExtractedFinancialData;
+  isProcessing?: boolean;
+  processingError?: string;
 }
 
 const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpen, onClose }) => {
@@ -78,8 +81,8 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
     notes: ''
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    acceptedFiles.forEach((file) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    for (const file of acceptedFiles) {
       const newFile: UploadedFile = {
         id: Date.now().toString() + Math.random().toString(36),
         name: file.name,
@@ -88,51 +91,62 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
         uploadDate: new Date(),
         file: file,
         metadata: { ...metadata },
-        extractedData: null
+        isProcessing: true
       };
       
       setUploadedFiles(prev => [...prev, newFile]);
       setSelectedFile(newFile);
       
-      // Simulate data extraction
-      setTimeout(() => {
-        const mockExtractedData = {
-          payment_date: '2025-06-23',
-          senior_tranche_os: 1480000000,
-          protected_tranche: 121000000,
-          cpr_annualised: 4.97,
-          cum_losses: 6770000,
-          next_payment_date: '2025-09-23',
-          tranches: [
-            {
-              name: 'Senior A',
-              balance: 1480000000,
-              interest_rate: 2.45,
-              wal: 2.3,
-              rating: 'AAA'
-            },
-            {
-              name: 'Protected',
-              balance: 121000000,
-              interest_rate: 3.20,
-              wal: 4.1,
-              rating: 'A'
-            }
-          ]
-        };
+      // Extract data from the actual file
+      try {
+        console.log(`Starting data extraction for file: ${file.name}, type: ${file.type}`);
+        
+        let extractedData: ExtractedFinancialData;
+        
+        if (file.type === 'application/pdf') {
+          extractedData = await DocumentExtractor.extractFromPDF(file);
+        } else if (file.type.includes('spreadsheet') || file.type.includes('excel') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+          extractedData = await DocumentExtractor.extractFromExcel(file);
+        } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+          extractedData = await DocumentExtractor.extractFromCSV(file);
+        } else {
+          throw new Error(`Unsupported file type: ${file.type}`);
+        }
+        
+        console.log('Data extraction completed:', extractedData);
+        
+        // Update the file with extracted data
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === newFile.id 
+            ? { ...f, extractedData, isProcessing: false }
+            : f
+        ));
+        
+        toast({
+          title: "Data extracted successfully",
+          description: `Successfully processed ${file.name}`,
+        });
+        
+      } catch (error) {
+        console.error('Data extraction failed:', error);
         
         setUploadedFiles(prev => prev.map(f => 
           f.id === newFile.id 
-            ? { ...f, extractedData: mockExtractedData }
+            ? { 
+                ...f, 
+                isProcessing: false, 
+                processingError: error instanceof Error ? error.message : 'Unknown error'
+              }
             : f
         ));
-      }, 2000);
-    });
-    
-    toast({
-      title: "Files uploaded successfully",
-      description: `${acceptedFiles.length} file(s) uploaded and processing started`,
-    });
+        
+        toast({
+          title: "Data extraction failed",
+          description: `Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          variant: "destructive",
+        });
+      }
+    }
   }, [metadata, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -163,13 +177,15 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
     const data = file.extractedData;
     return {
       deal_name: file.metadata.deal_name || file.name.split('.')[0],
-      period: file.metadata.period_end ? format(file.metadata.period_end, 'PPP') : 'Q2-2025',
-      payment_date: data.payment_date,
-      senior_tranche_os: `€${(data.senior_tranche_os / 1000000).toFixed(0)}M`,
-      protected_tranche: `€${(data.protected_tranche / 1000000).toFixed(0)}M`,
-      cpr_annualised: `${data.cpr_annualised}%`,
-      cum_losses: `€${(data.cum_losses / 1000000).toFixed(2)}M`,
-      next_payment_date: data.next_payment_date
+      period: file.metadata.period_end ? format(file.metadata.period_end, 'PPP') : 'Current Period',
+      payment_date: data.payment_date || 'N/A',
+      senior_tranche_os: data.senior_tranche_os ? `€${(data.senior_tranche_os / 1000000).toFixed(0)}M` : 'N/A',
+      protected_tranche: data.protected_tranche ? `€${(data.protected_tranche / 1000000).toFixed(0)}M` : 'N/A',
+      cpr_annualised: data.cpr_annualised ? `${data.cpr_annualised.toFixed(2)}%` : 'N/A',
+      cum_losses: data.cum_losses ? `€${(data.cum_losses / 1000000).toFixed(2)}M` : 'N/A',
+      next_payment_date: data.next_payment_date || 'N/A',
+      portfolio_balance: data.portfolio_balance ? `€${(data.portfolio_balance / 1000000).toFixed(0)}M` : 'N/A',
+      weighted_avg_rate: data.weighted_avg_rate ? `${data.weighted_avg_rate.toFixed(2)}%` : 'N/A'
     };
   };
 
@@ -403,14 +419,35 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {file.extractedData ? (
-                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            {file.processingError ? (
+                              <>
+                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                <Badge variant="destructive" className="text-xs">
+                                  Error
+                                </Badge>
+                              </>
+                            ) : file.isProcessing ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
+                                <Badge variant="secondary" className="text-xs">
+                                  Processing...
+                                </Badge>
+                              </>
+                            ) : file.extractedData ? (
+                              <>
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <Badge variant="secondary" className="text-xs">
+                                  Processed
+                                </Badge>
+                              </>
                             ) : (
-                              <AlertCircle className="h-4 w-4 text-orange-500" />
+                              <>
+                                <AlertCircle className="h-4 w-4 text-orange-500" />
+                                <Badge variant="secondary" className="text-xs">
+                                  Pending
+                                </Badge>
+                              </>
                             )}
-                            <Badge variant="secondary" className="text-xs">
-                              {file.extractedData ? 'Processed' : 'Processing'}
-                            </Badge>
                           </div>
                         </div>
                       ))}
@@ -608,30 +645,45 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
                     <CardTitle>Tranche Analysis</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Tranche</TableHead>
-                          <TableHead>Balance</TableHead>
-                          <TableHead>Interest Rate</TableHead>
-                          <TableHead>WAL</TableHead>
-                          <TableHead>Rating</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedFile.extractedData.tranches.map((tranche: any, index: number) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{tranche.name}</TableCell>
-                            <TableCell>€{(tranche.balance / 1000000).toFixed(0)}M</TableCell>
-                            <TableCell>{tranche.interest_rate}%</TableCell>
-                            <TableCell>{tranche.wal}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">{tranche.rating}</Badge>
-                            </TableCell>
+                    {selectedFile.extractedData.tranches && selectedFile.extractedData.tranches.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tranche</TableHead>
+                            <TableHead>Balance</TableHead>
+                            <TableHead>Interest Rate</TableHead>
+                            <TableHead>WAL</TableHead>
+                            <TableHead>Rating</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedFile.extractedData.tranches.map((tranche: any, index: number) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{tranche.name}</TableCell>
+                              <TableCell>
+                                {tranche.balance > 0 ? `€${(tranche.balance / 1000000).toFixed(0)}M` : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                {tranche.interest_rate > 0 ? `${tranche.interest_rate.toFixed(2)}%` : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                {tranche.wal > 0 ? tranche.wal.toFixed(1) : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">{tranche.rating || 'NR'}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No tranche data available</p>
+                        <p className="text-sm text-gray-400 mt-2">
+                          The document may not contain structured tranche information
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -661,6 +713,23 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            ) : selectedFile && selectedFile.processingError ? (
+              <div className="text-center py-8">
+                <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
+                <p className="text-red-600 font-medium mb-2">Processing Error</p>
+                <p className="text-gray-600 mb-4">{selectedFile.processingError}</p>
+                <p className="text-sm text-gray-500">
+                  Please try uploading a different file or check the file format
+                </p>
+              </div>
+            ) : selectedFile && selectedFile.isProcessing ? (
+              <div className="text-center py-8">
+                <RefreshCw className="mx-auto h-12 w-12 text-blue-400 animate-spin mb-4" />
+                <p className="text-blue-600 font-medium mb-2">Processing Document</p>
+                <p className="text-gray-600">
+                  Extracting data from {selectedFile.name}...
+                </p>
               </div>
             ) : (
               <div className="text-center py-8">
