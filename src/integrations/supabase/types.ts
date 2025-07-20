@@ -44,6 +44,81 @@ export type Database = {
         }
         Relationships: []
       }
+      investor_reports: {
+        Row: {
+          asset_class: string | null
+          created_at: string
+          currency: string | null
+          deal_name: string
+          extracted_data: Json | null
+          file_name: string
+          file_path: string
+          file_sha256: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          issuer: string | null
+          jurisdiction: string | null
+          notes: string | null
+          period_end: string | null
+          period_start: string | null
+          publish_date: string | null
+          report_type: string | null
+          sts_compliant: boolean | null
+          sustainability_labelled: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_class?: string | null
+          created_at?: string
+          currency?: string | null
+          deal_name: string
+          extracted_data?: Json | null
+          file_name: string
+          file_path: string
+          file_sha256?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          issuer?: string | null
+          jurisdiction?: string | null
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          publish_date?: string | null
+          report_type?: string | null
+          sts_compliant?: boolean | null
+          sustainability_labelled?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_class?: string | null
+          created_at?: string
+          currency?: string | null
+          deal_name?: string
+          extracted_data?: Json | null
+          file_name?: string
+          file_path?: string
+          file_sha256?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          issuer?: string | null
+          jurisdiction?: string | null
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          publish_date?: string | null
+          report_type?: string | null
+          sts_compliant?: boolean | null
+          sustainability_labelled?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       loan_data: {
         Row: {
           created_at: string

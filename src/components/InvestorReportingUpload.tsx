@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,15 +14,24 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, Download, Eye, TrendingUp, AlertCircle, CheckCircle, Calendar as CalendarComp } from 'lucide-react';
+import { Upload, FileText, Download, Eye, TrendingUp, AlertCircle, CheckCircle, Calendar as CalendarComp, Save, RefreshCw, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { 
+  saveInvestorReport, 
+  getInvestorReports, 
+  deleteInvestorReport, 
+  getFileDownloadUrl,
+  updateInvestorReport,
+  type InvestorReport,
+  type ReportMetadata as ImportedReportMetadata
+} from "@/utils/investorReports";
 
 interface InvestorReportingUploadProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface ReportMetadata {
+interface LocalReportMetadata {
   deal_name: string;
   issuer: string;
   asset_class: string;
@@ -44,7 +53,7 @@ interface UploadedFile {
   type: string;
   uploadDate: Date;
   file: File;
-  metadata: ReportMetadata;
+  metadata: LocalReportMetadata;
   extractedData?: any;
 }
 
@@ -52,7 +61,9 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
   const { toast } = useToast();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
-  const [metadata, setMetadata] = useState<ReportMetadata>({
+  const [savedReports, setSavedReports] = useState<InvestorReport[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [metadata, setMetadata] = useState<LocalReportMetadata>({
     deal_name: '',
     issuer: '',
     asset_class: '',
@@ -135,7 +146,7 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
     multiple: true
   });
 
-  const updateMetadata = (field: keyof ReportMetadata, value: any) => {
+  const updateMetadata = (field: keyof LocalReportMetadata, value: any) => {
     setMetadata(prev => ({ ...prev, [field]: value }));
     if (selectedFile) {
       setUploadedFiles(prev => prev.map(f => 
@@ -216,6 +227,113 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  const loadSavedReports = async () => {
+    setIsLoading(true);
+    try {
+      const reports = await getInvestorReports();
+      setSavedReports(reports);
+    } catch (error) {
+      toast({
+        title: "Error loading reports",
+        description: error instanceof Error ? error.message : "Failed to load reports",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveCurrentFile = async () => {
+    if (!selectedFile || !selectedFile.extractedData) {
+      toast({
+        title: "Cannot save file",
+        description: "Please select a processed file to save",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Convert local metadata to database format
+      const dbMetadata: ImportedReportMetadata = {
+        deal_name: selectedFile.metadata.deal_name,
+        issuer: selectedFile.metadata.issuer,
+        asset_class: selectedFile.metadata.asset_class,
+        jurisdiction: selectedFile.metadata.jurisdiction,
+        report_type: selectedFile.metadata.report_type,
+        period_start: selectedFile.metadata.period_start?.toISOString().split('T')[0],
+        period_end: selectedFile.metadata.period_end?.toISOString().split('T')[0],
+        publish_date: selectedFile.metadata.publish_date?.toISOString().split('T')[0],
+        currency: selectedFile.metadata.currency,
+        sustainability_labelled: selectedFile.metadata.sustainability_labelled,
+        sts_compliant: selectedFile.metadata.sts_compliant,
+        notes: selectedFile.metadata.notes,
+      };
+
+      await saveInvestorReport(selectedFile.file, dbMetadata, selectedFile.extractedData);
+      
+      toast({
+        title: "Report saved successfully",
+        description: "Your investor report has been saved to the database",
+      });
+
+      // Refresh the saved reports list
+      loadSavedReports();
+    } catch (error) {
+      toast({
+        title: "Error saving report",
+        description: error instanceof Error ? error.message : "Failed to save report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteSavedReport = async (reportId: string) => {
+    setIsLoading(true);
+    try {
+      await deleteInvestorReport(reportId);
+      
+      toast({
+        title: "Report deleted",
+        description: "The investor report has been deleted successfully",
+      });
+
+      // Refresh the saved reports list
+      loadSavedReports();
+    } catch (error) {
+      toast({
+        title: "Error deleting report",
+        description: error instanceof Error ? error.message : "Failed to delete report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const downloadSavedReport = async (report: InvestorReport) => {
+    try {
+      const downloadUrl = await getFileDownloadUrl(report.file_path);
+      window.open(downloadUrl, '_blank');
+    } catch (error) {
+      toast({
+        title: "Error downloading file",
+        description: error instanceof Error ? error.message : "Failed to generate download link",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load saved reports when the dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      loadSavedReports();
+    }
+  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -399,6 +517,28 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
                       onChange={(e) => updateMetadata('notes', e.target.value)}
                     />
                   </div>
+                  
+                  {selectedFile && selectedFile.extractedData && (
+                    <div className="pt-4 border-t">
+                      <Button
+                        onClick={saveCurrentFile}
+                        disabled={isLoading}
+                        className="w-full"
+                      >
+                        {isLoading ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Report to Database
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -533,35 +673,75 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
           <TabsContent value="reports" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Report Library</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Saved Reports</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadSavedReports}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {uploadedFiles.length > 0 ? (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <RefreshCw className="mx-auto h-8 w-8 text-gray-400 animate-spin mb-4" />
+                    <p className="text-gray-600">Loading reports...</p>
+                  </div>
+                ) : savedReports.length > 0 ? (
                   <div className="space-y-4">
-                    {uploadedFiles.map((file) => (
-                      <div key={file.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    {savedReports.map((report) => (
+                      <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-3">
                           <FileText className="h-5 w-5 text-gray-500" />
                           <div>
-                            <h4 className="font-medium">{file.metadata.deal_name || file.name}</h4>
+                            <h4 className="font-medium">{report.deal_name}</h4>
                             <p className="text-sm text-gray-600">
-                              {file.metadata.issuer} • {file.metadata.report_type}
+                              {report.issuer} • {report.report_type}
                             </p>
-                            <p className="text-xs text-gray-500">
-                              Uploaded {format(file.uploadDate, 'PPp')}
-                            </p>
+                            <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                              <span>Uploaded {report.created_at ? format(new Date(report.created_at), 'PPp') : 'Unknown'}</span>
+                              <span>{report.currency}</span>
+                              <span>{report.file_size ? formatFileSize(report.file_size) : 'Unknown size'}</span>
+                            </div>
+                            {report.notes && (
+                              <p className="text-xs text-gray-600 mt-1 italic">{report.notes}</p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={file.extractedData ? 'default' : 'secondary'}>
-                            {file.extractedData ? 'Processed' : 'Processing'}
-                          </Badge>
+                          {report.sustainability_labelled && (
+                            <Badge variant="outline" className="text-green-600 border-green-300">
+                              Sustainable
+                            </Badge>
+                          )}
+                          {report.sts_compliant && (
+                            <Badge variant="outline" className="text-blue-600 border-blue-300">
+                              STS
+                            </Badge>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedFile(file)}
+                            onClick={() => downloadSavedReport(report)}
                           >
-                            View
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteSavedReport(report.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -570,7 +750,10 @@ const InvestorReportingUpload: React.FC<InvestorReportingUploadProps> = ({ isOpe
                 ) : (
                   <div className="text-center py-8">
                     <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-600">No reports uploaded yet</p>
+                    <p className="text-gray-600">No saved reports found</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Upload and save reports to see them here
+                    </p>
                   </div>
                 )}
               </CardContent>
