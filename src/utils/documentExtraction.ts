@@ -1,5 +1,5 @@
-
 import * as XLSX from 'xlsx';
+import { supabase } from "@/integrations/supabase/client";
 
 // PDF parsing types and interfaces
 export interface ExtractedFinancialData {
@@ -26,19 +26,41 @@ export interface TrancheData {
 
 export class DocumentExtractor {
   
-  // Extract data from PDF files
+  // Extract data from PDF files using server-side processing
   static async extractFromPDF(file: File): Promise<ExtractedFinancialData> {
     try {
-      // Convert file to text using a simple text extraction approach
-      const text = await this.pdfToText(file);
+      console.log('🚀 Starting server-side PDF extraction...');
       
-      console.log('PDF text extracted, length:', text.length);
-      console.log('Sample text:', text.substring(0, 500));
+      // Create FormData to send file to Edge Function
+      const formData = new FormData();
+      formData.append('file', file);
       
-      return this.parseFinancialText(text);
+      console.log(`📤 Sending ${file.name} to server for processing...`);
+      
+      // Call the Edge Function
+      const { data, error } = await supabase.functions.invoke('extract-pdf-data', {
+        body: formData,
+      });
+      
+      if (error) {
+        console.error('❌ Edge Function error:', error);
+        throw new Error(`Server processing failed: ${error.message}`);
+      }
+      
+      if (!data.success) {
+        console.error('❌ Server extraction failed:', data.error);
+        throw new Error(`PDF extraction failed: ${data.error}`);
+      }
+      
+      console.log('✅ Server-side extraction completed');
+      console.log('📊 Extracted data:', data.extractedData);
+      console.log('📝 Text sample:', data.sampleText?.substring(0, 200));
+      
+      return data.extractedData;
+      
     } catch (error) {
-      console.error('PDF extraction error:', error);
-      throw new Error('Failed to extract data from PDF');
+      console.error('❌ PDF extraction error:', error);
+      throw new Error(`Failed to extract data from PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -85,43 +107,6 @@ export class DocumentExtractor {
     }
   }
 
-  // Helper method to convert PDF to text using pdf-parse
-  private static async pdfToText(file: File): Promise<string> {
-    try {
-      console.log('🔍 Starting PDF text extraction...');
-      const pdfParse = await import('pdf-parse');
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      console.log('📄 PDF buffer created, size:', buffer.length);
-      
-      const data = await pdfParse.default(buffer);
-      console.log('✅ PDF parsed successfully, text length:', data.text.length);
-      console.log('📝 First 200 chars:', data.text.substring(0, 200));
-      
-      return data.text;
-    } catch (error) {
-      console.error('❌ PDF parsing failed:', error);
-      console.log('🔄 Falling back to basic text extraction');
-      
-      // Fallback to basic text extraction
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const text = reader.result as string || '';
-          console.log('📄 Fallback extraction completed, length:', text.length);
-          resolve(text);
-        };
-        reader.onerror = () => {
-          console.log('❌ Fallback also failed, returning empty string');
-          resolve('');
-        };
-        reader.readAsText(file);
-      });
-    }
-  }
-
   // Helper method to read Excel file
   private static async readExcelFile(file: File): Promise<XLSX.WorkBook> {
     return new Promise((resolve, reject) => {
@@ -148,71 +133,6 @@ export class DocumentExtractor {
       reader.onerror = reject;
       reader.readAsText(file);
     });
-  }
-
-  // Parse financial data from text content
-  private static parseFinancialText(text: string): ExtractedFinancialData {
-    const result: ExtractedFinancialData = {};
-    
-    // Common patterns for financial data extraction
-    const patterns = {
-      payment_date: /payment\s+date[:\s]+(\d{1,2}[-\/]\d{1,2}[-\/]\d{4}|\d{4}-\d{2}-\d{2})/i,
-      next_payment_date: /next\s+payment[:\s]+(\d{1,2}[-\/]\d{1,2}[-\/]\d{4}|\d{4}-\d{2}-\d{2})/i,
-      senior_tranche: /senior.*?(?:balance|outstanding)[:\s]+([\d,]+\.?\d*)/i,
-      protected_tranche: /protected.*?(?:balance|outstanding)[:\s]+([\d,]+\.?\d*)/i,
-      cpr: /cpr[:\s]+([\d.]+)%?/i,
-      losses: /(?:cumulative\s+)?losses[:\s]+([\d,]+\.?\d*)/i,
-      portfolio_balance: /portfolio\s+balance[:\s]+([\d,]+\.?\d*)/i,
-      weighted_rate: /weighted.*?rate[:\s]+([\d.]+)%?/i
-    };
-
-    // Extract dates
-    const paymentMatch = text.match(patterns.payment_date);
-    if (paymentMatch) {
-      result.payment_date = this.standardizeDate(paymentMatch[1]);
-    }
-
-    const nextPaymentMatch = text.match(patterns.next_payment_date);
-    if (nextPaymentMatch) {
-      result.next_payment_date = this.standardizeDate(nextPaymentMatch[1]);
-    }
-
-    // Extract financial figures
-    const seniorMatch = text.match(patterns.senior_tranche);
-    if (seniorMatch) {
-      result.senior_tranche_os = this.parseNumber(seniorMatch[1]);
-    }
-
-    const protectedMatch = text.match(patterns.protected_tranche);
-    if (protectedMatch) {
-      result.protected_tranche = this.parseNumber(protectedMatch[1]);
-    }
-
-    const cprMatch = text.match(patterns.cpr);
-    if (cprMatch) {
-      result.cpr_annualised = parseFloat(cprMatch[1]);
-    }
-
-    const lossesMatch = text.match(patterns.losses);
-    if (lossesMatch) {
-      result.cum_losses = this.parseNumber(lossesMatch[1]);
-    }
-
-    const portfolioMatch = text.match(patterns.portfolio_balance);
-    if (portfolioMatch) {
-      result.portfolio_balance = this.parseNumber(portfolioMatch[1]);
-    }
-
-    const rateMatch = text.match(patterns.weighted_rate);
-    if (rateMatch) {
-      result.weighted_avg_rate = parseFloat(rateMatch[1]);
-    }
-
-    // Extract tranche information
-    result.tranches = this.extractTranches(text);
-
-    console.log('Extracted financial data:', result);
-    return result;
   }
 
   // Parse Excel/CSV data
@@ -326,29 +246,6 @@ export class DocumentExtractor {
     }
     
     return null;
-  }
-
-  private static extractTranches(text: string): TrancheData[] {
-    const tranches: TrancheData[] = [];
-    
-    // Look for tabular data patterns
-    const lines = text.split('\n');
-    const tranchePattern = /(senior|protected|mezzanine|junior|class\s+[a-z])\s+.*?(\d+[\d,]*\.?\d*)\s+.*?(\d+\.?\d*%?)/i;
-    
-    for (const line of lines) {
-      const match = line.match(tranchePattern);
-      if (match) {
-        tranches.push({
-          name: match[1],
-          balance: this.parseNumber(match[2]),
-          interest_rate: this.parseNumber(match[3]),
-          wal: 0,
-          rating: 'NR'
-        });
-      }
-    }
-    
-    return tranches;
   }
 
   private static findDateInData(data: any[][], searchTerms: string[]): string | undefined {
