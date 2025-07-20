@@ -259,6 +259,42 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          company: string | null
+          company_type: Database["public"]["Enums"]["company_type"] | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          company_type?: Database["public"]["Enums"]["company_type"] | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          company_type?: Database["public"]["Enums"]["company_type"] | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tranche_structures: {
         Row: {
           additional_transaction_costs: number | null
@@ -321,9 +357,28 @@ export type Database = {
           created_at: string
         }[]
       }
+      get_user_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          company: string
+          company_type: Database["public"]["Enums"]["company_type"]
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      has_company_access: {
+        Args: {
+          _user_id: string
+          _company_type: Database["public"]["Enums"]["company_type"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      company_type: "seer_capital" | "general"
+      user_role: "admin" | "company_user" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -450,6 +505,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      company_type: ["seer_capital", "general"],
+      user_role: ["admin", "company_user", "viewer"],
+    },
   },
 } as const

@@ -1,12 +1,12 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye, Globe } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Upload, Download, Settings, LogOut, Users, BarChart3, Database, DollarSign, TrendingUp, Shield, FileText, Zap, ChevronDown, RefreshCw, Building2, FolderOpen, BarChart, FileCheck, Activity, Plus, Eye, Globe } from 'lucide-react';
 import ExcelUpload from '@/components/ExcelUpload';
 import DatasetManager from '@/components/DatasetManager';
 import DataExtractor from '@/components/DataExtractor';
@@ -14,21 +14,25 @@ import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
 import { IssueOfferModal } from '@/components/IssueOfferModal';
 import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
 import InvestorReportingUpload from '@/components/InvestorReportingUpload';
+import SeerCapitalReporting from '@/components/SeerCapitalReporting';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const { toast } = useToast();
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showExistingData, setShowExistingData] = useState(false);
-  const [showDatasetManager, setShowDatasetManager] = useState(false);
   const [showDataExtractor, setShowDataExtractor] = useState(false);
+  const [showDatasetManager, setShowDatasetManager] = useState(false);
   const [showTrancheAnalysis, setShowTrancheAnalysis] = useState(false);
-  const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
-  const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
   const [showIssueOfferModal, setShowIssueOfferModal] = useState(false);
   const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
   const [showInvestorReporting, setShowInvestorReporting] = useState(false);
+  const [showSeerCapitalReporting, setShowSeerCapitalReporting] = useState(false);
+  const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
+  const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
 
   const handleLogout = () => {
     logout();
@@ -49,7 +53,6 @@ const Dashboard = () => {
   };
 
   const handlePreTradeAction = (action: string) => {
-    // Close the popover immediately when any action is selected
     setPreTradePopoverOpen(false);
     
     if (action === 'Upload Data Tape') {
@@ -71,7 +74,6 @@ const Dashboard = () => {
   };
 
   const handleDatasetUploaded = () => {
-    // Trigger refresh across all components that show datasets
     const newTrigger = Date.now();
     setGlobalRefreshTrigger(newTrigger);
     console.log('🔄 DASHBOARD - Global dataset refresh triggered:', newTrigger);
@@ -108,6 +110,28 @@ const Dashboard = () => {
     });
   };
 
+  const handleGenerateReport = () => {
+    if (!profile) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to access reporting features.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user has Seer Capital access
+    if (profile.company_type === 'seer_capital') {
+      setShowSeerCapitalReporting(true);
+    } else {
+      toast({
+        title: "Access Restricted",
+        description: "This reporting feature is currently only available for Seer Capital users.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <header className="border-b bg-white/80 backdrop-blur-sm">
@@ -129,7 +153,14 @@ const Dashboard = () => {
               </button>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome back, {user?.email}</span>
+              <span className="text-sm text-gray-600">
+                Welcome back, {profile?.full_name || user?.email}
+                {profile?.company_type === 'seer_capital' && (
+                  <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    Seer Capital
+                  </span>
+                )}
+              </span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -430,9 +461,22 @@ const Dashboard = () => {
               <DollarSign className="h-4 w-4" />
               <span>Update Pricing</span>
             </Button>
-            <Button variant="outline" className="flex items-center space-x-2">
-              <BarChart3 className="h-4 w-4" />
-              <span>Generate Report</span>
+            <Button 
+              variant="outline" 
+              className="flex items-center space-x-2"
+              onClick={handleGenerateReport}
+            >
+              {profile?.company_type === 'seer_capital' ? (
+                <Building2 className="h-4 w-4" />
+              ) : (
+                <BarChart3 className="h-4 w-4" />
+              )}
+              <span>
+                {profile?.company_type === 'seer_capital' 
+                  ? 'Seer Capital Reports' 
+                  : 'Generate Report'
+                }
+              </span>
             </Button>
           </div>
         </div>
@@ -480,6 +524,11 @@ const Dashboard = () => {
       <InvestorReportingUpload
         isOpen={showInvestorReporting}
         onClose={() => setShowInvestorReporting(false)}
+      />
+
+      <SeerCapitalReporting 
+        isOpen={showSeerCapitalReporting} 
+        onClose={() => setShowSeerCapitalReporting(false)} 
       />
     </div>
   );
