@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Download, FileText, X } from 'lucide-react';
+import { Upload, Download, FileText, X, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ExtractionToolProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['portfolioBalance', 'cumulativeLosses']);
   const { toast } = useToast();
 
   // Demo data that matches the image structure
@@ -122,6 +124,68 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
 
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat('en-US').format(value);
+  };
+
+  // Chart configuration
+  const chartMetrics = [
+    { key: 'portfolioBalance', label: 'Portfolio Balance', type: 'currency' },
+    { key: 'cumulativeLosses', label: 'Cumulative Losses', type: 'currency' },
+    { key: 'monthlyDefaults', label: 'Monthly Defaults', type: 'currency' },
+    { key: 'waRemainingTerm', label: 'WA Remaining Term', type: 'number' },
+    { key: 'poolFactor', label: 'Pool Factor', type: 'decimal' },
+    { key: 'loans', label: 'Loans', type: 'number' },
+    { key: 'fBalance', label: 'F Balance', type: 'currency' },
+    { key: 'gBalance', label: 'G Balance', type: 'currency' }
+  ];
+
+  const getLineColor = (index: number) => {
+    const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
+    return colors[index % colors.length];
+  };
+
+  const getMetricLabel = (key: string) => {
+    return chartMetrics.find(m => m.key === key)?.label || key;
+  };
+
+  const getMetricType = (key: string) => {
+    return chartMetrics.find(m => m.key === key)?.type || 'number';
+  };
+
+  const formatChartValue = (value: any, metrics: string[]) => {
+    if (typeof value !== 'number') return value;
+    
+    // Determine format based on the first selected metric
+    const firstMetricType = getMetricType(metrics[0]);
+    
+    if (firstMetricType === 'currency') {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (firstMetricType === 'decimal') {
+      return value.toFixed(2);
+    } else {
+      return formatNumber(value);
+    }
+  };
+
+  const formatTooltipValue = (value: any, name: string) => {
+    if (typeof value !== 'number') return value;
+    
+    const metricType = getMetricType(name);
+    
+    if (metricType === 'currency') {
+      return formatCurrency(value);
+    } else if (metricType === 'decimal') {
+      return value.toFixed(2);
+    } else {
+      return formatNumber(value);
+    }
+  };
+
+  const toggleMetric = (metric: string) => {
+    setSelectedMetrics(prev => 
+      prev.includes(metric) 
+        ? prev.filter(m => m !== metric)
+        : [...prev, metric]
+    );
   };
 
   return (
@@ -238,7 +302,7 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                       </div>
                       <div className="flex justify-between">
                         <span>FT Balance G</span>
-                        <span>{formatNumber(extractedData.trancheG.ftBalance)}</span>
+                        <span>{formatCurrency(extractedData.trancheG.ftBalance)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Attachment/Detachment</span>
@@ -303,7 +367,7 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                         <div className="text-sm text-teal-700">WA FICO</div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                       <div className="text-center p-3 bg-red-50 rounded-lg">
                         <div className="text-lg font-bold text-red-600">{extractedData.summary.origination.waRemainingTerm}</div>
                         <div className="text-sm text-red-700">WA Remaining Term</div>
@@ -319,6 +383,10 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                       <div className="text-center p-3 bg-cyan-50 rounded-lg">
                         <div className="text-lg font-bold text-cyan-600">{formatCurrency(extractedData.summary.origination.fBalance)}</div>
                         <div className="text-sm text-cyan-700">F Balance</div>
+                      </div>
+                      <div className="text-center p-3 bg-emerald-50 rounded-lg">
+                        <div className="text-lg font-bold text-emerald-600">{formatCurrency(extractedData.summary.origination.gBalance)}</div>
+                        <div className="text-sm text-emerald-700">G Balance</div>
                       </div>
                     </div>
                   </div>
@@ -364,18 +432,71 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                     </table>
                   </div>
 
-                  {/* Balance Information */}
+                  {/* Interactive Chart Visualization */}
                   <div className="mt-6">
-                    <h4 className="font-semibold mb-3">Current Balances</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(extractedData.balances.fBalance)}</div>
-                        <div className="text-sm text-blue-700">F Balance</div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-blue-600" />
+                        Performance Timeline
+                      </h4>
+                    </div>
+                    
+                    {/* Metric Selection */}
+                    <div className="mb-4">
+                      <Label className="text-sm font-medium mb-2 block">Select Metrics to Display:</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {chartMetrics.map((metric) => (
+                          <Button
+                            key={metric.key}
+                            variant={selectedMetrics.includes(metric.key) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleMetric(metric.key)}
+                            className="text-xs"
+                          >
+                            {metric.label}
+                          </Button>
+                        ))}
                       </div>
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{formatCurrency(extractedData.balances.gBalance)}</div>
-                        <div className="text-sm text-green-700">G Balance</div>
-                      </div>
+                    </div>
+
+                    {/* Chart */}
+                    <div className="h-96 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={extractedData.summary.monthlyData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="period" 
+                            fontSize={12}
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                          />
+                          <YAxis 
+                            fontSize={12}
+                            tickFormatter={(value) => formatChartValue(value, selectedMetrics)}
+                          />
+                          <Tooltip 
+                            formatter={(value, name) => [
+                              formatTooltipValue(value, name as string), 
+                              getMetricLabel(name as string)
+                            ]}
+                            labelStyle={{ color: '#374151' }}
+                          />
+                          <Legend />
+                          {selectedMetrics.map((metric, index) => (
+                            <Line
+                              key={metric}
+                              type="monotone"
+                              dataKey={metric}
+                              stroke={getLineColor(index)}
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                              activeDot={{ r: 6 }}
+                              name={getMetricLabel(metric)}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 </CardContent>
