@@ -295,7 +295,7 @@ function extractKeywordContext(text: string): string[] {
   return contexts;
 }
 
-// Enhanced financial data parsing
+// Enhanced financial data parsing with securitization focus
 function parseFinancialData(text: string): ExtractedFinancialData {
   const result: ExtractedFinancialData = {};
   
@@ -304,14 +304,15 @@ function parseFinancialData(text: string): ExtractedFinancialData {
     return { currency: 'EUR', tranches: [] };
   }
   
-  console.log('🔍 Starting enhanced financial data parsing...');
+  console.log('🔍 Starting securitization-focused financial data parsing...');
   console.log(`📊 Input text length: ${text.length} characters`);
   
-  // Enhanced date extraction patterns
+  // Enhanced date extraction for investor reports
   const datePatterns = [
-    /(?:payment|pay|reporting)\s*date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
-    /(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})\s*(?:payment|pay)/gi,
-    /(?:next|following)\s*payment[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi
+    /(?:payment|distribution|interest)\s*date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
+    /(?:reporting|valuation|calculation)\s*date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
+    /(?:next|upcoming|following)\s*(?:payment|distribution)[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
+    /(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})\s*(?:payment|distribution)/gi
   ];
   
   for (const pattern of datePatterns) {
@@ -319,30 +320,64 @@ function parseFinancialData(text: string): ExtractedFinancialData {
     if (matches && matches.length > 0) {
       const dateStr = matches[0].match(/\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4}/)?.[0];
       if (dateStr) {
-        if (!result.payment_date && matches[0].toLowerCase().includes('payment')) {
+        const context = matches[0].toLowerCase();
+        if (!result.payment_date && (context.includes('payment') || context.includes('distribution'))) {
           result.payment_date = standardizeDate(dateStr);
         }
-        if (!result.next_payment_date && matches[0].toLowerCase().includes('next')) {
+        if (!result.reporting_date && (context.includes('reporting') || context.includes('valuation'))) {
+          result.reporting_date = standardizeDate(dateStr);
+        }
+        if (!result.next_payment_date && context.includes('next')) {
           result.next_payment_date = standardizeDate(dateStr);
         }
       }
     }
   }
   
-  // Enhanced tranche extraction
-  result.tranches = extractTranches(text);
+  // Enhanced tranche extraction with securitization patterns
+  result.tranches = extractSecuritizationTranches(text);
   
-  // Extract financial metrics with improved patterns
-  const metrics = [
-    { key: 'senior_tranche_os', patterns: [/senior.*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi] },
-    { key: 'protected_tranche', patterns: [/(?:protected|mezzanine).*?(?:balance|outstanding|amount)[:\s]*([\d,]+\.?\d*)/gi] },
-    { key: 'cpr_annualised', patterns: [/cpr[:\s]*([\d.]+)%?/gi, /prepayment\s*rate[:\s]*([\d.]+)%?/gi] },
-    { key: 'cum_losses', patterns: [/(?:cumulative\s*)?losses?[:\s]*([\d,]+\.?\d*)/gi] },
-    { key: 'portfolio_balance', patterns: [/portfolio\s*balance[:\s]*([\d,]+\.?\d*)/gi, /total\s*balance[:\s]*([\d,]+\.?\d*)/gi] },
-    { key: 'weighted_avg_rate', patterns: [/weighted.*?rate[:\s]*([\d.]+)%?/gi, /w\.?a\.?r\.?[:\s]*([\d.]+)%?/gi] }
+  // Extract securitization-specific financial metrics
+  const securitizationMetrics = [
+    { key: 'collateral_balance', patterns: [
+      /(?:collateral|pool|portfolio)\s*(?:balance|amount)[:\s]*([\d,]+\.?\d*)/gi,
+      /total\s*outstanding[:\s]*([\d,]+\.?\d*)/gi
+    ]},
+    { key: 'senior_notes_outstanding', patterns: [
+      /senior\s*(?:notes?|class|tranche).*?(?:outstanding|balance|amount)[:\s]*([\d,]+\.?\d*)/gi,
+      /class\s*a.*?(?:outstanding|balance)[:\s]*([\d,]+\.?\d*)/gi
+    ]},
+    { key: 'mezzanine_notes_outstanding', patterns: [
+      /(?:mezzanine|subordinated?)\s*(?:notes?|class|tranche).*?(?:outstanding|balance|amount)[:\s]*([\d,]+\.?\d*)/gi,
+      /class\s*[b-z].*?(?:outstanding|balance)[:\s]*([\d,]+\.?\d*)/gi
+    ]},
+    { key: 'cpr_3m_avg', patterns: [
+      /(?:3\s*month|3m|quarterly)\s*(?:average\s*)?cpr[:\s]*([\d.]+)%?/gi,
+      /cpr\s*(?:\(3m\s*avg\))[:\s]*([\d.]+)%?/gi
+    ]},
+    { key: 'cpr_annualised', patterns: [
+      /(?:annual|yearly|annuali[sz]ed)\s*cpr[:\s]*([\d.]+)%?/gi,
+      /cpr\s*(?:annual|yearly)[:\s]*([\d.]+)%?/gi
+    ]},
+    { key: 'cumulative_losses', patterns: [
+      /(?:cumulative|cum\.?|total)\s*losses?[:\s]*([\d,]+\.?\d*)/gi,
+      /losses?\s*(?:to\s*date|cumulative)[:\s]*([\d,]+\.?\d*)/gi
+    ]},
+    { key: 'delinquency_60_plus', patterns: [
+      /(?:60\+?|60\s*plus|over\s*60)\s*(?:days?\s*)?delinquent[:\s]*([\d,]+\.?\d*)/gi,
+      /delinquent\s*(?:60\+|over\s*60)[:\s]*([\d,]+\.?\d*)/gi
+    ]},
+    { key: 'weighted_avg_life', patterns: [
+      /weighted\s*average\s*life[:\s]*([\d.]+)/gi,
+      /wal[:\s]*([\d.]+)/gi
+    ]},
+    { key: 'excess_spread', patterns: [
+      /excess\s*spread[:\s]*([\d.]+)%?/gi,
+      /overcollaterali[sz]ation[:\s]*([\d.]+)%?/gi
+    ]}
   ];
   
-  for (const metric of metrics) {
+  for (const metric of securitizationMetrics) {
     for (const pattern of metric.patterns) {
       const matches = text.match(pattern);
       if (matches && matches.length > 0) {
@@ -350,11 +385,7 @@ function parseFinancialData(text: string): ExtractedFinancialData {
         if (value) {
           const numValue = parseFinancialNumber(value);
           if (numValue > 0) {
-            if (metric.key === 'cpr_annualised' || metric.key === 'weighted_avg_rate') {
-              (result as any)[metric.key] = numValue;
-            } else {
-              (result as any)[metric.key] = numValue;
-            }
+            (result as any)[metric.key] = numValue;
             console.log(`✅ Found ${metric.key}:`, numValue);
             break;
           }
@@ -363,64 +394,168 @@ function parseFinancialData(text: string): ExtractedFinancialData {
     }
   }
   
-  // Currency detection
-  result.currency = detectCurrency(text) || 'EUR';
+  // Currency detection with more patterns
+  result.currency = detectSecuritizationCurrency(text) || 'EUR';
   
-  console.log('💰 Final parsed financial data:', result);
+  console.log('💰 Final securitization data:', result);
   return result;
 }
 
-// Enhanced tranche extraction
-function extractTranches(text: string): TrancheData[] {
+// Enhanced securitization tranche extraction
+function extractSecuritizationTranches(text: string): TrancheData[] {
   const tranches: TrancheData[] = [];
   
-  console.log('🎯 Extracting tranche data...');
+  console.log('🎯 Extracting securitization tranche data...');
   
-  // Enhanced tranche patterns
-  const tranchePatterns = [
-    // Pattern: Class/Tranche Name Balance Rate Rating
-    /(?:class|tranche)\s+([a-z]+)\s*(?:.*?)?([€$£¥]?[\d,]+\.?\d*)\s*(?:.*?)?(?:([\d.]+)%?)?\s*(?:.*?)?([a-z]{1,4})?/gi,
-    // Pattern: Senior/Protected with amounts
-    /(senior|protected|mezzanine|junior)(?:\s+(?:tranche|class|notes))?\s*[:\s]*([€$£¥]?[\d,]+\.?\d*)\s*(?:.*?)?([\d.]+%?)?/gi,
-    // Pattern: Named sections with financial data
-    /([a-z]+\s*(?:tranche|class|notes))\s*([€$£¥]?[\d,]+\.?\d*)\s*([\d.]+%?)?/gi
+  // Enhanced securitization-specific tranche patterns
+  const securitizationPatterns = [
+    // Pattern: Class A1, Class A2, etc. with balance and rating
+    /class\s+([a-z0-9]+)(?:\s+notes?)?\s*(?:.*?)(?:outstanding|balance|amount)[:\s]*([€$£¥]?[\d,]+\.?\d*)\s*(?:.*?)rating[:\s]*([a-z]{1,5})/gi,
+    
+    // Pattern: Senior/Subordinated notes with amounts
+    /(senior|subordinated?|mezzanine|junior)(?:\s+(?:notes?|bonds?|certificates?))?[:\s]*([€$£¥]?[\d,]+\.?\d*)\s*(?:.*?)(?:coupon|rate)[:\s]*([\d.]+)%?/gi,
+    
+    // Pattern: Tranche details in tables (Class | Outstanding | Rate | Rating)
+    /(?:class|tranche)\s+([a-z0-9-]+)\s*\|\s*([€$£¥]?[\d,]+\.?\d*)\s*\|\s*([\d.]+)%?\s*\|\s*([a-z]{1,5})/gi,
+    
+    // Pattern: Structured note formats
+    /([a-z0-9]+)\s*(?:class|series|tranche)\s*(?:.*?)(?:principal|outstanding)[:\s]*([€$£¥]?[\d,]+\.?\d*)/gi,
+    
+    // Pattern: Waterfall priorities
+    /(first|second|third|fourth|residual)\s*(?:priority|ranking)\s*(?:.*?)([€$£¥]?[\d,]+\.?\d*)/gi
   ];
   
   const foundTranches = new Map<string, TrancheData>();
   
-  for (const pattern of tranchePatterns) {
+  for (const pattern of securitizationPatterns) {
     let match;
     while ((match = pattern.exec(text)) !== null) {
-      const name = (match[1] || 'Unknown').trim().toLowerCase();
-      const balanceStr = match[2] || '0';
-      const rateStr = match[3] || '0';
-      const rating = (match[4] || 'NR').toUpperCase();
+      let name = (match[1] || 'Unknown').trim();
+      let balanceStr = match[2] || '0';
+      let rateStr = match[3] || '0';
+      let rating = (match[4] || 'NR').toUpperCase();
+      
+      // Handle different match groups based on pattern
+      if (pattern.toString().includes('priority')) {
+        // For waterfall priorities, the structure is different
+        balanceStr = match[2] || '0';
+        rateStr = '0';
+        rating = 'NR';
+      }
       
       const balance = parseFinancialNumber(balanceStr);
       const rate = parseFloat(rateStr.replace('%', '')) || 0;
       
-      if (balance > 1000 && name.length > 1) { // Minimum thresholds for valid data
-        const key = name.replace(/\s+/g, '_');
+      // Enhanced validation for securitization tranches
+      if (balance > 10000 && name.length > 0) { // Higher minimum threshold for securitization
+        // Standardize tranche names
+        name = standardizeTrancheName(name);
+        const key = name.replace(/\s+/g, '_').toLowerCase();
         
         if (!foundTranches.has(key) || foundTranches.get(key)!.balance < balance) {
           foundTranches.set(key, {
-            name: capitalizeWords(name),
+            name: name,
             balance: balance,
             interest_rate: rate,
-            wal: 0, // Will be populated separately if found
+            wal: extractWALForTranche(text, name), // Extract WAL if available
             rating: rating
           });
           
-          console.log(`🎯 Found tranche: ${name} - Balance: ${balance}, Rate: ${rate}%`);
+          console.log(`🎯 Found securitization tranche: ${name} - Balance: €${balance.toLocaleString()}, Rate: ${rate}%, Rating: ${rating}`);
         }
       }
     }
   }
   
   const trancheArray = Array.from(foundTranches.values());
-  console.log(`🎯 Total tranches extracted: ${trancheArray.length}`);
+  console.log(`🎯 Total securitization tranches extracted: ${trancheArray.length}`);
   
-  return trancheArray.sort((a, b) => b.balance - a.balance); // Sort by balance descending
+  return trancheArray.sort((a, b) => {
+    // Sort by seniority first (senior > mezzanine > junior), then by balance
+    const seniorityOrder = { 'Class A': 1, 'Senior': 1, 'Class B': 2, 'Mezzanine': 2, 'Class C': 3, 'Junior': 3, 'Residual': 4 };
+    const aSeniority = seniorityOrder[a.name as keyof typeof seniorityOrder] || 5;
+    const bSeniority = seniorityOrder[b.name as keyof typeof seniorityOrder] || 5;
+    
+    if (aSeniority !== bSeniority) {
+      return aSeniority - bSeniority;
+    }
+    
+    return b.balance - a.balance;
+  });
+}
+
+// Standardize tranche names for securitization
+function standardizeTrancheName(name: string): string {
+  const lowerName = name.toLowerCase();
+  
+  // Map common variations to standard names
+  const standardNames: { [key: string]: string } = {
+    'a': 'Class A',
+    'a1': 'Class A1',
+    'a2': 'Class A2',
+    'b': 'Class B',
+    'c': 'Class C',
+    'senior': 'Senior Notes',
+    'subordinated': 'Subordinated Notes',
+    'mezzanine': 'Mezzanine Notes',
+    'junior': 'Junior Notes',
+    'first': 'First Priority',
+    'second': 'Second Priority',
+    'residual': 'Residual'
+  };
+  
+  return standardNames[lowerName] || capitalizeWords(name);
+}
+
+// Extract WAL (Weighted Average Life) for specific tranche
+function extractWALForTranche(text: string, trancheName: string): number {
+  const walPatterns = [
+    new RegExp(`${trancheName}.*?wal[:\\s]*([\\d.]+)`, 'gi'),
+    new RegExp(`wal.*?${trancheName}[:\\s]*([\\d.]+)`, 'gi'),
+    new RegExp(`weighted.*?average.*?life.*?${trancheName}[:\\s]*([\\d.]+)`, 'gi')
+  ];
+  
+  for (const pattern of walPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const wal = parseFloat(match[1]);
+      if (wal > 0 && wal < 50) { // Reasonable WAL range (0-50 years)
+        return wal;
+      }
+    }
+  }
+  
+  return 0;
+}
+
+// Enhanced currency detection for securitization reports
+function detectSecuritizationCurrency(text: string): string {
+  const currencyPatterns = [
+    { code: 'EUR', patterns: [/€/g, /EUR/gi, /euro/gi] },
+    { code: 'USD', patterns: [/\$/g, /USD/gi, /dollar/gi] },
+    { code: 'GBP', patterns: [/£/g, /GBP/gi, /sterling/gi, /pound/gi] },
+    { code: 'CHF', patterns: [/CHF/gi, /swiss franc/gi] },
+    { code: 'JPY', patterns: [/¥/g, /JPY/gi, /yen/gi] }
+  ];
+  
+  let maxMatches = 0;
+  let detectedCurrency = 'EUR';
+  
+  for (const currency of currencyPatterns) {
+    let totalMatches = 0;
+    for (const pattern of currency.patterns) {
+      const matches = text.match(pattern);
+      totalMatches += matches ? matches.length : 0;
+    }
+    
+    if (totalMatches > maxMatches) {
+      maxMatches = totalMatches;
+      detectedCurrency = currency.code;
+    }
+  }
+  
+  console.log(`💱 Detected currency: ${detectedCurrency} (${maxMatches} matches)`);
+  return detectedCurrency;
 }
 
 // Helper functions

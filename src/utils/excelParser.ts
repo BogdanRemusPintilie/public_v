@@ -7,6 +7,124 @@ export interface ParsedExcelData {
   data: LoanRecord[];
 }
 
+interface SheetInfo {
+  name: string;
+  type: 'loan_tape' | 'tranche_summary' | 'portfolio_stats' | 'unknown';
+}
+
+interface ColumnMap {
+  [key: string]: number | undefined;
+  loan_amount?: number;
+  opening_balance?: number;
+  interest_rate?: number;
+  term?: number;
+  loan_type?: number;
+  credit_score?: number;
+  ltv?: number;
+  pd?: number;
+}
+
+// Securitization-focused sheet detection
+function findSecuritizationSheet(worksheets: string[], workbook: XLSX.WorkBook): SheetInfo {
+  const sheetPriority = [
+    { patterns: ['loan_tape', 'loantape', 'loan tape'], type: 'loan_tape' as const },
+    { patterns: ['tranche', 'tranches', 'structure'], type: 'tranche_summary' as const },
+    { patterns: ['portfolio', 'pool', 'collateral'], type: 'portfolio_stats' as const },
+    { patterns: ['data', 'loans', 'assets'], type: 'loan_tape' as const }
+  ];
+
+  for (const priority of sheetPriority) {
+    for (const sheet of worksheets) {
+      const lowerName = sheet.toLowerCase();
+      if (priority.patterns.some(pattern => lowerName.includes(pattern))) {
+        return { name: sheet, type: priority.type };
+      }
+    }
+  }
+
+  // If no specific sheet found, try to detect by content
+  for (const sheet of worksheets) {
+    const worksheet = workbook.Sheets[sheet];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    if (jsonData.length > 1) {
+      const headers = (jsonData[0] as string[])?.map(h => h?.toString().toLowerCase()) || [];
+      
+      // Check for loan tape indicators
+      const loanIndicators = ['loan', 'balance', 'rate', 'term', 'amount', 'principal'];
+      if (loanIndicators.some(indicator => 
+        headers.some(header => header?.includes(indicator))
+      )) {
+        return { name: sheet, type: 'loan_tape' };
+      }
+    }
+  }
+
+  // Default to first sheet
+  return { name: worksheets[0], type: 'unknown' };
+}
+
+// Flexible column mapping based on header patterns
+function createFlexibleColumnMap(headers: string[]): ColumnMap {
+  const map: ColumnMap = {};
+  
+  const patterns = {
+    loan_amount: /(?:loan.*amount|principal|original.*balance|initial.*amount)/i,
+    opening_balance: /(?:opening.*balance|current.*balance|outstanding|balance)/i,
+    interest_rate: /(?:interest.*rate|rate|coupon|margin|yield)/i,
+    term: /(?:term|maturity|duration|months)/i,
+    loan_type: /(?:type|product|category)/i,
+    credit_score: /(?:credit.*score|score|rating)/i,
+    ltv: /(?:ltv|loan.*to.*value|l\.t\.v)/i,
+    pd: /(?:pd|probability.*default|default.*rate|risk)/i
+  };
+
+  headers.forEach((header, index) => {
+    if (!header) return;
+    
+    const headerStr = header.toString().toLowerCase();
+    
+    for (const [field, pattern] of Object.entries(patterns)) {
+      if (pattern.test(headerStr) && !map[field]) {
+        map[field] = index;
+        break;
+      }
+    }
+  });
+
+  return map;
+}
+
+// Parse financial values with various formats
+function parseFinancialValue(value: any): number {
+  if (value === null || value === undefined || value === '') return 0;
+  
+  const str = value.toString().replace(/[,\s]/g, '');
+  const num = parseFloat(str);
+  
+  return isNaN(num) ? 0 : num;
+}
+
+// Parse interest rates (handle both decimal and percentage formats)
+function parseInterestRate(value: any): number {
+  if (value === null || value === undefined || value === '') return 0;
+  
+  const str = value.toString().replace(/[,\s%]/g, '');
+  const num = parseFloat(str);
+  
+  if (isNaN(num)) return 0;
+  
+  // If value is less than 1, assume it's in decimal format (0.05 = 5%)
+  // If value is greater than or equal to 1, assume it's already in percentage format
+  return num < 1 ? num * 100 : num;
+}
+
+// Parse string values
+function parseStringValue(value: any): string {
+  if (value === null || value === undefined) return '';
+  return value.toString().trim();
+}
+
 export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -19,96 +137,62 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
         const worksheets = workbook.SheetNames;
         console.log('Available worksheets:', worksheets);
         
-        // Focus specifically on the loan_tape sheet
-        const loanTapeSheet = worksheets.find(name => 
-          name.toLowerCase().includes('loan_tape') || 
-          name.toLowerCase().includes('loantape') ||
-          name.toLowerCase() === 'loan_tape'
-        );
+        // Securitization-focused sheet detection
+        const targetSheet = findSecuritizationSheet(worksheets, workbook);
         
-        if (!loanTapeSheet) {
-          console.error('loan_tape sheet not found. Available sheets:', worksheets);
-          throw new Error('loan_tape sheet not found in the Excel file');
-        }
+        console.log(`Processing sheet: "${targetSheet.name}" (detected as: ${targetSheet.type})`);
         
-        console.log(`Processing loan_tape sheet: "${loanTapeSheet}"`);
-        
-        const worksheet = workbook.Sheets[loanTapeSheet];
+        const worksheet = workbook.Sheets[targetSheet.name];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         
-        console.log(`loan_tape sheet data:`, {
+        console.log(`Sheet data:`, {
           totalRows: jsonData.length,
           headers: jsonData[0],
           sampleDataRow: jsonData[1]
         });
         
         if (jsonData.length < 2) {
-          throw new Error('loan_tape sheet appears to be empty or has no data rows');
+          throw new Error(`${targetSheet.name} sheet appears to be empty or has no data rows`);
         }
         
-        // Get headers from row 1 (index 0)
+        // Get headers and create flexible column mapping
         const headers = jsonData[0] as string[];
-        console.log('Headers found:', headers);
+        const columnMap = createFlexibleColumnMap(headers);
+        console.log('Column mapping:', columnMap);
         
         // Process data rows (skip header row)
         const dataRows = jsonData.slice(1);
         
         const mappedData = dataRows.map((row: any[], index: number) => {
-          // Column mapping based on your specifications:
-          // Column A: Loan ID
-          // Column B: Opening Balance  
-          // Column C: Interest Rate (decimal format, convert to percentage)
-          // Column D: Term (months)
-          // Column J: PD (Probability of Default)
-          
-          const loanId = row[0]; // Column A
-          const openingBalance = parseFloat(row[1]) || 0; // Column B
-          const interestRateDecimal = parseFloat(row[2]) || 0; // Column C (decimal)
-          const interestRate = interestRateDecimal * 100; // Convert to percentage
-          const termMonths = parseFloat(row[3]) || 0; // Column D (term in months)
-          const pd = parseFloat(row[9]) || 0; // Column J (0-indexed, so J = 9)
-          
           const loanRecord = {
-            loan_amount: openingBalance, // Using opening balance as loan amount for now
-            interest_rate: interestRate, // Now properly converted to percentage
-            term: termMonths, // Term in months from column D
-            loan_type: 'Standard', // Default value
-            credit_score: 0, // Not specified in your mapping
-            ltv: 0, // Not specified in your mapping
-            opening_balance: openingBalance,
-            pd: pd, // Adding PD for risk calculation
+            loan_amount: parseFinancialValue(row[columnMap.loan_amount || columnMap.opening_balance || 1]) || 0,
+            interest_rate: parseInterestRate(row[columnMap.interest_rate || 2]) || 0,
+            term: parseFinancialValue(row[columnMap.term || 3]) || 0,
+            loan_type: parseStringValue(row[columnMap.loan_type || 4]) || 'Standard',
+            credit_score: parseFinancialValue(row[columnMap.credit_score || 5]) || 0,
+            ltv: parseFinancialValue(row[columnMap.ltv || 6]) || 0,
+            opening_balance: parseFinancialValue(row[columnMap.opening_balance || columnMap.loan_amount || 1]) || 0,
+            pd: parseFinancialValue(row[columnMap.pd || 9]) || 0,
             file_name: file.name,
-            worksheet_name: loanTapeSheet
+            worksheet_name: targetSheet.name
           };
 
           // Log first few records for debugging
-          if (index < 5) {
-            console.log(`Sample record ${index + 1}:`, {
-              loanId,
-              openingBalance,
-              interestRateDecimal,
-              interestRatePercentage: interestRate,
-              termMonths,
-              pd,
-              fullRecord: loanRecord
-            });
+          if (index < 3) {
+            console.log(`Sample record ${index + 1}:`, loanRecord);
           }
 
           return loanRecord;
         }).filter((record: any) => {
-          // Filter out records with invalid opening balance
-          const isValid = record.opening_balance > 0;
-          
-          if (!isValid && dataRows.length < 10) {
-            console.log('Filtered out invalid record:', record);
-          }
-          
+          // Filter out records with invalid data
+          const isValid = record.opening_balance > 0 && record.interest_rate >= 0;
           return isValid;
         });
         
         console.log('Final parsing result:', {
           totalWorksheets: worksheets.length,
-          targetWorksheet: loanTapeSheet,
+          targetWorksheet: targetSheet.name,
+          sheetType: targetSheet.type,
           totalDataRows: dataRows.length,
           validRecords: mappedData.length,
           portfolioValue: mappedData.reduce((sum, loan) => sum + loan.opening_balance, 0),
@@ -119,7 +203,7 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData> => {
         });
         
         resolve({
-          worksheets: [loanTapeSheet],
+          worksheets: [targetSheet.name],
           data: mappedData
         });
       } catch (error) {
