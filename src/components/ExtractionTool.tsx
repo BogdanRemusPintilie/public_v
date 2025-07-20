@@ -49,14 +49,26 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
         waIR: "6.00%",
         waLTV: "95.20%",
         waFICO: 758,
-        waRemainingTerm: 66.55
+        waRemainingTerm: 66.55,
+        portfolioBalance: 1100000000,
+        loans: 28077,
+        fBalance: 19250000,
+        gBalance: 8250000
       },
       monthlyData: [
-        { period: "Jan 24", waIR: "5.81%", waRemainingTerm: 59.09, delinquency: "1.58%", cumulativeLosses: 2571183, monthlyDefaults: 705755.13, portfolioBalance: 873956666.75, loans: 23998 },
-        { period: "Feb 24", waIR: "5.80%", waRemainingTerm: 58.18, delinquency: "1.62%", cumulativeLosses: 3146990, monthlyDefaults: 1009749.52, portfolioBalance: 848901455.14, loans: 23619 },
-        { period: "Mar 24", waIR: "5.78%", waRemainingTerm: 57.25, delinquency: "", cumulativeLosses: 3466270, monthlyDefaults: 814458.58, portfolioBalance: 824229126.33, loans: null },
-        { period: "Apr 24", waIR: "5.77%", waRemainingTerm: 56.29, delinquency: "1.50%", cumulativeLosses: 4442136, monthlyDefaults: 1750907.88, portfolioBalance: 797163097.29, loans: null },
-        { period: "May 24", waIR: "5.76%", waRemainingTerm: 55.34, delinquency: "1.53%", cumulativeLosses: 5101943, monthlyDefaults: 1312505.90, portfolioBalance: 771869079.81, loans: 22132 }
+        { period: "Jan 24", waIR: "5.81%", waRemainingTerm: 59.09, delinquency: "1.58%", cumulativeLosses: 2571183, cumulativeLossesPercent: "0.23%", monthlyDefaults: 705755.13, portfolioBalance: 873956666.75, poolFactor: 0.79, loans: 23998, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Feb 24", waIR: "5.80%", waRemainingTerm: 58.18, delinquency: "1.62%", cumulativeLosses: 3146990, cumulativeLossesPercent: "0.29%", monthlyDefaults: 1009749.52, portfolioBalance: 848901455.14, poolFactor: 0.77, loans: 23619, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Mar 24", waIR: "5.78%", waRemainingTerm: 57.25, delinquency: "", cumulativeLosses: 3466270, cumulativeLossesPercent: "0.32%", monthlyDefaults: 814458.58, portfolioBalance: 824229126.33, poolFactor: 0.75, loans: null, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Apr 24", waIR: "5.77%", waRemainingTerm: 56.29, delinquency: "1.50%", cumulativeLosses: 4442136, cumulativeLossesPercent: "0.40%", monthlyDefaults: 1750907.88, portfolioBalance: 797163097.29, poolFactor: 0.72, loans: null, fBalance: 19250000, gBalance: 8250000 },
+        { period: "May 24", waIR: "5.76%", waRemainingTerm: 55.34, delinquency: "1.53%", cumulativeLosses: 5101943, cumulativeLossesPercent: "0.46%", monthlyDefaults: 1312505.90, portfolioBalance: 771869079.81, poolFactor: 0.70, loans: 22132, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Jun 24", waIR: "5.74%", waRemainingTerm: 54.39, delinquency: "1.53%", cumulativeLosses: 5650244, cumulativeLossesPercent: "0.51%", monthlyDefaults: 1027733.19, portfolioBalance: 747163881.18, poolFactor: 0.68, loans: 21780, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Jul 24", waIR: "5.74%", waRemainingTerm: 53.48, delinquency: "1.65%", cumulativeLosses: 6104366, cumulativeLossesPercent: "0.55%", monthlyDefaults: 745999.19, portfolioBalance: 723815016.95, poolFactor: 0.66, loans: 21430, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Aug 24", waIR: "5.72%", waRemainingTerm: 52.53, delinquency: "1.84%", cumulativeLosses: 6731725, cumulativeLossesPercent: "0.61%", monthlyDefaults: 1151573.41, portfolioBalance: 700152484.91, poolFactor: 0.64, loans: 21090, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Sep 24", waIR: "5.71%", waRemainingTerm: 51.59, delinquency: "1.97%", cumulativeLosses: 6785637.12, cumulativeLossesPercent: "0.62%", monthlyDefaults: 824492.90, portfolioBalance: 676896077.08, poolFactor: 0.62, loans: 20739, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Oct 24", waIR: "5.71%", waRemainingTerm: 50.68, delinquency: "2.15%", cumulativeLosses: 7295089.15, cumulativeLossesPercent: "0.66%", monthlyDefaults: 1023480.38, portfolioBalance: 654699741.41, poolFactor: 0.60, loans: 19739, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Jan 25", waIR: "5.72%", waRemainingTerm: 47.94, delinquency: "2.54%", cumulativeLosses: 8456431.92, cumulativeLossesPercent: "0.77%", monthlyDefaults: 505527.08, portfolioBalance: 589384393.42, poolFactor: 0.54, loans: 19020, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Mar 25", waIR: "5.71%", waRemainingTerm: 46.12, delinquency: "2.47%", cumulativeLosses: 9155332.61, cumulativeLossesPercent: "0.83%", monthlyDefaults: 1374016.05, portfolioBalance: 547303007.97, poolFactor: 0.50, loans: null, fBalance: 19250000, gBalance: 8250000 },
+        { period: "May 25", waIR: "5.72%", waRemainingTerm: 44.29, delinquency: "2.47%", cumulativeLosses: 9905523.92, cumulativeLossesPercent: "0.90%", monthlyDefaults: 731231.19, portfolioBalance: 504731908.46, poolFactor: 0.46, loans: null, fBalance: 19250000, gBalance: 8250000 }
       ]
     },
     balances: {
@@ -269,7 +281,7 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                   {/* Origination Summary */}
                   <div className="mb-6">
                     <h4 className="font-semibold mb-3">Origination Summary</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                       <div className="text-center p-3 bg-blue-50 rounded-lg">
                         <div className="text-lg font-bold text-blue-600">{extractedData.summary.origination.new}</div>
                         <div className="text-sm text-blue-700">New</div>
@@ -290,9 +302,23 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                         <div className="text-lg font-bold text-teal-600">{extractedData.summary.origination.waFICO}</div>
                         <div className="text-sm text-teal-700">WA FICO</div>
                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-3 bg-red-50 rounded-lg">
                         <div className="text-lg font-bold text-red-600">{extractedData.summary.origination.waRemainingTerm}</div>
                         <div className="text-sm text-red-700">WA Remaining Term</div>
+                      </div>
+                      <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                        <div className="text-lg font-bold text-indigo-600">{formatCurrency(extractedData.summary.origination.portfolioBalance)}</div>
+                        <div className="text-sm text-indigo-700">Portfolio Balance</div>
+                      </div>
+                      <div className="text-center p-3 bg-pink-50 rounded-lg">
+                        <div className="text-lg font-bold text-pink-600">{formatNumber(extractedData.summary.origination.loans)}</div>
+                        <div className="text-sm text-pink-700">Loans</div>
+                      </div>
+                      <div className="text-center p-3 bg-cyan-50 rounded-lg">
+                        <div className="text-lg font-bold text-cyan-600">{formatCurrency(extractedData.summary.origination.fBalance)}</div>
+                        <div className="text-sm text-cyan-700">F Balance</div>
                       </div>
                     </div>
                   </div>
@@ -308,9 +334,13 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                           <th className="text-right p-2">WA Remaining Term</th>
                           <th className="text-right p-2">Delinquency %</th>
                           <th className="text-right p-2">Cumulative Losses</th>
+                          <th className="text-right p-2">Losses %</th>
                           <th className="text-right p-2">Monthly Defaults</th>
                           <th className="text-right p-2">Portfolio Balance</th>
+                          <th className="text-right p-2">Pool Factor</th>
                           <th className="text-right p-2">Loans</th>
+                          <th className="text-right p-2">F Balance</th>
+                          <th className="text-right p-2">G Balance</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -321,9 +351,13 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                             <td className="p-2 text-right">{month.waRemainingTerm}</td>
                             <td className="p-2 text-right">{month.delinquency || "-"}</td>
                             <td className="p-2 text-right">{formatCurrency(month.cumulativeLosses)}</td>
+                            <td className="p-2 text-right">{month.cumulativeLossesPercent}</td>
                             <td className="p-2 text-right">{formatCurrency(month.monthlyDefaults)}</td>
                             <td className="p-2 text-right">{formatCurrency(month.portfolioBalance)}</td>
+                            <td className="p-2 text-right">{month.poolFactor?.toFixed(2) || "-"}</td>
                             <td className="p-2 text-right">{month.loans ? formatNumber(month.loans) : "-"}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.fBalance)}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.gBalance)}</td>
                           </tr>
                         ))}
                       </tbody>
