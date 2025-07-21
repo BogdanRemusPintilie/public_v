@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, Download, FileText, X, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 interface ExtractionToolProps {
   onClose: () => void;
@@ -19,6 +20,7 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['portfolioBalance', 'cumulativeLosses']);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Demo data that matches the image structure
   const demoData = {
@@ -164,11 +166,14 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
       }
       if (file2) {
         setExtractedData2(demoData2);
+        // Navigate to PD Analysis page with the extracted data
+        navigate('/pd-analysis', { state: { extractedData2: demoData2 } });
+        onClose(); // Close the extraction tool modal
       }
       setIsLoading(false);
       toast({
         title: "Extraction Complete",
-        description: `Financial data has been successfully extracted from ${file && file2 ? 'both files' : 'your file'}`,
+        description: `Financial data has been successfully extracted from ${file && file2 ? 'both files' : 'your file'}${file2 ? '. Opening PD Analysis page...' : ''}`,
       });
     }, 2000);
   };
@@ -600,153 +605,6 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
             </div>
           )}
 
-          {/* Second Extracted Data Display */}
-          {extractedData2 && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">PD Analysis & Subordination Data</h3>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export PD Results
-                </Button>
-              </div>
-
-              {/* Deal Information */}
-              <Card className="border-green-200">
-                <CardHeader>
-                  <CardTitle className="text-green-700">Deal Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Initial Notional</span>
-                        <span>{formatCurrency(extractedData2.portfolioSize)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Ramped Up Notional</span>
-                        <span>{formatCurrency(extractedData2.rampedUpNotional)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Tranche Size</span>
-                        <span>{formatCurrency(extractedData2.trancheSize)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>FT Balance</span>
-                        <span>{formatCurrency(extractedData2.ftBalance)}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span>Attachment/Detachment</span>
-                        <span>{extractedData2.attachmentDetachment}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Coupon</span>
-                        <span>{extractedData2.coupon}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Closing Date</span>
-                        <span>{extractedData2.dates.closing}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Purchase Date</span>
-                        <span>{extractedData2.dates.purchase}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span>Call Date</span>
-                        <span>{extractedData2.dates.call}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Ramp Up</span>
-                        <span>{extractedData2.rampUp}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Replenishment</span>
-                        <span>{extractedData2.replenishment}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>ED CODE</span>
-                        <span className="font-mono text-sm">{extractedData2.reporting.edCode}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* PD Analysis Data */}
-              <Card className="border-green-200">
-                <CardHeader>
-                  <CardTitle className="text-green-700">Performance & Risk Analysis</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-2">Period</th>
-                          <th className="text-right p-2">No. Loans</th>
-                          <th className="text-right p-2">No. Borrowers</th>
-                          <th className="text-right p-2">WAPD</th>
-                          <th className="text-right p-2">WA LGD</th>
-                          <th className="text-right p-2">WAL</th>
-                          <th className="text-right p-2">PRONA</th>
-                          <th className="text-right p-2">Cumulative Defaults</th>
-                          <th className="text-right p-2">Defaults %</th>
-                          <th className="text-right p-2">Initial Loss Amount</th>
-                          <th className="text-right p-2">Loss %</th>
-                          <th className="text-right p-2">Tranche Notional</th>
-                          <th className="text-right p-2">Subordination</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {extractedData2.monthlyData.map((month: any, index: number) => (
-                          <tr key={index} className="border-b hover:bg-green-50">
-                            <td className="p-2 font-medium">{month.period}</td>
-                            <td className="p-2 text-right">{formatNumber(month.noLoans)}</td>
-                            <td className="p-2 text-right">{formatNumber(month.noBorrowers)}</td>
-                            <td className="p-2 text-right">{month.wapd}</td>
-                            <td className="p-2 text-right">{month.waLgd}</td>
-                            <td className="p-2 text-right">{month.wal}</td>
-                            <td className="p-2 text-right">{formatCurrency(month.prona)}</td>
-                            <td className="p-2 text-right">{formatCurrency(month.cumulativeDefaults)}</td>
-                            <td className="p-2 text-right">{month.cumulativeDefaultsPercent}</td>
-                            <td className="p-2 text-right">{formatCurrency(month.initialLossAmount)}</td>
-                            <td className="p-2 text-right">{month.initialLossPercent}</td>
-                            <td className="p-2 text-right">{formatCurrency(month.trancheNotional)}</td>
-                            <td className="p-2 text-right">{month.subordination || "-"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Reporting Access */}
-              <Card className="border-green-200">
-                <CardHeader>
-                  <CardTitle className="text-green-700">Reporting Access</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="font-medium">How to get Reports</span>
-                      <span className="text-green-600 underline cursor-pointer">{extractedData2.reporting.howToGetReports}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Other Name</span>
-                      <span>{extractedData2.reporting.otherName}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
