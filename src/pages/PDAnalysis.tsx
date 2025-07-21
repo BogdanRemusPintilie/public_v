@@ -48,11 +48,11 @@ const PDAnalysis = () => {
           <h1 className="text-2xl font-bold">PD Analysis & Subordination Data</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => navigate('/', { state: { showFirstDataset: true } })}>
-            File 1
+          <Button variant="outline" onClick={() => navigate('/dashboard', { state: { showExtractionTool: true } })}>
+            SBCLN
           </Button>
           <Button variant="default">
-            File 2
+            BSTS 4
           </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />

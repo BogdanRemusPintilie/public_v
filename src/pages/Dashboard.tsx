@@ -6,7 +6,8 @@ import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import ExcelUpload from '@/components/ExcelUpload';
 import DatasetManager from '@/components/DatasetManager';
 import DataExtractor from '@/components/DataExtractor';
@@ -19,6 +20,7 @@ import ExtractionTool from '@/components/ExtractionTool';
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const [showExistingData, setShowExistingData] = useState(false);
@@ -31,6 +33,15 @@ const Dashboard = () => {
   const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
   const [showInvestorReporting, setShowInvestorReporting] = useState(false);
   const [showExtractionTool, setShowExtractionTool] = useState(false);
+
+  // Handle navigation from PDAnalysis page
+  useEffect(() => {
+    if (location.state?.showExtractionTool) {
+      setShowExtractionTool(true);
+      // Clear the state
+      navigate('/dashboard', { replace: true });
+    }
+  }, [location.state, navigate]);
 
   const handleLogout = () => {
     logout();
