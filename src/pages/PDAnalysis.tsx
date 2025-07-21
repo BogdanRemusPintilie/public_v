@@ -143,6 +143,16 @@ const PDAnalysis = () => {
                 <span>{data.replenishment}</span>
               </div>
               <div className="flex justify-between">
+                <span>How to get Reports</span>
+                <a href={data.reporting.howToGetReports} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline text-sm">
+                  {data.reporting.howToGetReports}
+                </a>
+              </div>
+              <div className="flex justify-between">
+                <span>Other name</span>
+                <span>{data.reporting.otherName}</span>
+              </div>
+              <div className="flex justify-between">
                 <span>ED CODE</span>
                 <span className="font-mono text-sm">{data.reporting.edCode}</span>
               </div>
