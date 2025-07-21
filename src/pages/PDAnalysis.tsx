@@ -416,6 +416,419 @@ const PDAnalysis = () => {
         </CardContent>
       </Card>
 
+      {/* Cumulative Defaults Non WO */}
+      <Card className="border-green-200">
+        <CardHeader>
+          <CardTitle className="text-green-700">Cumulative Defaults Non Write-Off</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Metric</th>
+                  <th className="text-right p-2">Dez 23</th>
+                  <th className="text-right p-2">Jan 24</th>
+                  <th className="text-right p-2">Mrz 24</th>
+                  <th className="text-right p-2">Apr 24</th>
+                  <th className="text-right p-2">Jun 24</th>
+                  <th className="text-right p-2">Sep 24</th>
+                  <th className="text-right p-2">Dez 24</th>
+                  <th className="text-right p-2">Mrz 25</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cumulative Defaults Non WO</td>
+                  <td className="p-2 text-right">682,517</td>
+                  <td className="p-2 text-right">682,517</td>
+                  <td className="p-2 text-right">1,208,808</td>
+                  <td className="p-2 text-right">1,208,808</td>
+                  <td className="p-2 text-right">3,906,011</td>
+                  <td className="p-2 text-right">5,158,080</td>
+                  <td className="p-2 text-right">6,719,245</td>
+                  <td className="p-2 text-right">8,337,685</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">%</td>
+                  <td className="p-2 text-right">0.05%</td>
+                  <td className="p-2 text-right">0.05%</td>
+                  <td className="p-2 text-right">0.08%</td>
+                  <td className="p-2 text-right">0.08%</td>
+                  <td className="p-2 text-right">0.27%</td>
+                  <td className="p-2 text-right">0.36%</td>
+                  <td className="p-2 text-right">0.47%</td>
+                  <td className="p-2 text-right">0.58%</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Initial Loss Amount</td>
+                  <td className="p-2 text-right">295,497</td>
+                  <td className="p-2 text-right">295,497</td>
+                  <td className="p-2 text-right">573,259</td>
+                  <td className="p-2 text-right">573,259</td>
+                  <td className="p-2 text-right">1,998,519</td>
+                  <td className="p-2 text-right">2,648,625</td>
+                  <td className="p-2 text-right">3,517,367</td>
+                  <td className="p-2 text-right">4,388,098</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">%</td>
+                  <td className="p-2 text-right">0.02%</td>
+                  <td className="p-2 text-right">0.02%</td>
+                  <td className="p-2 text-right">0.04%</td>
+                  <td className="p-2 text-right">0.04%</td>
+                  <td className="p-2 text-right">0.14%</td>
+                  <td className="p-2 text-right">0.19%</td>
+                  <td className="p-2 text-right">0.25%</td>
+                  <td className="p-2 text-right">0.31%</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cum Def WO</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">23,750</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Final Loss</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">0</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cum Loss</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">4,388,098</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">%</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">0.31%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quarterly Payment Report */}
+      <Card className="border-green-200">
+        <CardHeader>
+          <CardTitle className="text-green-700">Quarterly Payment Report</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Metric</th>
+                  <th className="text-right p-2">Dez 23</th>
+                  <th className="text-right p-2">Jan 24</th>
+                  <th className="text-right p-2">Mrz 24</th>
+                  <th className="text-right p-2">Apr 24</th>
+                  <th className="text-right p-2">Jun 24</th>
+                  <th className="text-right p-2">Sep 24</th>
+                  <th className="text-right p-2">Dez 24</th>
+                  <th className="text-right p-2">Mrz 25</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cum Def (WO + Non WO)</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">682,517</td>
+                  <td className="p-2 text-right">1,208,808</td>
+                  <td className="p-2 text-right">1,208,808</td>
+                  <td className="p-2 text-right">3,968,313</td>
+                  <td className="p-2 text-right">5,327,011</td>
+                  <td className="p-2 text-right">7,312,572</td>
+                  <td className="p-2 text-right">9,073,048</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.05%</td>
+                  <td className="p-2 text-right">0.08%</td>
+                  <td className="p-2 text-right">0.08%</td>
+                  <td className="p-2 text-right">0.28%</td>
+                  <td className="p-2 text-right">0.37%</td>
+                  <td className="p-2 text-right">0.51%</td>
+                  <td className="p-2 text-right">0.63%</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cum Loss (WO + Non WO)</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">295,497</td>
+                  <td className="p-2 text-right">573,259</td>
+                  <td className="p-2 text-right">573,259</td>
+                  <td className="p-2 text-right">1,964,533</td>
+                  <td className="p-2 text-right">2,670,378</td>
+                  <td className="p-2 text-right">3,751,471</td>
+                  <td className="p-2 text-right">4,250,853</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.02%</td>
+                  <td className="p-2 text-right">0.04%</td>
+                  <td className="p-2 text-right">0.04%</td>
+                  <td className="p-2 text-right">0.14%</td>
+                  <td className="p-2 text-right">0.19%</td>
+                  <td className="p-2 text-right">0.26%</td>
+                  <td className="p-2 text-right">0.30%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quarterly Non Worked Out Def */}
+      <Card className="border-green-200">
+        <CardHeader>
+          <CardTitle className="text-green-700">Quarterly Non Worked Out Defaults</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Metric</th>
+                  <th className="text-right p-2">Dez 23</th>
+                  <th className="text-right p-2">Jan 24</th>
+                  <th className="text-right p-2">Mrz 24</th>
+                  <th className="text-right p-2">Apr 24</th>
+                  <th className="text-right p-2">Jun 24</th>
+                  <th className="text-right p-2">Sep 24</th>
+                  <th className="text-right p-2">Dez 24</th>
+                  <th className="text-right p-2">Mrz 25</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Quarterly Non Worked Out Def</td>
+                  <td className="p-2 text-right">682,517</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">526,291</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">2,697,202</td>
+                  <td className="p-2 text-right">1,252,070</td>
+                  <td className="p-2 text-right">1,781,499</td>
+                  <td className="p-2 text-right">1,466,181</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">%</td>
+                  <td className="p-2 text-right">0.05%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.04%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.19%</td>
+                  <td className="p-2 text-right">0.09%</td>
+                  <td className="p-2 text-right">0.12%</td>
+                  <td className="p-2 text-right">0.10%</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Initial Loss Amount</td>
+                  <td className="p-2 text-right">295,497</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">277,762</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">1,391,274</td>
+                  <td className="p-2 text-right">705,846</td>
+                  <td className="p-2 text-right">1,081,092</td>
+                  <td className="p-2 text-right">947,994</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">%</td>
+                  <td className="p-2 text-right">0.02%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.02%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.10%</td>
+                  <td className="p-2 text-right">0.05%</td>
+                  <td className="p-2 text-right">0.08%</td>
+                  <td className="p-2 text-right">0.07%</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cumulative Defaults Non WO</td>
+                  <td className="p-2 text-right">682,517</td>
+                  <td className="p-2 text-right">1,208,808</td>
+                  <td className="p-2 text-right">1,208,808</td>
+                  <td className="p-2 text-right">3,906,011</td>
+                  <td className="p-2 text-right">5,158,080</td>
+                  <td className="p-2 text-right">6,939,580</td>
+                  <td className="p-2 text-right">8,405,760</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cumulative Loss Non WO</td>
+                  <td className="p-2 text-right">295,497</td>
+                  <td className="p-2 text-right">573,259</td>
+                  <td className="p-2 text-right">573,259</td>
+                  <td className="p-2 text-right">1,964,533</td>
+                  <td className="p-2 text-right">2,670,378</td>
+                  <td className="p-2 text-right">3,751,471</td>
+                  <td className="p-2 text-right">4,699,465</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quarterly WO Def */}
+      <Card className="border-green-200">
+        <CardHeader>
+          <CardTitle className="text-green-700">Quarterly Write-Off Defaults</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Metric</th>
+                  <th className="text-right p-2">Dez 23</th>
+                  <th className="text-right p-2">Jan 24</th>
+                  <th className="text-right p-2">Mrz 24</th>
+                  <th className="text-right p-2">Apr 24</th>
+                  <th className="text-right p-2">Jun 24</th>
+                  <th className="text-right p-2">Sep 24</th>
+                  <th className="text-right p-2">Dez 24</th>
+                  <th className="text-right p-2">Mrz 25</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Quarterly WO Def</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">62,303</td>
+                  <td className="p-2 text-right">106,628</td>
+                  <td className="p-2 text-right">204,061</td>
+                  <td className="p-2 text-right">294,296</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Initial Loss</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Final Loss Amount</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">0</td>
+                  <td className="p-2 text-right">0</td>
+                  <td className="p-2 text-right">0</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Severity</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                  <td className="p-2 text-right">0.00%</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cum WO</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">62,303</td>
+                  <td className="p-2 text-right">168,931</td>
+                  <td className="p-2 text-right">372,992</td>
+                  <td className="p-2 text-right">667,288</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Cum WO Loss</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Senior Tranche Information */}
+      <Card className="border-green-200">
+        <CardHeader>
+          <CardTitle className="text-green-700">Senior Tranche Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Metric</th>
+                  <th className="text-right p-2">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Senior</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Tranche Notional</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Retained Notional (orig w ramp)</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+                <tr className="border-b hover:bg-green-50">
+                  <td className="p-2 font-medium">Subordination</td>
+                  <td className="p-2 text-right">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Reporting Access */}
       <Card className="border-green-200">
         <CardHeader>
