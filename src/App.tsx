@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import PDAnalysis from "./pages/PDAnalysis";
+import InvestorReport from "./pages/InvestorReport";
 import SRTPlatform from "./pages/SRTPlatform";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PDAnalysis />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/investor-report" 
+              element={
+                <ProtectedRoute>
+                  <InvestorReport />
                 </ProtectedRoute>
               } 
             />

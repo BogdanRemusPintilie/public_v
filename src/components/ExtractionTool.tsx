@@ -345,7 +345,11 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                 <div className="flex items-center space-x-4">
                   <h3 className="text-lg font-semibold">Extracted Financial Data</h3>
                   <div className="flex items-center space-x-2">
-                    <Button variant="default" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate('/investor-report', { state: { extractedData: demoData } })}
+                    >
                       SBCLN
                     </Button>
                     <Button 

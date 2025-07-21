@@ -48,7 +48,7 @@ const PDAnalysis = () => {
           <h1 className="text-2xl font-bold">PD Analysis & Subordination Data</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => navigate('/dashboard', { state: { showExtractionTool: true } })}>
+          <Button variant="outline" onClick={() => navigate('/investor-report')}>
             SBCLN
           </Button>
           <Button variant="default">
