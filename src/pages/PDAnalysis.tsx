@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowLeft } from 'lucide-react';
+import { Download, ArrowLeft, TrendingUp } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const PDAnalysis = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const extractedData2 = location.state?.extractedData2;
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['noLoans', 'prona']);
 
   // Demo data that should always be available for BSTS 4
   const demoData2 = {
@@ -57,6 +60,95 @@ const PDAnalysis = () => {
 
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat('en-US').format(value);
+  };
+
+  // Chart metrics configuration
+  const chartMetrics = [
+    { key: 'noLoans', label: 'No. Loans', type: 'number' },
+    { key: 'noBorrowers', label: 'No. Borrowers', type: 'number' },
+    { key: 'wapd', label: 'WAPD', type: 'percentage' },
+    { key: 'waLgd', label: 'WA LGD', type: 'percentage' },
+    { key: 'wal', label: 'WAL', type: 'decimal' },
+    { key: 'prona', label: 'PRONA', type: 'currency' },
+    { key: 'cumulativeDefaults', label: 'Cumulative Defaults', type: 'currency' },
+    { key: 'initialLossAmount', label: 'Initial Loss Amount', type: 'currency' },
+    { key: 'trancheNotional', label: 'Tranche Notional', type: 'currency' }
+  ];
+
+  const getLineColor = (index: number) => {
+    const colors = ['#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16', '#EC4899'];
+    return colors[index % colors.length];
+  };
+
+  const getMetricLabel = (key: string) => {
+    return chartMetrics.find(m => m.key === key)?.label || key;
+  };
+
+  const getMetricType = (key: string) => {
+    return chartMetrics.find(m => m.key === key)?.type || 'number';
+  };
+
+  const formatChartValue = (value: any, metrics: string[]) => {
+    if (typeof value !== 'number' && typeof value !== 'string') return value;
+    
+    const firstMetricType = getMetricType(metrics[0]);
+    
+    if (firstMetricType === 'currency') {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return `$${(numValue / 1000000).toFixed(1)}M`;
+    } else if (firstMetricType === 'percentage') {
+      if (typeof value === 'string' && value.includes('%')) {
+        return parseFloat(value.replace('%', '')).toFixed(1);
+      }
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return numValue.toFixed(1);
+    } else if (firstMetricType === 'decimal') {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return numValue.toFixed(2);
+    } else {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return formatNumber(numValue);
+    }
+  };
+
+  const formatTooltipValue = (value: any, name: string) => {
+    if (typeof value !== 'number' && typeof value !== 'string') return value;
+    
+    const metricType = getMetricType(name);
+    
+    if (metricType === 'currency') {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return formatCurrency(numValue);
+    } else if (metricType === 'percentage') {
+      if (typeof value === 'string' && value.includes('%')) {
+        return value;
+      }
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return `${numValue}%`;
+    } else if (metricType === 'decimal') {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return numValue.toFixed(2);
+    } else {
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      return formatNumber(numValue);
+    }
+  };
+
+  const toggleMetric = (metric: string) => {
+    setSelectedMetrics(prev => 
+      prev.includes(metric) 
+        ? prev.filter(m => m !== metric)
+        : [...prev, metric]
+    );
+  };
+
+  // Convert percentage strings to numbers for chart display
+  const prepareChartData = (monthlyData: any[]) => {
+    return monthlyData.map(month => ({
+      ...month,
+      wapd: typeof month.wapd === 'string' ? parseFloat(month.wapd.replace('%', '')) : month.wapd,
+      waLgd: typeof month.waLgd === 'string' ? parseFloat(month.waLgd.replace('%', '')) : month.waLgd
+    }));
   };
 
 
@@ -262,6 +354,73 @@ const PDAnalysis = () => {
                 <tr className="bg-purple-50"><td className="border border-gray-300 p-2 font-bold">Subordination</td><td className="border border-gray-300 p-2 text-center">-</td><td className="border border-gray-300 p-2 text-center">1.28%</td><td className="border border-gray-300 p-2 text-center">-</td><td className="border border-gray-300 p-2 text-center">1.26%</td><td className="border border-gray-300 p-2 text-center">-</td><td className="border border-gray-300 p-2 text-center">1.16%</td><td className="border border-gray-300 p-2 text-center">1.16%</td><td className="border border-gray-300 p-2 text-center">1.05%</td><td className="border border-gray-300 p-2 text-center">1.08%</td></tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Interactive Chart Visualization */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                Performance Timeline
+              </h4>
+            </div>
+            
+            {/* Metric Selection */}
+            <div className="mb-4">
+              <div className="flex flex-wrap gap-2">
+                {chartMetrics.map((metric) => (
+                  <Button
+                    key={metric.key}
+                    variant={selectedMetrics.includes(metric.key) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleMetric(metric.key)}
+                    className="text-xs"
+                  >
+                    {metric.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Chart */}
+            <div className="h-96 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={prepareChartData(data.monthlyData)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="period" 
+                    fontSize={12}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis 
+                    fontSize={12}
+                    tickFormatter={(value) => formatChartValue(value, selectedMetrics)}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => [
+                      formatTooltipValue(value, name as string), 
+                      getMetricLabel(name as string)
+                    ]}
+                    labelStyle={{ color: '#374151' }}
+                  />
+                  <Legend />
+                  {selectedMetrics.map((metric, index) => (
+                    <Line
+                      key={metric}
+                      type="monotone"
+                      dataKey={metric}
+                      stroke={getLineColor(index)}
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name={getMetricLabel(metric)}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </CardContent>
       </Card>
