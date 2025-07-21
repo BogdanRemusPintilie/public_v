@@ -342,7 +342,21 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
           {extractedData && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Extracted Financial Data</h3>
+                <div className="flex items-center space-x-4">
+                  <h3 className="text-lg font-semibold">Extracted Financial Data</h3>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="default" size="sm">
+                      File 1
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate('/pd-analysis', { state: { extractedData2: demoData2 } })}
+                    >
+                      File 2
+                    </Button>
+                  </div>
+                </div>
                 <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   Export Results
