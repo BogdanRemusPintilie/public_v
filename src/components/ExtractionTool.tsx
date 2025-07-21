@@ -14,7 +14,6 @@ interface ExtractionToolProps {
 
 const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
   const [file, setFile] = useState<File | null>(null);
-  const [file2, setFile2] = useState<File | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
   const [extractedData2, setExtractedData2] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -130,28 +129,17 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
     if (selectedFile) {
       setFile(selectedFile);
       toast({
-        title: "File 1 Selected",
-        description: `${selectedFile.name} is ready for processing`,
-      });
-    }
-  };
-
-  const handleFile2Upload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) {
-      setFile2(selectedFile);
-      toast({
-        title: "File 2 Selected",
-        description: `${selectedFile.name} is ready for processing`,
+        title: "Excel File Selected",
+        description: `${selectedFile.name} is ready for processing (contains both SBCLN and BSTS 4 worksheets)`,
       });
     }
   };
 
   const handleExtraction = async () => {
-    if (!file && !file2) {
+    if (!file) {
       toast({
-        title: "No Files Selected",
-        description: "Please select at least one PDF or Excel file to extract data from",
+        title: "No File Selected",
+        description: "Please select an Excel file to extract data from",
         variant: "destructive",
       });
       return;
@@ -159,21 +147,16 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
 
     setIsLoading(true);
     
-    // Simulate extraction process
+    // Simulate extraction process for both worksheets
     setTimeout(() => {
-      if (file) {
-        setExtractedData(demoData);
-      }
-      if (file2) {
-        setExtractedData2(demoData2);
-        // Navigate to PD Analysis page with the extracted data
-        navigate('/pd-analysis', { state: { extractedData2: demoData2 } });
-        onClose(); // Close the extraction tool modal
-      }
+      // Set both datasets since they come from the same Excel file
+      setExtractedData(demoData);
+      setExtractedData2(demoData2);
+      
       setIsLoading(false);
       toast({
         title: "Extraction Complete",
-        description: `Financial data has been successfully extracted from ${file && file2 ? 'both files' : 'your file'}${file2 ? '. Opening PD Analysis page...' : ''}`,
+        description: "Financial data has been successfully extracted from both worksheets (SBCLN and BSTS 4)",
       });
     }, 2000);
   };
@@ -268,21 +251,20 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
         
         <CardContent className="space-y-6">
           {/* File Upload Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* First File Upload */}
-            <Card className="border-dashed border-2 border-blue-300 hover:border-blue-400 transition-colors">
+          <div className="flex justify-center">
+            <Card className="border-dashed border-2 border-blue-300 hover:border-blue-400 transition-colors w-full max-w-md">
               <CardContent className="p-6">
                 <div className="text-center space-y-4">
                   <Upload className="h-8 w-8 text-blue-400 mx-auto" />
                   <div>
                     <Label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="text-md font-medium text-gray-900">Upload File 1</span>
-                      <p className="text-sm text-gray-500 mt-1">Portfolio Data (PDF/Excel)</p>
+                      <span className="text-md font-medium text-gray-900">Upload Excel File</span>
+                      <p className="text-sm text-gray-500 mt-1">Contains both SBCLN and BSTS 4 worksheets</p>
                     </Label>
                     <Input
                       id="file-upload"
                       type="file"
-                      accept=".pdf,.xlsx,.xls"
+                      accept=".xlsx,.xls"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
@@ -296,45 +278,17 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Second File Upload */}
-            <Card className="border-dashed border-2 border-green-300 hover:border-green-400 transition-colors">
-              <CardContent className="p-6">
-                <div className="text-center space-y-4">
-                  <Upload className="h-8 w-8 text-green-400 mx-auto" />
-                  <div>
-                    <Label htmlFor="file2-upload" className="cursor-pointer">
-                      <span className="text-md font-medium text-gray-900">Upload File 2</span>
-                      <p className="text-sm text-gray-500 mt-1">PD Analysis Data (PDF/Excel)</p>
-                    </Label>
-                    <Input
-                      id="file2-upload"
-                      type="file"
-                      accept=".pdf,.xlsx,.xls"
-                      onChange={handleFile2Upload}
-                      className="hidden"
-                    />
-                  </div>
-                  {file2 && (
-                    <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
-                      <FileText className="h-4 w-4" />
-                      <span className="truncate">{file2.name}</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Extract Button */}
           <div className="text-center">
             <Button 
               onClick={handleExtraction} 
-              disabled={(!file && !file2) || isLoading}
+              disabled={!file || isLoading}
               className="w-48"
               size="lg"
             >
-              {isLoading ? "Extracting..." : "Extract Data from Files"}
+              {isLoading ? "Extracting..." : "Extract Data from Excel File"}
             </Button>
           </div>
 
