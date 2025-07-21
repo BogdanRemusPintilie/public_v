@@ -13,7 +13,9 @@ interface ExtractionToolProps {
 
 const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
   const [file, setFile] = useState<File | null>(null);
+  const [file2, setFile2] = useState<File | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
+  const [extractedData2, setExtractedData2] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['portfolioBalance', 'cumulativeLosses']);
   const { toast } = useToast();
@@ -80,22 +82,74 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
     }
   };
 
+  // Second demo data based on provided information
+  const demoData2 = {
+    portfolioSize: 1030812926.20,
+    rampedUpNotional: 1430812926.20,
+    trancheSize: 103100000,
+    ftBalance: 4000000,
+    attachmentDetachment: "1.3-8.5%",
+    coupon: "3mE + 9%",
+    dates: {
+      closing: "03.08.2023",
+      purchase: "03.08.2023",
+      purchasePrice: "100%",
+      maturity: "",
+      call: "WAL+REP (1.45+18m)"
+    },
+    rampUp: "6m",
+    replenishment: "18m",
+    reporting: {
+      howToGetReports: "https://editor.eurodw.eu/simplelogin",
+      otherName: "Boa Vista, Syntotta 4",
+      edCode: "MIXSPT000093500420236"
+    },
+    monthlyData: [
+      { period: "Dez 23", noLoans: 13019, noBorrowers: 9859, wapd: "1.03%", waLgd: "44.7%", wal: 3.4, prona: 1430812926, cumulativeDefaults: 682517, cumulativeDefaultsPercent: "0.05%", initialLossAmount: 295497, initialLossPercent: "0.02%", trancheNotional: 18305071, retainedNotional: 18305071, subordination: "1.28%" },
+      { period: "Jan 24", noLoans: 12467, noBorrowers: 9478, wapd: "1.10%", waLgd: "44.60%", wal: 3.3, prona: 1430812926, cumulativeDefaults: 682517, cumulativeDefaultsPercent: "0.05%", initialLossAmount: 295497, initialLossPercent: "0.02%", trancheNotional: 103000000, retainedNotional: 18027309, subordination: "1.26%" },
+      { period: "Mrz 24", noLoans: 12060, noBorrowers: 9313, wapd: "1.10%", waLgd: "46.53%", wal: 3.3, prona: 1430812926, cumulativeDefaults: 1208808, cumulativeDefaultsPercent: "0.08%", initialLossAmount: 573259, initialLossPercent: "0.04%", trancheNotional: 103000000, retainedNotional: 16636035, subordination: "1.16%" },
+      { period: "Apr 24", noLoans: 11473, noBorrowers: 7617, wapd: "1.17%", waLgd: "43.88%", wal: 3.47, prona: 1430812926, cumulativeDefaults: 1208808, cumulativeDefaultsPercent: "0.08%", initialLossAmount: 573259, initialLossPercent: "0.04%", trancheNotional: 103000000, retainedNotional: 15973696, subordination: "1.16%" },
+      { period: "Jun 24", noLoans: 11205, noBorrowers: 8876, wapd: "1.25%", waLgd: "43.80%", wal: 3.44, prona: 1428848394, cumulativeDefaults: 3906011, cumulativeDefaultsPercent: "0.27%", initialLossAmount: 1998519, initialLossPercent: "0.14%", trancheNotional: 103000000, retainedNotional: 14997232, subordination: "1.05%" },
+      { period: "Sep 24", noLoans: 10324, noBorrowers: 7129, wapd: "1.41%", waLgd: "48.31%", wal: 3.72, prona: 1430812926, cumulativeDefaults: 5158080, cumulativeDefaultsPercent: "0.36%", initialLossAmount: 2648625, initialLossPercent: "0.19%", trancheNotional: 103000000, retainedNotional: 14349714.63, subordination: "1.08%" },
+      { period: "Dez 24", noLoans: 11232, noBorrowers: 9133, wapd: "1.16%", waLgd: "45.03%", wal: 3.99, prona: 1430812926, cumulativeDefaults: 6719245, cumulativeDefaultsPercent: "0.47%", initialLossAmount: 3517367, initialLossPercent: "0.25%", trancheNotional: 103000000, retainedNotional: 95501890.22, subordination: "" },
+      { period: "Mrz 25", noLoans: 9508, noBorrowers: 7789, wapd: "1.96%", waLgd: "46.53%", wal: 4.53, prona: 1328007846, cumulativeDefaults: 8337685, cumulativeDefaultsPercent: "0.58%", initialLossAmount: 4388098, initialLossPercent: "0.31%", trancheNotional: 95501890.22, retainedNotional: 14349714.63, subordination: "" }
+    ],
+    pdBreakdown: {
+      origination: { "0-0.5": "49.7%", "0.5-1": "18.1%", "1-1.5": "17.0%", "1.5-2": "7.2%", "2-2.5": "5.2%", "3-3.5": "0.3%", "4-4.5": "0.6%", "5-5.5": "1.1%", "20-99": "0.4%", "99-100": "0.13%", "100.00": "0.17%", "total": "100.0%" },
+      periods: [
+        { period: "Dez 23", "0-0.5": "46.0%", "0.5-1": "16.9%", "1-1.5": "21.1%", "1.5-2": "8.3%", "2-2.5": "5.6%", "3-3.5": "0.3%", "4-4.5": "0.5%", "5-5.5": "1.0%", "20-99": "0.2%", "99-100": "0.07%", "100.00": "0.05%", "total": "100.0%" },
+        { period: "Jan 24", "0-0.5": "46.0%", "0.5-1": "17.4%", "1-1.5": "21.2%", "1.5-2": "7.7%", "2-2.5": "5.5%", "3-3.5": "0.3%", "4-4.5": "0.6%", "5-5.5": "1.0%", "20-99": "0.1%", "99-100": "0.09%", "100.00": "0.06%", "total": "100.0%" }
+      ]
+    }
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
       toast({
-        title: "File Selected",
+        title: "File 1 Selected",
+        description: `${selectedFile.name} is ready for processing`,
+      });
+    }
+  };
+
+  const handleFile2Upload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      setFile2(selectedFile);
+      toast({
+        title: "File 2 Selected",
         description: `${selectedFile.name} is ready for processing`,
       });
     }
   };
 
   const handleExtraction = async () => {
-    if (!file) {
+    if (!file && !file2) {
       toast({
-        title: "No File Selected",
-        description: "Please select a PDF or Excel file to extract data from",
+        title: "No Files Selected",
+        description: "Please select at least one PDF or Excel file to extract data from",
         variant: "destructive",
       });
       return;
@@ -105,11 +159,16 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
     
     // Simulate extraction process
     setTimeout(() => {
-      setExtractedData(demoData);
+      if (file) {
+        setExtractedData(demoData);
+      }
+      if (file2) {
+        setExtractedData2(demoData2);
+      }
       setIsLoading(false);
       toast({
         title: "Extraction Complete",
-        description: "Financial data has been successfully extracted from your file",
+        description: `Financial data has been successfully extracted from ${file && file2 ? 'both files' : 'your file'}`,
       });
     }, 2000);
   };
@@ -204,39 +263,75 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
         
         <CardContent className="space-y-6">
           {/* File Upload Section */}
-          <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 transition-colors">
-            <CardContent className="p-6">
-              <div className="text-center space-y-4">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto" />
-                <div>
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="text-lg font-medium text-gray-900">Upload your file</span>
-                    <p className="text-sm text-gray-500 mt-1">Supports PDF and Excel files</p>
-                  </Label>
-                  <Input
-                    id="file-upload"
-                    type="file"
-                    accept=".pdf,.xlsx,.xls"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </div>
-                {file && (
-                  <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
-                    <FileText className="h-4 w-4" />
-                    <span>{file.name}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* First File Upload */}
+            <Card className="border-dashed border-2 border-blue-300 hover:border-blue-400 transition-colors">
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <Upload className="h-8 w-8 text-blue-400 mx-auto" />
+                  <div>
+                    <Label htmlFor="file-upload" className="cursor-pointer">
+                      <span className="text-md font-medium text-gray-900">Upload File 1</span>
+                      <p className="text-sm text-gray-500 mt-1">Portfolio Data (PDF/Excel)</p>
+                    </Label>
+                    <Input
+                      id="file-upload"
+                      type="file"
+                      accept=".pdf,.xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
                   </div>
-                )}
-                <Button 
-                  onClick={handleExtraction} 
-                  disabled={!file || isLoading}
-                  className="w-40"
-                >
-                  {isLoading ? "Extracting..." : "Extract Data"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  {file && (
+                    <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
+                      <FileText className="h-4 w-4" />
+                      <span className="truncate">{file.name}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Second File Upload */}
+            <Card className="border-dashed border-2 border-green-300 hover:border-green-400 transition-colors">
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <Upload className="h-8 w-8 text-green-400 mx-auto" />
+                  <div>
+                    <Label htmlFor="file2-upload" className="cursor-pointer">
+                      <span className="text-md font-medium text-gray-900">Upload File 2</span>
+                      <p className="text-sm text-gray-500 mt-1">PD Analysis Data (PDF/Excel)</p>
+                    </Label>
+                    <Input
+                      id="file2-upload"
+                      type="file"
+                      accept=".pdf,.xlsx,.xls"
+                      onChange={handleFile2Upload}
+                      className="hidden"
+                    />
+                  </div>
+                  {file2 && (
+                    <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
+                      <FileText className="h-4 w-4" />
+                      <span className="truncate">{file2.name}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Extract Button */}
+          <div className="text-center">
+            <Button 
+              onClick={handleExtraction} 
+              disabled={(!file && !file2) || isLoading}
+              className="w-48"
+              size="lg"
+            >
+              {isLoading ? "Extracting..." : "Extract Data from Files"}
+            </Button>
+          </div>
 
           {/* Extracted Data Display */}
           {extractedData && (
@@ -498,6 +593,154 @@ const ExtractionTool = ({ onClose }: ExtractionToolProps) => {
                           ))}
                         </LineChart>
                       </ResponsiveContainer>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Second Extracted Data Display */}
+          {extractedData2 && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">PD Analysis & Subordination Data</h3>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export PD Results
+                </Button>
+              </div>
+
+              {/* Deal Information */}
+              <Card className="border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-green-700">Deal Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Initial Notional</span>
+                        <span>{formatCurrency(extractedData2.portfolioSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Ramped Up Notional</span>
+                        <span>{formatCurrency(extractedData2.rampedUpNotional)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Tranche Size</span>
+                        <span>{formatCurrency(extractedData2.trancheSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>FT Balance</span>
+                        <span>{formatCurrency(extractedData2.ftBalance)}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span>Attachment/Detachment</span>
+                        <span>{extractedData2.attachmentDetachment}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Coupon</span>
+                        <span>{extractedData2.coupon}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Closing Date</span>
+                        <span>{extractedData2.dates.closing}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Purchase Date</span>
+                        <span>{extractedData2.dates.purchase}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span>Call Date</span>
+                        <span>{extractedData2.dates.call}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Ramp Up</span>
+                        <span>{extractedData2.rampUp}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Replenishment</span>
+                        <span>{extractedData2.replenishment}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>ED CODE</span>
+                        <span className="font-mono text-sm">{extractedData2.reporting.edCode}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* PD Analysis Data */}
+              <Card className="border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-green-700">Performance & Risk Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Period</th>
+                          <th className="text-right p-2">No. Loans</th>
+                          <th className="text-right p-2">No. Borrowers</th>
+                          <th className="text-right p-2">WAPD</th>
+                          <th className="text-right p-2">WA LGD</th>
+                          <th className="text-right p-2">WAL</th>
+                          <th className="text-right p-2">PRONA</th>
+                          <th className="text-right p-2">Cumulative Defaults</th>
+                          <th className="text-right p-2">Defaults %</th>
+                          <th className="text-right p-2">Initial Loss Amount</th>
+                          <th className="text-right p-2">Loss %</th>
+                          <th className="text-right p-2">Tranche Notional</th>
+                          <th className="text-right p-2">Subordination</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {extractedData2.monthlyData.map((month: any, index: number) => (
+                          <tr key={index} className="border-b hover:bg-green-50">
+                            <td className="p-2 font-medium">{month.period}</td>
+                            <td className="p-2 text-right">{formatNumber(month.noLoans)}</td>
+                            <td className="p-2 text-right">{formatNumber(month.noBorrowers)}</td>
+                            <td className="p-2 text-right">{month.wapd}</td>
+                            <td className="p-2 text-right">{month.waLgd}</td>
+                            <td className="p-2 text-right">{month.wal}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.prona)}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.cumulativeDefaults)}</td>
+                            <td className="p-2 text-right">{month.cumulativeDefaultsPercent}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.initialLossAmount)}</td>
+                            <td className="p-2 text-right">{month.initialLossPercent}</td>
+                            <td className="p-2 text-right">{formatCurrency(month.trancheNotional)}</td>
+                            <td className="p-2 text-right">{month.subordination || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Reporting Access */}
+              <Card className="border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-green-700">Reporting Access</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">How to get Reports</span>
+                      <span className="text-green-600 underline cursor-pointer">{extractedData2.reporting.howToGetReports}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Other Name</span>
+                      <span>{extractedData2.reporting.otherName}</span>
                     </div>
                   </div>
                 </CardContent>
