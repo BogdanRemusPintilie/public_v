@@ -4,6 +4,7 @@ import { Download, ArrowLeft, TrendingUp } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { exportToExcel, type SBCLNData, type BSTS4Data } from '@/utils/excelExport';
 
 const PDAnalysis = () => {
   const navigate = useNavigate();
@@ -142,6 +143,52 @@ const PDAnalysis = () => {
     );
   };
 
+  // Demo SBCLN data structure for export
+  const demoSBCLNData: SBCLNData = {
+    portfolioSize: 1100000000,
+    trancheF: {
+      size: 19250000,
+      ftBalance: 10000000,
+      attachmentDetachment: "2.75-4.5%",
+      coupon: "10.00%"
+    },
+    trancheG: {
+      size: 8250000,
+      ftBalance: 30000,
+      attachmentDetachment: "2-2.75%",
+      coupon: "21%"
+    },
+    dates: {
+      closing: "15.06.2023",
+      purchase: "15.06.2023",
+      purchasePrice: "100%",
+      maturity: "",
+      call: ""
+    },
+    summary: {
+      monthlyData: [
+        { period: "Jan 24", waIR: "5.81%", waRemainingTerm: 59.09, delinquency: "1.58%", cumulativeLosses: 2571183, cumulativeLossesPercent: "0.23%", monthlyDefaults: 705755.13, portfolioBalance: 873956666.75, poolFactor: 0.79, loans: 23998, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Feb 24", waIR: "5.80%", waRemainingTerm: 58.18, delinquency: "1.62%", cumulativeLosses: 3146990, cumulativeLossesPercent: "0.29%", monthlyDefaults: 1009749.52, portfolioBalance: 848901455.14, poolFactor: 0.77, loans: 23619, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Mar 24", waIR: "5.78%", waRemainingTerm: 57.25, delinquency: "", cumulativeLosses: 3466270, cumulativeLossesPercent: "0.32%", monthlyDefaults: 814458.58, portfolioBalance: 824229126.33, poolFactor: 0.75, loans: null, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Apr 24", waIR: "5.77%", waRemainingTerm: 56.29, delinquency: "1.50%", cumulativeLosses: 4442136, cumulativeLossesPercent: "0.40%", monthlyDefaults: 1750907.88, portfolioBalance: 797163097.29, poolFactor: 0.72, loans: null, fBalance: 19250000, gBalance: 8250000 },
+        { period: "May 24", waIR: "5.76%", waRemainingTerm: 55.34, delinquency: "1.53%", cumulativeLosses: 5101943, cumulativeLossesPercent: "0.46%", monthlyDefaults: 1312505.90, portfolioBalance: 771869079.81, poolFactor: 0.70, loans: 22132, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Jun 24", waIR: "5.74%", waRemainingTerm: 54.39, delinquency: "1.53%", cumulativeLosses: 5650244, cumulativeLossesPercent: "0.51%", monthlyDefaults: 1027733.19, portfolioBalance: 747163881.18, poolFactor: 0.68, loans: 21780, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Jul 24", waIR: "5.74%", waRemainingTerm: 53.48, delinquency: "1.65%", cumulativeLosses: 6104366, cumulativeLossesPercent: "0.55%", monthlyDefaults: 745999.19, portfolioBalance: 723815016.95, poolFactor: 0.66, loans: 21430, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Aug 24", waIR: "5.72%", waRemainingTerm: 52.53, delinquency: "1.84%", cumulativeLosses: 6731725, cumulativeLossesPercent: "0.61%", monthlyDefaults: 1151573.41, portfolioBalance: 700152484.91, poolFactor: 0.64, loans: 21090, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Sep 24", waIR: "5.71%", waRemainingTerm: 51.59, delinquency: "1.97%", cumulativeLosses: 6785637.12, cumulativeLossesPercent: "0.62%", monthlyDefaults: 824492.90, portfolioBalance: 676896077.08, poolFactor: 0.62, loans: 20739, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Oct 24", waIR: "5.71%", waRemainingTerm: 50.68, delinquency: "2.15%", cumulativeLosses: 7295089.15, cumulativeLossesPercent: "0.66%", monthlyDefaults: 1023480.38, portfolioBalance: 654699741.41, poolFactor: 0.60, loans: 19739, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Jan 25", waIR: "5.72%", waRemainingTerm: 47.94, delinquency: "2.54%", cumulativeLosses: 8456431.92, cumulativeLossesPercent: "0.77%", monthlyDefaults: 505527.08, portfolioBalance: 589384393.42, poolFactor: 0.54, loans: 19020, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Mar 25", waIR: "5.71%", waRemainingTerm: 46.12, delinquency: "2.47%", cumulativeLosses: 9155332.61, cumulativeLossesPercent: "0.83%", monthlyDefaults: 1374016.05, portfolioBalance: 547303007.97, poolFactor: 0.50, loans: null, fBalance: 19250000, gBalance: 8250000 },
+        { period: "May 25", waIR: "5.72%", waRemainingTerm: 44.29, delinquency: "2.47%", cumulativeLosses: 9905523.92, cumulativeLossesPercent: "0.90%", monthlyDefaults: 731231.19, portfolioBalance: 504731908.46, poolFactor: 0.46, loans: null, fBalance: 19250000, gBalance: 8250000 },
+        { period: "Jun 25", waIR: "5.74%", waRemainingTerm: 42.48, delinquency: "2.77%", cumulativeLosses: 10401986.87, cumulativeLossesPercent: "0.95%", monthlyDefaults: 901887.25, portfolioBalance: 462546078.93, poolFactor: 0.42, loans: 17502, fBalance: 19250000, gBalance: 8250000 }
+      ]
+    }
+  };
+
+  const handleExport = () => {
+    exportToExcel(demoSBCLNData, data as BSTS4Data);
+  };
+
   // Convert percentage strings to numbers for chart display
   const prepareChartData = (monthlyData: any[]) => {
     return monthlyData.map(month => ({
@@ -169,7 +216,7 @@ const PDAnalysis = () => {
           <Button variant="default">
             BSTS 4
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export PD Results
           </Button>
@@ -177,9 +224,9 @@ const PDAnalysis = () => {
       </div>
 
       {/* Deal Information */}
-      <Card className="border-green-200">
+      <Card className="border-blue-200">
         <CardHeader>
-          <CardTitle className="text-green-700">Deal Information</CardTitle>
+          <CardTitle className="text-blue-700">Deal Information</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -254,9 +301,9 @@ const PDAnalysis = () => {
       </Card>
 
       {/* PD Analysis Data Table */}
-      <Card className="border-green-200">
+      <Card className="border-blue-200">
         <CardHeader>
-          <CardTitle className="text-green-700">PD Analysis & Performance Data</CardTitle>
+          <CardTitle className="text-blue-700">PD Analysis & Performance Data</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -360,7 +407,7 @@ const PDAnalysis = () => {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-semibold flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+                <TrendingUp className="h-5 w-5 text-blue-600" />
                 Performance Timeline
               </h4>
             </div>
