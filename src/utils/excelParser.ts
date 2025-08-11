@@ -237,7 +237,7 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData & { wa
           avgInterestRate: mappedData.length > 0 ? 
             mappedData.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / 
             mappedData.reduce((sum, loan) => sum + loan.opening_balance, 0) : 0,
-          higherRiskLoans: mappedData.filter(loan => loan.pd > 0.10).length,
+          higherRiskLoans: mappedData.filter(loan => (loan.pd || 0) > 0.10).length,
           warnings: warnings.length
         });
         
