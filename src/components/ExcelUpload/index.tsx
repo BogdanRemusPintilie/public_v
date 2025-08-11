@@ -106,7 +106,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
             totalValue: result.data.reduce((sum, loan) => sum + loan.opening_balance, 0),
             avgInterestRate: result.data.length > 0 ? 
               result.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / result.data.length : 0,
-            highRiskLoans: result.data.filter(loan => (loan.pd || 0) > 0.05).length,
+            highRiskLoans: result.data.filter(loan => (loan.pd || 0) > 0.10).length,
             totalRecords: result.totalCount // Use actual total count from database
           };
           setPortfolioSummary(quickSummary);
@@ -157,7 +157,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           totalValue: allData.reduce((sum, loan) => sum + loan.opening_balance, 0),
           avgInterestRate: allData.length > 0 ? 
             allData.reduce((sum, loan) => sum + loan.interest_rate, 0) / allData.length : 0,
-          highRiskLoans: allData.filter(loan => (loan.pd || 0) > 0.05).length,
+          highRiskLoans: allData.filter(loan => (loan.pd || 0) > 0.10).length,
           totalRecords: totalRecords
         };
         setPortfolioSummary(originalSummary);
@@ -175,7 +175,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         totalValue: filtered.reduce((sum, loan) => sum + loan.opening_balance, 0),
         avgInterestRate: filtered.length > 0 ? 
           filtered.reduce((sum, loan) => sum + loan.interest_rate, 0) / filtered.length : 0,
-        highRiskLoans: filtered.filter(loan => (loan.pd || 0) > 0.05).length,
+        highRiskLoans: filtered.filter(loan => (loan.pd || 0) > 0.10).length,
         totalRecords: filtered.length
       };
       setPortfolioSummary(filteredSummary);
@@ -328,7 +328,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     const totalValue = data.reduce((sum, loan) => sum + loan.opening_balance, 0);
     const avgInterestRate = data.length > 0 ? 
       data.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / totalValue : 0;
-    const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.05).length;
+    const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.10).length;
     
     const calculatedSummary = {
       totalValue,

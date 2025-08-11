@@ -256,7 +256,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
     const totalValue = extractedData.reduce((sum, record) => sum + record.opening_balance, 0);
     const avgInterestRate = extractedData.length > 0 ? 
       extractedData.reduce((sum, record) => sum + (record.interest_rate * record.opening_balance), 0) / totalValue : 0;
-    const highRiskLoans = extractedData.filter(loan => (loan.pd || 0) > 0.05).length;
+    const highRiskLoans = extractedData.filter(loan => (loan.pd || 0) > 0.10).length;
 
     return {
       totalRecords: extractedData.length,
