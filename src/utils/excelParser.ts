@@ -74,8 +74,8 @@ function createFlexibleColumnMap(headers: string[]): ColumnMap {
     opening_balance: /(?:opening.*balance|current.*balance|outstanding.*balance|balance|outstanding|unpaid.*balance)/i,
     interest_rate: /(?:interest.*rate|rate|coupon|margin|yield|gross.*rate|contract.*rate)/i,
     term: /(?:term|maturity|duration|months|original.*term|remaining.*term)/i,
-    loan_type: /(?:type|product|category|purpose|loan.*purpose)/i,
-    credit_score: /(?:credit.*score|score|rating|fico|beacon)/i,
+    loan_type: /(?:type|product|category|purpose|loan.*purpose|remaining.*term|rem.*term|time.*left|remaining.*months)/i,
+    credit_score: /(?:credit.*score|score|rating|fico|beacon|lgd|loss.*given.*default|loss.*severity|recovery.*rate)/i,
     ltv: /(?:ltv|loan.*to.*value|l\.t\.v|cltv|combined.*ltv)/i,
     pd: /(?:pd|probability.*default|default.*rate|risk.*score|credit.*risk)/i
   };
