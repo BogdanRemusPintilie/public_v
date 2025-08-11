@@ -34,6 +34,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolioSum
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-red-600">{portfolioSummary.highRiskLoans}</div>
           <div className="text-sm text-gray-600">High Risk Loans</div>
+          <div className="text-xs text-gray-400">PD {'>'}  10%</div>
         </div>
       </div>
     </div>
