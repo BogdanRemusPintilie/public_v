@@ -18,8 +18,8 @@ interface ColumnMap {
   opening_balance?: number;
   interest_rate?: number;
   term?: number;
-  loan_type?: number;
-  credit_score?: number;
+  remaining_term?: number;
+  lgd?: number;
   ltv?: number;
   pd?: number;
 }
@@ -73,9 +73,9 @@ function createFlexibleColumnMap(headers: string[]): ColumnMap {
     loan_amount: /(?:loan.*amount|principal|original.*balance|initial.*amount|gross.*amount)/i,
     opening_balance: /(?:opening.*balance|current.*balance|outstanding.*balance|balance|outstanding|unpaid.*balance)/i,
     interest_rate: /(?:interest.*rate|rate|coupon|margin|yield|gross.*rate|contract.*rate)/i,
-    term: /(?:term|maturity|duration|months|original.*term|remaining.*term)/i,
-    loan_type: /(?:type|product|category|purpose|loan.*purpose|remaining.*term|rem.*term|time.*left|remaining.*months)/i,
-    credit_score: /(?:credit.*score|score|rating|fico|beacon|lgd|loss.*given.*default|loss.*severity|recovery.*rate)/i,
+    term: /(?:term|maturity|duration|months|original.*term)/i,
+    remaining_term: /(?:remaining.*term|rem.*term|time.*left|remaining.*months|type|product|category|purpose|loan.*purpose)/i,
+    lgd: /(?:lgd|loss.*given.*default|loss.*severity|recovery.*rate|credit.*score|score|rating|fico|beacon)/i,
     ltv: /(?:ltv|loan.*to.*value|l\.t\.v|cltv|combined.*ltv)/i,
     pd: /(?:pd|probability.*default|default.*rate|risk.*score|credit.*risk)/i
   };
@@ -194,8 +194,8 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData & { wa
             loan_amount: parseFinancialValue(row[columnMap.loan_amount || columnMap.opening_balance || 1]) || 0,
             interest_rate: parseInterestRate(row[columnMap.interest_rate || 2]) || 0,
             term: parseFinancialValue(row[columnMap.term || 3]) || 0,
-            loan_type: parseStringValue(row[columnMap.loan_type || 4]) || 'Standard',
-            credit_score: parseFinancialValue(row[columnMap.credit_score || 5]) || 0,
+            remaining_term: parseFinancialValue(row[columnMap.remaining_term || 4]) || null,
+            lgd: parseFinancialValue(row[columnMap.lgd || 5]) || 0,
             ltv: parseFinancialValue(row[columnMap.ltv || 6]) || 0,
             opening_balance: parseFinancialValue(row[columnMap.opening_balance || columnMap.loan_amount || 1]) || 0,
             pd: parseFinancialValue(row[columnMap.pd || 9]) || 0,

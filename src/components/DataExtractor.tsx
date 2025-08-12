@@ -133,8 +133,8 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
           row.interest_rate,
           row.term,
           row.pd || 0,
-          row.loan_type,
-          row.credit_score,
+          row.remaining_term || 0,
+          row.lgd,
           row.ltv
         ].join(','))
       ].join('\n');
@@ -230,8 +230,8 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
         row.interest_rate,
         row.term,
         row.pd || 0,
-        row.loan_type,
-        row.credit_score,
+        row.remaining_term || 0,
+        row.lgd,
         row.ltv
       ].join(','))
     ].join('\n');
@@ -442,8 +442,8 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
                             <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
                             <TableCell>{row.term}</TableCell>
                             <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
-                            <TableCell>{row.loan_type}</TableCell>
-                            <TableCell>{row.credit_score}</TableCell>
+                            <TableCell>{row.remaining_term ? Number(row.remaining_term).toFixed(0) : 'N/A'}</TableCell>
+                            <TableCell>{row.lgd.toFixed(2)}%</TableCell>
                             <TableCell>{row.ltv.toFixed(2)}%</TableCell>
                           </TableRow>
                         ))}

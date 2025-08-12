@@ -161,8 +161,8 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                   <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
                   <TableCell>{row.term}</TableCell>
                   <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
-                  <TableCell>{typeof row.loan_type === 'number' ? Number(row.loan_type).toFixed(2) : (isNaN(Number(row.loan_type)) ? row.loan_type : Number(row.loan_type).toFixed(2))}</TableCell>
-                  <TableCell>{typeof row.credit_score === 'number' ? row.credit_score.toFixed(2) : row.credit_score}</TableCell>
+                  <TableCell>{row.remaining_term ? Number(row.remaining_term).toFixed(0) : 'N/A'}</TableCell>
+                  <TableCell>{row.lgd.toFixed(2)}%</TableCell>
                   <TableCell>{row.ltv.toFixed(2)}%</TableCell>
                 </TableRow>
               ))}

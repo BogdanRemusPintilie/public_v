@@ -116,16 +116,16 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           return false;
         }
 
-        // Loan type filter
-        if (filterCriteria.loanType !== 'all' && record.loan_type !== filterCriteria.loanType) {
+        // Remaining term filter
+        if (filterCriteria.loanType !== 'all' && record.remaining_term !== parseFloat(filterCriteria.loanType)) {
           return false;
         }
 
-        // Credit score filter
-        if (filterCriteria.minCreditScore && record.credit_score < parseFloat(filterCriteria.minCreditScore)) {
+        // LGD filter
+        if (filterCriteria.minCreditScore && record.lgd < parseFloat(filterCriteria.minCreditScore)) {
           return false;
         }
-        if (filterCriteria.maxCreditScore && record.credit_score > parseFloat(filterCriteria.maxCreditScore)) {
+        if (filterCriteria.maxCreditScore && record.lgd > parseFloat(filterCriteria.maxCreditScore)) {
           return false;
         }
 
@@ -211,7 +211,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     return [...new Set(completeDataset.map(record => record[field]))].filter(Boolean);
   };
 
-  const loanTypes = getUniqueValues('loan_type') as string[];
+  const remainingTerms = getUniqueValues('remaining_term') as number[];
 
   return (
     <Card className="mb-6">
@@ -279,8 +279,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {loanTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                {remainingTerms.map(term => (
+                  <SelectItem key={term} value={term.toString()}>{term}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
