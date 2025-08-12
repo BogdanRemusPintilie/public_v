@@ -275,83 +275,128 @@ function hexToUtf16BEString(hex: string): string {
   return out;
 }
 
-function parseToUnicodeCMap(pdf: Uint8Array): { cmap: Map<string, string>, codeUnitBytes: number } {
-  // Heuristically scan the whole document for ToUnicode CMaps
-  const doc = new TextDecoder('latin1', { fatal: false }).decode(pdf);
-  const cmap = new Map<string, string>();
-
-  // Helper: normalize <...> hex token
+function parseCMapText(cmapText: string, target: Map<string,string>) {
   const norm = (s: string) => s.replace(/\s+/g, '').toUpperCase();
 
-  // bfchar blocks
-  const bfcharBlocks = [...doc.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)];
+  // bfchar
+  const bfcharBlocks = [...cmapText.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)];
   for (const b of bfcharBlocks) {
-    const body = b[1];
-    const pairs = body.match(/<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]+)>/g) || [];
+    const pairs = b[1].match(/<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]+)>/g) || [];
     for (const p of pairs) {
       const m = /<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]+)>/.exec(p);
       if (!m) continue;
       const src = norm(m[1]);
       const dst = norm(m[2]);
-      // Destination usually UTF-16BE (e.g. 0041)
       const text = dst.length % 4 === 0 ? hexToUtf16BEString(dst) : hexToString(dst);
-      cmap.set(src, text);
+      target.set(src, text);
     }
   }
 
-  // bfrange blocks
-  const bfrangeBlocks = [...doc.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)];
-  for (const b of bfrangeBlocks) {
-    const body = b[1];
-    // Form 1: <srcFrom> <srcTo> <dstStart>
-    const ranges1 = body.match(/<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>/g) || [];
-    for (const r of ranges1) {
-      const m = /<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>/.exec(r);
-      if (!m) continue;
-      const srcFrom = parseInt(norm(m[1]), 16);
-      const srcTo   = parseInt(norm(m[2]), 16);
-      const dstStartHex = norm(m[3]);
-      for (let code = srcFrom, k = 0; code <= srcTo; code++, k++) {
-        const srcKey = code.toString(16).toUpperCase().padStart(m[1].replace(/\s/g,'').length, '0');
-        const baseBytes = dstStartHex.length / 2;
-        let dst = '';
-        if (baseBytes >= 2) {
-          const head = dstStartHex.slice(0, -4);
-          const tail = parseInt(dstStartHex.slice(-4), 16) + k;
-          const dstHex = head + tail.toString(16).toUpperCase().padStart(4, '0');
-          dst = hexToUtf16BEString(dstHex);
-        } else {
-          const dstHex = (parseInt(dstStartHex, 16) + k).toString(16).toUpperCase();
-          dst = hexToString(dstHex);
-        }
-        cmap.set(srcKey, dst);
+  // bfrange Form 1: <a> <b> <c>
+  const r1 = [...cmapText.matchAll(/<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>/g)];
+  for (const m of r1) {
+    const normHex = (s: string) => s.replace(/\s+/g,'').toUpperCase();
+    const keyWidth = normHex(m[1]).length;
+    const srcFrom = parseInt(normHex(m[1]), 16);
+    const srcTo   = parseInt(normHex(m[2]), 16);
+    const dst0    = normHex(m[3]);
+    for (let code = srcFrom, k = 0; code <= srcTo; code++, k++) {
+      const key = code.toString(16).toUpperCase().padStart(keyWidth, '0');
+      let text = '';
+      if (dst0.length >= 4 && dst0.length % 4 === 0) {
+        const head = dst0.slice(0, -4);
+        const tail = (parseInt(dst0.slice(-4), 16) + k).toString(16).toUpperCase().padStart(4,'0');
+        text = hexToUtf16BEString(head + tail);
+      } else {
+        const dstN = (parseInt(dst0,16) + k).toString(16).toUpperCase();
+        text = hexToString(dstN);
       }
-    }
-    // Form 2: <srcFrom> <srcTo> [ <dst1> <dst2> ... ]
-    const ranges2 = body.match(/<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+\[((?:\s*<[^>]+>\s*)+)\]/g) || [];
-    for (const r of ranges2) {
-      const m = /<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+\[((?:\s*<[^>]+>\s*)+)\]/.exec(r);
-      if (!m) continue;
-      const srcFrom = parseInt(norm(m[1]), 16);
-      const srcTo   = parseInt(norm(m[2]), 16);
-      const arr = [...m[3].matchAll(/<([^>]+)>/g)].map(mm => norm(mm[1]));
-      for (let code = srcFrom, i = 0; code <= srcTo && i < arr.length; code++, i++) {
-        const key = code.toString(16).toUpperCase().padStart(m[1].replace(/\s/g,'').length, '0');
-        const dstHex = arr[i];
-        const text = dstHex.length % 4 === 0 ? hexToUtf16BEString(dstHex) : hexToString(dstHex);
-        cmap.set(key, text);
-      }
+      target.set(key, text);
     }
   }
 
-  // Estimate code unit length (in bytes) from key lengths
+  // bfrange Form 2: <a> <b> [ <x> <y> ... ]
+  const r2 = [...cmapText.matchAll(/<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+\[((?:\s*<[^>]+>\s*)+)\]/g)];
+  for (const m of r2) {
+    const normHex = (s: string) => s.replace(/\s+/g,'').toUpperCase();
+    const keyWidth = normHex(m[1]).length;
+    const srcFrom = parseInt(normHex(m[1]), 16);
+    const srcTo   = parseInt(normHex(m[2]), 16);
+    const arr = [...m[3].matchAll(/<([^>]+)>/g)].map(mm => normHex(mm[1]));
+    for (let code = srcFrom, i = 0; code <= srcTo && i < arr.length; code++, i++) {
+      const key = code.toString(16).toUpperCase().padStart(keyWidth, '0');
+      const dst = arr[i];
+      const text = dst.length % 4 === 0 ? hexToUtf16BEString(dst) : hexToString(dst);
+      target.set(key, text);
+    }
+  }
+}
+
+function collectToUnicodeCMapsFromStreams(pdf: Uint8Array): { cmap: Map<string,string>, codeUnitBytes: number } {
+  const encoder = new TextEncoder();
+  const streamMarker = encoder.encode('stream');
+  const endstreamMarker = encoder.encode('endstream');
+  const decoderLatin1 = new TextDecoder('latin1', { fatal: false });
+
+  const cmap = new Map<string,string>();
+
+  const indexOfBytes = (buf: Uint8Array, pattern: Uint8Array, from: number) => {
+    outer: for (let i = from; i <= buf.length - pattern.length; i++) {
+      for (let j = 0; j < pattern.length; j++) {
+        if (buf[i + j] !== pattern[j]) continue outer;
+      }
+      return i;
+    }
+    return -1;
+  };
+
+  const MAX_STREAM = 5 * 1024 * 1024;
+  let cursor = 0, blocks = 0, hits = 0;
+
+  while (cursor < pdf.length) {
+    const startIdx = indexOfBytes(pdf, streamMarker, cursor);
+    if (startIdx === -1) break;
+
+    let dataStart = startIdx + streamMarker.length;
+    if (pdf[dataStart] === 0x0d && pdf[dataStart+1] === 0x0a) dataStart += 2;
+    else if (pdf[dataStart] === 0x0a) dataStart += 1;
+
+    const endIdx = indexOfBytes(pdf, endstreamMarker, dataStart);
+    if (endIdx === -1 || endIdx <= dataStart) break;
+
+    const dictStart = findDictStart(pdf, startIdx);
+    const dictText = readDictBefore(pdf, dictStart, startIdx);
+    const streamBytes = pdf.subarray(dataStart, endIdx);
+    blocks++;
+
+    let content: string | null = null;
+
+    if (streamBytes.length <= MAX_STREAM) {
+      if (shouldInflate(dictText)) {
+        try      { content = decoderLatin1.decode(inflate(streamBytes)); }
+        catch(e) { try { content = decoderLatin1.decode(inflateRaw(streamBytes)); } catch { content = null; } }
+      } else {
+        content = decoderLatin1.decode(streamBytes);
+      }
+    }
+
+    if (content && /begin[cC]map|CIDInit|beginbfchar|beginbfrange/.test(content)) {
+      parseCMapText(content, cmap);
+      hits++;
+    }
+
+    cursor = endIdx + endstreamMarker.length;
+    if (blocks > 3000) break; // hard cap
+  }
+
+  // Estimate Bytes per code unit from key lengths
   let codeUnitBytes = 2;
-  const keyLens = [...cmap.keys()].map(k => k.length);
+  const keyLens = [...cmap.keys()].map(k => k.length).filter(Boolean);
   if (keyLens.length) {
-    const most = keyLens.sort((a,b)=>a-b)[Math.floor(keyLens.length/2)];
-    codeUnitBytes = Math.max(1, Math.round(most/2));
+    const median = keyLens.sort((a,b)=>a-b)[Math.floor(keyLens.length/2)];
+    codeUnitBytes = Math.max(1, Math.round(median/2));
   }
-  console.log(`🗺️ ToUnicode CMap parsed: entries=${cmap.size}, codeUnitBytes≈${codeUnitBytes}`);
+  console.log(`🗺️ ToUnicode CMap parsed from streams: objects=${blocks}, cmap_hits=${hits}, entries=${cmap.size}, codeUnitBytes≈${codeUnitBytes}`);
   return { cmap, codeUnitBytes };
 }
 
@@ -552,10 +597,10 @@ function extractPdfTextChunksFromBTET_UsingCMap(content: string, cmap: Map<strin
 
 async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: string, pages: number}> {
   try {
-    console.log('🔍 Parsing PDF streams (binary) with BT/ET + ToUnicode...');
+    console.log('🔍 Parsing PDF streams (binary) with BT/ET + ToUnicode (from streams)...');
 
-    // NEW: parse ToUnicode CMap once
-    const { cmap, codeUnitBytes } = parseToUnicodeCMap(pdfBuffer);
+    // NEU: CMaps einmal aus allen Streams einsammeln
+    const { cmap, codeUnitBytes } = collectToUnicodeCMapsFromStreams(pdfBuffer);
 
     const encoder = new TextEncoder();
     const streamMarker = encoder.encode('stream');
@@ -564,10 +609,9 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
     const decoderLatin1 = new TextDecoder('latin1', { fatal: false });
 
     const texts: string[] = [];
-    const MAX_STREAM = 5 * 1024 * 1024; // 5MB cap
+    const MAX_STREAM = 5 * 1024 * 1024;
     const MAX_SEGMENTS = 10000;
 
-    // Byte-level search
     const indexOfBytes = (buf: Uint8Array, pattern: Uint8Array, from: number) => {
       outer: for (let i = from; i <= buf.length - pattern.length; i++) {
         for (let j = 0; j < pattern.length; j++) {
@@ -584,8 +628,8 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
       if (startIdx === -1) break;
 
       let dataStart = startIdx + streamMarker.length;
-      if (pdfBuffer[dataStart] === 0x0d && pdfBuffer[dataStart + 1] === 0x0a) dataStart += 2; // CRLF
-      else if (pdfBuffer[dataStart] === 0x0a) dataStart += 1; // LF
+      if (pdfBuffer[dataStart] === 0x0d && pdfBuffer[dataStart + 1] === 0x0a) dataStart += 2;
+      else if (pdfBuffer[dataStart] === 0x0a) dataStart += 1;
 
       const endIdx = indexOfBytes(pdfBuffer, endstreamMarker, dataStart);
       if (endIdx === -1 || endIdx <= dataStart) break;
@@ -593,17 +637,10 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
       const dictStart = findDictStart(pdfBuffer, startIdx);
       const dictText = readDictBefore(pdfBuffer, dictStart, startIdx);
 
-      // Skip obvious non-text streams
-      if (isImageStream(dictText)) {
-        cursor = endIdx + endstreamMarker.length;
-        continue;
-      }
+      if (isImageStream(dictText)) { cursor = endIdx + endstreamMarker.length; continue; }
 
       const streamBytes = pdfBuffer.subarray(dataStart, endIdx);
-      if (streamBytes.length > MAX_STREAM) {
-        cursor = endIdx + endstreamMarker.length;
-        continue;
-      }
+      if (streamBytes.length > MAX_STREAM) { cursor = endIdx + endstreamMarker.length; continue; }
 
       let decompressed: Uint8Array | null = null;
       if (shouldInflate(dictText)) {
@@ -611,12 +648,11 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
         catch { try { decompressed = inflateRaw(streamBytes); } catch { decompressed = null; } }
       }
 
-      // Turn bytes into candidate strings and extract BT/ET chunks
       const addFromBytes = (bytes: Uint8Array) => {
         const utf = decoderUtf8.decode(bytes);
         const lat = decoderLatin1.decode(bytes);
 
-        // 1) Primary: BT/ET blocks (Tj/TJ) using CMap
+        // 1) Primär: BT/ET (Tj/TJ) mit CMap
         for (const cand of [utf, lat]) {
           if (!cand) continue;
           const btChunks = extractPdfTextChunksFromBTET_UsingCMap(cand, cmap, codeUnitBytes);
@@ -629,7 +665,7 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
           if (texts.length >= MAX_SEGMENTS) return;
         }
 
-        // 2) Fallback: if no BT/ET chunks found, scan for loose strings
+        // 2) Fallback: lose Strings, falls kein BT/ET gefunden
         if (texts.length === 0 && looksLikeText(bytes)) {
           const parenRegex = /\((?:\\.|[^\\\)]+)\)/g;
           let m: RegExpExecArray | null;
@@ -643,7 +679,7 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
           while ((hm = hexRegex.exec(utf)) !== null) {
             const raw = (hm[1] || '').replace(/\s/g, '');
             if (raw.length % 2 === 0) {
-              const decoded = hexToString(raw);
+              const decoded = decodeHexWithCMap(raw, cmap, codeUnitBytes);
               if (isLikelyFinancialText(decoded)) texts.push(cleanExtractedText(decoded));
               if (texts.length >= MAX_SEGMENTS) break;
             }
@@ -651,32 +687,32 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
         }
       };
 
-      if (decompressed && decompressed.byteLength > 0) {
-        addFromBytes(decompressed);
-      } else if (looksLikeText(streamBytes)) {
-        addFromBytes(streamBytes);
-      }
+      if (decompressed && decompressed.byteLength > 0) addFromBytes(decompressed);
+      else if (looksLikeText(streamBytes))           addFromBytes(streamBytes);
 
       cursor = endIdx + endstreamMarker.length;
     }
 
-    // Last resort: literal strings outside streams
     if (texts.length === 0) {
+      // Last resort: wörtliche Strings außerhalb von Streams
       const wholeDoc = decoderLatin1.decode(pdfBuffer);
-      const extraParts: string[] = [];
+      const extra: string[] = [];
       const litRegex = /\((?:\\.|[^\\\)]){3,}\)/g;
       let lm: RegExpExecArray | null;
       while ((lm = litRegex.exec(wholeDoc)) !== null) {
         const t = unescapePDFString(lm[0].slice(1, -1));
-        if (isLikelyFinancialText(t)) extraParts.push(t);
-        if (extraParts.length > 2000) break;
+        if (isLikelyFinancialText(t)) extra.push(t);
+        if (extra.length > 2000) break;
       }
-      texts.push(...extraParts);
+      texts.push(...extra);
     }
 
     const unique = [...new Set(texts)].slice(0, 10000);
-    const combined = unique.join(' ').trim();
-    console.log(`📊 Extracted ${unique.length} unique chunks (BT/ET-first), total length: ${combined.length}`);
+    let combined = unique.join(' ');
+    if (combined.length > 1_000_000) combined = combined.slice(0, 1_000_000);
+    combined = combined.trim();
+
+    console.log(`📊 Extracted ${unique.length} unique chunks (BT/ET+CMap), total length: ${combined.length}`);
     return { text: combined, pages: 1 };
   } catch (error) {
     console.error('❌ PDF-parse extraction failed:', error);
