@@ -1,6 +1,8 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { inflate, inflateRaw } from 'https://esm.sh/pako@2.1.0'
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -228,61 +230,95 @@ serve(async (req) => {
   }
 });
 
-// Enhanced PDF text extraction using pdf-parse equivalent approach
+// Enhanced PDF text extraction using binary stream inflation (handles FlateDecode)
 async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: string, pages: number}> {
   try {
-    // Convert buffer to string for processing
-    const textDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false });
-    const pdfString = textDecoder.decode(pdfBuffer);
-    
-    console.log('🔍 Analyzing PDF structure...');
-    
-    // Look for PDF objects and streams
-    const streamRegex = /stream\s+([\s\S]*?)\s+endstream/g;
-    const textObjects: string[] = [];
-    let match;
-    
-    // Extract content from PDF streams
-    while ((match = streamRegex.exec(pdfString)) !== null) {
-      const streamContent = match[1];
-      
-      // Try to decode the stream content
-      const decodedText = decodeStreamContent(streamContent);
-      if (decodedText && decodedText.length > 10) {
-        textObjects.push(decodedText);
-      }
-    }
-    
-    // Also extract literal strings (text in parentheses)
-    const literalRegex = /\(([^)]{3,})\)/g;
-    while ((match = literalRegex.exec(pdfString)) !== null) {
-      const literalText = unescapePDFString(match[1]);
-      if (literalText && isLikelyFinancialText(literalText)) {
-        textObjects.push(literalText);
-      }
-    }
-    
-    // Extract hex strings
-    const hexRegex = /<([0-9A-Fa-f\s]{6,})>/g;
-    while ((match = hexRegex.exec(pdfString)) !== null) {
-      try {
-        const hexContent = match[1].replace(/\s/g, '');
-        if (hexContent.length % 2 === 0) {
-          const decodedHex = hexToString(hexContent);
-          if (decodedHex && isLikelyFinancialText(decodedHex)) {
-            textObjects.push(decodedHex);
-          }
+    console.log('🔍 Parsing PDF streams (binary)...');
+
+    const encoder = new TextEncoder();
+    const streamMarker = encoder.encode('stream');
+    const endstreamMarker = encoder.encode('endstream');
+
+    const decoderUtf8 = new TextDecoder('utf-8', { fatal: false });
+    const decoderLatin1 = new TextDecoder('latin1', { fatal: false });
+
+    const texts: string[] = [];
+
+    // Byte-level search for a pattern
+    const indexOfBytes = (buf: Uint8Array, pattern: Uint8Array, from: number) => {
+      outer: for (let i = from; i <= buf.length - pattern.length; i++) {
+        for (let j = 0; j < pattern.length; j++) {
+          if (buf[i + j] !== pattern[j]) continue outer;
         }
-      } catch (e) {
-        // Skip invalid hex strings
+        return i;
       }
+      return -1;
+    };
+
+    let cursor = 0;
+    while (cursor < pdfBuffer.length) {
+      const startIdx = indexOfBytes(pdfBuffer, streamMarker, cursor);
+      if (startIdx === -1) break;
+      let dataStart = startIdx + streamMarker.length;
+      // Skip newline after 'stream'
+      if (pdfBuffer[dataStart] === 0x0d && pdfBuffer[dataStart + 1] === 0x0a) dataStart += 2; // CRLF
+      else if (pdfBuffer[dataStart] === 0x0a) dataStart += 1; // LF
+
+      const endIdx = indexOfBytes(pdfBuffer, endstreamMarker, dataStart);
+      if (endIdx === -1) break;
+
+      const streamBytes = pdfBuffer.subarray(dataStart, endIdx);
+
+      let decompressed: Uint8Array | null = null;
+      try {
+        decompressed = inflate(streamBytes);
+      } catch {
+        try {
+          decompressed = inflateRaw(streamBytes);
+        } catch {
+          decompressed = null;
+        }
+      }
+
+      const candidates: string[] = [];
+      if (decompressed && decompressed.byteLength > 0) {
+        candidates.push(decoderUtf8.decode(decompressed));
+        candidates.push(decoderLatin1.decode(decompressed));
+      } else {
+        candidates.push(decoderLatin1.decode(streamBytes));
+      }
+
+      for (const cand of candidates) {
+        // Extract literal strings used by PDF text operators
+        const parts: string[] = [];
+        const parenRegex = /\(([^)]+)\)/g;
+        let m: RegExpExecArray | null;
+        while ((m = parenRegex.exec(cand)) !== null) {
+          const t = unescapePDFString(m[1]);
+          if (isLikelyFinancialText(t)) parts.push(t);
+        }
+        const cleaned = cleanExtractedText(parts.join(' '));
+        if (cleaned.length > 0) texts.push(cleaned);
+      }
+
+      cursor = endIdx + endstreamMarker.length;
     }
-    
-    const fullText = textObjects.join(' ').trim();
-    console.log(`📊 Extracted ${textObjects.length} text objects, total length: ${fullText.length}`);
-    
-    return { text: fullText, pages: 1 };
-    
+
+    // Also catch any literal strings outside streams as a last resort
+    const wholeDoc = decoderLatin1.decode(pdfBuffer);
+    const extraParts: string[] = [];
+    const litRegex = /\(([^)]{3,})\)/g;
+    let lm: RegExpExecArray | null;
+    while ((lm = litRegex.exec(wholeDoc)) !== null) {
+      const t = unescapePDFString(lm[1]);
+      if (isLikelyFinancialText(t)) extraParts.push(t);
+    }
+    texts.push(...extraParts);
+
+    const combined = [...new Set(texts)].join(' ').trim();
+    console.log(`📊 Extracted ${texts.length} segments, total length: ${combined.length}`);
+
+    return { text: combined, pages: 1 };
   } catch (error) {
     console.error('❌ PDF-parse extraction failed:', error);
     throw error;
@@ -672,7 +708,8 @@ function isLikelyFinancialText(text: string): boolean {
   const financialKeywords = [
     'tranche', 'balance', 'rate', 'payment', 'class', 'senior', 
     'protected', 'amount', 'outstanding', 'coupon', 'yield', 
-    'loss', 'cpr', 'portfolio', 'currency', 'mezzanine'
+    'loss', 'cpr', 'portfolio', 'currency', 'mezzanine', 'notes',
+    'nominal', 'principal', 'isin', 'series', 'wal', 'report'
   ];
   
   const lowerText = text.toLowerCase();
@@ -708,11 +745,20 @@ function hexToString(hex: string): string {
 }
 
 function parseFinancialNumber(value: string): number {
-  const cleaned = value
-    .replace(/[€$£¥,\s]/g, '')
-    .replace(/[%]/g, '');
-  
-  const num = parseFloat(cleaned);
+  let v = (value || '').trim();
+  // Detect European format (comma decimal) and normalize
+  const hasComma = v.includes(',');
+  const hasDot = v.includes('.');
+  if (hasComma && (!hasDot || v.lastIndexOf(',') > v.lastIndexOf('.'))) {
+    v = v
+      .replace(/[€$£¥\s]/g, '')
+      .replace(/\./g, '') // remove thousand separators
+      .replace(/,/g, '.') // convert decimal comma to dot
+      .replace(/%/g, '');
+  } else {
+    v = v.replace(/[€$£¥,\s%]/g, '');
+  }
+  const num = parseFloat(v);
   return isNaN(num) ? 0 : num;
 }
 
