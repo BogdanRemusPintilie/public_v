@@ -206,13 +206,11 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   try {
     const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
     
-    // First, get all unique datasets owned by the user using DISTINCT for efficiency
-    const { data: ownedDatasets, error: ownedError } = await supabase
-      .from('loan_data')
-      .select('dataset_name, user_id')
-      .eq('user_id', user.id)
-      .not('dataset_name', 'is', null)
-      .not('dataset_name', 'eq', '');
+    // First, get unique datasets owned by the user using efficient GROUP BY database function
+    const { data: ownedDatasets, error: ownedError } = await (supabase as any)
+      .rpc('get_user_unique_datasets', { 
+        input_user_id: user.id 
+      });
 
     if (ownedError) {
       console.error('❌ Error fetching owned datasets:', ownedError);
