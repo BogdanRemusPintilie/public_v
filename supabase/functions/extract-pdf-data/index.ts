@@ -10,14 +10,27 @@ const corsHeaders = {
 }
 
 interface ExtractedFinancialData {
+  determination_date?: string;
+  reporting_date?: string;
   payment_date?: string;
+  next_payment_date?: string;
+  period_no?: number;
+  portfolio_balance?: number;
+  available_distribution_amount?: number;
+  overcollateralization?: number;
+  wa_loan_interest_rate?: number;
+  reserve_account_balance?: number;
+  tranches?: TrancheData[];
+  waterfall?: {
+    interest_per_class?: Record<string, number>;
+    principal_redemption_per_class?: Record<string, number>;
+  };
+  triggers?: Array<{name: string; current_value: string; breached: boolean}>;
+  // legacy/compat keys
   senior_tranche_os?: number;
   protected_tranche?: number;
   cpr_annualised?: number;
   cum_losses?: number;
-  next_payment_date?: string;
-  tranches?: TrancheData[];
-  portfolio_balance?: number;
   weighted_avg_rate?: number;
   currency?: string;
 }
@@ -447,6 +460,67 @@ function extractKeywordContext(text: string): string[] {
   return contexts;
 }
 
+// Section utilities for glossary-driven parsing
+function sliceSection(text: string, header: RegExp | string, nextHeaders: (RegExp | string)[]): string {
+  if (!text) return '';
+  const start = typeof header === 'string' 
+    ? text.toLowerCase().indexOf(header.toLowerCase())
+    : text.search(header as RegExp);
+  if (start === -1) return '';
+  const tail = text.slice(start + (typeof header === 'string' ? (header as string).length : 0));
+  const endIdxs = nextHeaders
+    .map(h => typeof h === 'string' ? tail.toLowerCase().indexOf((h as string).toLowerCase()) : tail.search(h as RegExp))
+    .filter(i => i > -1);
+  const end = endIdxs.length ? Math.min(...endIdxs) : tail.length;
+  return tail.slice(0, end);
+}
+
+function parseNotesSection(block: string): { tranches: TrancheData[]; overcollateralization?: number } {
+  const classes = ['Class A','Class B','Class C','Class D','Class E'];
+  const tranches: TrancheData[] = [];
+  if (!block) return { tranches };
+  const rateRow = /Interest\s*Rate\s+([\d.,]+)%\s+([\d.,]+)%\s+([\d.,]+)%\s+([\d.,]+)%\s+([\d.,]+)%/i.exec(block);
+  const eopRow = /Aggregate\s+Notes\s+Principal\s+Amount\s*\(eop\)\s*per\s*Class\s+([0-9.,]+)\s+([0-9.,]+)\s+([0-9.,]+)\s+([0-9.,]+)\s+([0-9.,]+)/i.exec(block);
+
+  if (rateRow && eopRow) {
+    for (let i = 0; i < 5; i++) {
+      tranches.push({
+        name: classes[i],
+        balance: parseFinancialNumber(eopRow[i+1]),
+        interest_rate: parseFinancialNumber(rateRow[i+1]),
+        wal: 0,
+        rating: 'NR'
+      });
+    }
+  }
+
+  const ocMatch = /Overcollateralization\s+([0-9.,]+)/i.exec(block);
+  const overcollateralization = ocMatch ? parseFinancialNumber(ocMatch[1]) : undefined;
+  return { tranches, overcollateralization };
+}
+
+function parseWaterfallSection(block: string): { interest_per_class?: Record<string, number>; principal_redemption_per_class?: Record<string, number> } {
+  if (!block) return {};
+  const classes = ['Class A','Class B','Class C','Class D','Class E'];
+  const interest: Record<string, number> = {};
+  const principal: Record<string, number> = {};
+
+  for (const cls of classes) {
+    const interestRe = new RegExp(`${cls}\\s*(?:Notes?)?\\s*Interest\\s*Amount\\s+([0-9.,]+)`, 'i');
+    const principalRe1 = new RegExp(`${cls}\\s*(?:Notes?)?\\s*Principal\\s*Redemption\\s*Amount\\s+([0-9.,]+)`, 'i');
+    const principalRe2 = new RegExp(`${cls}\\s*(?:Principal\\s*Amount\\s*Redeemed)\\s+([0-9.,]+)`, 'i');
+    const im = interestRe.exec(block);
+    const pm = principalRe1.exec(block) || principalRe2.exec(block);
+    if (im) interest[cls] = parseFinancialNumber(im[1]);
+    if (pm) principal[cls] = parseFinancialNumber(pm[1]);
+  }
+
+  const res: any = {};
+  if (Object.keys(interest).length) res.interest_per_class = interest;
+  if (Object.keys(principal).length) res.principal_redemption_per_class = principal;
+  return res;
+}
+
 // Enhanced financial data parsing with securitization focus
 function parseFinancialData(text: string): ExtractedFinancialData {
   const result: ExtractedFinancialData = {};
@@ -483,8 +557,85 @@ function parseFinancialData(text: string): ExtractedFinancialData {
     (result as any).period_no = parseInt(periodMatch[1]);
   }
   
-  // Enhanced tranche extraction with securitization patterns
-  result.tranches = extractSecuritizationTranches(text);
+  // Prefer glossary-driven tranche parse from Notes section; fallback to generic
+  const notesBlock = sliceSection(
+    text,
+    /(Information regarding the Notes|Notes Information)/i,
+    [/Reserve Accounts/i, /Available Distribution Amount/i, /Portfolio Information/i, /Waterfall/i, /Trigger/i, /Ratings/i]
+  );
+  const parsedNotes = parseNotesSection(notesBlock);
+  if (parsedNotes.tranches.length) {
+    result.tranches = parsedNotes.tranches;
+    if (parsedNotes.overcollateralization !== undefined) {
+      result.overcollateralization = parsedNotes.overcollateralization;
+    }
+  } else {
+    result.tranches = extractSecuritizationTranches(text);
+  }
+
+  // Available Distribution Amount
+  const adaBlock = sliceSection(text, /Available Distribution Amount/i, [/Waterfall/i, /Portfolio Information/i, /Reserve Accounts/i, /Trigger/i]);
+  const adaMatch = adaBlock.match(/Available\s+Distribution\s+Amount\s+([0-9.,]+)/i);
+  if (adaMatch) {
+    result.available_distribution_amount = parseFinancialNumber(adaMatch[1]);
+  }
+
+  // Portfolio balance from Portfolio Information
+  const portfolioBlock = sliceSection(text, /Portfolio Information/i, [/Swap Data/i, /Defaults/i, /Delinquency/i, /Stratification/i, /Waterfall/i]);
+  const pbMatch = portfolioBlock.match(/Outstanding\s+Principal\s+Balance.*?(?:End\s*of\s*Period|eop)?[:\s]*([0-9.,]+)/i) ||
+                  portfolioBlock.match(/Outstanding\s+Principal\s+Balance\s+([0-9.,]+)/i);
+  if (pbMatch) {
+    result.portfolio_balance = parseFinancialNumber(pbMatch[1]);
+  }
+
+  // WA loan interest rate
+  const rateBlock = sliceSection(text, /Loan Interest Rate Range/i, [/Portfolio Information/i, /Notes Information/i, /Information regarding the Notes/i]);
+  const waMatch = rateBlock.match(/WA\s+Loan\s+Interest\s+Rate\s+p\.a\.\s+([\d.,]+)%/i);
+  if (waMatch) {
+    result.wa_loan_interest_rate = parseFinancialNumber(waMatch[1]);
+  }
+
+  // Reserve Accounts
+  const reserveBlock = sliceSection(text, /Reserve Accounts/i, [/Risk Retention/i, /Available Distribution Amount/i, /Waterfall/i, /Portfolio Information/i]);
+  const reserveMatch = reserveBlock.match(/(?:Reserve|Reserve Account).*?([0-9.,]+)/i);
+  if (reserveMatch) {
+    result.reserve_account_balance = parseFinancialNumber(reserveMatch[1]);
+  }
+
+  // Waterfall breakdown
+  const waterfallBlock = sliceSection(text, /Waterfall/i, [/Portfolio Information/i, /Stratification/i, /Trigger/i, /Reserve Accounts/i]);
+  const waterfallParsed = parseWaterfallSection(waterfallBlock);
+  if (Object.keys(waterfallParsed).length) {
+    result.waterfall = waterfallParsed;
+  }
+
+  // Triggers
+  const triggersBlock = sliceSection(text, /(Trigger\s*&\s*Clean\s*Up\s*Call|Trigger)/i, [/Notes Information/i, /Portfolio Information/i, /Waterfall/i]);
+  const trig: Array<{name: string; current_value: string; breached: boolean}> = [];
+  const clr = /Cumulative\s+Loss\s+Ratio.*?Current\s+Value\s*([0-9.,%]+).*?(?:Trigger\s*Breach|Breach)\s*(Yes|No)/i.exec(triggersBlock);
+  if (clr) {
+    trig.push({ name: 'Cumulative Loss Ratio', current_value: clr[1], breached: /yes/i.test(clr[2] || '') });
+  }
+  if (trig.length) {
+    (result as any).triggers = trig;
+  }
+
+  // Legacy aggregates from parsed tranches
+  if (result.tranches && result.tranches.length) {
+    result.senior_tranche_os = result.tranches
+      .filter(t => /class\s*a|senior/i.test(t.name))
+      .reduce((s, t) => s + (t.balance || 0), 0);
+    result.protected_tranche = result.tranches
+      .filter(t => /class\s*[b-e]|mezzanine|junior|subordinated/i.test(t.name))
+      .reduce((s, t) => s + (t.balance || 0), 0);
+    if (!result.portfolio_balance) {
+      result.portfolio_balance = result.tranches.reduce((s, t) => s + (t.balance || 0), 0);
+    }
+    if (!result.weighted_avg_rate && result.portfolio_balance) {
+      const totalBal = result.portfolio_balance || 1;
+      result.weighted_avg_rate = result.tranches.reduce((s, t) => s + (t.balance || 0) * (t.interest_rate || 0), 0) / totalBal;
+    }
+  }
   
   // Extract securitization-specific financial metrics (glossary-aware)
   const securitizationMetrics = [
