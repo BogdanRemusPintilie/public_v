@@ -206,11 +206,13 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   try {
     const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
     
-    // First, get all unique datasets owned by the user using a raw SQL query for efficiency
+    // First, get all unique datasets owned by the user using raw SQL for efficiency
     const { data: ownedDatasets, error: ownedError } = await supabase
-      .rpc('get_user_datasets_distinct', { 
-        input_user_id: user.id 
-      });
+      .from('loan_data')
+      .select('dataset_name, user_id')
+      .eq('user_id', user.id)
+      .not('dataset_name', 'is', null)
+      .not('dataset_name', 'eq', '');
 
     if (ownedError) {
       console.error('❌ Error fetching owned datasets:', ownedError);
@@ -219,16 +221,18 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
 
     console.log('📊 OWNED DATASETS:', ownedDatasets?.length || 0, 'unique datasets');
 
-    // Process owned datasets
+    // Process owned datasets and deduplicate
     if (ownedDatasets && ownedDatasets.length > 0) {
       ownedDatasets.forEach(record => {
         if (record.dataset_name && record.dataset_name.trim()) {
           const datasetName = record.dataset_name.trim();
-          uniqueDatasets.set(datasetName, {
-            name: datasetName,
-            owner_id: record.user_id,
-            is_shared: false
-          });
+          if (!uniqueDatasets.has(datasetName)) {
+            uniqueDatasets.set(datasetName, {
+              name: datasetName,
+              owner_id: record.user_id,
+              is_shared: false
+            });
+          }
         }
       });
     }
