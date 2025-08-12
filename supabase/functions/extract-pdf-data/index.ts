@@ -147,7 +147,12 @@ serve(async (req) => {
     
     // Validate extraction quality
     const hasValidTranches = financialData.tranches && financialData.tranches.length > 0;
-    const hasFinancialMetrics = financialData.portfolio_balance || financialData.senior_notes_outstanding;
+    const hasFinancialMetrics = Boolean(
+      (financialData as any).portfolio_balance ||
+      (financialData as any).senior_notes_outstanding ||
+      (financialData as any).available_distribution_amount ||
+      (financialData as any).original_portfolio_balance
+    );
     
     // Determine job status
     let jobStatus: 'done' | 'failed' = 'done';
@@ -297,6 +302,18 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
           const t = unescapePDFString(m[1]);
           if (isLikelyFinancialText(t)) parts.push(t);
         }
+        // Also extract hex-encoded strings like <48656C6C6F>
+        const hexRegex = /<([0-9A-Fa-f\s]{4,})>/g;
+        let hm: RegExpExecArray | null;
+        while ((hm = hexRegex.exec(cand)) !== null) {
+          try {
+            const raw = (hm[1] || '').replace(/\s/g, '');
+            if (raw.length % 2 === 0) {
+              const decoded = hexToString(raw);
+              if (decoded && isLikelyFinancialText(decoded)) parts.push(decoded);
+            }
+          } catch {}
+        }
         const cleaned = cleanExtractedText(parts.join(' '));
         if (cleaned.length > 0) texts.push(cleaned);
       }
@@ -442,41 +459,54 @@ function parseFinancialData(text: string): ExtractedFinancialData {
   console.log('🔍 Starting securitization-focused financial data parsing...');
   console.log(`📊 Input text length: ${text.length} characters`);
   
-  // Enhanced date extraction for investor reports
+  // Enhanced date extraction for investor reports (glossary-aware)
   const datePatterns = [
-    /(?:payment|distribution|interest)\s*date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
-    /(?:reporting|valuation|calculation)\s*date[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
-    /(?:next|upcoming|following)\s*(?:payment|distribution)[:\s]*(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/gi,
-    /(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})\s*(?:payment|distribution)/gi
+    { key: 'payment_date', regex: /(?:payment|distribution|interest)\s*date[:\s]*(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4})/gi },
+    { key: 'reporting_date', regex: /(?:investor\s*reporting|reporting|valuation|calculation)\s*date[:\s]*(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4})/gi },
+    { key: 'next_payment_date', regex: /(?:next|upcoming|following)\s*(?:payment|distribution)[:\s]*(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4})/gi },
+    { key: 'determination_date', regex: /determination\s*date[:\s]*(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4})/gi }
   ];
-  
-  for (const pattern of datePatterns) {
-    const matches = text.match(pattern);
+
+  for (const dp of datePatterns) {
+    const matches = text.match(dp.regex);
     if (matches && matches.length > 0) {
-      const dateStr = matches[0].match(/\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4}/)?.[0];
+      const dateStr = matches[0].match(/\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}/)?.[0];
       if (dateStr) {
-        const context = matches[0].toLowerCase();
-        if (!result.payment_date && (context.includes('payment') || context.includes('distribution'))) {
-          result.payment_date = standardizeDate(dateStr);
-        }
-        if (!result.reporting_date && (context.includes('reporting') || context.includes('valuation'))) {
-          result.reporting_date = standardizeDate(dateStr);
-        }
-        if (!result.next_payment_date && context.includes('next')) {
-          result.next_payment_date = standardizeDate(dateStr);
-        }
+        (result as any)[dp.key] = standardizeDate(dateStr);
       }
     }
+  }
+
+  // Period number (e.g., "Period No.: 7")
+  const periodMatch = text.match(/period\s*no\.?[:\s]*([0-9]{1,3})/i);
+  if (periodMatch) {
+    (result as any).period_no = parseInt(periodMatch[1]);
   }
   
   // Enhanced tranche extraction with securitization patterns
   result.tranches = extractSecuritizationTranches(text);
   
-  // Extract securitization-specific financial metrics
+  // Extract securitization-specific financial metrics (glossary-aware)
   const securitizationMetrics = [
+    { key: 'portfolio_balance', patterns: [
+      /outstanding\s*principal\s*balance[:\s]*([€$£¥]?[\d.,]+)/gi,
+      /outstanding\s*(?:pool|portfolio)\s*(?:balance|amount)[:\s]*([€$£¥]?[\d.,]+)/gi,
+      /total\s*outstanding[:\s]*([€$£¥]?[\d.,]+)/gi
+    ]},
+    { key: 'original_portfolio_balance', patterns: [
+      /original\s*principal\s*balance[:\s]*([€$£¥]?[\d.,]+)/gi
+    ]},
+    { key: 'available_distribution_amount', patterns: [
+      /available\s*distribution\s*amount[:\s]*([€$£¥]?[\d.,]+)/gi
+    ]},
+    { key: 'reserve_account_balance', patterns: [
+      /reserve\s*accounts?\s*(?:balance|amount)[:\s]*([€$£¥]?[\d.,]+)/gi
+    ]},
+    { key: 'risk_retention_percent', patterns: [
+      /risk\s*retention[:\s]*([\d.,]+)%/gi
+    ]},
     { key: 'collateral_balance', patterns: [
-      /(?:collateral|pool|portfolio)\s*(?:balance|amount)[:\s]*([\d,]+\.?\d*)/gi,
-      /total\s*outstanding[:\s]*([\d,]+\.?\d*)/gi
+      /(?:collateral|pool|portfolio)\s*(?:balance|amount)[:\s]*([\d,]+\.?\d*)/gi
     ]},
     { key: 'senior_notes_outstanding', patterns: [
       /senior\s*(?:notes?|class|tranche).*?(?:outstanding|balance|amount)[:\s]*([\d,]+\.?\d*)/gi,
