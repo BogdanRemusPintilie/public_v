@@ -258,6 +258,124 @@ serve(async (req) => {
 });
 
 // Enhanced PDF text extraction using binary stream inflation (handles FlateDecode)
+// --- ToUnicode CMap parsing & decoding --------------------------------------
+
+function hexToUtf16BEString(hex: string): string {
+  if (!hex) return '';
+  const pairs = hex.match(/.{1,2}/g);
+  if (!pairs) return '';
+  const bytes = new Uint8Array(pairs.map(h => parseInt(h, 16)));
+  // Remove BOM FE FF if present
+  let i = 0;
+  if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) i = 2;
+  let out = '';
+  for (; i + 1 < bytes.length; i += 2) {
+    out += String.fromCharCode((bytes[i] << 8) | bytes[i + 1]);
+  }
+  return out;
+}
+
+function parseToUnicodeCMap(pdf: Uint8Array): { cmap: Map<string, string>, codeUnitBytes: number } {
+  // Heuristically scan the whole document for ToUnicode CMaps
+  const doc = new TextDecoder('latin1', { fatal: false }).decode(pdf);
+  const cmap = new Map<string, string>();
+
+  // Helper: normalize <...> hex token
+  const norm = (s: string) => s.replace(/\s+/g, '').toUpperCase();
+
+  // bfchar blocks
+  const bfcharBlocks = [...doc.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)];
+  for (const b of bfcharBlocks) {
+    const body = b[1];
+    const pairs = body.match(/<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]+)>/g) || [];
+    for (const p of pairs) {
+      const m = /<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]+)>/.exec(p);
+      if (!m) continue;
+      const src = norm(m[1]);
+      const dst = norm(m[2]);
+      // Destination usually UTF-16BE (e.g. 0041)
+      const text = dst.length % 4 === 0 ? hexToUtf16BEString(dst) : hexToString(dst);
+      cmap.set(src, text);
+    }
+  }
+
+  // bfrange blocks
+  const bfrangeBlocks = [...doc.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)];
+  for (const b of bfrangeBlocks) {
+    const body = b[1];
+    // Form 1: <srcFrom> <srcTo> <dstStart>
+    const ranges1 = body.match(/<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>/g) || [];
+    for (const r of ranges1) {
+      const m = /<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>/.exec(r);
+      if (!m) continue;
+      const srcFrom = parseInt(norm(m[1]), 16);
+      const srcTo   = parseInt(norm(m[2]), 16);
+      const dstStartHex = norm(m[3]);
+      for (let code = srcFrom, k = 0; code <= srcTo; code++, k++) {
+        const srcKey = code.toString(16).toUpperCase().padStart(m[1].replace(/\s/g,'').length, '0');
+        const baseBytes = dstStartHex.length / 2;
+        let dst = '';
+        if (baseBytes >= 2) {
+          const head = dstStartHex.slice(0, -4);
+          const tail = parseInt(dstStartHex.slice(-4), 16) + k;
+          const dstHex = head + tail.toString(16).toUpperCase().padStart(4, '0');
+          dst = hexToUtf16BEString(dstHex);
+        } else {
+          const dstHex = (parseInt(dstStartHex, 16) + k).toString(16).toUpperCase();
+          dst = hexToString(dstHex);
+        }
+        cmap.set(srcKey, dst);
+      }
+    }
+    // Form 2: <srcFrom> <srcTo> [ <dst1> <dst2> ... ]
+    const ranges2 = body.match(/<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+\[((?:\s*<[^>]+>\s*)+)\]/g) || [];
+    for (const r of ranges2) {
+      const m = /<([0-9A-Fa-f\s]+)>\s+<([0-9A-Fa-f\s]+)>\s+\[((?:\s*<[^>]+>\s*)+)\]/.exec(r);
+      if (!m) continue;
+      const srcFrom = parseInt(norm(m[1]), 16);
+      const srcTo   = parseInt(norm(m[2]), 16);
+      const arr = [...m[3].matchAll(/<([^>]+)>/g)].map(mm => norm(mm[1]));
+      for (let code = srcFrom, i = 0; code <= srcTo && i < arr.length; code++, i++) {
+        const key = code.toString(16).toUpperCase().padStart(m[1].replace(/\s/g,'').length, '0');
+        const dstHex = arr[i];
+        const text = dstHex.length % 4 === 0 ? hexToUtf16BEString(dstHex) : hexToString(dstHex);
+        cmap.set(key, text);
+      }
+    }
+  }
+
+  // Estimate code unit length (in bytes) from key lengths
+  let codeUnitBytes = 2;
+  const keyLens = [...cmap.keys()].map(k => k.length);
+  if (keyLens.length) {
+    const most = keyLens.sort((a,b)=>a-b)[Math.floor(keyLens.length/2)];
+    codeUnitBytes = Math.max(1, Math.round(most/2));
+  }
+  console.log(`🗺️ ToUnicode CMap parsed: entries=${cmap.size}, codeUnitBytes≈${codeUnitBytes}`);
+  return { cmap, codeUnitBytes };
+}
+
+function decodeHexWithCMap(rawHex: string, cmap: Map<string,string> | null, codeUnitBytes: number): string {
+  const hex = rawHex.replace(/\s/g, '').toUpperCase();
+  if (!hex || hex.length % 2 !== 0) return '';
+  if (cmap && cmap.size) {
+    const step = Math.max(1, codeUnitBytes) * 2; // 2 hex chars per byte
+    let out = '';
+    for (let i = 0; i < hex.length; i += step) {
+      const key = hex.slice(i, i + step);
+      const mapped = cmap.get(key);
+      if (mapped !== undefined) out += mapped;
+      else {
+        if (step === 4) out += hexToUtf16BEString(key);
+        else out += hexToString(key);
+      }
+    }
+    return out;
+  }
+  if (hex.startsWith('FEFF')) return hexToUtf16BEString(hex);
+  return hexToString(hex);
+}
+
 // --- NEW: BT/ET-aware text extraction helpers -------------------------------
 
 function extractPdfTextChunksFromBTET(content: string, maxBlocks = 500, maxChunks = 10000): string[] {
@@ -349,10 +467,222 @@ function extractPdfTextChunksFromBTET(content: string, maxBlocks = 500, maxChunk
 
 // --- REPLACEMENT: extractTextWithPdfParse (now BT/ET-aware) ------------------
 
+function extractPdfTextChunksFromBTET_UsingCMap(content: string, cmap: Map<string,string>, codeUnitBytes: number, maxBlocks = 500, maxChunks = 10000): string[] {
+  const chunks: string[] = [];
+  const btEt = /BT([\s\S]*?)ET/g;
+  let m: RegExpExecArray | null;
+  let blockCount = 0;
+
+  const parenRe = /\((?:\\.|[^\\\)])*\)/g;
+  const tjLitRe = /\((?:\\.|[^\\\)])*\)\s*Tj/g;
+  const tjHexRe = /<([0-9A-Fa-f\s]+)>\s*Tj/g;
+  const tjArrLitRe = /\[((?:\s*\((?:\\.|[^\\\)])*\)\s*|\s*-?\d+(?:\.\d+)?\s*)+)\]\s*TJ/g;
+  const tjArrHexRe = /\[((?:\s*<([0-9A-Fa-f\s]+)>\s*|\s*-?\d+(?:\.\d+)?\s*)+)\]\s*TJ/g;
+
+  const collectParenStrings = (s: string) => {
+    let pm: RegExpExecArray | null;
+    while ((pm = parenRe.exec(s)) !== null) {
+      const inner = pm[0].slice(1, -1);
+      const txt = unescapePDFString(inner);
+      if (isLikelyFinancialText(txt)) chunks.push(txt);
+      if (chunks.length >= maxChunks) return;
+    }
+  };
+
+  const collectHexStringsWithCMap = (s: string) => {
+    const hexAny = /<([0-9A-Fa-f\s]{2,})>/g;
+    let hm: RegExpExecArray | null;
+    while ((hm = hexAny.exec(s)) !== null) {
+      const raw = (hm[1] || '').replace(/\s/g, '');
+      if (raw.length >= 2 && raw.length % 2 === 0) {
+        const txt = decodeHexWithCMap(raw, cmap, codeUnitBytes);
+        if (isLikelyFinancialText(txt)) chunks.push(txt);
+        if (chunks.length >= maxChunks) return;
+      }
+    }
+  };
+
+  while ((m = btEt.exec(content)) !== null) {
+    const block = m[1];
+    blockCount++;
+    if (blockCount > maxBlocks) break;
+
+    let x: RegExpExecArray | null;
+
+    while ((x = tjLitRe.exec(block)) !== null) {
+      const lit = x[0].replace(/\s*Tj$/, '');
+      const inner = lit.slice(1, -1);
+      const txt = unescapePDFString(inner);
+      if (isLikelyFinancialText(txt)) chunks.push(txt);
+      if (chunks.length >= maxChunks) break;
+    }
+    if (chunks.length >= maxChunks) break;
+
+    while ((x = tjHexRe.exec(block)) !== null) {
+      const raw = (x[1] || '').replace(/\s/g, '');
+      const txt = decodeHexWithCMap(raw, cmap, codeUnitBytes);
+      if (isLikelyFinancialText(txt)) chunks.push(txt);
+      if (chunks.length >= maxChunks) break;
+    }
+    if (chunks.length >= maxChunks) break;
+
+    while ((x = tjArrLitRe.exec(block)) !== null) {
+      collectParenStrings(x[1]);
+      if (chunks.length >= maxChunks) break;
+    }
+    if (chunks.length >= maxChunks) break;
+
+    while ((x = tjArrHexRe.exec(block)) !== null) {
+      collectHexStringsWithCMap(x[1]);
+      if (chunks.length >= maxChunks) break;
+    }
+    if (chunks.length >= maxChunks) break;
+
+    if (chunks.length === 0) {
+      collectParenStrings(block);
+      collectHexStringsWithCMap(block);
+    }
+  }
+
+  if (blockCount) console.log(`🧱 BT/ET blocks scanned: ${blockCount}, chunks: ${chunks.length}`);
+  return chunks;
+}
+
+// --- REPLACEMENT: extractTextWithPdfParse (now BT/ET-aware) ------------------
+
 async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: string, pages: number}> {
   try {
-    console.log('🔍 Parsing PDF streams (binary) with BT/ET focus...');
+    console.log('🔍 Parsing PDF streams (binary) with BT/ET + ToUnicode...');
 
+    // NEW: parse ToUnicode CMap once
+    const { cmap, codeUnitBytes } = parseToUnicodeCMap(pdfBuffer);
+
+    const encoder = new TextEncoder();
+    const streamMarker = encoder.encode('stream');
+    const endstreamMarker = encoder.encode('endstream');
+    const decoderUtf8 = new TextDecoder('utf-8', { fatal: false });
+    const decoderLatin1 = new TextDecoder('latin1', { fatal: false });
+
+    const texts: string[] = [];
+    const MAX_STREAM = 5 * 1024 * 1024; // 5MB cap
+    const MAX_SEGMENTS = 10000;
+
+    // Byte-level search
+    const indexOfBytes = (buf: Uint8Array, pattern: Uint8Array, from: number) => {
+      outer: for (let i = from; i <= buf.length - pattern.length; i++) {
+        for (let j = 0; j < pattern.length; j++) {
+          if (buf[i + j] !== pattern[j]) continue outer;
+        }
+        return i;
+      }
+      return -1;
+    };
+
+    let cursor = 0;
+    while (cursor < pdfBuffer.length && texts.length < MAX_SEGMENTS) {
+      const startIdx = indexOfBytes(pdfBuffer, streamMarker, cursor);
+      if (startIdx === -1) break;
+
+      let dataStart = startIdx + streamMarker.length;
+      if (pdfBuffer[dataStart] === 0x0d && pdfBuffer[dataStart + 1] === 0x0a) dataStart += 2; // CRLF
+      else if (pdfBuffer[dataStart] === 0x0a) dataStart += 1; // LF
+
+      const endIdx = indexOfBytes(pdfBuffer, endstreamMarker, dataStart);
+      if (endIdx === -1 || endIdx <= dataStart) break;
+
+      const dictStart = findDictStart(pdfBuffer, startIdx);
+      const dictText = readDictBefore(pdfBuffer, dictStart, startIdx);
+
+      // Skip obvious non-text streams
+      if (isImageStream(dictText)) {
+        cursor = endIdx + endstreamMarker.length;
+        continue;
+      }
+
+      const streamBytes = pdfBuffer.subarray(dataStart, endIdx);
+      if (streamBytes.length > MAX_STREAM) {
+        cursor = endIdx + endstreamMarker.length;
+        continue;
+      }
+
+      let decompressed: Uint8Array | null = null;
+      if (shouldInflate(dictText)) {
+        try { decompressed = inflate(streamBytes); }
+        catch { try { decompressed = inflateRaw(streamBytes); } catch { decompressed = null; } }
+      }
+
+      // Turn bytes into candidate strings and extract BT/ET chunks
+      const addFromBytes = (bytes: Uint8Array) => {
+        const utf = decoderUtf8.decode(bytes);
+        const lat = decoderLatin1.decode(bytes);
+
+        // 1) Primary: BT/ET blocks (Tj/TJ) using CMap
+        for (const cand of [utf, lat]) {
+          if (!cand) continue;
+          const btChunks = extractPdfTextChunksFromBTET_UsingCMap(cand, cmap, codeUnitBytes);
+          if (btChunks.length) {
+            for (const ch of btChunks) {
+              if (ch && isLikelyFinancialText(ch)) texts.push(cleanExtractedText(ch));
+              if (texts.length >= MAX_SEGMENTS) break;
+            }
+          }
+          if (texts.length >= MAX_SEGMENTS) return;
+        }
+
+        // 2) Fallback: if no BT/ET chunks found, scan for loose strings
+        if (texts.length === 0 && looksLikeText(bytes)) {
+          const parenRegex = /\((?:\\.|[^\\\)]+)\)/g;
+          let m: RegExpExecArray | null;
+          while ((m = parenRegex.exec(utf)) !== null) {
+            const t = unescapePDFString(m[0].slice(1, -1));
+            if (isLikelyFinancialText(t)) texts.push(cleanExtractedText(t));
+            if (texts.length >= MAX_SEGMENTS) break;
+          }
+          const hexRegex = /<([0-9A-Fa-f\s]{4,})>/g;
+          let hm: RegExpExecArray | null;
+          while ((hm = hexRegex.exec(utf)) !== null) {
+            const raw = (hm[1] || '').replace(/\s/g, '');
+            if (raw.length % 2 === 0) {
+              const decoded = hexToString(raw);
+              if (isLikelyFinancialText(decoded)) texts.push(cleanExtractedText(decoded));
+              if (texts.length >= MAX_SEGMENTS) break;
+            }
+          }
+        }
+      };
+
+      if (decompressed && decompressed.byteLength > 0) {
+        addFromBytes(decompressed);
+      } else if (looksLikeText(streamBytes)) {
+        addFromBytes(streamBytes);
+      }
+
+      cursor = endIdx + endstreamMarker.length;
+    }
+
+    // Last resort: literal strings outside streams
+    if (texts.length === 0) {
+      const wholeDoc = decoderLatin1.decode(pdfBuffer);
+      const extraParts: string[] = [];
+      const litRegex = /\((?:\\.|[^\\\)]){3,}\)/g;
+      let lm: RegExpExecArray | null;
+      while ((lm = litRegex.exec(wholeDoc)) !== null) {
+        const t = unescapePDFString(lm[0].slice(1, -1));
+        if (isLikelyFinancialText(t)) extraParts.push(t);
+        if (extraParts.length > 2000) break;
+      }
+      texts.push(...extraParts);
+    }
+
+    const unique = [...new Set(texts)].slice(0, 10000);
+    const combined = unique.join(' ').trim();
+    console.log(`📊 Extracted ${unique.length} unique chunks (BT/ET-first), total length: ${combined.length}`);
+    return { text: combined, pages: 1 };
+  } catch (error) {
+    console.error('❌ PDF-parse extraction failed:', error);
+    throw error;
+  }
+}
     const encoder = new TextEncoder();
     const streamMarker = encoder.encode('stream');
     const endstreamMarker = encoder.encode('endstream');
@@ -1047,6 +1377,8 @@ function isLikelyFinancialText(text: string): boolean {
 }
 
 function unescapePDFString(str: string): string {
+  // octal escapes: \\ddd (1–3 digits)
+  str = str.replace(/\\([0-7]{1,3})/g, (_m, oct) => String.fromCharCode(parseInt(oct, 8)));
   return str
     .replace(/\\n/g, '\n')
     .replace(/\\r/g, '\r')
