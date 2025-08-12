@@ -166,10 +166,35 @@ serve(async (req) => {
     
     console.log(`📝 Final extracted text length: ${extractedText.length}`);
     console.log(`📋 Sample text: ${extractedText.substring(0, 150)}`);
+
+    // Heuristic gate: unreadable text? Try OCR fallback
+    if (
+      textLooksUnreadable(extractedText) ||
+      (extractedText.length > 10_000 && ((extractedText.match(/\b[a-z]{3,}\b/gi)?.length ?? 0) < 20))
+    ) {
+      try {
+        console.warn('🧪 Extracted text looks unreadable → trying OCR...');
+        needsOcr = true;
+        warnings.push('Text appears encoded/no ToUnicode – OCR fallback used');
+
+        const ocrText = await ocrExtractWithOCRSpace(pdfBuffer);
+        if (ocrText && ocrText.length > 100) {
+          extractedText = ocrText;
+          extractionMethod = 'ocr-remote';
+          console.log(`🟩 OCR text length: ${ocrText.length}`);
+        } else {
+          console.warn('🟨 OCR returned too little text');
+          warnings.push('OCR returned too little text');
+        }
+      } catch (e: any) {
+        console.error('🟥 OCR failed:', e?.message || e);
+        warnings.push(`OCR failed: ${e?.message || String(e)}`);
+      }
+    }
     
     // Parse the extracted text for financial data
     const financialData = parseFinancialData(extractedText);
-    
+
     console.log('💰 Extracted financial data:', JSON.stringify(financialData, null, 2));
     
     // Validate extraction quality
@@ -1296,6 +1321,52 @@ function unescapePDFString(str: string): string {
     .replace(/\\\(/g, '(')
     .replace(/\\\)/g, ')')
     .replace(/\\\\/g, '\\');
+}
+
+// Heuristic: detect unreadable text to decide OCR fallback
+function textLooksUnreadable(s: string): boolean {
+  if (!s || s.length < 50) return true;
+  const asciiWords = s.match(/\b[a-z]{3,}\b/gi)?.length ?? 0;
+  const financeHits = s.match(/\b(notes|waterfall|portfolio|class|interest|principal|amount|reserve|trigger|payment|distribution)\b/gi)?.length ?? 0;
+  const letters = s.match(/[A-Za-z]/g)?.length ?? 0;
+  const letterRatio = letters / Math.max(1, s.length);
+  return (asciiWords < 30 && financeHits < 3) || letterRatio < 0.12;
+}
+
+// Simple OCR fallback via OCR.space API
+async function ocrExtractWithOCRSpace(pdfBytes: Uint8Array): Promise<string> {
+  const apiKey = Deno.env.get('OCR_SPACE_API_KEY');
+  if (!apiKey) throw new Error('Missing OCR_SPACE_API_KEY');
+
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const form = new FormData();
+  form.append('file', blob, 'file.pdf');
+  form.append('language', 'eng'); // optionally: 'eng+deu'
+  form.append('isTable', 'true');
+  form.append('OCREngine', '2'); // better layout handling
+  form.append('scale', 'true');
+
+  const resp = await fetch('https://api.ocr.space/parse/image', {
+    method: 'POST',
+    headers: { apikey: apiKey },
+    body: form,
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => '');
+    throw new Error(`OCR HTTP ${resp.status}: ${txt.slice(0, 200)}`);
+  }
+
+  const json: any = await resp.json();
+  if (json?.IsErroredOnProcessing) {
+    throw new Error(`OCR error: ${json?.ErrorMessage || json?.ErrorDetails || 'unknown'}`);
+  }
+
+  const text = (json?.ParsedResults || [])
+    .map((r: any) => r?.ParsedText || '')
+    .join('\n');
+
+  return text || '';
 }
 
 function hexToString(hex: string): string {
