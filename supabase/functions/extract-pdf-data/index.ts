@@ -47,9 +47,10 @@ interface TrancheData {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: { ...corsHeaders, 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Max-Age': '86400' } });
   }
 
+  let jobId: string | null = null;
   try {
     console.log('🚀 Starting enhanced PDF extraction with job tracking...');
     
@@ -88,10 +89,23 @@ serve(async (req) => {
       throw new Error(`Failed to create ETL job: ${jobError?.message}`);
     }
     
-    const jobId = jobData.id;
+    jobId = jobData.id;
     console.log(`📝 Created ETL job: ${jobId}`);
     
-    const arrayBuffer = file ? await file.arrayBuffer() : await fetch(fileUrl).then(r => r.arrayBuffer());
+    let arrayBuffer: ArrayBuffer;
+    if (file) {
+      arrayBuffer = await file.arrayBuffer();
+    } else {
+      const allowedHosts = [/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\//i];
+      const isAllowedUrl = (u: string) => allowedHosts.some(r => r.test(u));
+      if (!isAllowedUrl(fileUrl)) throw new Error('Disallowed file host');
+      const resp = await fetch(fileUrl, { method: 'GET' });
+      const contentType = resp.headers.get('content-type') || '';
+      const len = Number(resp.headers.get('content-length') || '0');
+      if (!/application\/pdf/i.test(contentType)) throw new Error('Remote file is not a PDF');
+      if (len && len > 50 * 1024 * 1024) throw new Error('Remote file too large');
+      arrayBuffer = await resp.arrayBuffer();
+    }
     const pdfBuffer = new Uint8Array(arrayBuffer);
     
     console.log('🔍 Starting PDF text extraction...');
@@ -151,7 +165,7 @@ serve(async (req) => {
       .eq('id', jobId);
     
     console.log(`📝 Final extracted text length: ${extractedText.length}`);
-    console.log(`📋 Sample text: ${extractedText.substring(0, 300)}`);
+    console.log(`📋 Sample text: ${extractedText.substring(0, 150)}`);
     
     // Parse the extracted text for financial data
     const financialData = parseFinancialData(extractedText);
@@ -193,7 +207,7 @@ serve(async (req) => {
         job_id: jobId,
         extractedData: financialData,
         textLength: extractedText.length,
-        sampleText: extractedText.substring(0, 500),
+        sampleText: extractedText.substring(0, 150),
         extractionMethod: extractionMethod,
         fileName: fileName,
         warnings: warnings,
@@ -212,21 +226,16 @@ serve(async (req) => {
     
     // Update job status to failed if job was created
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // Try to find and update the job - this is best effort
-      const errorMessage = error.message || 'Unknown extraction error';
-      await supabase
-        .from('etl_jobs')
-        .update({ 
-          status: 'failed', 
-          warnings: [errorMessage] 
-        })
-        .eq('status', 'running')
-        .order('created_at', { ascending: false })
-        .limit(1);
+      if (jobId) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const errorMessage = (error as any)?.message || 'Unknown extraction error';
+        await supabase
+          .from('etl_jobs')
+          .update({ status: 'failed', warnings: [errorMessage] })
+          .eq('id', jobId);
+      }
     } catch (updateError) {
       console.error('Failed to update job status:', updateError);
     }
@@ -274,6 +283,8 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
     };
 
     let cursor = 0;
+    const MAX_STREAM = 5 * 1024 * 1024; // 5MB
+
     while (cursor < pdfBuffer.length) {
       const startIdx = indexOfBytes(pdfBuffer, streamMarker, cursor);
       if (startIdx === -1) break;
@@ -285,29 +296,50 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
       const endIdx = indexOfBytes(pdfBuffer, endstreamMarker, dataStart);
       if (endIdx === -1) break;
 
+      const dictStart = findDictStart(pdfBuffer, startIdx);
+      const dictText = readDictBefore(pdfBuffer, dictStart, startIdx);
+
+      // Skip clear image streams
+      if (isImageStream(dictText)) {
+        cursor = endIdx + endstreamMarker.length;
+        continue;
+      }
+
       const streamBytes = pdfBuffer.subarray(dataStart, endIdx);
+      if (streamBytes.length > MAX_STREAM) {
+        cursor = endIdx + endstreamMarker.length;
+        continue;
+      }
 
       let decompressed: Uint8Array | null = null;
-      try {
-        decompressed = inflate(streamBytes);
-      } catch {
+      if (shouldInflate(dictText)) {
         try {
-          decompressed = inflateRaw(streamBytes);
+          decompressed = inflate(streamBytes);
         } catch {
-          decompressed = null;
+          try {
+            decompressed = inflateRaw(streamBytes);
+          } catch {
+            decompressed = null;
+          }
         }
       }
 
       const candidates: string[] = [];
+      const addCandidatesFrom = (bytes: Uint8Array) => {
+        const utf = decoderUtf8.decode(bytes);
+        const lat = decoderLatin1.decode(bytes);
+        if (utf && /[A-Za-z0-9]{2,}/.test(utf)) candidates.push(utf);
+        if (lat && /[A-Za-z0-9]{2,}/.test(lat)) candidates.push(lat);
+      };
+
       if (decompressed && decompressed.byteLength > 0) {
-        candidates.push(decoderUtf8.decode(decompressed));
-        candidates.push(decoderLatin1.decode(decompressed));
-      } else {
-        candidates.push(decoderLatin1.decode(streamBytes));
+        addCandidatesFrom(decompressed);
+      } else if (looksLikeText(streamBytes)) {
+        addCandidatesFrom(streamBytes);
       }
 
       for (const cand of candidates) {
-        // Extract literal strings used by PDF text operators
+        // Extract literal and hex strings used by PDF text operators
         const parts: string[] = [];
         const parenRegex = /\(([^)]+)\)/g;
         let m: RegExpExecArray | null;
@@ -315,7 +347,6 @@ async function extractTextWithPdfParse(pdfBuffer: Uint8Array): Promise<{text: st
           const t = unescapePDFString(m[1]);
           if (isLikelyFinancialText(t)) parts.push(t);
         }
-        // Also extract hex-encoded strings like <48656C6C6F>
         const hexRegex = /<([0-9A-Fa-f\s]{4,})>/g;
         let hm: RegExpExecArray | null;
         while ((hm = hexRegex.exec(cand)) !== null) {
@@ -420,18 +451,35 @@ async function extractTextEnhanced(pdfBuffer: Uint8Array): Promise<{text: string
   return { text: combinedText };
 }
 
-// Decode PDF stream content
-function decodeStreamContent(streamContent: string): string {
-  // Remove common PDF encoding artifacts
-  let cleaned = streamContent
-    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ') // Remove control characters
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .trim();
-  
-  // Try to extract readable text patterns
-  const readablePatterns = cleaned.match(/[a-zA-Z][a-zA-Z0-9\s.,;:!?€$£¥%()[\]{}_+=|\\/"'-]{3,}/g) || [];
-  
-  return readablePatterns.join(' ');
+function findDictStart(pdf: Uint8Array, startIdx: number): number {
+  const from = Math.max(0, startIdx - 2048);
+  const decoder = new TextDecoder('latin1');
+  const slice = decoder.decode(pdf.subarray(from, startIdx));
+  const idx = slice.lastIndexOf('<<');
+  return idx === -1 ? startIdx : from + idx;
+}
+
+function readDictBefore(pdf: Uint8Array, dictStart: number, dictEnd: number): string {
+  const decoder = new TextDecoder('latin1', { fatal: false });
+  return decoder.decode(pdf.subarray(dictStart, dictEnd));
+}
+
+function shouldInflate(dictText: string): boolean {
+  return /\/Filter\s*(?:\[.*?FlateDecode.*?\]|\/FlateDecode)/i.test(dictText);
+}
+
+function isImageStream(dictText: string): boolean {
+  return /\/Subtype\s*\/Image/i.test(dictText);
+}
+
+function looksLikeText(bytes: Uint8Array): boolean {
+  let printable = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    const b = bytes[i];
+    if ((b >= 32 && b <= 126) || b === 9 || b === 10 || b === 13) printable++;
+  }
+  const ratio = printable / Math.max(1, bytes.length);
+  return ratio > 0.8; // heuristic
 }
 
 // Extract context around financial keywords
@@ -463,13 +511,21 @@ function extractKeywordContext(text: string): string[] {
 // Section utilities for glossary-driven parsing
 function sliceSection(text: string, header: RegExp | string, nextHeaders: (RegExp | string)[]): string {
   if (!text) return '';
-  const start = typeof header === 'string' 
-    ? text.toLowerCase().indexOf(header.toLowerCase())
-    : text.search(header as RegExp);
+  let start = -1, after = 0;
+  if (typeof header === 'string') {
+    start = text.toLowerCase().indexOf(header.toLowerCase());
+    after = start === -1 ? 0 : header.length;
+  } else {
+    const m = (header as RegExp).exec(text);
+    if (m) { start = m.index; after = m[0].length; }
+  }
   if (start === -1) return '';
-  const tail = text.slice(start + (typeof header === 'string' ? (header as string).length : 0));
+  const tail = text.slice(start + after);
   const endIdxs = nextHeaders
-    .map(h => typeof h === 'string' ? tail.toLowerCase().indexOf((h as string).toLowerCase()) : tail.search(h as RegExp))
+    .map(h => {
+      if (typeof h === 'string') return tail.toLowerCase().indexOf(h.toLowerCase());
+      const mm = (h as RegExp).exec(tail); return mm ? mm.index : -1;
+    })
     .filter(i => i > -1);
   const end = endIdxs.length ? Math.min(...endIdxs) : tail.length;
   return tail.slice(0, end);
@@ -825,22 +881,17 @@ function standardizeTrancheName(name: string): string {
 
 // Extract WAL (Weighted Average Life) for specific tranche
 function extractWALForTranche(text: string, trancheName: string): number {
-  const walPatterns = [
-    new RegExp(`${trancheName}.*?wal[:\\s]*([\\d.]+)`, 'gi'),
-    new RegExp(`wal.*?${trancheName}[:\\s]*([\\d.]+)`, 'gi'),
-    new RegExp(`weighted.*?average.*?life.*?${trancheName}[:\\s]*([\\d.]+)`, 'gi')
+  const pats = [
+    new RegExp(`${trancheName}[^\\n]{0,80}wal[:\\s]*([\\d.,]+)`, 'i'),
+    new RegExp(`wal[^\\n]{0,80}${trancheName}[:\\s]*([\\d.,]+)`, 'i'),
   ];
-  
-  for (const pattern of walPatterns) {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      const wal = parseFloat(match[1]);
-      if (wal > 0 && wal < 50) { // Reasonable WAL range (0-50 years)
-        return wal;
-      }
+  for (const p of pats) {
+    const m = p.exec(text);
+    if (m?.[1]) {
+      const val = parseFinancialNumber(m[1]);
+      if (val > 0 && val < 50) return val;
     }
   }
-  
   return 0;
 }
 
@@ -927,6 +978,8 @@ function hexToString(hex: string): string {
 
 function parseFinancialNumber(value: string): number {
   let v = (value || '').trim();
+  const isNeg = /^\(.*\)$/.test(v) || /^-/.test(v);
+  v = v.replace(/^\(|\)$/g, '');
   // Detect European format (comma decimal) and normalize
   const hasComma = v.includes(',');
   const hasDot = v.includes('.');
@@ -940,7 +993,8 @@ function parseFinancialNumber(value: string): number {
     v = v.replace(/[€$£¥,\s%]/g, '');
   }
   const num = parseFloat(v);
-  return isNaN(num) ? 0 : num;
+  if (isNaN(num)) return 0;
+  return isNeg ? -num : num;
 }
 
 function detectCurrency(text: string): string | undefined {
@@ -965,21 +1019,21 @@ function detectCurrency(text: string): string | undefined {
 }
 
 function standardizeDate(dateStr: string): string {
-  try {
-    const parts = dateStr.split(/[-\/\.]/);
-    if (parts.length === 3) {
-      // Assume DD/MM/YYYY or MM/DD/YYYY format
-      const year = parseInt(parts[2]);
-      const month = parseInt(parts[1]) - 1; // JavaScript months are 0-based
-      const day = parseInt(parts[0]);
-      
-      const date = new Date(year, month, day);
-      return date.toISOString().split('T')[0];
-    }
-    return dateStr;
-  } catch {
-    return dateStr;
+  const s = dateStr.trim();
+  const m1 = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s); // DD.MM.YYYY
+  if (m1) {
+    const [_, d, m, y] = m1;
+    return `${y}-${m}-${d}`;
   }
+  const m2 = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/.exec(s);
+  if (m2) {
+    let [_, a, b, y] = m2 as unknown as [string, string, string, string];
+    if (y.length === 2) y = String(2000 + Number(y));
+    const dd = Number(a) > 12 ? a.padStart(2,'0') : b.padStart(2,'0');
+    const mm = Number(a) > 12 ? b.padStart(2,'0') : a.padStart(2,'0');
+    return `${y}-${mm}-${dd}`;
+  }
+  return s;
 }
 
 // Calculate text quality ratio (meaningful characters vs total)
