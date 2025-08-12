@@ -206,7 +206,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   try {
     const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
     
-    // First, get all unique datasets owned by the user using raw SQL for efficiency
+    // First, get all unique datasets owned by the user using DISTINCT for efficiency
     const { data: ownedDatasets, error: ownedError } = await supabase
       .from('loan_data')
       .select('dataset_name, user_id')
