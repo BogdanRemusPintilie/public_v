@@ -204,37 +204,31 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id, 'email:', user.email);
 
   try {
-    // Create a Map to store unique datasets
     const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
     
-    // First, get all datasets owned by the user
+    // First, get all unique datasets owned by the user using a raw SQL query for efficiency
     const { data: ownedDatasets, error: ownedError } = await supabase
-      .from('loan_data')
-      .select('dataset_name, user_id, created_at')
-      .eq('user_id', user.id)
-      .not('dataset_name', 'is', null)
-      .not('dataset_name', 'eq', '')
-      .order('created_at', { ascending: false });
+      .rpc('get_user_datasets_distinct', { 
+        input_user_id: user.id 
+      });
 
     if (ownedError) {
       console.error('❌ Error fetching owned datasets:', ownedError);
       throw ownedError;
     }
 
-    console.log('📊 OWNED DATASETS RAW:', ownedDatasets?.length || 0, 'records');
+    console.log('📊 OWNED DATASETS:', ownedDatasets?.length || 0, 'unique datasets');
 
     // Process owned datasets
     if (ownedDatasets && ownedDatasets.length > 0) {
       ownedDatasets.forEach(record => {
         if (record.dataset_name && record.dataset_name.trim()) {
           const datasetName = record.dataset_name.trim();
-          if (!uniqueDatasets.has(datasetName)) {
-            uniqueDatasets.set(datasetName, {
-              name: datasetName,
-              owner_id: record.user_id,
-              is_shared: false
-            });
-          }
+          uniqueDatasets.set(datasetName, {
+            name: datasetName,
+            owner_id: record.user_id,
+            is_shared: false
+          });
         }
       });
     }
@@ -253,7 +247,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
       console.error('❌ Error fetching shared datasets:', sharedError);
       // Continue with owned datasets only, don't throw
     } else {
-      console.log('📊 SHARED DATASETS RAW:', sharedDatasets?.length || 0, 'records');
+      console.log('📊 SHARED DATASETS:', sharedDatasets?.length || 0, 'records');
 
       // Add shared datasets
       if (sharedDatasets && sharedDatasets.length > 0) {
@@ -269,57 +263,6 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
             }
           }
         });
-      }
-    }
-
-    // Third, check if there are any datasets that might exist in loan_data but not owned by current user
-    // This could catch datasets like "Demo Data Lite" that might be sample data
-    const { data: allDatasets, error: allDatasetsError } = await supabase
-      .from('loan_data')
-      .select('dataset_name, user_id')
-      .not('dataset_name', 'is', null)
-      .not('dataset_name', 'eq', '')
-      .neq('user_id', user.id); // Get datasets NOT owned by current user
-
-    if (!allDatasetsError && allDatasets && allDatasets.length > 0) {
-      console.log('📊 OTHER DATASETS FOUND:', allDatasets.length, 'records');
-      
-      // For any datasets not owned by the user, check if they should be accessible
-      const otherDatasetNames = [...new Set(allDatasets.map(d => d.dataset_name?.trim()).filter(Boolean))];
-      
-      for (const datasetName of otherDatasetNames) {
-        if (datasetName && !uniqueDatasets.has(datasetName)) {
-          // Check if this dataset has any sharing permissions for the current user
-          const { data: shareCheck } = await supabase
-            .from('dataset_shares')
-            .select('owner_id')
-            .eq('dataset_name', datasetName)
-            .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`)
-            .limit(1);
-
-          if (shareCheck && shareCheck.length > 0) {
-            uniqueDatasets.set(datasetName, {
-              name: datasetName,
-              owner_id: shareCheck[0].owner_id,
-              is_shared: true
-            });
-            console.log('📊 ADDED SHARED DATASET:', datasetName);
-          } else {
-            // Check if this is a demo/sample dataset that should be accessible to all users
-            // You might want to add logic here for specific demo datasets
-            if (datasetName.toLowerCase().includes('demo') || datasetName.toLowerCase().includes('lite')) {
-              const ownerRecord = allDatasets.find(d => d.dataset_name?.trim() === datasetName);
-              if (ownerRecord) {
-                uniqueDatasets.set(datasetName, {
-                  name: datasetName,
-                  owner_id: ownerRecord.user_id,
-                  is_shared: true
-                });
-                console.log('📊 ADDED DEMO DATASET:', datasetName);
-              }
-            }
-          }
-        }
       }
     }
 
