@@ -425,3 +425,35 @@ export const deleteTrancheStructure = async (structureId: string): Promise<void>
     throw error;
   }
 };
+
+// Portfolio summary function - calculates summary for entire dataset server-side
+export interface PortfolioSummary {
+  totalValue: number;
+  avgInterestRate: number;
+  highRiskLoans: number;
+  totalRecords: number;
+}
+
+export const getPortfolioSummary = async (datasetName: string): Promise<PortfolioSummary | null> => {
+  const { data, error } = await (supabase as any)
+    .rpc('get_portfolio_summary', { 
+      dataset_name_param: datasetName 
+    });
+
+  if (error) {
+    console.error('Error fetching portfolio summary:', error);
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  const summary = data[0];
+  return {
+    totalValue: parseFloat(summary.total_value) || 0,
+    avgInterestRate: parseFloat(summary.avg_interest_rate) || 0,
+    highRiskLoans: parseInt(summary.high_risk_loans) || 0,
+    totalRecords: parseInt(summary.total_records) || 0
+  };
+};

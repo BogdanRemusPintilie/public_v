@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { LoanRecord, insertLoanData, getLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData } from '@/utils/supabase';
+import { LoanRecord, insertLoanData, getLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData, getPortfolioSummary } from '@/utils/supabase';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
@@ -101,15 +101,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         setCurrentPage(0);
         
         if (result.data.length > 0) {
-          // Calculate summary for loaded data
-          const quickSummary = {
-            totalValue: result.data.reduce((sum, loan) => sum + loan.opening_balance, 0),
-            avgInterestRate: result.data.length > 0 ? 
-              result.data.reduce((sum, loan) => sum + loan.interest_rate, 0) / result.data.length : 0,
-            highRiskLoans: result.data.filter(loan => (loan.pd || 0) > 0.10).length,
-            totalRecords: result.totalCount // Use actual total count from database
-          };
-          setPortfolioSummary(quickSummary);
+          // Calculate portfolio summary server-side for entire dataset (avoiding 1000-row limit)
+          const portfolioSummary = await getPortfolioSummary(datasetName);
+          setPortfolioSummary(portfolioSummary);
           
           toast({
             title: "Dataset Loaded",
