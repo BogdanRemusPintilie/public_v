@@ -16,6 +16,7 @@ import { Loader2, X, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { StructureModificationComponent } from './StructureModificationComponent';
 
 const offerSchema = z.object({
   offer_name: z.string().min(1, 'Offer name is required'),
@@ -384,46 +385,206 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               {/* Structure Characterization */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Structure Characterization</CardTitle>
+                  <CardTitle className="text-base">General Structure Characterization</CardTitle>
+                  <CardDescription>Define the core characteristics and components of your securitization structure</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="structure_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Structure Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select structure type" />
-                            </SelectTrigger>
-                          </FormControl>
+                <CardContent className="space-y-6">
+                  {/* Basic Structure Information */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="structure_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Structure Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select primary structure type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="abs">Asset-Backed Securities (ABS)</SelectItem>
+                              <SelectItem value="mbs">Mortgage-Backed Securities (MBS)</SelectItem>
+                              <SelectItem value="rmbs">Residential MBS (RMBS)</SelectItem>
+                              <SelectItem value="cmbs">Commercial MBS (CMBS)</SelectItem>
+                              <SelectItem value="cdo">Collateralized Debt Obligation (CDO)</SelectItem>
+                              <SelectItem value="clo">Collateralized Loan Obligation (CLO)</SelectItem>
+                              <SelectItem value="cbo">Collateralized Bond Obligation (CBO)</SelectItem>
+                              <SelectItem value="auto">Auto Loan ABS</SelectItem>
+                              <SelectItem value="credit_card">Credit Card ABS</SelectItem>
+                              <SelectItem value="student_loan">Student Loan ABS</SelectItem>
+                              <SelectItem value="equipment">Equipment Lease ABS</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-2">
+                      <Label>Currency</Label>
+                      <Select defaultValue="EUR">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="GBP">GBP</SelectItem>
+                          <SelectItem value="CHF">CHF</SelectItem>
+                          <SelectItem value="JPY">JPY</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Structure Features */}
+                  <div className="space-y-4">
+                    <Label className="text-sm font-medium">Structure Features</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="structure_synthetic"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-medium">Synthetic Structure</FormLabel>
+                              <p className="text-xs text-muted-foreground">
+                                Uses derivatives instead of actual asset transfer
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="structure_true_sale"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-medium">True Sale</FormLabel>
+                              <p className="text-xs text-muted-foreground">
+                                Actual transfer of assets to SPV
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="structure_sts"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-medium">STS Compliant</FormLabel>
+                              <p className="text-xs text-muted-foreground">
+                                Simple, Transparent & Standardized
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="structure_consumer_finance"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="font-medium">Consumer Finance</FormLabel>
+                              <p className="text-xs text-muted-foreground">
+                                Consumer-focused underlying assets
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Transaction Key Figures */}
+                  <div className="space-y-4">
+                    <Label className="text-sm font-medium">Transaction Key Figures & Metrics</Label>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Expected Pool Size</Label>
+                        <Input placeholder="e.g., €500M" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Weighted Avg Life</Label>
+                        <Input placeholder="e.g., 3.5 years" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Expected Rating</Label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="abs">Asset-Backed Securities (ABS)</SelectItem>
-                            <SelectItem value="mbs">Mortgage-Backed Securities (MBS)</SelectItem>
-                            <SelectItem value="rmbs">Residential MBS (RMBS)</SelectItem>
-                            <SelectItem value="cmbs">Commercial MBS (CMBS)</SelectItem>
-                            <SelectItem value="cdo">Collateralized Debt Obligation (CDO)</SelectItem>
-                            <SelectItem value="clo">Collateralized Loan Obligation (CLO)</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="aaa">AAA</SelectItem>
+                            <SelectItem value="aa">AA</SelectItem>
+                            <SelectItem value="a">A</SelectItem>
+                            <SelectItem value="bbb">BBB</SelectItem>
+                            <SelectItem value="bb">BB</SelectItem>
+                            <SelectItem value="b">B</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Credit Enhancement</Label>
+                        <Input placeholder="e.g., 15%" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Overcollateralization</Label>
+                        <Input placeholder="e.g., 5%" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Reserve Fund</Label>
+                        <Input placeholder="e.g., 1%" />
+                      </div>
+                    </div>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="structure_figures"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Key Figures</FormLabel>
+                        <FormLabel>Additional Key Figures & Details</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Key numerical figures and metrics of the structure"
-                            rows={2}
+                            placeholder="Include any additional key metrics, performance triggers, payment mechanics, or structural features"
+                            rows={3}
                             {...field}
                           />
                         </FormControl>
@@ -431,82 +592,11 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                       </FormItem>
                     )}
                   />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="structure_synthetic"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Synthetic</FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="structure_true_sale"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>True Sale</FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="structure_sts"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>STS Compliant</FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="structure_consumer_finance"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Consumer Finance</FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </CardContent>
               </Card>
+
+              {/* Structure Components Editor */}
+              <StructureModificationComponent />
               
               <FormField
                 control={form.control}
