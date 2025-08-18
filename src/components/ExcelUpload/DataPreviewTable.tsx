@@ -135,7 +135,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                 <TableHead>Term (Months)</TableHead>
                 <TableHead>PD</TableHead>
                 <TableHead>Remaining Term</TableHead>
-                <TableHead>LGD</TableHead>
+                <TableHead>Credit Score</TableHead>
                 <TableHead>LTV</TableHead>
               </TableRow>
             </TableHeader>
@@ -162,7 +162,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                   <TableCell>{row.term}</TableCell>
                   <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
                   <TableCell>{row.remaining_term ? Number(row.remaining_term).toFixed(0) : 'N/A'}</TableCell>
-                  <TableCell>{row.lgd.toFixed(2)}%</TableCell>
+                  <TableCell>{row.credit_score || 0}</TableCell>
                   <TableCell>{row.ltv.toFixed(2)}%</TableCell>
                 </TableRow>
               ))}

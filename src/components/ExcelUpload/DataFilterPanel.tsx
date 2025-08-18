@@ -15,8 +15,8 @@ interface FilterCriteria {
   minInterestRate: string;
   maxInterestRate: string;
   loanType: string;
-  minCreditScore: string;
-  maxCreditScore: string;
+  minPD: string;
+  maxPD: string;
   minLTV: string;
   maxLTV: string;
 }
@@ -42,8 +42,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     minInterestRate: '',
     maxInterestRate: '',
     loanType: 'all',
-    minCreditScore: '',
-    maxCreditScore: '',
+      minPD: '',
+      maxPD: '',
     minLTV: '',
     maxLTV: ''
   });
@@ -121,11 +121,11 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           return false;
         }
 
-        // LGD filter
-        if (filterCriteria.minCreditScore && record.lgd < parseFloat(filterCriteria.minCreditScore)) {
+        // PD filter
+        if (filterCriteria.minPD && record.pd < parseFloat(filterCriteria.minPD)) {
           return false;
         }
-        if (filterCriteria.maxCreditScore && record.lgd > parseFloat(filterCriteria.maxCreditScore)) {
+        if (filterCriteria.maxPD && record.pd > parseFloat(filterCriteria.maxPD)) {
           return false;
         }
 
@@ -159,8 +159,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       minInterestRate: '',
       maxInterestRate: '',
       loanType: 'all',
-      minCreditScore: '',
-      maxCreditScore: '',
+      minPD: '',
+      maxPD: '',
       minLTV: '',
       maxLTV: ''
     });
@@ -287,19 +287,21 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Credit Score Range</Label>
+            <Label>PD Range (%)</Label>
             <div className="flex gap-2">
               <Input
                 type="number"
+                step="0.01"
                 placeholder="Min"
-                value={filterCriteria.minCreditScore}
-                onChange={(e) => setFilterCriteria({...filterCriteria, minCreditScore: e.target.value})}
+                value={filterCriteria.minPD}
+                onChange={(e) => setFilterCriteria({...filterCriteria, minPD: e.target.value})}
               />
               <Input
                 type="number"
+                step="0.01"
                 placeholder="Max"
-                value={filterCriteria.maxCreditScore}
-                onChange={(e) => setFilterCriteria({...filterCriteria, maxCreditScore: e.target.value})}
+                value={filterCriteria.maxPD}
+                onChange={(e) => setFilterCriteria({...filterCriteria, maxPD: e.target.value})}
               />
             </div>
           </div>

@@ -9,7 +9,7 @@ export interface LoanRecord {
   interest_rate: number;
   term: number;
   remaining_term: number | null;
-  lgd: number;
+  credit_score: number;
   ltv: number;
   opening_balance: number;
   pd: number;
@@ -66,10 +66,9 @@ export const insertLoanData = async (
       user_id: user.id, // Explicitly set the user_id for RLS compliance
       // Map frontend interface to database columns
       loan_type: record.remaining_term?.toString() || 'N/A',
-      credit_score: record.lgd || 0,
+      credit_score: record.pd || 0,
       // Remove the frontend interface fields that don't exist in DB
-      remaining_term: undefined,
-      lgd: undefined
+      remaining_term: undefined
     }));
 
     console.log('💾 INSERTING BATCH:', {
@@ -134,7 +133,6 @@ export const getLoanDataByDataset = async (
   const transformedData = (data || []).map(record => ({
     ...record,
     remaining_term: record.loan_type ? parseFloat(record.loan_type) : null,
-    lgd: record.credit_score || 0,
     // Keep the database fields for compatibility but prefer the new interface names
     loan_type: record.loan_type,
     credit_score: record.credit_score
