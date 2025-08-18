@@ -217,35 +217,65 @@ export type Database = {
       }
       offers: {
         Row: {
+          additional_comments: string | null
           comments: string | null
           created_at: string
           id: string
+          issuer_business_focus: string | null
+          issuer_nationality: string | null
+          issuer_overview: string | null
           offer_name: string
           shared_with_emails: string[] | null
           status: string | null
+          structure_consumer_finance: boolean | null
+          structure_figures: string | null
           structure_id: string
+          structure_sts: boolean | null
+          structure_synthetic: boolean | null
+          structure_true_sale: boolean | null
+          structure_type: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          additional_comments?: string | null
           comments?: string | null
           created_at?: string
           id?: string
+          issuer_business_focus?: string | null
+          issuer_nationality?: string | null
+          issuer_overview?: string | null
           offer_name: string
           shared_with_emails?: string[] | null
           status?: string | null
+          structure_consumer_finance?: boolean | null
+          structure_figures?: string | null
           structure_id: string
+          structure_sts?: boolean | null
+          structure_synthetic?: boolean | null
+          structure_true_sale?: boolean | null
+          structure_type?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          additional_comments?: string | null
           comments?: string | null
           created_at?: string
           id?: string
+          issuer_business_focus?: string | null
+          issuer_nationality?: string | null
+          issuer_overview?: string | null
           offer_name?: string
           shared_with_emails?: string[] | null
           status?: string | null
+          structure_consumer_finance?: boolean | null
+          structure_figures?: string | null
           structure_id?: string
+          structure_sts?: boolean | null
+          structure_synthetic?: boolean | null
+          structure_true_sale?: boolean | null
+          structure_type?: string | null
           updated_at?: string
           user_id?: string
         }

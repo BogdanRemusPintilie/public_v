@@ -14,12 +14,26 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 const offerSchema = z.object({
   offer_name: z.string().min(1, 'Offer name is required'),
   structure_id: z.string().min(1, 'Please select a structure'),
   shared_with_emails: z.array(z.string().email('Invalid email format')).min(0),
   comments: z.string().optional(),
+  // Issuer Characterization
+  issuer_nationality: z.string().optional(),
+  issuer_overview: z.string().optional(),
+  issuer_business_focus: z.string().optional(),
+  // Structure Characterization
+  structure_type: z.string().optional(),
+  structure_figures: z.string().optional(),
+  structure_synthetic: z.boolean().default(false),
+  structure_true_sale: z.boolean().default(false),
+  structure_sts: z.boolean().default(false),
+  structure_consumer_finance: z.boolean().default(false),
+  additional_comments: z.string().optional(),
 });
 
 type OfferFormData = z.infer<typeof offerSchema>;
@@ -62,6 +76,16 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
       structure_id: '',
       shared_with_emails: [],
       comments: '',
+      issuer_nationality: '',
+      issuer_overview: '',
+      issuer_business_focus: '',
+      structure_type: '',
+      structure_figures: '',
+      structure_synthetic: false,
+      structure_true_sale: false,
+      structure_sts: false,
+      structure_consumer_finance: false,
+      additional_comments: '',
     },
   });
 
@@ -164,6 +188,16 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
           structure_id: data.structure_id,
           shared_with_emails: emailList,
           comments: data.comments || null,
+          issuer_nationality: data.issuer_nationality || null,
+          issuer_overview: data.issuer_overview || null,
+          issuer_business_focus: data.issuer_business_focus || null,
+          structure_type: data.structure_type || null,
+          structure_figures: data.structure_figures || null,
+          structure_synthetic: data.structure_synthetic,
+          structure_true_sale: data.structure_true_sale,
+          structure_sts: data.structure_sts,
+          structure_consumer_finance: data.structure_consumer_finance,
+          additional_comments: data.additional_comments || null,
         });
 
       if (error) throw error;
@@ -283,15 +317,227 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               )}
             </div>
 
+            <Separator className="my-6" />
+            
+            {/* Transaction Overview */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Transaction Overview</h3>
+              
+              {/* Issuer Characterization */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Issuer Characterization</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="issuer_nationality"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nationality</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., German, Spanish, Italian" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="issuer_overview"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>General Overview</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Brief description of the issuer, their history, size, etc."
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="issuer_business_focus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Business Focus</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Description of the issuer's main business activities and focus areas"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Structure Characterization */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Structure Characterization</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="structure_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Structure Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select structure type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="abs">Asset-Backed Securities (ABS)</SelectItem>
+                            <SelectItem value="mbs">Mortgage-Backed Securities (MBS)</SelectItem>
+                            <SelectItem value="rmbs">Residential MBS (RMBS)</SelectItem>
+                            <SelectItem value="cmbs">Commercial MBS (CMBS)</SelectItem>
+                            <SelectItem value="cdo">Collateralized Debt Obligation (CDO)</SelectItem>
+                            <SelectItem value="clo">Collateralized Loan Obligation (CLO)</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="structure_figures"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Key Figures</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Key numerical figures and metrics of the structure"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="structure_synthetic"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Synthetic</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="structure_true_sale"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>True Sale</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="structure_sts"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>STS Compliant</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="structure_consumer_finance"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Consumer Finance</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <FormField
+                control={form.control}
+                name="additional_comments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Comments</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Any additional open-ended comments about the transaction"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Separator className="my-6" />
+
             <FormField
               control={form.control}
               name="comments"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Comments</FormLabel>
+                  <FormLabel>General Comments</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Optional comments about this offer"
+                      placeholder="Optional general comments about this offer"
                       rows={3}
                       {...field}
                     />
