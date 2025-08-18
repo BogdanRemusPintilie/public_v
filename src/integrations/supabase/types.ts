@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -164,16 +164,16 @@ export type Database = {
       loan_data: {
         Row: {
           created_at: string
-          credit_score: number
           dataset_name: string | null
           file_name: string | null
           id: string
           interest_rate: number
+          lgd: number
           loan_amount: number
-          loan_type: string
           ltv: number
           opening_balance: number
           pd: number | null
+          remaining_term: string
           term: number
           updated_at: string
           user_id: string | null
@@ -181,16 +181,16 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          credit_score: number
           dataset_name?: string | null
           file_name?: string | null
           id?: string
           interest_rate: number
+          lgd: number
           loan_amount: number
-          loan_type: string
           ltv: number
           opening_balance: number
           pd?: number | null
+          remaining_term: string
           term: number
           updated_at?: string
           user_id?: string | null
@@ -198,16 +198,16 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          credit_score?: number
           dataset_name?: string | null
           file_name?: string | null
           id?: string
           interest_rate?: number
+          lgd?: number
           loan_amount?: number
-          loan_type?: string
           ltv?: number
           opening_balance?: number
           pd?: number | null
+          remaining_term?: string
           term?: number
           updated_at?: string
           user_id?: string | null
@@ -349,29 +349,52 @@ export type Database = {
       get_dataset_summaries: {
         Args: Record<PropertyKey, never>
         Returns: {
+          avg_interest_rate: number
+          created_at: string
           dataset_name: string
+          high_risk_count: number
           record_count: number
           total_value: number
+        }[]
+      }
+      get_portfolio_summary: {
+        Args: { dataset_name_param: string }
+        Returns: {
           avg_interest_rate: number
-          high_risk_count: number
-          created_at: string
+          high_risk_loans: number
+          total_records: number
+          total_value: number
+        }[]
+      }
+      get_user_datasets_distinct: {
+        Args: { input_user_id: string }
+        Returns: {
+          dataset_name: string
+          user_id: string
         }[]
       }
       get_user_profile: {
         Args: { _user_id: string }
         Returns: {
-          id: string
-          email: string
-          full_name: string
           company: string
           company_type: Database["public"]["Enums"]["company_type"]
+          email: string
+          full_name: string
+          id: string
           role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      get_user_unique_datasets: {
+        Args: { input_user_id: string }
+        Returns: {
+          dataset_name: string
+          user_id: string
         }[]
       }
       has_company_access: {
         Args: {
-          _user_id: string
           _company_type: Database["public"]["Enums"]["company_type"]
+          _user_id: string
         }
         Returns: boolean
       }
