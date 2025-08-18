@@ -106,7 +106,7 @@ const Dashboard = () => {
   };
 
   const handleMatchedMarket = (action: string) => {
-    if (action === 'Issue Offer') {
+    if (action === 'Create Offer') {
       setShowIssueOfferModal(true);
     } else {
       toast({
@@ -294,9 +294,9 @@ const Dashboard = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-64">
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Issue Offer')}>
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Create Offer')}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Issue Offer
+                      Create Offer
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
                       <Settings className="h-4 w-4 mr-2" />
