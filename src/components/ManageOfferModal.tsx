@@ -140,10 +140,8 @@ export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
   };
 
   const handleShareTransactionOverview = (investorId: string) => {
-    toast({
-      title: "Transaction Overview Shared",
-      description: "Detailed transaction overview has been sent to investor"
-    });
+    onClose();
+    window.location.href = `/share-transaction-overview?investorId=${investorId}&offerName=${selectedOffer?.offerName || 'Transaction'}`;
   };
 
   const interestedInvestors = investorInterests.filter(i => i.interestLevel === 'interested');
