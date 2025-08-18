@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Users, FileText, DollarSign, Shield, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle, Users, FileText, DollarSign, Shield, TrendingUp, TrendingDown, Minus, ArrowLeft, Send, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface InvestorInterest {
@@ -52,6 +55,11 @@ export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
   const { toast } = useToast();
   const [investorInterests, setInvestorInterests] = useState<InvestorInterest[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showSharePage, setShowSharePage] = useState(false);
+  const [selectedInvestorForShare, setSelectedInvestorForShare] = useState<string | null>(null);
+  const [shareEmail, setShareEmail] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for demonstration
   useEffect(() => {
@@ -140,8 +148,49 @@ export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
   };
 
   const handleShareTransactionOverview = (investorId: string) => {
-    onClose();
-    window.location.href = `/share-transaction-overview?investorId=${investorId}&offerName=${selectedOffer?.offerName || 'Transaction'}`;
+    const investor = investorInterests.find(i => i.id === investorId);
+    setSelectedInvestorForShare(investorId);
+    setShareEmail(investor?.email || '');
+    setShareMessage(`Dear Investor,
+
+Please find attached the transaction overview for ${selectedOffer?.offerName || 'Transaction'}. This document contains detailed information about the structure, tranches, and risk characteristics.
+
+Best regards,
+The RiskBlocs Team`);
+    setShowSharePage(true);
+  };
+
+  const handleSendTransactionOverview = async () => {
+    if (!shareEmail) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast({
+        title: "Transaction Overview Shared",
+        description: `Overview has been sent to ${shareEmail}`,
+      });
+      setIsLoading(false);
+      setShowSharePage(false);
+      setSelectedInvestorForShare(null);
+      setShareEmail('');
+      setShareMessage('');
+    }, 1000);
+  };
+
+  const handleBackFromShare = () => {
+    setShowSharePage(false);
+    setSelectedInvestorForShare(null);
+    setShareEmail('');
+    setShareMessage('');
   };
 
   const interestedInvestors = investorInterests.filter(i => i.interestLevel === 'interested');
@@ -151,8 +200,91 @@ export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Manage Offer: {selectedOffer?.offerName || 'Current Offer'}</DialogTitle>
+          <DialogTitle>
+            {showSharePage ? (
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleBackFromShare}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                Share Transaction Overview
+              </div>
+            ) : (
+              `Manage Offer: ${selectedOffer?.offerName || 'Current Offer'}`
+            )}
+          </DialogTitle>
         </DialogHeader>
+
+        {showSharePage ? (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  Share Details
+                </CardTitle>
+                <CardDescription>
+                  Enter the investor's email address and customize the message
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Recipient Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="investor@example.com"
+                    value={shareEmail}
+                    onChange={(e) => setShareEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Enter your message..."
+                    value={shareMessage}
+                    onChange={(e) => setShareMessage(e.target.value)}
+                    rows={8}
+                  />
+                </div>
+
+                <div className="bg-muted p-4 rounded-lg">
+                  <h3 className="font-medium mb-2">Transaction Overview will include:</h3>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Structure summary and tranche details</li>
+                    <li>• Risk characteristics and ratings</li>
+                    <li>• Payment waterfall information</li>
+                    <li>• Key terms and conditions</li>
+                    <li>• Portfolio composition overview</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    onClick={handleSendTransactionOverview} 
+                    disabled={isLoading}
+                    className="flex-1"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {isLoading ? 'Sending...' : 'Send Transaction Overview'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleBackFromShare}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -439,6 +571,7 @@ export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
             </Card>
           </TabsContent>
         </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );

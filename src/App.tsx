@@ -12,7 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import PDAnalysis from "./pages/PDAnalysis";
 import InvestorReport from "./pages/InvestorReport";
 import SRTPlatform from "./pages/SRTPlatform";
-import ShareTransactionOverview from "./pages/ShareTransactionOverview";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,14 +49,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <InvestorReport />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/share-transaction-overview" 
-              element={
-                <ProtectedRoute>
-                  <ShareTransactionOverview />
                 </ProtectedRoute>
               } 
             />
