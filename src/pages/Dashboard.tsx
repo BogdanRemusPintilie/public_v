@@ -13,6 +13,7 @@ import DatasetManager from '@/components/DatasetManager';
 import DataExtractor from '@/components/DataExtractor';
 import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
 import { IssueOfferModal } from '@/components/IssueOfferModal';
+import { ManageOfferModal } from '@/components/ManageOfferModal';
 import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
 import InvestorReportingUpload from '@/components/InvestorReportingUpload';
 import ExtractionTool from '@/components/ExtractionTool';
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
   const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
   const [showIssueOfferModal, setShowIssueOfferModal] = useState(false);
+  const [showManageOfferModal, setShowManageOfferModal] = useState(false);
   const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
   const [showInvestorReporting, setShowInvestorReporting] = useState(false);
   const [showExtractionTool, setShowExtractionTool] = useState(false);
@@ -108,6 +110,8 @@ const Dashboard = () => {
   const handleMatchedMarket = (action: string) => {
     if (action === 'Create Offer') {
       setShowIssueOfferModal(true);
+    } else if (action === 'Manage Offer') {
+      setShowManageOfferModal(true);
     } else {
       toast({
         title: "Matched Market",
@@ -489,6 +493,11 @@ const Dashboard = () => {
       <IssueOfferModal
         open={showIssueOfferModal}
         onOpenChange={setShowIssueOfferModal}
+      />
+      
+      <ManageOfferModal 
+        isOpen={showManageOfferModal}
+        onClose={() => setShowManageOfferModal(false)}
       />
       
       <RegulatoryReportingUpload

@@ -1,0 +1,447 @@
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle, Users, FileText, DollarSign, Shield, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface InvestorInterest {
+  id: string;
+  investorName: string;
+  email: string;
+  interestLevel: 'interested' | 'indication' | 'declined';
+  contactDate: string;
+  proposedPricing?: {
+    tranche: string;
+    price: number;
+    spread: number;
+  }[];
+  ndaExecuted?: boolean;
+  dataAccessGranted?: boolean;
+}
+
+interface OfferData {
+  id: string;
+  offerName: string;
+  status: string;
+  structureType: string;
+  totalSize: number;
+  tranches: Array<{
+    name: string;
+    size: number;
+    rating: string;
+    spread: number;
+  }>;
+}
+
+interface ManageOfferModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedOffer?: OfferData;
+}
+
+export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
+  isOpen,
+  onClose,
+  selectedOffer
+}) => {
+  const { toast } = useToast();
+  const [investorInterests, setInvestorInterests] = useState<InvestorInterest[]>([]);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Mock data for demonstration
+  useEffect(() => {
+    if (isOpen) {
+      setInvestorInterests([
+        {
+          id: '1',
+          investorName: 'Deutsche Bank AG',
+          email: 'investments@db.com',
+          interestLevel: 'indication',
+          contactDate: '2024-01-15',
+          proposedPricing: [
+            { tranche: 'Senior A1', price: 99.5, spread: 45 },
+            { tranche: 'Senior A2', price: 98.8, spread: 85 }
+          ],
+          ndaExecuted: true,
+          dataAccessGranted: true
+        },
+        {
+          id: '2',
+          investorName: 'BNP Paribas',
+          email: 'securitization@bnpparibas.com',
+          interestLevel: 'interested',
+          contactDate: '2024-01-18',
+          proposedPricing: [
+            { tranche: 'Senior A1', price: 99.2, spread: 55 }
+          ],
+          ndaExecuted: false,
+          dataAccessGranted: false
+        },
+        {
+          id: '3',
+          investorName: 'Credit Suisse',
+          email: 'fixed.income@credit-suisse.com',
+          interestLevel: 'indication',
+          contactDate: '2024-01-20',
+          proposedPricing: [
+            { tranche: 'Senior A1', price: 99.8, spread: 35 },
+            { tranche: 'Senior A2', price: 99.1, spread: 75 }
+          ],
+          ndaExecuted: true,
+          dataAccessGranted: true
+        }
+      ]);
+    }
+  }, [isOpen]);
+
+  const getInterestBadgeColor = (level: string) => {
+    switch (level) {
+      case 'indication': return 'bg-green-100 text-green-800 border-green-200';
+      case 'interested': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'declined': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const calculatePricingStats = (tranche: string) => {
+    const prices = investorInterests
+      .filter(investor => investor.proposedPricing)
+      .flatMap(investor => investor.proposedPricing!)
+      .filter(pricing => pricing.tranche === tranche)
+      .map(pricing => pricing.price);
+
+    if (prices.length === 0) return null;
+
+    return {
+      average: prices.reduce((sum, price) => sum + price, 0) / prices.length,
+      high: Math.max(...prices),
+      low: Math.min(...prices),
+      count: prices.length
+    };
+  };
+
+  const handleGrantDataAccess = (investorId: string) => {
+    setInvestorInterests(prev => 
+      prev.map(investor => 
+        investor.id === investorId 
+          ? { ...investor, dataAccessGranted: true }
+          : investor
+      )
+    );
+    toast({
+      title: "Data Access Granted",
+      description: "Investor now has access to full dataset"
+    });
+  };
+
+  const handleShareTransactionOverview = (investorId: string) => {
+    toast({
+      title: "Transaction Overview Shared",
+      description: "Detailed transaction overview has been sent to investor"
+    });
+  };
+
+  const interestedInvestors = investorInterests.filter(i => i.interestLevel === 'interested');
+  const indicationInvestors = investorInterests.filter(i => i.interestLevel === 'indication');
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Manage Offer: {selectedOffer?.offerName || 'Current Offer'}</DialogTitle>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="interested">Interested ({interestedInvestors.length})</TabsTrigger>
+            <TabsTrigger value="indications">Indications ({indicationInvestors.length})</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing View</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <Users className="h-4 w-4 mr-2" />
+                    Total Interest
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{investorInterests.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {indicationInvestors.length} indications, {interestedInvestors.length} interested
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <Shield className="h-4 w-4 mr-2" />
+                    NDAs Executed
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {investorInterests.filter(i => i.ndaExecuted).length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    of {investorInterests.length} total
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Pricing Received
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {investorInterests.filter(i => i.proposedPricing?.length).length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    investors submitted pricing
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Transaction Summary</CardTitle>
+                <CardDescription>Overview of current offer structure and risk profile</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Structure Type</p>
+                    <p className="text-sm text-muted-foreground">{selectedOffer?.structureType || 'True Sale ABS'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Total Size</p>
+                    <p className="text-sm text-muted-foreground">€{selectedOffer?.totalSize?.toLocaleString() || '500,000,000'}</p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <p className="text-sm font-medium mb-2">Risk Profile</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Overall Risk</span>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Low</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Credit Enhancement</span>
+                      <span className="text-sm">15.5%</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="interested" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Interested Investors</CardTitle>
+                <CardDescription>Investors who have shown interest but haven't provided formal indications</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {interestedInvestors.map((investor) => (
+                    <div key={investor.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{investor.investorName}</h4>
+                          <p className="text-sm text-muted-foreground">{investor.email}</p>
+                        </div>
+                        <Badge className={getInterestBadgeColor(investor.interestLevel)}>
+                          {investor.interestLevel}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleShareTransactionOverview(investor.id)}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Share Transaction Overview
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {interestedInvestors.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No interested investors yet
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="indications" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Indication of Interest</CardTitle>
+                <CardDescription>Investors who have provided formal indications and require data access</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {indicationInvestors.map((investor) => (
+                    <div key={investor.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{investor.investorName}</h4>
+                          <p className="text-sm text-muted-foreground">{investor.email}</p>
+                        </div>
+                        <Badge className={getInterestBadgeColor(investor.interestLevel)}>
+                          Formal Indication
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center">
+                          <Shield className="h-4 w-4 mr-2" />
+                          <span>NDA Status:</span>
+                          <Badge 
+                            variant={investor.ndaExecuted ? "default" : "secondary"}
+                            className="ml-2"
+                          >
+                            {investor.ndaExecuted ? 'Executed' : 'Pending'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center">
+                          <FileText className="h-4 w-4 mr-2" />
+                          <span>Data Access:</span>
+                          <Badge 
+                            variant={investor.dataAccessGranted ? "default" : "secondary"}
+                            className="ml-2"
+                          >
+                            {investor.dataAccessGranted ? 'Granted' : 'Pending'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          disabled={!investor.ndaExecuted || investor.dataAccessGranted}
+                          onClick={() => handleGrantDataAccess(investor.id)}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Grant Full Data Access
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          View Data Structure
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {indicationInvestors.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No formal indications received yet
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Proposed Pricing Overview</CardTitle>
+                <CardDescription>Pricing indications received from investors by tranche</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {['Senior A1', 'Senior A2', 'Mezzanine B'].map((tranche) => {
+                    const stats = calculatePricingStats(tranche);
+                    
+                    if (!stats) {
+                      return (
+                        <div key={tranche} className="border rounded-lg p-4">
+                          <h4 className="font-medium mb-2">{tranche}</h4>
+                          <p className="text-sm text-muted-foreground">No pricing received yet</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={tranche} className="border rounded-lg p-4 space-y-4">
+                        <h4 className="font-medium">{tranche}</h4>
+                        
+                        <div className="grid grid-cols-4 gap-4">
+                          <div className="text-center">
+                            <p className="text-sm text-muted-foreground">Average</p>
+                            <p className="text-lg font-semibold">{stats.average.toFixed(2)}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-muted-foreground">High</p>
+                            <p className="text-lg font-semibold text-green-600 flex items-center justify-center">
+                              <TrendingUp className="h-4 w-4 mr-1" />
+                              {stats.high.toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-muted-foreground">Low</p>
+                            <p className="text-lg font-semibold text-red-600 flex items-center justify-center">
+                              <TrendingDown className="h-4 w-4 mr-1" />
+                              {stats.low.toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-muted-foreground">Responses</p>
+                            <p className="text-lg font-semibold">{stats.count}</p>
+                          </div>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Individual Proposals:</p>
+                          {investorInterests
+                            .filter(investor => investor.proposedPricing?.some(p => p.tranche === tranche))
+                            .map(investor => {
+                              const pricing = investor.proposedPricing!.find(p => p.tranche === tranche);
+                              return (
+                                <div key={investor.id} className="flex justify-between items-center text-sm">
+                                  <span>{investor.investorName}</span>
+                                  <div className="flex items-center gap-4">
+                                    <span>Price: {pricing!.price}</span>
+                                    <span>Spread: +{pricing!.spread}bps</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+};
