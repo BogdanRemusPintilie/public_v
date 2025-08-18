@@ -162,7 +162,7 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                   <TableCell>{row.term}</TableCell>
                   <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
                   <TableCell>{row.remaining_term ? Number(row.remaining_term).toFixed(0) : 'N/A'}</TableCell>
-                  <TableCell>{row.credit_score || 0}</TableCell>
+                  <TableCell>{row.lgd || 0}</TableCell>
                   <TableCell>{row.ltv.toFixed(2)}%</TableCell>
                 </TableRow>
               ))}

@@ -231,7 +231,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
         row.term,
         row.pd || 0,
         row.remaining_term || 0,
-        row.credit_score,
+        row.lgd,
         row.ltv
       ].join(','))
     ].join('\n');
@@ -443,7 +443,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
                             <TableCell>{row.term}</TableCell>
                             <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
                             <TableCell>{row.remaining_term ? Number(row.remaining_term).toFixed(0) : 'N/A'}</TableCell>
-                            <TableCell>{row.credit_score}</TableCell>
+                            <TableCell>{row.lgd}</TableCell>
                             <TableCell>{row.ltv.toFixed(2)}%</TableCell>
                           </TableRow>
                         ))}

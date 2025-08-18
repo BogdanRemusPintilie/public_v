@@ -9,7 +9,7 @@ export interface LoanRecord {
   interest_rate: number;
   term: number;
   remaining_term: number | null;
-  credit_score: number;
+  lgd: number;
   ltv: number;
   opening_balance: number;
   pd: number;
@@ -60,15 +60,11 @@ export const insertLoanData = async (
   for (let i = 0; i < totalRecords; i += BATCH_SIZE) {
     const batch = loanData.slice(i, i + BATCH_SIZE);
 
-    // Ensure all records have the correct user_id and map to database column names
+    // Ensure all records have the correct user_id and convert types for database
     const batchWithUserId = batch.map(record => ({
       ...record,
       user_id: user.id, // Explicitly set the user_id for RLS compliance
-      // Map frontend interface to database columns
-      loan_type: record.remaining_term?.toString() || 'N/A',
-      credit_score: record.pd || 0,
-      // Remove the frontend interface fields that don't exist in DB
-      remaining_term: undefined
+      remaining_term: record.remaining_term?.toString() || null, // Convert number to string for database
     }));
 
     console.log('💾 INSERTING BATCH:', {
@@ -132,10 +128,7 @@ export const getLoanDataByDataset = async (
   // Transform database columns back to frontend interface
   const transformedData = (data || []).map(record => ({
     ...record,
-    remaining_term: record.loan_type ? parseFloat(record.loan_type) : null,
-    // Keep the database fields for compatibility but prefer the new interface names
-    loan_type: record.loan_type,
-    credit_score: record.credit_score
+    remaining_term: record.remaining_term ? parseFloat(record.remaining_term) : null,
   }));
 
   return { data: transformedData, totalCount, hasMore };

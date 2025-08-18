@@ -219,7 +219,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           interest_rate,
           term,
           remaining_term,
-          credit_score: record.pd || 0,
+          lgd: record.pd || 0,
           ltv,
           opening_balance,
           pd,
