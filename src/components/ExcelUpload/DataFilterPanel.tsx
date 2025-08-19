@@ -116,8 +116,16 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       setAllDataLoaded(false);
       setCompleteDataset([]);
       
+      console.log('🚨 ABOUT TO CALL loadCompleteDataset...');
+      
       // Load complete dataset if not already loaded
       const allData = await loadCompleteDataset();
+      
+      console.log('🚨 loadCompleteDataset RETURNED:', { 
+        length: allData.length, 
+        isArray: Array.isArray(allData),
+        firstRecord: allData[0] 
+      });
       
       console.log(`🔍 APPLYING FILTERS - Dataset size: ${allData.length} records`);
       console.log('🔍 FILTER CRITERIA:', filterCriteria);
