@@ -63,42 +63,64 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     
     try {
       setIsLoadingAllData(true);
-      console.log('🚀 LOADING ALL RECORDS DIRECTLY FROM SUPABASE...');
+      console.log('🚀 LOADING ALL RECORDS WITH PROPER PAGINATION...');
       
-      // Load ALL records directly without pagination - set very high limit for large datasets
       const { supabase } = await import('@/integrations/supabase/client');
-      console.log(`🎯 REQUESTING ALL RECORDS FOR DATASET: ${datasetName}`);
+      let allRecords: any[] = [];
+      let pageSize = 1000; // Use Supabase's max limit
+      let offset = 0;
+      let hasMore = true;
       
-      const { data, error, count } = await supabase
+      // First get total count
+      const { count: totalCount } = await supabase
         .from('loan_data')
-        .select('*', { count: 'exact' })
-        .eq('dataset_name', datasetName)
-        .order('created_at', { ascending: false })
-        .limit(1000000); // Set very high limit for datasets up to 1M records
+        .select('*', { count: 'exact', head: true })
+        .eq('dataset_name', datasetName);
       
-      console.log(`🔍 SUPABASE RESPONSE:`, { 
-        dataLength: data?.length || 0, 
-        totalCount: count,
-        error: error?.message 
-      });
-
-      if (error) {
-        console.error('❌ Error loading complete dataset:', error);
-        throw error;
+      console.log(`📊 TOTAL RECORDS TO LOAD: ${totalCount}`);
+      
+      while (hasMore) {
+        console.log(`🔄 Loading batch ${Math.floor(offset/pageSize) + 1}: offset ${offset}, pageSize ${pageSize}`);
+        
+        const { data, error } = await supabase
+          .from('loan_data')
+          .select('*')
+          .eq('dataset_name', datasetName)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + pageSize - 1);
+        
+        if (error) {
+          console.error('❌ Error loading batch:', error);
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          allRecords = [...allRecords, ...data];
+          console.log(`📈 Progress: ${allRecords.length} of ${totalCount} records loaded`);
+          
+          offset += pageSize;
+          hasMore = data.length === pageSize && allRecords.length < (totalCount || 0);
+        } else {
+          hasMore = false;
+        }
+        
+        // Safety check
+        if (offset > (totalCount || 0) + pageSize) {
+          console.log('🛑 Stopping pagination - reached end');
+          break;
+        }
       }
-
-      console.log(`📊 DIRECT LOAD RESULT: ${data?.length || 0} records loaded, total count: ${count}`);
       
       // Transform data to match LoanRecord interface
-      const allRecords = (data || []).map(record => ({
+      const transformedRecords = allRecords.map(record => ({
         ...record,
         remaining_term: typeof record.remaining_term === 'string' ? parseFloat(record.remaining_term) : record.remaining_term
       })) as LoanRecord[];
       
-      console.log(`✅ Complete dataset loaded: ${allRecords.length} records`);
-      setCompleteDataset(allRecords);
+      console.log(`✅ Complete dataset loaded: ${transformedRecords.length} records`);
+      setCompleteDataset(transformedRecords);
       setAllDataLoaded(true);
-      return allRecords;
+      return transformedRecords;
     } catch (error) {
       console.error('❌ Error loading complete dataset:', error);
       throw error;
