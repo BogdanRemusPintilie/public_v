@@ -74,10 +74,16 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       while (hasMore) {
         const result = await getLoanDataByDataset(datasetName, page, pageSize);
         allRecords = [...allRecords, ...result.data];
-        hasMore = result.hasMore;
+        hasMore = result.hasMore; // Update hasMore from current result
         page++;
         
-        console.log(`Loaded ${allRecords.length} of ${result.totalCount} records...`);
+        console.log(`Loaded ${allRecords.length} of ${result.totalCount} records... (hasMore: ${hasMore})`);
+        
+        // Safety check to prevent infinite loops
+        if (page > 100) {
+          console.warn('Stopping pagination after 100 pages to prevent infinite loop');
+          break;
+        }
       }
       
       console.log(`Complete dataset loaded: ${allRecords.length} records`);
