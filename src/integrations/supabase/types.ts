@@ -234,6 +234,7 @@ export type Database = {
           structure_synthetic: boolean | null
           structure_true_sale: boolean | null
           structure_type: string | null
+          target_investors: string[] | null
           updated_at: string
           user_id: string
         }
@@ -255,6 +256,7 @@ export type Database = {
           structure_synthetic?: boolean | null
           structure_true_sale?: boolean | null
           structure_type?: string | null
+          target_investors?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -276,6 +278,7 @@ export type Database = {
           structure_synthetic?: boolean | null
           structure_true_sale?: boolean | null
           structure_type?: string | null
+          target_investors?: string[] | null
           updated_at?: string
           user_id?: string
         }
