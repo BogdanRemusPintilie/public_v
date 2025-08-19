@@ -69,24 +69,33 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       let allRecords: LoanRecord[] = [];
       let page = 0;
       let hasMore = true;
-      const pageSize = 5000; // Larger page size for faster loading
+      const pageSize = 1000; // Use smaller pageSize to work with Supabase limits
       
       while (hasMore) {
+        console.log(`🔄 Loading page ${page} with pageSize ${pageSize}...`);
         const result = await getLoanDataByDataset(datasetName, page, pageSize);
+        
+        console.log(`📊 Page ${page} result:`, {
+          dataLength: result.data.length,
+          totalCount: result.totalCount,
+          hasMore: result.hasMore,
+          currentTotal: allRecords.length
+        });
+        
         allRecords = [...allRecords, ...result.data];
-        hasMore = result.hasMore; // Update hasMore from current result
+        hasMore = result.hasMore;
         page++;
         
-        console.log(`Loaded ${allRecords.length} of ${result.totalCount} records... (hasMore: ${hasMore})`);
+        console.log(`📈 Progress: ${allRecords.length} of ${result.totalCount} records loaded (hasMore: ${hasMore})`);
         
         // Safety check to prevent infinite loops
-        if (page > 100) {
-          console.warn('Stopping pagination after 100 pages to prevent infinite loop');
+        if (page > 50) {
+          console.warn('Stopping pagination after 50 pages to prevent infinite loop');
           break;
         }
       }
       
-      console.log(`Complete dataset loaded: ${allRecords.length} records`);
+      console.log(`✅ Complete dataset loaded: ${allRecords.length} records`);
       setCompleteDataset(allRecords);
       setAllDataLoaded(true);
       return allRecords;
