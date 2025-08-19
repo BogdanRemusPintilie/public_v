@@ -111,10 +111,16 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     try {
       setIsLoadingAllData(true);
       
+      // Force reload the complete dataset every time to avoid stale cache
+      console.log('🔄 FORCING RELOAD of complete dataset...');
+      setAllDataLoaded(false);
+      setCompleteDataset([]);
+      
       // Load complete dataset if not already loaded
       const allData = await loadCompleteDataset();
       
-      console.log(`Applying filters to ${allData.length} records`);
+      console.log(`🔍 APPLYING FILTERS - Dataset size: ${allData.length} records`);
+      console.log('🔍 FILTER CRITERIA:', filterCriteria);
       
       const filtered = allData.filter(record => {
         // Loan amount filter
@@ -160,7 +166,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         return true;
       });
 
-      console.log(`Filter applied: ${filtered.length} records out of ${allData.length} total records`);
+      console.log(`✅ FILTER COMPLETE: ${filtered.length} records out of ${allData.length} total records`);
       
       setFilteredData(filtered);
       setShowFiltered(true);
