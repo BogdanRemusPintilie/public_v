@@ -65,14 +65,22 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       setIsLoadingAllData(true);
       console.log('🚀 LOADING ALL RECORDS DIRECTLY FROM SUPABASE...');
       
-      // Load ALL records directly without pagination - set explicit limit
+      // Load ALL records directly without pagination - set very high limit for large datasets
       const { supabase } = await import('@/integrations/supabase/client');
+      console.log(`🎯 REQUESTING ALL RECORDS FOR DATASET: ${datasetName}`);
+      
       const { data, error, count } = await supabase
         .from('loan_data')
         .select('*', { count: 'exact' })
         .eq('dataset_name', datasetName)
         .order('created_at', { ascending: false })
-        .limit(10000); // Set explicit high limit to override Supabase's default 1000
+        .limit(1000000); // Set very high limit for datasets up to 1M records
+      
+      console.log(`🔍 SUPABASE RESPONSE:`, { 
+        dataLength: data?.length || 0, 
+        totalCount: count,
+        error: error?.message 
+      });
 
       if (error) {
         console.error('❌ Error loading complete dataset:', error);
