@@ -132,7 +132,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
-  const [selectedInvestors, setSelectedInvestors] = useState<string[]>([]);
+  const [selectedInvestor, setSelectedInvestor] = useState<string>('');
 
   const form = useForm<OfferFormData>({
     resolver: zodResolver(offerSchema),
@@ -253,7 +253,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
           offer_name: data.offer_name,
           structure_id: data.structure_id,
           shared_with_emails: emailList,
-          target_investors: selectedInvestors,
+          target_investors: selectedInvestor ? [selectedInvestor] : [],
           comments: data.comments || null,
           issuer_nationality: data.issuer_nationality || null,
           issuer_overview: data.issuer_overview || null,
@@ -278,7 +278,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
       form.reset();
       setEmailList([]);
       setEmailInput('');
-      setSelectedInvestors([]);
+      setSelectedInvestor('');
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating offer:', error);
@@ -388,77 +388,37 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
             {/* Target Investor Pool Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Select Investor</h3>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-4">
-                {INVESTOR_POOL.map((investor) => (
-                  <div key={investor} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={investor}
-                      checked={selectedInvestors.includes(investor)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          const newSelectedInvestors = [...selectedInvestors, investor];
-                          setSelectedInvestors(newSelectedInvestors);
-                          form.setValue('target_investors', newSelectedInvestors);
-                        } else {
-                          const newSelectedInvestors = selectedInvestors.filter(i => i !== investor);
-                          setSelectedInvestors(newSelectedInvestors);
-                          form.setValue('target_investors', newSelectedInvestors);
-                        }
-                      }}
-                    />
-                    <Label htmlFor={investor} className="text-sm cursor-pointer">
+              <Select value={selectedInvestor} onValueChange={(value) => {
+                setSelectedInvestor(value);
+                form.setValue('target_investors', value ? [value] : []);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an investor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVESTOR_POOL.map((investor) => (
+                    <SelectItem key={investor} value={investor}>
                       {investor}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-              
-              {selectedInvestors.length > 0 && (
-                <div className="mt-3">
-                  <Label className="text-sm font-medium">Selected Investors ({selectedInvestors.length}):</Label>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedInvestors.map((investor) => (
-                      <div
-                        key={investor}
-                        className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-xs"
-                      >
-                        {investor}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newSelectedInvestors = selectedInvestors.filter(i => i !== investor);
-                            setSelectedInvestors(newSelectedInvestors);
-                            form.setValue('target_investors', newSelectedInvestors);
-                          }}
-                          className="hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Previous Transaction Information Section */}
-            {selectedInvestors.length > 0 && (
+            {selectedInvestor && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Previous Transaction Information</h3>
-                <div className="space-y-3">
-                  {selectedInvestors.map((investor) => (
-                    <Card key={investor} className="border-l-4 border-l-primary">
-                      <CardContent className="pt-4">
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-sm">{investor}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {INVESTOR_TRANSACTION_INFO[investor]}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <Card className="border-l-4 border-l-primary">
+                  <CardContent className="pt-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">{selectedInvestor}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {INVESTOR_TRANSACTION_INFO[selectedInvestor]}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
