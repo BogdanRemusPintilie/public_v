@@ -44,6 +44,37 @@ const INVESTOR_POOL = [
   "Abrdn plc",
   "Allianz Insurance"
 ];
+
+const INVESTOR_TRANSACTION_INFO: Record<string, string> = {
+  "European Investment Banking Group": "Conducted 9 unfunded bilateral unfunded transactions",
+  "Atalaya": "Conducted 1 bilateral transaction",
+  "Bayview": "Conducted 2 SVP CLN bilateral transactions",
+  "International Finance Corporation": "Conducted 3 bilateral transactions",
+  "Luminarx": "Conducted 1 bilateral transaction",
+  "PGGM": "Conducted 3 unfunded and 5 Direct CLN bilateral transactions",
+  "Blackstone": "Conducted 2 transactions",
+  "British Business Bank": "Conducted 1 unfunded bilateral transaction",
+  "European Bank for Reconstruction and Development": "Conducted 1 unfunded bilateral transaction",
+  "Veld Capital": "Conducted 1 bilateral transaction",
+  "Kohlberg Kravis Roberts": "Conducted 1 SVP CLN bilateral transaction",
+  "AXA": "Conducted 110 SRT deals since 2000",
+  "Seer Capital": "Conducted 71 SRT deals since 2010",
+  "Cheyne Capital Management": "Active in the market from 2004-2018, recently re-entered the market in 2024",
+  "M&G plc": "Conducted €9.7Bn in SRT transactions since 2008",
+  "Intermediate Capital Group": "No previous SRT transactions but conducted $32Bn in Structured Capital AUM (ICG)",
+  "Orchard Global": "Planned up to 20 SRT deals with 7 being conducted up to 2024",
+  "Arini": "No previous SRT transactions but experienced in the CLO field",
+  "Man Group": "Conducts junior tranche SRT transactions",
+  "Great Lakes Insurance": "No previous SRT transactions",
+  "Christofferson Robb and Company": "Plays a significant institutional role in the space conducting 4 SRT transactions in 2024",
+  "Coface": "No previous SRT transactions",
+  "Keva": "No previous SRT transactions",
+  "Chorus Capital": "Core player in the space (SRT investor of the year 2023, 2024, 2025)",
+  "Zurich Insurance": "No previous SRT transactions",
+  "Arch Capital Group": "Conducted nearly 30 unfunded SRT transactions since 2018, operating in 13 countries with a portfolio size of around $6Bn",
+  "Abrdn plc": "No previous SRT transactions",
+  "Allianz Insurance": "No previous SRT transactions but involved within the ART space"
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
@@ -409,6 +440,27 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                 </div>
               )}
             </div>
+
+            {/* Previous Transaction Information Section */}
+            {selectedInvestors.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Previous Transaction Information</h3>
+                <div className="space-y-3">
+                  {selectedInvestors.map((investor) => (
+                    <Card key={investor} className="border-l-4 border-l-primary">
+                      <CardContent className="pt-4">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm">{investor}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {INVESTOR_TRANSACTION_INFO[investor]}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Separator className="my-6" />
             
