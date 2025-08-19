@@ -106,6 +106,20 @@ function parseFinancialValue(value: any): number {
   return isNaN(num) ? 0 : num;
 }
 
+// Parse PD values (always normalize to 0-1 range for storage)
+function parsePDValue(value: any): number {
+  if (value === null || value === undefined || value === '') return 0;
+  
+  const str = value.toString().replace(/[,\s%]/g, '');
+  const num = parseFloat(str);
+  
+  if (isNaN(num)) return 0;
+  
+  // If value is > 1, assume it's in percentage format and convert to decimal
+  // If value is <= 1, assume it's already in decimal format
+  return num > 1 ? num / 100 : num;
+}
+
 // Parse interest rates (handle both decimal and percentage formats)
 function parseInterestRate(value: any): number {
   if (value === null || value === undefined || value === '') return 0;
@@ -198,7 +212,7 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData & { wa
             lgd: parseFinancialValue(row[columnMap.credit_score || columnMap.lgd || 5]) || 0,
             ltv: parseFinancialValue(row[columnMap.ltv || 6]) || 0,
             opening_balance: parseFinancialValue(row[columnMap.opening_balance || columnMap.loan_amount || 1]) || 0,
-            pd: parseFinancialValue(row[columnMap.pd || 9]) || 0,
+            pd: parsePDValue(row[columnMap.pd || 9]) || 0,
             file_name: file.name,
             worksheet_name: targetSheet.name
           };
