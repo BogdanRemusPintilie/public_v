@@ -14,7 +14,8 @@ interface FilterCriteria {
   maxLoanAmount: string;
   minInterestRate: string;
   maxInterestRate: string;
-  remainingTerm: string;
+  minRemainingTerm: string;
+  maxRemainingTerm: string;
   minPD: string;
   maxPD: string;
   minLGD: string;
@@ -41,7 +42,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     maxLoanAmount: '',
     minInterestRate: '',
     maxInterestRate: '',
-    remainingTerm: 'all',
+    minRemainingTerm: '',
+    maxRemainingTerm: '',
     minPD: '',
     maxPD: '',
     minLGD: '',
@@ -117,7 +119,10 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         }
 
         // Remaining term filter
-        if (filterCriteria.remainingTerm !== 'all' && record.remaining_term?.toString() !== filterCriteria.remainingTerm) {
+        if (filterCriteria.minRemainingTerm && parseFloat(record.remaining_term?.toString() || '0') < parseFloat(filterCriteria.minRemainingTerm)) {
+          return false;
+        }
+        if (filterCriteria.maxRemainingTerm && parseFloat(record.remaining_term?.toString() || '0') > parseFloat(filterCriteria.maxRemainingTerm)) {
           return false;
         }
 
@@ -158,7 +163,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       maxLoanAmount: '',
       minInterestRate: '',
       maxInterestRate: '',
-      remainingTerm: 'all',
+      minRemainingTerm: '',
+      maxRemainingTerm: '',
       minPD: '',
       maxPD: '',
       minLGD: '',
@@ -272,18 +278,21 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Remaining Terms (months)</Label>
-            <Select value={filterCriteria.remainingTerm} onValueChange={(value) => setFilterCriteria({...filterCriteria, remainingTerm: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select remaining term" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Terms</SelectItem>
-                {remainingTerms.map(term => (
-                  <SelectItem key={term} value={term.toString()}>{term}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Remaining Terms Range (months)</Label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                placeholder="Min"
+                value={filterCriteria.minRemainingTerm}
+                onChange={(e) => setFilterCriteria({...filterCriteria, minRemainingTerm: e.target.value})}
+              />
+              <Input
+                type="number"
+                placeholder="Max"
+                value={filterCriteria.maxRemainingTerm}
+                onChange={(e) => setFilterCriteria({...filterCriteria, maxRemainingTerm: e.target.value})}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
