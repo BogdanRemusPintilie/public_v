@@ -14,11 +14,11 @@ interface FilterCriteria {
   maxLoanAmount: string;
   minInterestRate: string;
   maxInterestRate: string;
-  loanType: string;
+  remainingTerm: string;
   minPD: string;
   maxPD: string;
-  minLTV: string;
-  maxLTV: string;
+  minLGD: string;
+  maxLGD: string;
 }
 
 interface DataFilterPanelProps {
@@ -41,11 +41,11 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     maxLoanAmount: '',
     minInterestRate: '',
     maxInterestRate: '',
-    loanType: 'all',
-      minPD: '',
-      maxPD: '',
-    minLTV: '',
-    maxLTV: ''
+    remainingTerm: 'all',
+    minPD: '',
+    maxPD: '',
+    minLGD: '',
+    maxLGD: ''
   });
   const [filteredData, setFilteredData] = useState<LoanRecord[]>([]);
   const [showFiltered, setShowFiltered] = useState(false);
@@ -117,23 +117,23 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         }
 
         // Remaining term filter
-        if (filterCriteria.loanType !== 'all' && record.remaining_term !== parseFloat(filterCriteria.loanType)) {
+        if (filterCriteria.remainingTerm !== 'all' && record.remaining_term?.toString() !== filterCriteria.remainingTerm) {
           return false;
         }
 
         // PD filter
-        if (filterCriteria.minPD && record.pd < parseFloat(filterCriteria.minPD)) {
+        if (filterCriteria.minPD && record.pd && record.pd < parseFloat(filterCriteria.minPD)) {
           return false;
         }
-        if (filterCriteria.maxPD && record.pd > parseFloat(filterCriteria.maxPD)) {
+        if (filterCriteria.maxPD && record.pd && record.pd > parseFloat(filterCriteria.maxPD)) {
           return false;
         }
 
-        // LTV filter
-        if (filterCriteria.minLTV && record.ltv < parseFloat(filterCriteria.minLTV)) {
+        // LGD filter
+        if (filterCriteria.minLGD && record.lgd < parseFloat(filterCriteria.minLGD)) {
           return false;
         }
-        if (filterCriteria.maxLTV && record.ltv > parseFloat(filterCriteria.maxLTV)) {
+        if (filterCriteria.maxLGD && record.lgd > parseFloat(filterCriteria.maxLGD)) {
           return false;
         }
 
@@ -158,11 +158,11 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       maxLoanAmount: '',
       minInterestRate: '',
       maxInterestRate: '',
-      loanType: 'all',
+      remainingTerm: 'all',
       minPD: '',
       maxPD: '',
-      minLTV: '',
-      maxLTV: ''
+      minLGD: '',
+      maxLGD: ''
     });
     setFilteredData([]);
     setShowFiltered(false);
@@ -272,13 +272,13 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Loan Type</Label>
-            <Select value={filterCriteria.loanType} onValueChange={(value) => setFilterCriteria({...filterCriteria, loanType: value})}>
+            <Label>Remaining Terms (months)</Label>
+            <Select value={filterCriteria.remainingTerm} onValueChange={(value) => setFilterCriteria({...filterCriteria, remainingTerm: value})}>
               <SelectTrigger>
-                <SelectValue placeholder="Select loan type" />
+                <SelectValue placeholder="Select remaining term" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all">All Terms</SelectItem>
                 {remainingTerms.map(term => (
                   <SelectItem key={term} value={term.toString()}>{term}</SelectItem>
                 ))}
@@ -307,21 +307,21 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label>LTV Range (%)</Label>
+            <Label>LGD Range (%)</Label>
             <div className="flex gap-2">
               <Input
                 type="number"
                 step="0.01"
                 placeholder="Min"
-                value={filterCriteria.minLTV}
-                onChange={(e) => setFilterCriteria({...filterCriteria, minLTV: e.target.value})}
+                value={filterCriteria.minLGD}
+                onChange={(e) => setFilterCriteria({...filterCriteria, minLGD: e.target.value})}
               />
               <Input
                 type="number"
                 step="0.01"
                 placeholder="Max"
-                value={filterCriteria.maxLTV}
-                onChange={(e) => setFilterCriteria({...filterCriteria, maxLTV: e.target.value})}
+                value={filterCriteria.maxLGD}
+                onChange={(e) => setFilterCriteria({...filterCriteria, maxLGD: e.target.value})}
               />
             </div>
           </div>
