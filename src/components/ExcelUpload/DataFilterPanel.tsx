@@ -59,8 +59,8 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [completeDataset, setCompleteDataset] = useState<LoanRecord[]>([]);
 
   const loadCompleteDataset = async () => {
-    if (allDataLoaded) return completeDataset;
-    
+    // ALWAYS reload - ignore cache completely
+    console.log('🚀 FORCE LOADING ALL RECORDS WITH PROPER PAGINATION (NO CACHE)...');
     try {
       setIsLoadingAllData(true);
       console.log('🚀 LOADING ALL RECORDS WITH PROPER PAGINATION...');
