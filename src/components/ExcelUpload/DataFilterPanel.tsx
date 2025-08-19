@@ -187,12 +187,14 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           if (record.pd > maxPDDecimal) return false;
         }
 
-        // LGD filter
-        if (filterCriteria.minLGD && record.lgd < parseFloat(filterCriteria.minLGD)) {
-          return false;
+        // LGD filter (convert percentage input to decimal for comparison)
+        if (filterCriteria.minLGD && record.lgd) {
+          const minLGDDecimal = parseFloat(filterCriteria.minLGD) / 100;
+          if (record.lgd < minLGDDecimal) return false;
         }
-        if (filterCriteria.maxLGD && record.lgd > parseFloat(filterCriteria.maxLGD)) {
-          return false;
+        if (filterCriteria.maxLGD && record.lgd) {
+          const maxLGDDecimal = parseFloat(filterCriteria.maxLGD) / 100;
+          if (record.lgd > maxLGDDecimal) return false;
         }
 
         return true;
@@ -369,19 +371,19 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label>LGD Range (%)</Label>
+            <Label>LGD Range (%) <span className="text-sm text-gray-500">- Enter as percentage (e.g., 0 to 50)</span></Label>
             <div className="flex gap-2">
               <Input
                 type="number"
                 step="0.01"
-                placeholder="Min"
+                placeholder="e.g., 0"
                 value={filterCriteria.minLGD}
                 onChange={(e) => setFilterCriteria({...filterCriteria, minLGD: e.target.value})}
               />
               <Input
                 type="number"
                 step="0.01"
-                placeholder="Max"
+                placeholder="e.g., 50"
                 value={filterCriteria.maxLGD}
                 onChange={(e) => setFilterCriteria({...filterCriteria, maxLGD: e.target.value})}
               />

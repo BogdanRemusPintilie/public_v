@@ -120,6 +120,20 @@ function parsePDValue(value: any): number {
   return num > 1 ? num / 100 : num;
 }
 
+// Parse LGD values (always normalize to 0-1 range for storage)
+function parseLGDValue(value: any): number {
+  if (value === null || value === undefined || value === '') return 0;
+  
+  const str = value.toString().replace(/[,\s%]/g, '');
+  const num = parseFloat(str);
+  
+  if (isNaN(num)) return 0;
+  
+  // If value is > 1, assume it's in percentage format and convert to decimal
+  // If value is <= 1, assume it's already in decimal format
+  return num > 1 ? num / 100 : num;
+}
+
 // Parse interest rates (handle both decimal and percentage formats)
 function parseInterestRate(value: any): number {
   if (value === null || value === undefined || value === '') return 0;
@@ -209,7 +223,7 @@ export const parseExcelFile = async (file: File): Promise<ParsedExcelData & { wa
             interest_rate: parseInterestRate(row[columnMap.interest_rate || 2]) || 0,
             term: parseFinancialValue(row[columnMap.term || 3]) || 0,
             remaining_term: parseFinancialValue(row[columnMap.remaining_term || 4]) || null,
-            lgd: parseFinancialValue(row[columnMap.credit_score || columnMap.lgd || 5]) || 0,
+            lgd: parseLGDValue(row[columnMap.credit_score || columnMap.lgd || 5]) || 0,
             ltv: parseFinancialValue(row[columnMap.ltv || 6]) || 0,
             opening_balance: parseFinancialValue(row[columnMap.opening_balance || columnMap.loan_amount || 1]) || 0,
             pd: parsePDValue(row[columnMap.pd || 9]) || 0,
