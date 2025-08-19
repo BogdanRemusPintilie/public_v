@@ -63,44 +63,35 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     
     try {
       setIsLoadingAllData(true);
-      console.log('Loading complete dataset for filtering...');
+      console.log('🚀 LOADING ALL RECORDS DIRECTLY FROM SUPABASE...');
       
-      const { getLoanDataByDataset } = await import('@/utils/supabase');
-      let allRecords: LoanRecord[] = [];
-      let page = 0;
-      let hasMore = true;
-      const pageSize = 1000; // Use smaller pageSize to work with Supabase limits
-      
-      while (hasMore) {
-        console.log(`🔄 Loading page ${page} with pageSize ${pageSize}...`);
-        const result = await getLoanDataByDataset(datasetName, page, pageSize);
-        
-        console.log(`📊 Page ${page} result:`, {
-          dataLength: result.data.length,
-          totalCount: result.totalCount,
-          hasMore: result.hasMore,
-          currentTotal: allRecords.length
-        });
-        
-        allRecords = [...allRecords, ...result.data];
-        hasMore = result.hasMore;
-        page++;
-        
-        console.log(`📈 Progress: ${allRecords.length} of ${result.totalCount} records loaded (hasMore: ${hasMore})`);
-        
-        // Safety check to prevent infinite loops
-        if (page > 50) {
-          console.warn('Stopping pagination after 50 pages to prevent infinite loop');
-          break;
-        }
+      // Load ALL records directly without pagination
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error, count } = await supabase
+        .from('loan_data')
+        .select('*', { count: 'exact' })
+        .eq('dataset_name', datasetName)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error loading complete dataset:', error);
+        throw error;
       }
+
+      console.log(`📊 DIRECT LOAD RESULT: ${data?.length || 0} records loaded, total count: ${count}`);
+      
+      // Transform data to match LoanRecord interface
+      const allRecords = (data || []).map(record => ({
+        ...record,
+        remaining_term: typeof record.remaining_term === 'string' ? parseFloat(record.remaining_term) : record.remaining_term
+      })) as LoanRecord[];
       
       console.log(`✅ Complete dataset loaded: ${allRecords.length} records`);
       setCompleteDataset(allRecords);
       setAllDataLoaded(true);
       return allRecords;
     } catch (error) {
-      console.error('Error loading complete dataset:', error);
+      console.error('❌ Error loading complete dataset:', error);
       throw error;
     } finally {
       setIsLoadingAllData(false);
