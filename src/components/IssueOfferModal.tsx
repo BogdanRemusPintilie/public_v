@@ -589,7 +589,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
 
                   <Separator />
 
-                  {/* Transaction Key Figures */}
+                   {/* Transaction Key Figures */}
                   <div className="space-y-4">
                     <Label className="text-sm font-medium">Transaction Key Figures & Metrics</Label>
                     <div className="grid grid-cols-3 gap-4">
@@ -616,18 +616,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                             <SelectItem value="b">B</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Credit Enhancement</Label>
-                        <Input placeholder="e.g., 15%" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Overcollateralization</Label>
-                        <Input placeholder="e.g., 5%" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Reserve Fund</Label>
-                        <Input placeholder="e.g., 1%" />
                       </div>
                     </div>
                   </div>
