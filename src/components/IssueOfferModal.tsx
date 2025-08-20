@@ -614,7 +614,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                     name="structure_figures"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Key Figures & Details</FormLabel>
+                        <FormLabel>Additional Comments, Key Figures & Details</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Include any additional key metrics, performance triggers, payment mechanics, or structural features"
