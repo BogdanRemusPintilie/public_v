@@ -702,44 +702,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               {/* Structure Components Editor */}
               <StructureModificationComponent />
               
-              <FormField
-                control={form.control}
-                name="additional_comments"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Additional Comments</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Any additional open-ended comments about the transaction"
-                        rows={3}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
-
-            <Separator className="my-6" />
-
-            <FormField
-              control={form.control}
-              name="comments"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>General Comments</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Optional general comments about this offer"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter className="flex gap-2">
               <Button
