@@ -80,6 +80,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { StructureModificationComponent } from './StructureModificationComponent';
+import { InvestorSelector } from './InvestorSelector';
 
 const offerSchema = z.object({
   offer_name: z.string().min(1, 'Offer name is required'),
@@ -133,7 +134,9 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
-  const [selectedInvestor, setSelectedInvestor] = useState<string>('');
+  const [selectedInvestors, setSelectedInvestors] = useState<string[]>([]);
+  const [additionalEmails, setAdditionalEmails] = useState<string[]>([]);
+  const [showInvestorSelector, setShowInvestorSelector] = useState(false);
 
   const form = useForm<OfferFormData>({
     resolver: zodResolver(offerSchema),
@@ -253,8 +256,8 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
           user_id: user.id,
           offer_name: data.offer_name,
           structure_id: data.structure_id,
-          shared_with_emails: emailList,
-          target_investors: selectedInvestor ? [selectedInvestor] : [],
+          shared_with_emails: [...emailList, ...additionalEmails],
+          target_investors: selectedInvestors,
           comments: data.comments || null,
           issuer_nationality: data.issuer_nationality || null,
           issuer_overview: data.issuer_overview || null,
@@ -279,7 +282,8 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
       form.reset();
       setEmailList([]);
       setEmailInput('');
-      setSelectedInvestor('');
+      setSelectedInvestors([]);
+      setAdditionalEmails([]);
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating offer:', error);
@@ -355,39 +359,52 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
             {/* Target Investor Pool Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Select Investor Pool</h3>
-              <Select value={selectedInvestor} onValueChange={(value) => {
-                setSelectedInvestor(value);
-                form.setValue('target_investors', value ? [value] : []);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose an investor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {INVESTOR_POOL.map((investor) => (
-                    <SelectItem key={investor} value={investor}>
-                      {investor}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowInvestorSelector(true)}
+                className="w-full"
+              >
+                {selectedInvestors.length > 0 
+                  ? `${selectedInvestors.length} investor(s) selected` 
+                  : 'Choose investors'
+                }
+              </Button>
+              
+              {/* Display selected investors */}
+              {selectedInvestors.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Selected Investors:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedInvestors.map((investor) => (
+                      <div
+                        key={investor}
+                        className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+                      >
+                        {investor}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {/* Previous Transaction Information Section */}
-            {selectedInvestor && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Previous Transaction Information</h3>
-                <Card className="border-l-4 border-l-primary">
-                  <CardContent className="pt-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">{selectedInvestor}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {INVESTOR_TRANSACTION_INFO[selectedInvestor]}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+              {/* Display additional emails */}
+              {additionalEmails.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Additional Investor Emails:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {additionalEmails.map((email) => (
+                      <div
+                        key={email}
+                        className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+                      >
+                        {email}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-2">
               <Label>Investor Emails</Label>
@@ -654,6 +671,15 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
           </form>
         </Form>
       </DialogContent>
+      
+      <InvestorSelector
+        open={showInvestorSelector}
+        onOpenChange={setShowInvestorSelector}
+        selectedInvestors={selectedInvestors}
+        onInvestorsChange={setSelectedInvestors}
+        additionalEmails={additionalEmails}
+        onAdditionalEmailsChange={setAdditionalEmails}
+      />
     </Dialog>
   );
 }
