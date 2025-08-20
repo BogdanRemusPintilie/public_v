@@ -647,7 +647,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                     Creating...
                   </>
                 ) : (
-                  'Create Offer'
+                  'Send indication of intent to issue'
                 )}
               </Button>
             </DialogFooter>
