@@ -498,93 +498,84 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                 </CardHeader>
                 <CardContent className="space-y-6">
 
-                  {/* Structure Features Tabs */}
+                  {/* Structure Features */}
                   <div className="space-y-4">
                     <Label className="text-sm font-medium">Structure Features</Label>
-                    <Tabs defaultValue="features" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="features">Structure Features</TabsTrigger>
-                        <TabsTrigger value="currency">Currency</TabsTrigger>
-                      </TabsList>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="structure_synthetic"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="font-medium">Synthetic</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="structure_true_sale"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="font-medium">True Sale</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="structure_sts"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="font-medium">STS Compliant</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       
-                      <TabsContent value="features" className="space-y-4 mt-4">
-                        <div className="grid grid-cols-3 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="structure_synthetic"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel className="font-medium">Synthetic</FormLabel>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="structure_true_sale"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel className="font-medium">True Sale</FormLabel>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="structure_sts"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel className="font-medium">STS Compliant</FormLabel>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
+                      <div className="w-1/3">
+                        <div className="space-y-2">
+                          <Label>Currency</Label>
+                          <Select defaultValue="EUR">
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="GBP">GBP</SelectItem>
+                              <SelectItem value="CHF">CHF</SelectItem>
+                              <SelectItem value="JPY">JPY</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="currency" className="space-y-4 mt-4">
-                        <div className="w-1/2">
-                          <div className="space-y-2">
-                            <Label>Currency</Label>
-                            <Select defaultValue="EUR">
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="GBP">GBP</SelectItem>
-                                <SelectItem value="CHF">CHF</SelectItem>
-                                <SelectItem value="JPY">JPY</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                      </div>
+                    </div>
                   </div>
 
                   <Separator />
