@@ -504,11 +504,11 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                     <Tabs defaultValue="features" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="features">Structure Features</TabsTrigger>
-                        <TabsTrigger value="currency">Currency & Type</TabsTrigger>
+                        <TabsTrigger value="currency">Currency</TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="features" className="space-y-4 mt-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                           <FormField
                             control={form.control}
                             name="structure_synthetic"
@@ -522,9 +522,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                   <FormLabel className="font-medium">Synthetic</FormLabel>
-                                  <p className="text-xs text-muted-foreground">
-                                    Uses derivatives instead of actual asset transfer
-                                  </p>
                                 </div>
                               </FormItem>
                             )}
@@ -543,9 +540,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                   <FormLabel className="font-medium">True Sale</FormLabel>
-                                  <p className="text-xs text-muted-foreground">
-                                    Actual transfer of assets to SPV
-                                  </p>
                                 </div>
                               </FormItem>
                             )}
@@ -564,30 +558,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                   <FormLabel className="font-medium">STS Compliant</FormLabel>
-                                  <p className="text-xs text-muted-foreground">
-                                    Simple, Transparent & Standardized
-                                  </p>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="structure_consumer_finance"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel className="font-medium">Consumer Finance</FormLabel>
-                                  <p className="text-xs text-muted-foreground">
-                                    Consumer-focused underlying assets
-                                  </p>
                                 </div>
                               </FormItem>
                             )}
@@ -596,39 +566,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                       </TabsContent>
                       
                       <TabsContent value="currency" className="space-y-4 mt-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="structure_type"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Primary Structure Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select primary structure type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="abs">Asset-Backed Securities (ABS)</SelectItem>
-                                    <SelectItem value="mbs">Mortgage-Backed Securities (MBS)</SelectItem>
-                                    <SelectItem value="rmbs">Residential MBS (RMBS)</SelectItem>
-                                    <SelectItem value="cmbs">Commercial MBS (CMBS)</SelectItem>
-                                    <SelectItem value="cdo">Collateralized Debt Obligation (CDO)</SelectItem>
-                                    <SelectItem value="clo">Collateralized Loan Obligation (CLO)</SelectItem>
-                                    <SelectItem value="cbo">Collateralized Bond Obligation (CBO)</SelectItem>
-                                    <SelectItem value="auto">Auto Loan ABS</SelectItem>
-                                    <SelectItem value="credit_card">Credit Card ABS</SelectItem>
-                                    <SelectItem value="student_loan">Student Loan ABS</SelectItem>
-                                    <SelectItem value="equipment">Equipment Lease ABS</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
+                        <div className="w-1/2">
                           <div className="space-y-2">
                             <Label>Currency</Label>
                             <Select defaultValue="EUR">
