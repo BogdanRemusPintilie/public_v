@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import PDAnalysis from "./pages/PDAnalysis";
 import InvestorReport from "./pages/InvestorReport";
 import SRTPlatform from "./pages/SRTPlatform";
+import { InvestorManagement } from "./pages/InvestorManagement";
 
 import NotFound from "./pages/NotFound";
 
@@ -49,6 +50,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <InvestorReport />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/investors" 
+              element={
+                <ProtectedRoute>
+                  <InvestorManagement />
                 </ProtectedRoute>
               } 
             />

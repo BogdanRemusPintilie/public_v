@@ -161,6 +161,39 @@ export type Database = {
         }
         Relationships: []
       }
+      investors: {
+        Row: {
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          id: string
+          investor: string
+          overview: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          investor: string
+          overview?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          investor?: string
+          overview?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       loan_data: {
         Row: {
           created_at: string
