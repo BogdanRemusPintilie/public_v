@@ -296,7 +296,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Issue New Offer</DialogTitle>
+          <DialogTitle>Create New Issue</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -387,7 +387,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
 
             {/* Target Investor Pool Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Select Investor</h3>
+              <h3 className="text-lg font-semibold">Select Investor Pool</h3>
               <Select value={selectedInvestor} onValueChange={(value) => {
                 setSelectedInvestor(value);
                 form.setValue('target_investors', value ? [value] : []);
