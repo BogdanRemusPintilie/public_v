@@ -176,7 +176,7 @@ export type Database = {
           remaining_term: string
           term: number
           updated_at: string
-          user_id: string | null
+          user_id: string
           worksheet_name: string | null
         }
         Insert: {
@@ -193,7 +193,7 @@ export type Database = {
           remaining_term: string
           term: number
           updated_at?: string
-          user_id?: string | null
+          user_id: string
           worksheet_name?: string | null
         }
         Update: {
@@ -210,7 +210,7 @@ export type Database = {
           remaining_term?: string
           term?: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
           worksheet_name?: string | null
         }
         Relationships: []
