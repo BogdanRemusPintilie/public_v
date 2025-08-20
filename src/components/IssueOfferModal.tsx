@@ -442,7 +442,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                     name="issuer_nationality"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nationality</FormLabel>
+                        <FormLabel>Nationality/Region</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g., German, Spanish, Italian" {...field} />
                         </FormControl>
@@ -459,7 +459,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                         <FormLabel>General Overview</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Brief description of the issuer, their history, size, etc."
+                            placeholder="Brief description of the issuer"
                             rows={3}
                             {...field}
                           />
