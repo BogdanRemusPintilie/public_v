@@ -336,6 +336,9 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               />
             )}
 
+            {/* Structure Components Editor */}
+            {selectedStructure && <StructureModificationComponent />}
+
             <FormField
               control={form.control}
               name="offer_name"
@@ -349,41 +352,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                 </FormItem>
               )}
             />
-
-            <div className="space-y-2">
-              <Label>Investor Emails</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter email address"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  onKeyPress={handleEmailKeyPress}
-                />
-                <Button type="button" onClick={addEmail} variant="outline">
-                  Add
-                </Button>
-              </div>
-              
-              {emailList.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {emailList.map((email, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-                    >
-                      {email}
-                      <button
-                        type="button"
-                        onClick={() => removeEmail(email)}
-                        className="hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Target Investor Pool Section */}
             <div className="space-y-4">
@@ -421,6 +389,41 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                 </Card>
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label>Investor Emails</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter email address"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  onKeyPress={handleEmailKeyPress}
+                />
+                <Button type="button" onClick={addEmail} variant="outline">
+                  Add
+                </Button>
+              </div>
+              
+              {emailList.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {emailList.map((email, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+                    >
+                      {email}
+                      <button
+                        type="button"
+                        onClick={() => removeEmail(email)}
+                        className="hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Separator className="my-6" />
             
@@ -698,9 +701,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                   />
                 </CardContent>
               </Card>
-
-              {/* Structure Components Editor */}
-              <StructureModificationComponent />
               
             </div>
 
