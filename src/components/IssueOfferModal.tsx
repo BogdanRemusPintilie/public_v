@@ -337,8 +337,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               />
             )}
 
-            {/* Structure Visualisation */}
-            {selectedStructure && <StructureModificationComponent />}
 
             <FormField
               control={form.control}
