@@ -141,7 +141,7 @@ export function StructureModificationComponent({ onStructureChange }: StructureM
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings className="h-5 w-5" />
-          Structure Components Editor
+          Structure Visualisation
         </CardTitle>
         <CardDescription>
           Customize and configure the various components of your securitization structure
