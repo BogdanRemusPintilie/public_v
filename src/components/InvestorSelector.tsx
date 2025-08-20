@@ -98,11 +98,11 @@ export function InvestorSelector({
           <DialogTitle>Select Investors</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
+        <div className="flex-1 space-y-6 overflow-hidden">
           {/* Investor Pool Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Investor Pool</h3>
-            <ScrollArea className="h-[400px] border rounded-md">
+            <ScrollArea className="h-[300px] border rounded-md">
               {isLoading ? (
                 <div className="p-4 text-center text-muted-foreground">Loading investors...</div>
               ) : investors.length === 0 ? (
@@ -112,11 +112,11 @@ export function InvestorSelector({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-2 w-8"></th>
-                        <th className="text-left p-2">Investor</th>
-                        <th className="text-left p-2">Overview</th>
-                        <th className="text-left p-2">Contact Name</th>
-                        <th className="text-left p-2">Contact Email</th>
+                        <th className="text-left p-2 w-12"></th>
+                        <th className="text-left p-2 min-w-[150px]">Investor</th>
+                        <th className="text-left p-2 min-w-[200px]">Overview</th>
+                        <th className="text-left p-2 min-w-[120px]">Contact Name</th>
+                        <th className="text-left p-2 min-w-[150px]">Contact Email</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -130,8 +130,10 @@ export function InvestorSelector({
                             />
                           </td>
                           <td className="p-2 font-medium">{investor.investor}</td>
-                          <td className="p-2 text-muted-foreground max-w-xs truncate">
-                            {investor.overview || '-'}
+                          <td className="p-2 text-muted-foreground">
+                            <div className="max-w-[200px] truncate" title={investor.overview || ''}>
+                              {investor.overview || '-'}
+                            </div>
                           </td>
                           <td className="p-2">{investor.contact_name || '-'}</td>
                           <td className="p-2 text-muted-foreground">
@@ -147,80 +149,85 @@ export function InvestorSelector({
           </div>
 
           {/* Additional Emails */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Additional Investor Emails</h3>
-            
-            <div className="space-y-2">
-              <Label>Add Investor Email</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter email address"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  onKeyPress={handleEmailKeyPress}
-                />
-                <Button type="button" onClick={addEmail} variant="outline" size="icon">
-                  <Plus className="h-4 w-4" />
-                </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Additional Investor Emails</h3>
+              
+              <div className="space-y-2">
+                <Label>Add Investor Email</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter email address"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    onKeyPress={handleEmailKeyPress}
+                  />
+                  <Button type="button" onClick={addEmail} variant="outline" size="icon">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
             {/* Selected Investors and Emails Display */}
-            <ScrollArea className="h-[350px] border rounded-md p-4">
-              <div className="space-y-4">
-                {selectedInvestors.length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-sm mb-2">Selected Investors</h4>
-                    <div className="space-y-1">
-                      {selectedInvestors.map((investor) => (
-                        <Card key={investor} className="p-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">{investor}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleInvestorToggle(investor)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Selection Summary</h3>
+              <ScrollArea className="h-[200px] border rounded-md p-4">
+                <div className="space-y-4">
+                  {selectedInvestors.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-2">Selected Investors</h4>
+                      <div className="space-y-1">
+                        {selectedInvestors.map((investor) => (
+                          <Card key={investor} className="p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">{investor}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleInvestorToggle(investor)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {additionalEmails.length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-sm mb-2">Additional Emails</h4>
-                    <div className="space-y-1">
-                      {additionalEmails.map((email, index) => (
-                        <Card key={index} className="p-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">{email}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeEmail(email)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
+                  {additionalEmails.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-2">Additional Emails</h4>
+                      <div className="space-y-1">
+                        {additionalEmails.map((email, index) => (
+                          <Card key={index} className="p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">{email}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeEmail(email)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {selectedInvestors.length === 0 && additionalEmails.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    No investors or emails selected yet
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
+                  {selectedInvestors.length === 0 && additionalEmails.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      No investors or emails selected yet
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
         </div>
 
