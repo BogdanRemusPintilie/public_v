@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,68 +7,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { getInvestors, InvestorRecord } from '@/utils/investorUtils';
+import { useToast } from '@/hooks/use-toast';
 
-const INVESTOR_POOL = [
-  "Abrdn plc",
-  "Allianz Insurance", 
-  "Arch Capital Group",
-  "Arini",
-  "Atalaya",
-  "AXA",
-  "Bayview",
-  "Blackstone",
-  "British Business Bank",
-  "Cheyne Capital Management",
-  "Chorus Capital",
-  "Christofferson Robb and Company",
-  "Coface",
-  "European Bank for Reconstruction and Development",
-  "European Investment Banking Group",
-  "Great Lakes Insurance",
-  "Intermediate Capital Group",
-  "International Finance Corporation",
-  "Keva",
-  "Kohlberg Kravis Roberts",
-  "Luminarx",
-  "M&G plc",
-  "Man Group",
-  "Orchard Global",
-  "PGGM",
-  "Seer Capital",
-  "Veld Capital",
-  "Zurich Insurance"
-];
-
-const INVESTOR_TRANSACTION_INFO: Record<string, string> = {
-  "European Investment Banking Group": "Conducted 9 unfunded bilateral unfunded transactions",
-  "Atalaya": "Conducted 1 bilateral transaction",
-  "Bayview": "Conducted 2 SVP CLN bilateral transactions",
-  "International Finance Corporation": "Conducted 3 bilateral transactions",
-  "Luminarx": "Conducted 1 bilateral transaction",
-  "PGGM": "Conducted 3 unfunded and 5 Direct CLN bilateral transactions",
-  "Blackstone": "Conducted 2 transactions",
-  "British Business Bank": "Conducted 1 unfunded bilateral transaction",
-  "European Bank for Reconstruction and Development": "Conducted 1 unfunded bilateral transaction",
-  "Veld Capital": "Conducted 1 bilateral transaction",
-  "Kohlberg Kravis Roberts": "Conducted 1 SVP CLN bilateral transaction",
-  "AXA": "Conducted 110 SRT deals since 2000",
-  "Seer Capital": "Conducted 71 SRT deals since 2010",
-  "Cheyne Capital Management": "Active in the market from 2004-2018, recently re-entered the market in 2024",
-  "M&G plc": "Conducted €9.7Bn in SRT transactions since 2008",
-  "Intermediate Capital Group": "No previous SRT transactions but conducted $32Bn in Structured Capital AUM (ICG)",
-  "Orchard Global": "Planned up to 20 SRT deals with 7 being conducted up to 2024",
-  "Arini": "No previous SRT transactions but experienced in the CLO field",
-  "Man Group": "Conducts junior tranche SRT transactions",
-  "Great Lakes Insurance": "No previous SRT transactions",
-  "Christofferson Robb and Company": "Plays a significant institutional role in the space conducting 4 SRT transactions in 2024",
-  "Coface": "No previous SRT transactions",
-  "Keva": "No previous SRT transactions",
-  "Chorus Capital": "Core player in the space (SRT investor of the year 2023, 2024, 2025)",
-  "Zurich Insurance": "No previous SRT transactions",
-  "Arch Capital Group": "Conducted nearly 30 unfunded SRT transactions since 2018, operating in 13 countries with a portfolio size of around $6Bn",
-  "Abrdn plc": "No previous SRT transactions",
-  "Allianz Insurance": "No previous SRT transactions but involved within the ART space"
-};
 
 interface InvestorSelectorProps {
   open: boolean;
@@ -88,6 +29,31 @@ export function InvestorSelector({
   onAdditionalEmailsChange
 }: InvestorSelectorProps) {
   const [newEmail, setNewEmail] = useState('');
+  const [investors, setInvestors] = useState<InvestorRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (open) {
+      loadInvestors();
+    }
+  }, [open]);
+
+  const loadInvestors = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getInvestors();
+      setInvestors(data);
+    } catch (error) {
+      toast({
+        title: "Error loading investors",
+        description: error instanceof Error ? error.message : "Failed to load investors",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInvestorToggle = (investor: string) => {
     const isSelected = selectedInvestors.includes(investor);
@@ -136,31 +102,47 @@ export function InvestorSelector({
           {/* Investor Pool Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Investor Pool</h3>
-            <ScrollArea className="h-[400px] border rounded-md p-4">
-              <div className="space-y-2">
-                {INVESTOR_POOL.map((investor) => (
-                  <div key={investor} className="flex items-start space-x-3">
-                    <Checkbox
-                      id={investor}
-                      checked={selectedInvestors.includes(investor)}
-                      onCheckedChange={() => handleInvestorToggle(investor)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <label
-                        htmlFor={investor}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {investor}
-                      </label>
-                      {INVESTOR_TRANSACTION_INFO[investor] && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {INVESTOR_TRANSACTION_INFO[investor]}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <ScrollArea className="h-[400px] border rounded-md">
+              {isLoading ? (
+                <div className="p-4 text-center text-muted-foreground">Loading investors...</div>
+              ) : investors.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">No investors found. Upload data first.</div>
+              ) : (
+                <div className="p-2">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2 w-8"></th>
+                        <th className="text-left p-2">Investor</th>
+                        <th className="text-left p-2">Overview</th>
+                        <th className="text-left p-2">Contact Name</th>
+                        <th className="text-left p-2">Contact Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {investors.map((investor) => (
+                        <tr key={investor.id} className="border-b hover:bg-muted/50">
+                          <td className="p-2">
+                            <Checkbox
+                              id={investor.id}
+                              checked={selectedInvestors.includes(investor.investor)}
+                              onCheckedChange={() => handleInvestorToggle(investor.investor)}
+                            />
+                          </td>
+                          <td className="p-2 font-medium">{investor.investor}</td>
+                          <td className="p-2 text-muted-foreground max-w-xs truncate">
+                            {investor.overview || '-'}
+                          </td>
+                          <td className="p-2">{investor.contact_name || '-'}</td>
+                          <td className="p-2 text-muted-foreground">
+                            {investor.contact_email || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </ScrollArea>
           </div>
 
