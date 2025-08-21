@@ -845,81 +845,31 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                       Transaction Key Figures & Metrics
                     </h4>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground">Expected Pool Size</span>
-                          <p className="text-lg font-bold text-primary">
-                            {new Intl.NumberFormat('en-US', {
-                              style: 'currency',
-                              currency: 'EUR',
-                              notation: 'compact',
-                              maximumFractionDigits: 1,
-                            }).format(selectedDataset.total_opening_balance || selectedDataset.total_value || 0)}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground">Number of Loans</span>
-                          <p className="text-lg font-bold">
-                            {new Intl.NumberFormat('en-US').format(selectedDataset.loan_count || 0)}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground">Transaction Structure</span>
-                          <p className="text-sm font-medium">{selectedStructure.structure_name}</p>
-                        </div>
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="text-center">
+                        <span className="text-xs font-medium text-muted-foreground block mb-1">Expected Pool Size</span>
+                        <p className="text-lg font-bold text-primary">
+                          {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'EUR',
+                            notation: 'compact',
+                            maximumFractionDigits: 1,
+                          }).format(selectedDataset.total_opening_balance || selectedDataset.total_value || 0)}
+                        </p>
                       </div>
                       
-                      <div className="space-y-3">
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground">Total Tranches</span>
-                          <p className="text-lg font-bold">{selectedStructure.tranches.length}</p>
-                        </div>
-                        
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground">Weighted Avg Cost</span>
-                          <p className="text-lg font-bold text-green-600">
-                            {selectedStructure.weighted_avg_cost_bps.toFixed(0)} BPS
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <span className="text-xs font-medium text-muted-foreground">Total Transaction Cost</span>
-                          <p className="text-sm font-medium text-red-600">
-                            {selectedStructure.cost_percentage.toFixed(2)}%
-                          </p>
-                        </div>
+                      <div className="text-center">
+                        <span className="text-xs font-medium text-muted-foreground block mb-1">Weighted Avg Life</span>
+                        <p className="text-lg font-bold text-primary">
+                          2.8 years
+                        </p>
                       </div>
-                    </div>
-                    
-                    {/* Tranche Breakdown */}
-                    <div className="mt-4 pt-3 border-t border-primary/20">
-                      <h5 className="text-sm font-medium mb-2">Tranche Breakdown</h5>
-                      <div className="space-y-1">
-                        {selectedStructure.tranches.map((tranche, index) => {
-                          const trancheValue = selectedDataset.total_opening_balance || selectedDataset.total_value || 0;
-                          const value = (trancheValue * tranche.thickness) / 100;
-                          
-                          return (
-                            <div key={tranche.id} className="flex justify-between items-center text-xs py-1">
-                              <span className="font-medium">{tranche.name}</span>
-                              <div className="flex gap-4 text-muted-foreground">
-                                <span>{tranche.thickness}%</span>
-                                <span>{tranche.costBps} BPS</span>
-                                <span className="font-medium">
-                                  {new Intl.NumberFormat('en-US', {
-                                    style: 'currency',
-                                    currency: 'EUR',
-                                    notation: 'compact',
-                                    maximumFractionDigits: 1,
-                                  }).format(value)}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
+                      
+                      <div className="text-center">
+                        <span className="text-xs font-medium text-muted-foreground block mb-1">Expected Rating</span>
+                        <p className="text-lg font-bold text-primary">
+                          A-
+                        </p>
                       </div>
                     </div>
                   </div>
