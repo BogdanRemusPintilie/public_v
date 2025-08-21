@@ -159,12 +159,63 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
     },
   });
 
-  // Fetch user's structures
+  // Load draft data when modal opens
   useEffect(() => {
     if (open && user) {
       fetchStructures();
+      loadDraftData();
     }
   }, [open, user]);
+
+  // Save draft data to localStorage
+  const saveDraftData = () => {
+    if (!user) return;
+    
+    const draftData = {
+      formData: form.getValues(),
+      emailList,
+      selectedInvestors,
+      additionalEmails,
+      selectedStructureId: selectedStructure?.id || null,
+    };
+    
+    localStorage.setItem(`offer_draft_${user.id}`, JSON.stringify(draftData));
+  };
+
+  // Load draft data from localStorage
+  const loadDraftData = () => {
+    if (!user) return;
+    
+    const savedDraft = localStorage.getItem(`offer_draft_${user.id}`);
+    if (savedDraft) {
+      try {
+        const draftData = JSON.parse(savedDraft);
+        
+        // Restore form data
+        form.reset(draftData.formData);
+        
+        // Restore other state
+        setEmailList(draftData.emailList || []);
+        setSelectedInvestors(draftData.selectedInvestors || []);
+        setAdditionalEmails(draftData.additionalEmails || []);
+        
+        // Restore selected structure after structures are loaded
+        if (draftData.selectedStructureId) {
+          setTimeout(() => {
+            handleStructureSelect(draftData.selectedStructureId);
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error loading draft data:', error);
+      }
+    }
+  };
+
+  // Clear draft data
+  const clearDraftData = () => {
+    if (!user) return;
+    localStorage.removeItem(`offer_draft_${user.id}`);
+  };
 
   const fetchStructures = async () => {
     try {
@@ -313,12 +364,15 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
         description: 'Offer created successfully',
       });
 
-      // Reset form and close modal
+      // Clear draft and reset form after successful submission
+      clearDraftData();
       form.reset();
       setEmailList([]);
       setEmailInput('');
       setSelectedInvestors([]);
       setAdditionalEmails([]);
+      setSelectedStructure(null);
+      setSelectedDataset(null);
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating offer:', error);
@@ -803,25 +857,13 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               <div className="flex gap-2 mt-6 pt-4 border-t">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    toast({
-                      title: 'Edit Mode',
-                      description: 'Make changes to your offer above',
-                    });
-                  }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  type="button"
                   variant="secondary"
                   className="flex-1"
                   onClick={() => {
+                    saveDraftData();
                     toast({
                       title: 'Draft Saved',
-                      description: 'Your offer has been saved as a draft',
+                      description: 'Your offer has been saved and will be retained until confirmed and sent',
                     });
                   }}
                 >
