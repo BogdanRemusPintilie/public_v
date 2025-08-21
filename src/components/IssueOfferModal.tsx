@@ -644,8 +644,8 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                     <Label className="text-sm font-medium">Transaction Key Figures & Metrics</Label>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-xs">Expected Pool Size</Label>
-                        <Input placeholder="e.g., €500M" />
+                        <Label className="text-xs">Expected Pool Size (€ Millions)</Label>
+                        <Input placeholder="e.g., 500" />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-xs">Weighted Avg Life</Label>
