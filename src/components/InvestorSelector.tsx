@@ -143,48 +143,84 @@ export function InvestorSelector({
           <div className="space-y-6">
           {/* Investor Pool Selection */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Investor Pool</h3>
-            <ScrollArea className="h-[250px] border rounded-md">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground">Investor Pool</h3>
+              <div className="text-sm text-muted-foreground">
+                {selectedInvestors.length} selected
+              </div>
+            </div>
+            
+            <ScrollArea className="h-[280px] border rounded-lg bg-card">
               {isLoading ? (
-                <div className="p-4 text-center text-muted-foreground">Loading investors...</div>
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center space-y-2">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-sm text-muted-foreground">Loading investors...</p>
+                  </div>
+                </div>
               ) : investors.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">No investors found. Upload data first.</div>
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center space-y-2 p-6">
+                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto">
+                      <Plus className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">No investors found</p>
+                    <p className="text-xs text-muted-foreground">Upload data first or add new contacts below</p>
+                  </div>
+                </div>
               ) : (
-                <div className="p-2">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2 w-12"></th>
-                        <th className="text-left p-2 min-w-[150px]">Investor</th>
-                        <th className="text-left p-2 min-w-[200px]">Overview</th>
-                        <th className="text-left p-2 min-w-[120px]">Contact Name</th>
-                        <th className="text-left p-2 min-w-[150px]">Contact Email</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {investors.map((investor) => (
-                        <tr key={investor.id} className="border-b hover:bg-muted/50">
-                          <td className="p-2">
-                            <Checkbox
-                              id={investor.id}
-                              checked={selectedInvestors.includes(investor.investor)}
-                              onCheckedChange={() => handleInvestorToggle(investor.investor)}
-                            />
-                          </td>
-                          <td className="p-2 font-medium">{investor.investor}</td>
-                          <td className="p-2 text-muted-foreground">
-                            <div className="max-w-[200px] truncate" title={investor.overview || ''}>
-                              {investor.overview || '-'}
+                <div className="p-3 space-y-2">
+                  {investors.map((investor) => (
+                    <Card 
+                      key={investor.id} 
+                      className={`transition-all duration-200 hover:shadow-md cursor-pointer ${
+                        selectedInvestors.includes(investor.investor) 
+                          ? 'ring-2 ring-primary bg-primary/5' 
+                          : 'hover:bg-muted/30'
+                      }`}
+                      onClick={() => handleInvestorToggle(investor.investor)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start space-x-3">
+                          <Checkbox
+                            id={investor.id}
+                            checked={selectedInvestors.includes(investor.investor)}
+                            onCheckedChange={() => handleInvestorToggle(investor.investor)}
+                            className="mt-1"
+                          />
+                          
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h4 className="font-semibold text-foreground truncate pr-2">
+                                {investor.investor}
+                              </h4>
                             </div>
-                          </td>
-                          <td className="p-2">{investor.contact_name || '-'}</td>
-                          <td className="p-2 text-muted-foreground">
-                            {investor.contact_email || '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                            
+                            {investor.overview && (
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {investor.overview}
+                              </p>
+                            )}
+                            
+                            <div className="flex flex-wrap gap-4 text-xs">
+                              {investor.contact_name && (
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-muted-foreground">Contact:</span>
+                                  <span className="text-foreground font-medium">{investor.contact_name}</span>
+                                </div>
+                              )}
+                              {investor.contact_email && (
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-muted-foreground">Email:</span>
+                                  <span className="text-foreground font-mono">{investor.contact_email}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
             </ScrollArea>
