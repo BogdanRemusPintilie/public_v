@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { getInvestors, InvestorRecord, insertInvestors } from '@/utils/investorUtils';
+import { getInvestors, InvestorRecord, insertInvestors, deleteAllInvestors } from '@/utils/investorUtils';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -128,6 +128,30 @@ export function InvestorSelector({
     onAdditionalEmailsChange(additionalEmails.filter(email => email !== emailToRemove));
   };
 
+  const handleDeleteAllInvestors = async () => {
+    try {
+      setIsLoading(true);
+      await deleteAllInvestors();
+      
+      toast({
+        title: "All investors removed",
+        description: "All investors have been removed from the pool",
+      });
+      
+      // Clear selections and reload
+      onInvestorsChange([]);
+      await loadInvestors();
+    } catch (error) {
+      toast({
+        title: "Error removing investors",
+        description: error instanceof Error ? error.message : "Failed to remove investors",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleConfirm = () => {
     onOpenChange(false);
   };
@@ -144,8 +168,23 @@ export function InvestorSelector({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground">Investor Pool</h3>
-              <div className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                {selectedInvestors.length} selected
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                  {selectedInvestors.length} selected
+                </div>
+                {investors.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteAllInvestors}
+                    disabled={isLoading}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Clear All
+                  </Button>
+                )}
               </div>
             </div>
             

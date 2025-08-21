@@ -65,3 +65,14 @@ export const getInvestors = async (): Promise<InvestorRecord[]> => {
   
   return data || [];
 };
+
+export const deleteAllInvestors = async (): Promise<void> => {
+  const { error } = await supabase
+    .from('investors')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records for current user (RLS handles user filtering)
+  
+  if (error) {
+    throw new Error(`Failed to delete investors: ${error.message}`);
+  }
+};
