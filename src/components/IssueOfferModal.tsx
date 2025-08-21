@@ -204,11 +204,24 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
     }
   };
 
-  const handleStructureSelect = (structureId: string) => {
+  const handleStructureSelect = async (structureId: string) => {
     const structure = structures.find(s => s.id === structureId);
     setSelectedStructure(structure || null);
+    
+    // Immediately fetch dataset summary when structure is selected
     if (structure) {
-      fetchDatasetSummary(structure.dataset_name);
+      try {
+        const { data, error } = await supabase.rpc('get_dataset_summaries');
+        
+        if (error) throw error;
+        
+        const dataset = data?.find((d: any) => d.dataset_name === structure.dataset_name);
+        setSelectedDataset(dataset);
+      } catch (error) {
+        console.error('Error fetching dataset summary:', error);
+      }
+    } else {
+      setSelectedDataset(null);
     }
   };
 
@@ -334,13 +347,22 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               )}
             />
 
-            {selectedStructure && selectedDataset && (
-              <StructureSummary 
-                structure={selectedStructure} 
-                dataset={selectedDataset}
-              />
+            {/* Structure Summary - appears immediately after selection */}
+            {selectedStructure && (
+              <div className="mt-4">
+                {selectedDataset ? (
+                  <StructureSummary 
+                    structure={selectedStructure} 
+                    dataset={selectedDataset}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Loading structure summary...</span>
+                  </div>
+                )}
+              </div>
             )}
-
 
             <FormField
               control={form.control}
