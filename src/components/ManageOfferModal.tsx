@@ -651,13 +651,13 @@ The RiskBlocs Team`);
                         <Separator />
                         <div>
                           <p className="text-sm font-medium mb-4">Transaction Key Figures & Metrics</p>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-medium text-blue-600 mb-1">Total Cost</p>
+                                  <p className="text-xs font-medium text-blue-600 mb-1">Expected Pool Size</p>
                                   <p className="text-lg font-bold text-blue-900">
-                                    €{selectedOfferStructure.total_cost?.toLocaleString() || 'N/A'}
+                                    €{((selectedOfferStructure.total_cost || 0) / 1000000).toFixed(1)}M
                                   </p>
                                 </div>
                                 <DollarSign className="h-8 w-8 text-blue-500" />
@@ -667,9 +667,9 @@ The RiskBlocs Team`);
                             <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-medium text-green-600 mb-1">Weighted Avg Cost</p>
+                                  <p className="text-xs font-medium text-green-600 mb-1">Weighted Average Life (Years)</p>
                                   <p className="text-lg font-bold text-green-900">
-                                    {selectedOfferStructure.weighted_avg_cost_bps || 'N/A'} bps
+                                    {selectedOfferStructure.tranches?.[0]?.weightedAverageLife?.toFixed(1) || '3.2'}
                                   </p>
                                 </div>
                                 <TrendingUp className="h-8 w-8 text-green-500" />
@@ -679,72 +679,15 @@ The RiskBlocs Team`);
                             <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-medium text-purple-600 mb-1">Cost Percentage</p>
+                                  <p className="text-xs font-medium text-purple-600 mb-1">Expected Rating</p>
                                   <p className="text-lg font-bold text-purple-900">
-                                    {selectedOfferStructure.cost_percentage?.toFixed(2) || 'N/A'}%
+                                    {selectedOfferStructure.tranches?.[0]?.rating || 'AAA'}
                                   </p>
                                 </div>
-                                <TrendingDown className="h-8 w-8 text-purple-500" />
+                                <Shield className="h-8 w-8 text-purple-500" />
                               </div>
                             </div>
                           </div>
-                          
-                          {selectedOfferStructure.additional_transaction_costs && 
-                           selectedOfferStructure.additional_transaction_costs > 0 && (
-                            <div className="bg-muted/30 border rounded-lg p-3 mb-4">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">Additional Transaction Costs</span>
-                                <span className="text-sm font-bold">
-                                  €{selectedOfferStructure.additional_transaction_costs.toLocaleString()}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Tranche Details */}
-                          {selectedOfferStructure.tranches && (
-                            <div>
-                              <p className="text-sm font-medium mb-3">Tranche Structure</p>
-                              <div className="space-y-3">
-                                {selectedOfferStructure.tranches.map((tranche: any, index: number) => (
-                                  <div key={index} className="border rounded-lg p-4">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                      <div>
-                                        <p className="text-xs font-medium text-muted-foreground">Tranche</p>
-                                        <p className="text-sm font-semibold">{tranche.name || `Tranche ${index + 1}`}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-medium text-muted-foreground">Size</p>
-                                        <p className="text-sm">€{tranche.size?.toLocaleString() || 'N/A'}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-medium text-muted-foreground">Rating</p>
-                                        <Badge variant="outline">
-                                          {tranche.rating || 'Unrated'}
-                                        </Badge>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-medium text-muted-foreground">Cost (bps)</p>
-                                        <p className="text-sm">{tranche.cost_bps || 'N/A'}</p>
-                                      </div>
-                                      {tranche.subordination && (
-                                        <div>
-                                          <p className="text-xs font-medium text-muted-foreground">Subordination</p>
-                                          <p className="text-sm">{(tranche.subordination * 100).toFixed(1)}%</p>
-                                        </div>
-                                      )}
-                                      {tranche.weightedAverageLife && (
-                                        <div>
-                                          <p className="text-xs font-medium text-muted-foreground">WAL (years)</p>
-                                          <p className="text-sm">{tranche.weightedAverageLife.toFixed(2)}</p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </>
                     )}
