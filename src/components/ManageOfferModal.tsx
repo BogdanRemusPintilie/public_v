@@ -267,7 +267,7 @@ The RiskBlocs Team`);
                 Share Transaction Overview
               </div>
             ) : (
-              `Manage Offer${selectedOfferId ? `: ${offers.find(o => o.id === selectedOfferId)?.offer_name || 'Current Offer'}` : ''}`
+              Manage Offer
             )}
           </DialogTitle>
         </DialogHeader>
