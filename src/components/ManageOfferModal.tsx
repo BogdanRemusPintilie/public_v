@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, Users, FileText, DollarSign, Shield, TrendingUp, TrendingDown, Minus, ArrowLeft, Send, Mail } from 'lucide-react';
+import { CheckCircle, Users, FileText, Coins, Shield, TrendingUp, TrendingDown, Minus, ArrowLeft, Send, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -492,7 +492,7 @@ The RiskBlocs Team`);
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center">
-                    <DollarSign className="h-4 w-4 mr-2" />
+                    <Coins className="h-4 w-4 mr-2" />
                     Pricing Received
                   </CardTitle>
                 </CardHeader>
@@ -660,7 +660,7 @@ The RiskBlocs Team`);
                                     €4.09M
                                   </p>
                                 </div>
-                                <DollarSign className="h-8 w-8 text-blue-500" />
+                                <Coins className="h-8 w-8 text-blue-500" />
                               </div>
                             </div>
                             
