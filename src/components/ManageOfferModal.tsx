@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, Users, FileText, DollarSign, Shield, TrendingUp, TrendingDown, Minus, ArrowLeft, Send, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InvestorInterest {
   id: string;
@@ -25,6 +27,19 @@ interface InvestorInterest {
   }[];
   ndaExecuted?: boolean;
   dataAccessGranted?: boolean;
+}
+
+interface DatabaseOffer {
+  id: string;
+  offer_name: string;
+  status: string;
+  structure_type: string;
+  target_investors: string[];
+  shared_with_emails: string[];
+  created_at: string;
+  issuer_nationality?: string;
+  issuer_overview?: string;
+  structure_id: string;
 }
 
 interface OfferData {
@@ -53,17 +68,22 @@ export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
   selectedOffer
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [offers, setOffers] = useState<DatabaseOffer[]>([]);
+  const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
   const [investorInterests, setInvestorInterests] = useState<InvestorInterest[]>([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('offers');
   const [showSharePage, setShowSharePage] = useState(false);
   const [selectedInvestorForShare, setSelectedInvestorForShare] = useState<string | null>(null);
   const [shareEmail, setShareEmail] = useState('');
   const [shareMessage, setShareMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data for demonstration
+  // Fetch offers from database
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
+      fetchOffers();
+      // Mock data for demonstration of investor interests
       setInvestorInterests([
         {
           id: '1',
@@ -105,7 +125,40 @@ export const ManageOfferModal: React.FC<ManageOfferModalProps> = ({
         }
       ]);
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
+
+  const fetchOffers = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('offers')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setOffers(data || []);
+      
+      if (data && data.length > 0) {
+        // Auto-select the first offer if none is selected
+        if (!selectedOfferId) {
+          setSelectedOfferId(data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch offers',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getInterestBadgeColor = (level: string) => {
     switch (level) {
@@ -214,7 +267,7 @@ The RiskBlocs Team`);
                 Share Transaction Overview
               </div>
             ) : (
-              `Manage Offer: ${selectedOffer?.offerName || 'Current Offer'}`
+              `Manage Offer${selectedOfferId ? `: ${offers.find(o => o.id === selectedOfferId)?.offer_name || 'Current Offer'}` : ''}`
             )}
           </DialogTitle>
         </DialogHeader>
@@ -287,12 +340,78 @@ The RiskBlocs Team`);
         ) : (
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="offers">Your Offers</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="interested">Interested ({interestedInvestors.length})</TabsTrigger>
             <TabsTrigger value="indications">Indications ({indicationInvestors.length})</TabsTrigger>
             <TabsTrigger value="pricing">Pricing View</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="offers" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Offers</CardTitle>
+                <CardDescription>Select an offer to manage investor interest and communications</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span className="ml-2 text-sm text-muted-foreground">Loading offers...</span>
+                  </div>
+                ) : offers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FileText className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">No offers created yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">Create your first offer to manage investor communications</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {offers.map((offer) => (
+                      <div 
+                        key={offer.id}
+                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                          selectedOfferId === offer.id 
+                            ? 'border-primary bg-primary/5' 
+                            : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => {
+                          setSelectedOfferId(offer.id);
+                          setActiveTab('overview');
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{offer.offer_name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {offer.structure_type || 'Transaction structure'} • 
+                              Created {new Date(offer.created_at).toLocaleDateString()}
+                            </p>
+                            {offer.target_investors?.length > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {offer.target_investors.length} target investor{offer.target_investors.length !== 1 ? 's' : ''}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={offer.status === 'active' ? 'default' : 'secondary'}>
+                              {offer.status || 'Active'}
+                            </Badge>
+                            {selectedOfferId === offer.id && (
+                              <CheckCircle className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -355,11 +474,30 @@ The RiskBlocs Team`);
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium">Structure Type</p>
-                    <p className="text-sm text-muted-foreground">{selectedOffer?.structureType || 'True Sale ABS'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOfferId ? offers.find(o => o.id === selectedOfferId)?.structure_type || 'Not specified' : 'Select an offer first'}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Total Size</p>
-                    <p className="text-sm text-muted-foreground">€{selectedOffer?.totalSize?.toLocaleString() || '500,000,000'}</p>
+                    <p className="text-sm font-medium">Created Date</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOfferId ? new Date(offers.find(o => o.id === selectedOfferId)?.created_at || '').toLocaleDateString() : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Target Investors</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOfferId ? 
+                        (offers.find(o => o.id === selectedOfferId)?.target_investors?.length || 0) + ' selected' : 
+                        'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Status</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedOfferId ? offers.find(o => o.id === selectedOfferId)?.status || 'Active' : 'N/A'}
+                    </p>
                   </div>
                 </div>
                 
