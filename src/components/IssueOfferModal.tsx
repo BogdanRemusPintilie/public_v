@@ -648,7 +648,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                         <Input placeholder="e.g., 500" />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">Weighted Avg Life</Label>
+                        <Label className="text-xs">Weighted Avg Life (years)</Label>
                         <Input placeholder="e.g., 3.5 years" />
                       </div>
                       <div className="space-y-2">
