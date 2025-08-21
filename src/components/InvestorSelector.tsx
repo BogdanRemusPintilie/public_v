@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { getInvestors, InvestorRecord } from '@/utils/investorUtils';
+import { getInvestors, InvestorRecord, insertInvestors } from '@/utils/investorUtils';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -28,9 +28,12 @@ export function InvestorSelector({
   additionalEmails,
   onAdditionalEmailsChange
 }: InvestorSelectorProps) {
-  const [newEmail, setNewEmail] = useState('');
+  const [newInvestor, setNewInvestor] = useState('');
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
   const [investors, setInvestors] = useState<InvestorRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,27 +67,65 @@ export function InvestorSelector({
     }
   };
 
-  const addEmail = () => {
-    const email = newEmail.trim();
-    if (email && !additionalEmails.includes(email)) {
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (emailRegex.test(email)) {
-        onAdditionalEmailsChange([...additionalEmails, email]);
-        setNewEmail('');
-      }
+  const addNewContact = async () => {
+    const investor = newInvestor.trim();
+    const contactName = newContactName.trim();
+    const contactEmail = newContactEmail.trim();
+
+    if (!investor) {
+      toast({
+        title: "Investor required",
+        description: "Please enter an investor/company name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const newInvestorRecord: InvestorRecord = {
+        investor,
+        overview: '',
+        contact_name: contactName || undefined,
+        contact_email: contactEmail || undefined
+      };
+
+      await insertInvestors([newInvestorRecord]);
+      
+      toast({
+        title: "Contact added",
+        description: "New contact has been added to the investor pool",
+      });
+
+      // Clear form
+      setNewInvestor('');
+      setNewContactName('');
+      setNewContactEmail('');
+      
+      // Reload investors
+      await loadInvestors();
+    } catch (error) {
+      toast({
+        title: "Error adding contact",
+        description: error instanceof Error ? error.message : "Failed to add contact",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const removeEmail = (emailToRemove: string) => {
     onAdditionalEmailsChange(additionalEmails.filter(email => email !== emailToRemove));
-  };
-
-  const handleEmailKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addEmail();
-    }
   };
 
   const handleConfirm = () => {
@@ -148,23 +189,48 @@ export function InvestorSelector({
             </ScrollArea>
           </div>
 
-          {/* Additional Emails */}
+          {/* New Contacts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Additional Investor Emails</h3>
+              <h3 className="text-lg font-semibold">New Contacts</h3>
               
-              <div className="space-y-2">
-                <Label>Add Investor Email</Label>
-                <div className="flex gap-2">
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Investor (Company) *</Label>
                   <Input
-                    placeholder="Enter email address"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    onKeyPress={handleEmailKeyPress}
+                    placeholder="Enter company/investor name"
+                    value={newInvestor}
+                    onChange={(e) => setNewInvestor(e.target.value)}
                   />
-                  <Button type="button" onClick={addEmail} variant="outline" size="icon">
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Contact Name</Label>
+                  <Input
+                    placeholder="Enter contact name"
+                    value={newContactName}
+                    onChange={(e) => setNewContactName(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Contact Email</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter contact email"
+                      value={newContactEmail}
+                      onChange={(e) => setNewContactEmail(e.target.value)}
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={addNewContact} 
+                      variant="outline" 
+                      size="icon"
+                      disabled={!newInvestor.trim() || isSaving}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
