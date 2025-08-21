@@ -168,58 +168,61 @@ export function InvestorSelector({
                   </div>
                 </div>
               ) : (
-                <div className="p-3 space-y-2">
-                  {investors.map((investor) => (
-                    <Card 
-                      key={investor.id} 
-                      className={`transition-all duration-200 hover:shadow-md cursor-pointer ${
-                        selectedInvestors.includes(investor.investor) 
-                          ? 'ring-2 ring-primary bg-primary/5' 
-                          : 'hover:bg-muted/30'
-                      }`}
-                      onClick={() => handleInvestorToggle(investor.investor)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                          <Checkbox
-                            id={investor.id}
-                            checked={selectedInvestors.includes(investor.investor)}
-                            onCheckedChange={() => handleInvestorToggle(investor.investor)}
-                            className="mt-1"
-                          />
-                          
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-start justify-between">
-                              <h4 className="font-semibold text-foreground truncate pr-2">
-                                {investor.investor}
-                              </h4>
+                <div className="overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted/50 sticky top-0">
+                      <tr className="border-b">
+                        <th className="w-12 p-3 text-left">
+                          <div className="w-4 h-4"></div>
+                        </th>
+                        <th className="p-3 text-left text-sm font-medium text-muted-foreground">Investor</th>
+                        <th className="p-3 text-left text-sm font-medium text-muted-foreground">Overview</th>
+                        <th className="p-3 text-left text-sm font-medium text-muted-foreground">Contact Name</th>
+                        <th className="p-3 text-left text-sm font-medium text-muted-foreground">Contact Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {investors.map((investor) => (
+                        <tr 
+                          key={investor.id}
+                          className={`border-b transition-colors cursor-pointer hover:bg-muted/30 ${
+                            selectedInvestors.includes(investor.investor) 
+                              ? 'bg-primary/5 border-primary/20' 
+                              : ''
+                          }`}
+                          onClick={() => handleInvestorToggle(investor.investor)}
+                        >
+                          <td className="p-3">
+                            <Checkbox
+                              id={investor.id}
+                              checked={selectedInvestors.includes(investor.investor)}
+                              onCheckedChange={() => handleInvestorToggle(investor.investor)}
+                            />
+                          </td>
+                          <td className="p-3">
+                            <div className="font-medium text-foreground">
+                              {investor.investor}
                             </div>
-                            
-                            {investor.overview && (
-                              <p className="text-sm text-muted-foreground line-clamp-2">
-                                {investor.overview}
-                              </p>
-                            )}
-                            
-                            <div className="flex flex-wrap gap-4 text-xs">
-                              {investor.contact_name && (
-                                <div className="flex items-center space-x-1">
-                                  <span className="text-muted-foreground">Contact:</span>
-                                  <span className="text-foreground font-medium">{investor.contact_name}</span>
-                                </div>
-                              )}
-                              {investor.contact_email && (
-                                <div className="flex items-center space-x-1">
-                                  <span className="text-muted-foreground">Email:</span>
-                                  <span className="text-foreground font-mono">{investor.contact_email}</span>
-                                </div>
-                              )}
+                          </td>
+                          <td className="p-3">
+                            <div className="text-sm text-muted-foreground max-w-xs truncate">
+                              {investor.overview || '-'}
                             </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          </td>
+                          <td className="p-3">
+                            <div className="text-sm text-foreground">
+                              {investor.contact_name || '-'}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <div className="text-sm text-foreground font-mono">
+                              {investor.contact_email || '-'}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </ScrollArea>
