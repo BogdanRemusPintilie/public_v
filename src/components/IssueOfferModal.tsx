@@ -211,14 +211,36 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
     // Immediately fetch dataset summary when structure is selected
     if (structure) {
       try {
-        const { data, error } = await supabase.rpc('get_dataset_summaries');
+        // Fast direct query for specific dataset instead of slow RPC
+        const { data, error } = await supabase
+          .from('loan_data')
+          .select('loan_amount, opening_balance')
+          .eq('dataset_name', structure.dataset_name)
+          .eq('user_id', user?.id);
         
         if (error) throw error;
         
-        const dataset = data?.find((d: any) => d.dataset_name === structure.dataset_name);
-        setSelectedDataset(dataset);
+        if (data && data.length > 0) {
+          const totalAmount = data.reduce((sum, loan) => sum + Number(loan.loan_amount || 0), 0);
+          const totalBalance = data.reduce((sum, loan) => sum + Number(loan.opening_balance || 0), 0);
+          
+          setSelectedDataset({
+            dataset_name: structure.dataset_name,
+            loan_count: data.length,
+            total_loan_amount: totalAmount,
+            total_opening_balance: totalBalance
+          });
+        } else {
+          setSelectedDataset({
+            dataset_name: structure.dataset_name,
+            loan_count: 0,
+            total_loan_amount: 0,
+            total_opening_balance: 0
+          });
+        }
       } catch (error) {
         console.error('Error fetching dataset summary:', error);
+        setSelectedDataset(null);
       }
     } else {
       setSelectedDataset(null);
