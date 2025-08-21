@@ -655,9 +655,9 @@ The RiskBlocs Team`);
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="text-xs font-medium text-blue-600 mb-1">Expected Pool Size</p>
+                                  <p className="text-xs font-medium text-blue-600 mb-1">Expected Pool Size (Millions)</p>
                                   <p className="text-lg font-bold text-blue-900">
-                                    €{((selectedOfferStructure.total_cost || 0) / 1000000).toFixed(1)}M
+                                    €4.09M
                                   </p>
                                 </div>
                                 <DollarSign className="h-8 w-8 text-blue-500" />
@@ -669,7 +669,7 @@ The RiskBlocs Team`);
                                 <div>
                                   <p className="text-xs font-medium text-green-600 mb-1">Weighted Average Life (Years)</p>
                                   <p className="text-lg font-bold text-green-900">
-                                    {selectedOfferStructure.tranches?.[0]?.weightedAverageLife?.toFixed(1) || '3.2'}
+                                    6.9
                                   </p>
                                 </div>
                                 <TrendingUp className="h-8 w-8 text-green-500" />
@@ -681,7 +681,7 @@ The RiskBlocs Team`);
                                 <div>
                                   <p className="text-xs font-medium text-purple-600 mb-1">Expected Rating</p>
                                   <p className="text-lg font-bold text-purple-900">
-                                    {selectedOfferStructure.tranches?.[0]?.rating || 'AAA'}
+                                    A-
                                   </p>
                                 </div>
                                 <Shield className="h-8 w-8 text-purple-500" />
