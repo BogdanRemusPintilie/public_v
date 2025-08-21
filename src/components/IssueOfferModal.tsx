@@ -692,6 +692,158 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               
             </div>
 
+            {/* Review Section */}
+            <div className="mt-6 p-4 border-2 border-primary/20 rounded-lg bg-muted/30">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Review Your Offer
+              </h3>
+              
+              <div className="space-y-4 text-sm">
+                {/* Basic Offer Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium text-muted-foreground">Offer Name:</span>
+                    <p className="mt-1">{form.watch('offer_name') || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-muted-foreground">Selected Structure:</span>
+                    <p className="mt-1">{selectedStructure?.structure_name || 'Not selected'}</p>
+                  </div>
+                </div>
+
+                {/* Target Investors */}
+                <div>
+                  <span className="font-medium text-muted-foreground">Target Investors:</span>
+                  <div className="mt-1">
+                    {selectedInvestors.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedInvestors.map((investor) => (
+                          <span key={investor} className="px-2 py-1 bg-secondary rounded text-xs">
+                            {investor}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No investors selected</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Email Addresses */}
+                <div>
+                  <span className="font-medium text-muted-foreground">Email Addresses:</span>
+                  <div className="mt-1">
+                    {(emailList.length > 0 || additionalEmails.length > 0) ? (
+                      <div className="flex flex-wrap gap-1">
+                        {[...emailList, ...additionalEmails].map((email) => (
+                          <span key={email} className="px-2 py-1 bg-secondary rounded text-xs">
+                            {email}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No email addresses added</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Issuer Information */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium text-muted-foreground">Issuer Nationality:</span>
+                    <p className="mt-1">{form.watch('issuer_nationality') || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-muted-foreground">Business Focus:</span>
+                    <p className="mt-1">{form.watch('issuer_business_focus') || 'Not specified'}</p>
+                  </div>
+                </div>
+
+                {/* Structure Type */}
+                <div>
+                  <span className="font-medium text-muted-foreground">Structure Type:</span>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {form.watch('structure_synthetic') && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Synthetic</span>
+                    )}
+                    {form.watch('structure_true_sale') && (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">True Sale</span>
+                    )}
+                    {form.watch('structure_sts') && (
+                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">STS</span>
+                    )}
+                    {form.watch('structure_consumer_finance') && (
+                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">Consumer Finance</span>
+                    )}
+                    {!form.watch('structure_synthetic') && !form.watch('structure_true_sale') && 
+                     !form.watch('structure_sts') && !form.watch('structure_consumer_finance') && (
+                      <span className="text-muted-foreground">No structure types selected</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comments */}
+                {(form.watch('comments') || form.watch('additional_comments')) && (
+                  <div>
+                    <span className="font-medium text-muted-foreground">Comments:</span>
+                    <div className="mt-1 space-y-2">
+                      {form.watch('comments') && (
+                        <p className="bg-secondary p-2 rounded text-xs">{form.watch('comments')}</p>
+                      )}
+                      {form.watch('additional_comments') && (
+                        <p className="bg-secondary p-2 rounded text-xs">{form.watch('additional_comments')}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Review Action Buttons */}
+              <div className="flex gap-2 mt-6 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    toast({
+                      title: 'Edit Mode',
+                      description: 'Make changes to your offer above',
+                    });
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    toast({
+                      title: 'Draft Saved',
+                      description: 'Your offer has been saved as a draft',
+                    });
+                  }}
+                >
+                  Save Draft
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Confirm & Send'
+                  )}
+                </Button>
+              </div>
+            </div>
+
             <DialogFooter className="flex gap-2">
               <Button
                 type="button"
@@ -700,16 +852,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                 disabled={isLoading}
               >
                 Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  'Send indication of intent to issue'
-                )}
               </Button>
             </DialogFooter>
           </form>
