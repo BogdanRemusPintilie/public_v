@@ -267,7 +267,7 @@ The RiskBlocs Team`);
                 Share Transaction Overview
               </div>
             ) : (
-              Manage Offer
+              "Manage Offer"
             )}
           </DialogTitle>
         </DialogHeader>
