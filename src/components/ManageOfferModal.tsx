@@ -37,9 +37,19 @@ interface DatabaseOffer {
   target_investors: string[];
   shared_with_emails: string[];
   created_at: string;
+  updated_at: string;
+  user_id: string;
+  structure_id: string;
   issuer_nationality?: string;
   issuer_overview?: string;
-  structure_id: string;
+  issuer_business_focus?: string;
+  structure_true_sale?: boolean;
+  structure_sts?: boolean;
+  structure_synthetic?: boolean;
+  structure_consumer_finance?: boolean;
+  structure_figures?: string;
+  additional_comments?: string;
+  comments?: string;
 }
 
 interface OfferData {
@@ -468,54 +478,173 @@ The RiskBlocs Team`);
             <Card>
               <CardHeader>
                 <CardTitle>Transaction Summary</CardTitle>
-                <CardDescription>Overview of current offer structure and risk profile</CardDescription>
+                <CardDescription>
+                  {selectedOfferId ? 
+                    `Overview of ${offers.find(o => o.id === selectedOfferId)?.offer_name || 'selected offer'}` : 
+                    'Select an offer to view details'
+                  }
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Structure Type</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedOfferId ? offers.find(o => o.id === selectedOfferId)?.structure_type || 'Not specified' : 'Select an offer first'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Created Date</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedOfferId ? new Date(offers.find(o => o.id === selectedOfferId)?.created_at || '').toLocaleDateString() : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Target Investors</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedOfferId ? 
-                        (offers.find(o => o.id === selectedOfferId)?.target_investors?.length || 0) + ' selected' : 
-                        'N/A'
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Status</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedOfferId ? offers.find(o => o.id === selectedOfferId)?.status || 'Active' : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <p className="text-sm font-medium mb-2">Risk Profile</p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Overall Risk</span>
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Low</Badge>
+              <CardContent className="space-y-6">
+                {selectedOfferId ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium">Offer Name</p>
+                          <p className="text-sm text-muted-foreground">
+                            {offers.find(o => o.id === selectedOfferId)?.offer_name || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Structure Type</p>
+                          <p className="text-sm text-muted-foreground">
+                            {offers.find(o => o.id === selectedOfferId)?.structure_type || 'Not specified'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Status</p>
+                          <Badge variant={offers.find(o => o.id === selectedOfferId)?.status === 'active' ? 'default' : 'secondary'}>
+                            {offers.find(o => o.id === selectedOfferId)?.status || 'Active'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium">Created Date</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(offers.find(o => o.id === selectedOfferId)?.created_at || '').toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Target Investors</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(offers.find(o => o.id === selectedOfferId)?.target_investors?.length || 0)} selected
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Shared With</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(offers.find(o => o.id === selectedOfferId)?.shared_with_emails?.length || 0)} recipients
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Credit Enhancement</span>
-                      <span className="text-sm">15.5%</span>
+                    
+                    <Separator />
+                    
+                    {/* Issuer Information */}
+                    {(offers.find(o => o.id === selectedOfferId)?.issuer_overview || 
+                      offers.find(o => o.id === selectedOfferId)?.issuer_nationality || 
+                      offers.find(o => o.id === selectedOfferId)?.issuer_business_focus) && (
+                      <>
+                        <div>
+                          <p className="text-sm font-medium mb-3">Issuer Information</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {offers.find(o => o.id === selectedOfferId)?.issuer_nationality && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground">Nationality</p>
+                                <p className="text-sm">{offers.find(o => o.id === selectedOfferId)?.issuer_nationality}</p>
+                              </div>
+                            )}
+                            {offers.find(o => o.id === selectedOfferId)?.issuer_business_focus && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground">Business Focus</p>
+                                <p className="text-sm">{offers.find(o => o.id === selectedOfferId)?.issuer_business_focus}</p>
+                              </div>
+                            )}
+                          </div>
+                          {offers.find(o => o.id === selectedOfferId)?.issuer_overview && (
+                            <div className="mt-3">
+                              <p className="text-xs font-medium text-muted-foreground">Overview</p>
+                              <p className="text-sm">{offers.find(o => o.id === selectedOfferId)?.issuer_overview}</p>
+                            </div>
+                          )}
+                        </div>
+                        <Separator />
+                      </>
+                    )}
+                    
+                    {/* Structure Details */}
+                    <div>
+                      <p className="text-sm font-medium mb-3">Structure Characteristics</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg">
+                          <p className="text-xs font-medium text-muted-foreground">True Sale</p>
+                          <div className="mt-1">
+                            {offers.find(o => o.id === selectedOfferId)?.structure_true_sale ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Minus className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg">
+                          <p className="text-xs font-medium text-muted-foreground">STS Compliant</p>
+                          <div className="mt-1">
+                            {offers.find(o => o.id === selectedOfferId)?.structure_sts ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Minus className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg">
+                          <p className="text-xs font-medium text-muted-foreground">Synthetic</p>
+                          <div className="mt-1">
+                            {offers.find(o => o.id === selectedOfferId)?.structure_synthetic ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Minus className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg">
+                          <p className="text-xs font-medium text-muted-foreground">Consumer Finance</p>
+                          <div className="mt-1">
+                            {offers.find(o => o.id === selectedOfferId)?.structure_consumer_finance ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Minus className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    
+                    {/* Additional Information */}
+                    {(offers.find(o => o.id === selectedOfferId)?.structure_figures || 
+                      offers.find(o => o.id === selectedOfferId)?.additional_comments) && (
+                      <>
+                        <Separator />
+                        <div className="space-y-3">
+                          {offers.find(o => o.id === selectedOfferId)?.structure_figures && (
+                            <div>
+                              <p className="text-sm font-medium">Structure Figures</p>
+                              <p className="text-sm text-muted-foreground">
+                                {offers.find(o => o.id === selectedOfferId)?.structure_figures}
+                              </p>
+                            </div>
+                          )}
+                          {offers.find(o => o.id === selectedOfferId)?.additional_comments && (
+                            <div>
+                              <p className="text-sm font-medium">Additional Comments</p>
+                              <p className="text-sm text-muted-foreground">
+                                {offers.find(o => o.id === selectedOfferId)?.additional_comments}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Select an offer from the "Your Offers" tab to view details</p>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
