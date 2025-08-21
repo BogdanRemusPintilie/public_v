@@ -139,13 +139,12 @@ export function InvestorSelector({
           <DialogTitle>Select Investors</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6">
+        <div className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto pr-2">
           {/* Investor Pool Selection */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground">Investor Pool</h3>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
                 {selectedInvestors.length} selected
               </div>
             </div>
@@ -226,114 +225,158 @@ export function InvestorSelector({
             </ScrollArea>
           </div>
 
-          {/* New Contacts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">New Contacts</h3>
-              
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label>Investor (Company) *</Label>
-                  <Input
-                    placeholder="Enter company/investor name"
-                    value={newInvestor}
-                    onChange={(e) => setNewInvestor(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Contact Name</Label>
-                  <Input
-                    placeholder="Enter contact name"
-                    value={newContactName}
-                    onChange={(e) => setNewContactName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Contact Email</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter contact email"
-                      value={newContactEmail}
-                      onChange={(e) => setNewContactEmail(e.target.value)}
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={addNewContact} 
-                      variant="outline" 
-                      size="icon"
-                      disabled={!newInvestor.trim() || isSaving}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+          {/* New Contacts and Selection Summary */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* New Contacts Form */}
+            <Card className="border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Plus className="h-4 w-4 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground">Add New Contact</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Investor (Company) *</Label>
+                      <Input
+                        placeholder="Enter company/investor name"
+                        value={newInvestor}
+                        onChange={(e) => setNewInvestor(e.target.value)}
+                        className="bg-background"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Contact Name</Label>
+                      <Input
+                        placeholder="Enter contact name"
+                        value={newContactName}
+                        onChange={(e) => setNewContactName(e.target.value)}
+                        className="bg-background"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Contact Email</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter contact email"
+                          value={newContactEmail}
+                          onChange={(e) => setNewContactEmail(e.target.value)}
+                          className="bg-background flex-1"
+                        />
+                        <Button 
+                          type="button" 
+                          onClick={addNewContact} 
+                          disabled={!newInvestor.trim() || isSaving}
+                          className="shrink-0"
+                        >
+                          {isSaving ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        This will be added to your investor pool
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            {/* Selected Investors and Emails Display */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Selection Summary</h3>
-              <ScrollArea className="h-[150px] border rounded-md p-4">
+            {/* Selection Summary */}
+            <Card className="bg-muted/20">
+              <CardContent className="p-6">
                 <div className="space-y-4">
-                  {selectedInvestors.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-2">Selected Investors</h4>
-                      <div className="space-y-1">
-                        {selectedInvestors.map((investor) => (
-                          <Card key={investor} className="p-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">{investor}</span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleInvestorToggle(investor)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+                      <div className="w-4 h-4 rounded-full bg-secondary" />
                     </div>
-                  )}
-
-                  {additionalEmails.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-2">Additional Emails</h4>
-                      <div className="space-y-1">
-                        {additionalEmails.map((email, index) => (
-                          <Card key={index} className="p-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">{email}</span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeEmail(email)}
+                    <h3 className="text-lg font-semibold text-foreground">Selection Summary</h3>
+                  </div>
+                  
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-4 pr-4">
+                      {selectedInvestors.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                            Selected Investors ({selectedInvestors.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedInvestors.map((investor) => (
+                              <div 
+                                key={investor} 
+                                className="flex items-center justify-between p-3 bg-background rounded-lg border hover:bg-muted/50 transition-colors"
                               >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                                <span className="text-sm font-medium truncate pr-2">{investor}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleInvestorToggle(investor)}
+                                  className="shrink-0 h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-                  {selectedInvestors.length === 0 && additionalEmails.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center">
-                      No investors or emails selected yet
-                    </p>
-                  )}
+                      {additionalEmails.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                            Additional Emails ({additionalEmails.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {additionalEmails.map((email, index) => (
+                              <div 
+                                key={index} 
+                                className="flex items-center justify-between p-3 bg-background rounded-lg border hover:bg-muted/50 transition-colors"
+                              >
+                                <span className="text-sm font-mono truncate pr-2">{email}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeEmail(email)}
+                                  className="shrink-0 h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedInvestors.length === 0 && additionalEmails.length === 0 && (
+                        <div className="text-center py-8">
+                          <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                            <div className="w-6 h-6 border-2 border-muted-foreground/30 border-dashed rounded-full" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            No investors selected yet
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Select investors from the pool above
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
                 </div>
-              </ScrollArea>
-            </div>
+              </CardContent>
+            </Card>
           </div>
-          </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
