@@ -134,16 +134,17 @@ export function InvestorSelector({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Select Investors</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 space-y-6 overflow-hidden">
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6">
           {/* Investor Pool Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Investor Pool</h3>
-            <ScrollArea className="h-[300px] border rounded-md">
+            <ScrollArea className="h-[250px] border rounded-md">
               {isLoading ? (
                 <div className="p-4 text-center text-muted-foreground">Loading investors...</div>
               ) : investors.length === 0 ? (
@@ -238,7 +239,7 @@ export function InvestorSelector({
             {/* Selected Investors and Emails Display */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Selection Summary</h3>
-              <ScrollArea className="h-[200px] border rounded-md p-4">
+              <ScrollArea className="h-[150px] border rounded-md p-4">
                 <div className="space-y-4">
                   {selectedInvestors.length > 0 && (
                     <div>
@@ -295,7 +296,8 @@ export function InvestorSelector({
               </ScrollArea>
             </div>
           </div>
-        </div>
+          </div>
+        </ScrollArea>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
