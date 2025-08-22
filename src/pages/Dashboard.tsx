@@ -18,6 +18,7 @@ import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
 import InvestorReportingUpload from '@/components/InvestorReportingUpload';
 import ExtractionTool from '@/components/ExtractionTool';
 import { preloadDatasets } from '@/components/DatasetSelector';
+import { preloadTrancheData } from '@/components/TrancheAnalysisDashboard';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -46,11 +47,12 @@ const Dashboard = () => {
     }
   }, [location.state, navigate]);
 
-  // Preload datasets when user is authenticated for instant loading
+  // Preload data when user is authenticated for instant loading
   useEffect(() => {
     if (user) {
-      console.log('🚀 DASHBOARD - User authenticated, preloading datasets');
+      console.log('🚀 DASHBOARD - User authenticated, preloading all data');
       preloadDatasets(user);
+      preloadTrancheData(user);
     }
   }, [user]);
 

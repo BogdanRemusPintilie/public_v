@@ -11,6 +11,11 @@ import StructureDatasetPage from './StructureDatasetPage';
 import TrancheAnalyticsView from './TrancheAnalyticsView';
 import { TrancheStructure } from '@/utils/supabase';
 
+// Global cache for preloaded tranche data
+let preloadedDatasets: DatasetSummary[] | null = null;
+let preloadedStructures: TrancheStructure[] | null = null;
+let preloadPromise: Promise<void> | null = null;
+
 interface DatasetSummary {
   dataset_name: string;
   record_count: number;
@@ -24,6 +29,53 @@ interface TrancheAnalysisDashboardProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Preload function that can be called from Dashboard
+export const preloadTrancheData = async (user: any) => {
+  if (!user || (preloadedDatasets && preloadedStructures) || preloadPromise) return;
+  
+  preloadPromise = (async () => {
+    try {
+      console.log('🚀 PRELOADING TRANCHE DATA in background');
+      
+      // Fetch datasets and structures in parallel
+      const [datasetsResponse, structuresResponse] = await Promise.all([
+        supabase.rpc('get_dataset_summaries'),
+        supabase
+          .from('tranche_structures')
+          .select('*')
+          .order('created_at', { ascending: false })
+      ]);
+
+      if (datasetsResponse.error) {
+        console.error('Error preloading datasets:', datasetsResponse.error);
+        preloadedDatasets = [];
+      } else {
+        preloadedDatasets = datasetsResponse.data || [];
+        console.log(`✅ PRELOADED ${preloadedDatasets.length} datasets`);
+      }
+
+      if (structuresResponse.error) {
+        console.error('Error preloading structures:', structuresResponse.error);
+        preloadedStructures = [];
+      } else {
+        // Cast the Json tranches back to array type
+        const structures = (structuresResponse.data || []).map(item => ({
+          ...item,
+          tranches: item.tranches as any[]
+        }));
+        preloadedStructures = structures;
+        console.log(`✅ PRELOADED ${preloadedStructures.length} tranche structures`);
+      }
+    } catch (error) {
+      console.error('❌ ERROR preloading tranche data:', error);
+      preloadedDatasets = [];
+      preloadedStructures = [];
+    }
+  })();
+  
+  await preloadPromise;
+};
 
 const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardProps) => {
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
@@ -39,8 +91,15 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchDatasets = async () => {
+  const fetchDatasets = async (force = false) => {
     if (!user) return;
+    
+    // If we have preloaded data and this isn't a forced refresh, use it instantly!
+    if (preloadedDatasets && !force) {
+      console.log('⚡ USING PRELOADED DATASETS - Instant load!');
+      setDatasets([...preloadedDatasets]);
+      return;
+    }
     
     setLoading(true);
     try {
@@ -56,7 +115,9 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         return;
       }
 
+      // Update both local state and global cache
       setDatasets(data || []);
+      preloadedDatasets = data || [];
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -69,8 +130,15 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     }
   };
 
-  const fetchTrancheStructures = async () => {
+  const fetchTrancheStructures = async (force = false) => {
     if (!user) return;
+    
+    // If we have preloaded data and this isn't a forced refresh, use it instantly!
+    if (preloadedStructures && !force) {
+      console.log('⚡ USING PRELOADED STRUCTURES - Instant load!');
+      setTrancheStructures([...preloadedStructures]);
+      return;
+    }
     
     try {
       const { data, error } = await supabase
@@ -93,7 +161,10 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         ...item,
         tranches: item.tranches as any[]
       }));
+      
+      // Update both local state and global cache
       setTrancheStructures(structures);
+      preloadedStructures = structures;
     } catch (error) {
       console.error('Error:', error);
       toast({
