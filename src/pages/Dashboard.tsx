@@ -17,6 +17,7 @@ import { ManageOfferModal } from '@/components/ManageOfferModal';
 import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
 import InvestorReportingUpload from '@/components/InvestorReportingUpload';
 import ExtractionTool from '@/components/ExtractionTool';
+import { preloadDatasets } from '@/components/DatasetSelector';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -44,6 +45,14 @@ const Dashboard = () => {
       navigate('/dashboard', { replace: true });
     }
   }, [location.state, navigate]);
+
+  // Preload datasets when user is authenticated for instant loading
+  useEffect(() => {
+    if (user) {
+      console.log('🚀 DASHBOARD - User authenticated, preloading datasets');
+      preloadDatasets(user);
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();

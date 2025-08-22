@@ -8,12 +8,35 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Database, Loader2, RefreshCw } from 'lucide-react';
 import DatasetManagementInterface from './DatasetManagementInterface';
 
+// Global cache for preloaded datasets
+let preloadedDatasets: { name: string; owner_id: string; is_shared: boolean }[] | null = null;
+let preloadPromise: Promise<void> | null = null;
+
 interface DatasetSelectorProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectDataset: (datasetName: string) => void;
   refreshTrigger?: number;
 }
+
+// Preload function that can be called from Dashboard
+export const preloadDatasets = async (user: any) => {
+  if (!user || preloadedDatasets || preloadPromise) return;
+  
+  preloadPromise = (async () => {
+    try {
+      console.log('🚀 PRELOADING DATASETS in background');
+      const accessibleDatasets = await getAccessibleDatasets();
+      preloadedDatasets = [...accessibleDatasets];
+      console.log(`✅ PRELOADED ${accessibleDatasets.length} datasets:`, accessibleDatasets.map(d => d.name));
+    } catch (error) {
+      console.error('❌ ERROR preloading datasets:', error);
+      preloadedDatasets = [];
+    }
+  })();
+  
+  await preloadPromise;
+};
 
 const DatasetSelector: React.FC<DatasetSelectorProps> = ({ 
   isOpen, 
@@ -37,6 +60,14 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     }
     
     try {
+      // If we have preloaded data and this isn't a forced refresh, use it instantly!
+      if (preloadedDatasets && !force) {
+        console.log('⚡ USING PRELOADED DATASETS - Instant load!');
+        setDatasets([...preloadedDatasets]);
+        setHasInitiallyLoaded(true);
+        return;
+      }
+      
       setIsLoading(true);
       console.log('🔄 LOADING DATASETS - Force:', force, 'Refresh trigger:', refreshTrigger);
       
@@ -50,8 +81,9 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         datasetNames: accessibleDatasets.map(d => d.name)
       });
       
-      // Ensure we're setting ALL accessible datasets without any filtering or limiting
-      setDatasets([...accessibleDatasets]); // Use spread to ensure fresh array
+      // Update both local state and global cache
+      setDatasets([...accessibleDatasets]);
+      preloadedDatasets = [...accessibleDatasets];
       setHasInitiallyLoaded(true);
       
       console.log(`✅ LOADED ${accessibleDatasets.length} accessible datasets:`, accessibleDatasets.map(d => d.name));
@@ -128,6 +160,9 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
 
   const handleManualRefresh = () => {
     console.log('🔄 MANUAL REFRESH requested');
+    // Clear preloaded cache on manual refresh
+    preloadedDatasets = null;
+    preloadPromise = null;
     loadDatasets(true);
   };
 
