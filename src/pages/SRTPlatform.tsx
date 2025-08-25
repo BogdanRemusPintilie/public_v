@@ -255,17 +255,17 @@ const SRTPlatform = () => {
                 className="block hover:opacity-90 transition-opacity duration-300"
               >
                 <div className="bg-white rounded-2xl shadow-2xl p-8 hover:shadow-3xl transition-all duration-300 hover:-translate-y-1">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="mb-6">
                     <h3 className="text-xl font-semibold text-gray-900">Market Activity</h3>
-                    <p className="text-sm text-gray-600">(source: Structured Credit Investor)</p>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <img 
                       src="/lovable-uploads/7f508a91-79f9-4d95-93a0-87b3e41d4f80.png" 
                       alt="Cash and Synthetic SRT Market Activity Charts" 
                       className="w-full h-auto rounded-lg shadow-sm"
                       style={{ imageRendering: 'crisp-edges' }}
                     />
+                    <p className="text-xs text-gray-500 text-center">(source: Structured Credit Investor)</p>
                   </div>
                 </div>
               </a>
