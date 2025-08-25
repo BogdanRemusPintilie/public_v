@@ -248,42 +248,26 @@ const SRTPlatform = () => {
             </div>
             
             <div className="lg:pl-8">
-              <div className="bg-white rounded-2xl shadow-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">SRT Analytics Dashboard</h3>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600">Live Data</span>
+              <a 
+                href="https://www.structuredcreditinvestor.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block hover:opacity-90 transition-opacity duration-300"
+              >
+                <div className="bg-white rounded-2xl shadow-2xl p-6 hover:shadow-3xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Market Activity</h3>
+                    <p className="text-sm text-gray-600">(source: Structured Credit Investor)</p>
+                  </div>
+                  <div className="space-y-4">
+                    <img 
+                      src="/lovable-uploads/7f508a91-79f9-4d95-93a0-87b3e41d4f80.png" 
+                      alt="Cash and Synthetic SRT Market Activity Charts" 
+                      className="w-full h-auto rounded-lg"
+                    />
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Portfolio Value</div>
-                      <div className="text-2xl font-bold text-gray-900">€2.4B</div>
-                      <div className="text-sm text-green-600">+12.3%</div>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Risk-Weighted Assets</div>
-                      <div className="text-2xl font-bold text-gray-900">€480M</div>
-                      <div className="text-sm text-red-600">-23.1%</div>
-                    </div>
-                  </div>
-                  <div className="h-32">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{
-                        fill: '#2563eb',
-                        strokeWidth: 2
-                      }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
+              </a>
             </div>
           </div>
         </div>
