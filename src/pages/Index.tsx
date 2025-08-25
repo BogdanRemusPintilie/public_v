@@ -198,6 +198,35 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Market Activity Section */}
+      <section className="py-20 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-4 mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Market Activity</h2>
+            <p className="text-lg text-gray-600">(source: Structured Credit Investor)</p>
+          </div>
+          
+          <div className="flex justify-center">
+            <a 
+              href="https://www.structuredcreditinvestor.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block hover:opacity-90 transition-opacity duration-300"
+            >
+              <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 max-w-5xl">
+                <CardContent className="p-8">
+                  <img 
+                    src="/lovable-uploads/7f508a91-79f9-4d95-93a0-87b3e41d4f80.png" 
+                    alt="Cash and Synthetic SRT Market Activity Charts" 
+                    className="w-full h-auto rounded-lg"
+                  />
+                </CardContent>
+              </Card>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Security Section */}
       <section id="security" className="py-20 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
