@@ -80,6 +80,41 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     await loadDatasetData(datasetName);
   };
 
+  // Enhanced global refresh function
+  const triggerGlobalDatasetRefresh = () => {
+    console.log('🌍 TRIGGERING GLOBAL DATASET REFRESH');
+    
+    // Clear all cached data
+    clearDatasetCache();
+    
+    // Generate multiple refresh triggers with staggered timing
+    const baseTimestamp = Date.now();
+    
+    // Immediate refresh
+    setDatasetRefreshTrigger(baseTimestamp);
+    console.log('🔄 IMMEDIATE REFRESH TRIGGERED:', baseTimestamp);
+    
+    // Secondary refresh after 2 seconds
+    setTimeout(() => {
+      const secondaryTimestamp = baseTimestamp + 1;
+      setDatasetRefreshTrigger(secondaryTimestamp);
+      console.log('🔄 SECONDARY REFRESH TRIGGERED:', secondaryTimestamp);
+    }, 2000);
+    
+    // Final refresh after 4 seconds to ensure consistency
+    setTimeout(() => {
+      const finalTimestamp = baseTimestamp + 2;
+      setDatasetRefreshTrigger(finalTimestamp);
+      console.log('🔄 FINAL REFRESH TRIGGERED:', finalTimestamp);
+    }, 4000);
+    
+    // Notify parent component about dataset changes
+    if (onDatasetUploaded) {
+      console.log('📢 NOTIFYING PARENT COMPONENT OF DATASET CHANGE');
+      onDatasetUploaded();
+    }
+  };
+
   // FIXED: Use efficient dataset-specific query instead of filtering all data
   const loadDatasetData = async (datasetName: string, page = 0) => {
     if (!user) return;
@@ -238,39 +273,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Enhanced refresh mechanism with multiple triggers and longer delays
-      const timestamp = Date.now();
-      
-      // Trigger immediate refresh
-      setDatasetRefreshTrigger(timestamp);
-      
-      // Clear dataset cache and notify parent component about the new dataset
-      clearDatasetCache();
-      if (onDatasetUploaded) {
-        onDatasetUploaded();
-      }
-      
-      console.log('🔄 DATASET REFRESH TRIGGERED (immediate):', timestamp);
-      
-      // Wait for database consistency
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Trigger secondary refresh to ensure data appears
-      const secondaryTimestamp = timestamp + 1;
-      setDatasetRefreshTrigger(secondaryTimestamp);
-      console.log('🔄 DATASET REFRESH TRIGGERED (secondary):', secondaryTimestamp);
-      
-      // Wait a bit more and trigger final refresh
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Final refresh to be absolutely sure
-      const finalTimestamp = timestamp + 2;
-      setDatasetRefreshTrigger(finalTimestamp);
-      console.log('🔄 DATASET REFRESH TRIGGERED (final):', finalTimestamp);
+      // Trigger comprehensive global refresh
+      triggerGlobalDatasetRefresh();
       
       toast({
         title: "Filtered Dataset Saved Successfully",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset should now appear in "Select Dataset to Manage" within a few seconds.`,
+        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset will appear throughout the platform within a few seconds.`,
         duration: 8000,
       });
       
@@ -552,19 +560,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ UPLOAD SUCCESSFUL - Data saved to database');
       
-      // Enhanced refresh mechanism
-      const newTrigger = Date.now();
-      setDatasetRefreshTrigger(newTrigger);
-      
-      // Clear dataset cache and notify parent component about the new dataset
-      clearDatasetCache();
-      if (onDatasetUploaded) {
-        onDatasetUploaded();
-      }
+      // Trigger comprehensive global refresh after successful save
+      triggerGlobalDatasetRefresh();
       
       toast({
         title: "Upload Successful",
-        description: `${dataToSave.length} loan records saved successfully as "${datasetName}". The dataset will appear in "Access Existing Data" and "Extract Data" sections.`,
+        description: `${dataToSave.length} loan records saved successfully as "${datasetName}". The dataset will appear throughout the platform within a few seconds.`,
         duration: 6000,
       });
       
