@@ -12,6 +12,13 @@ import DatasetManagementInterface from './DatasetManagementInterface';
 let preloadedDatasets: { name: string; owner_id: string; is_shared: boolean }[] | null = null;
 let preloadPromise: Promise<void> | null = null;
 
+// Function to clear cache when new datasets are added
+export const clearDatasetCache = () => {
+  console.log('🧹 CLEARING DATASET CACHE');
+  preloadedDatasets = null;
+  preloadPromise = null;
+};
+
 interface DatasetSelectorProps {
   isOpen: boolean;
   onClose: () => void;

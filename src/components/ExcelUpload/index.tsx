@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { parseExcelFile } from '@/utils/excelParser';
 import { ExcelUploadModal } from './ExcelUploadModal';
 import DatasetSharingManager from '../DatasetSharingManager';
-import DatasetSelector from '../DatasetSelector';
+import DatasetSelector, { clearDatasetCache } from '../DatasetSelector';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -244,7 +244,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       // Trigger immediate refresh
       setDatasetRefreshTrigger(timestamp);
       
-      // Notify parent component about the new dataset
+      // Clear dataset cache and notify parent component about the new dataset
+      clearDatasetCache();
       if (onDatasetUploaded) {
         onDatasetUploaded();
       }
@@ -555,7 +556,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       const newTrigger = Date.now();
       setDatasetRefreshTrigger(newTrigger);
       
-      // Notify parent component about the new dataset
+      // Clear dataset cache and notify parent component about the new dataset
+      clearDatasetCache();
       if (onDatasetUploaded) {
         onDatasetUploaded();
       }
