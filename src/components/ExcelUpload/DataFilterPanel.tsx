@@ -282,12 +282,17 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           Data Filters
           {showFiltered && (
             <span className="text-sm font-normal text-gray-600">
-              ({filteredData.length.toLocaleString()} of {totalRecords.toLocaleString()} records)
+              ({filteredData.length.toLocaleString()} of {completeDataset.length.toLocaleString()} records)
             </span>
           )}
           {!allDataLoaded && (
             <span className="text-sm font-normal text-orange-600">
-              (Will load all {totalRecords.toLocaleString()} records for filtering)
+              (Will load all records for filtering)
+            </span>
+          )}
+          {allDataLoaded && !showFiltered && (
+            <span className="text-sm font-normal text-green-600">
+              ({completeDataset.length.toLocaleString()} records loaded)
             </span>
           )}
         </CardTitle>
