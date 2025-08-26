@@ -157,6 +157,8 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
 
   const handleDatasetDeleted = () => {
     setSelectedDatasetForManagement(null);
+    // Clear cache to ensure deleted dataset doesn't appear
+    clearDatasetCache();
     // Refresh the datasets list
     loadDatasets(true);
     toast({
