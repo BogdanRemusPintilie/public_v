@@ -59,17 +59,22 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [completeDataset, setCompleteDataset] = useState<LoanRecord[]>([]);
 
   const loadCompleteDataset = async () => {
-    console.log('🚀 OPTIMIZED PARALLEL LOADING FOR FILTERING...');
+    console.log('🚀 ULTRA-FAST FILTERING LOAD - SMALLER BATCHES...');
     try {
       setIsLoadingAllData(true);
       
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // First get total count
-      const { count: totalCount } = await supabase
+      // First get total count with timeout protection
+      const { count: totalCount, error: countError } = await supabase
         .from('loan_data')
         .select('*', { count: 'exact', head: true })
         .eq('dataset_name', datasetName);
+      
+      if (countError) {
+        console.error('❌ Error getting count:', countError);
+        throw countError;
+      }
       
       console.log(`📊 TOTAL RECORDS TO LOAD: ${totalCount}`);
       
@@ -79,45 +84,59 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         return [];
       }
       
-      // Use larger batch size for faster loading
-      const batchSize = 2000;
+      // Use smaller batches to avoid timeouts - 500 records per batch
+      const batchSize = 500;
       const totalBatches = Math.ceil(totalCount / batchSize);
       
-      console.log(`🚀 Loading ${totalBatches} batches in parallel with ${batchSize} records each`);
+      console.log(`🚀 Loading ${totalBatches} small batches of ${batchSize} records each for speed`);
       
-      // Create array of batch promises for parallel loading
-      const batchPromises = [];
-      
-      for (let i = 0; i < totalBatches; i++) {
-        const offset = i * batchSize;
-        const batchPromise = supabase
-          .from('loan_data')
-          .select('id, opening_balance, interest_rate, remaining_term, pd, lgd, loan_amount, term, ltv, dataset_name, user_id, created_at')
-          .eq('dataset_name', datasetName)
-          .order('created_at', { ascending: false })
-          .range(offset, offset + batchSize - 1);
-          
-        batchPromises.push(batchPromise);
-      }
-      
-      console.log(`⚡ Executing ${batchPromises.length} parallel requests...`);
-      
-      // Execute all batches in parallel
-      const batchResults = await Promise.all(batchPromises);
-      
-      // Combine all results
+      // Process in smaller groups to avoid overwhelming the database
+      const groupSize = 6; // Max 6 parallel requests at once
+      const groups = Math.ceil(totalBatches / groupSize);
       let allRecords: any[] = [];
-      for (let i = 0; i < batchResults.length; i++) {
-        const { data, error } = batchResults[i];
+      
+      for (let group = 0; group < groups; group++) {
+        const startBatch = group * groupSize;
+        const endBatch = Math.min(startBatch + groupSize, totalBatches);
         
-        if (error) {
-          console.error(`❌ Error in batch ${i + 1}:`, error);
-          throw error;
+        console.log(`⚡ Processing group ${group + 1}/${groups}: batches ${startBatch + 1}-${endBatch}`);
+        
+        // Create promises for this group
+        const groupPromises = [];
+        for (let i = startBatch; i < endBatch; i++) {
+          const offset = i * batchSize;
+          const batchPromise = supabase
+            .from('loan_data')
+            .select('id, opening_balance, interest_rate, remaining_term, pd, lgd, loan_amount, term, ltv, dataset_name, user_id, created_at')
+            .eq('dataset_name', datasetName)
+            .order('created_at', { ascending: false })
+            .range(offset, offset + batchSize - 1);
+            
+          groupPromises.push(batchPromise);
         }
         
-        if (data && data.length > 0) {
-          allRecords = [...allRecords, ...data];
-          console.log(`📈 Batch ${i + 1}/${totalBatches} completed: ${allRecords.length} total records loaded`);
+        // Execute this group in parallel
+        const groupResults = await Promise.all(groupPromises);
+        
+        // Process results for this group
+        for (let j = 0; j < groupResults.length; j++) {
+          const { data, error } = groupResults[j];
+          const batchIndex = startBatch + j + 1;
+          
+          if (error) {
+            console.error(`❌ Error in batch ${batchIndex}:`, error);
+            throw error;
+          }
+          
+          if (data && data.length > 0) {
+            allRecords = [...allRecords, ...data];
+            console.log(`📈 Batch ${batchIndex}/${totalBatches} completed: ${allRecords.length} total records loaded`);
+          }
+        }
+        
+        // Small delay between groups to be nice to the database
+        if (group < groups - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       
@@ -127,12 +146,14 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         remaining_term: typeof record.remaining_term === 'string' ? parseFloat(record.remaining_term) : record.remaining_term
       })) as LoanRecord[];
       
-      console.log(`✅ Complete dataset loaded: ${transformedRecords.length} records in ${totalBatches} parallel batches`);
+      console.log(`✅ Complete dataset loaded: ${transformedRecords.length} records in ${totalBatches} small batches`);
       setCompleteDataset(transformedRecords);
       setAllDataLoaded(true);
       return transformedRecords;
     } catch (error) {
       console.error('❌ Error loading complete dataset:', error);
+      setCompleteDataset([]);
+      setAllDataLoaded(false);
       throw error;
     } finally {
       setIsLoadingAllData(false);
