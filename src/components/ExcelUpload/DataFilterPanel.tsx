@@ -59,17 +59,11 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [completeDataset, setCompleteDataset] = useState<LoanRecord[]>([]);
 
   const loadCompleteDataset = async () => {
-    // ALWAYS reload - ignore cache completely
-    console.log('🚀 FORCE LOADING ALL RECORDS WITH PROPER PAGINATION (NO CACHE)...');
+    console.log('🚀 OPTIMIZED PARALLEL LOADING FOR FILTERING...');
     try {
       setIsLoadingAllData(true);
-      console.log('🚀 LOADING ALL RECORDS WITH PROPER PAGINATION...');
       
       const { supabase } = await import('@/integrations/supabase/client');
-      let allRecords: any[] = [];
-      let pageSize = 1000; // Use Supabase's max limit
-      let offset = 0;
-      let hasMore = true;
       
       // First get total count
       const { count: totalCount } = await supabase
@@ -79,35 +73,51 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       
       console.log(`📊 TOTAL RECORDS TO LOAD: ${totalCount}`);
       
-      while (hasMore) {
-        console.log(`🔄 Loading batch ${Math.floor(offset/pageSize) + 1}: offset ${offset}, pageSize ${pageSize}`);
-        
-        const { data, error } = await supabase
+      if (!totalCount || totalCount === 0) {
+        setCompleteDataset([]);
+        setAllDataLoaded(true);
+        return [];
+      }
+      
+      // Use larger batch size for faster loading
+      const batchSize = 2000;
+      const totalBatches = Math.ceil(totalCount / batchSize);
+      
+      console.log(`🚀 Loading ${totalBatches} batches in parallel with ${batchSize} records each`);
+      
+      // Create array of batch promises for parallel loading
+      const batchPromises = [];
+      
+      for (let i = 0; i < totalBatches; i++) {
+        const offset = i * batchSize;
+        const batchPromise = supabase
           .from('loan_data')
-          .select('*')
+          .select('id, opening_balance, interest_rate, remaining_term, pd, lgd, loan_amount, term, ltv, dataset_name, user_id, created_at')
           .eq('dataset_name', datasetName)
           .order('created_at', { ascending: false })
-          .range(offset, offset + pageSize - 1);
+          .range(offset, offset + batchSize - 1);
+          
+        batchPromises.push(batchPromise);
+      }
+      
+      console.log(`⚡ Executing ${batchPromises.length} parallel requests...`);
+      
+      // Execute all batches in parallel
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Combine all results
+      let allRecords: any[] = [];
+      for (let i = 0; i < batchResults.length; i++) {
+        const { data, error } = batchResults[i];
         
         if (error) {
-          console.error('❌ Error loading batch:', error);
+          console.error(`❌ Error in batch ${i + 1}:`, error);
           throw error;
         }
         
         if (data && data.length > 0) {
           allRecords = [...allRecords, ...data];
-          console.log(`📈 Progress: ${allRecords.length} of ${totalCount} records loaded`);
-          
-          offset += pageSize;
-          hasMore = data.length === pageSize && allRecords.length < (totalCount || 0);
-        } else {
-          hasMore = false;
-        }
-        
-        // Safety check
-        if (offset > (totalCount || 0) + pageSize) {
-          console.log('🛑 Stopping pagination - reached end');
-          break;
+          console.log(`📈 Batch ${i + 1}/${totalBatches} completed: ${allRecords.length} total records loaded`);
         }
       }
       
@@ -117,7 +127,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         remaining_term: typeof record.remaining_term === 'string' ? parseFloat(record.remaining_term) : record.remaining_term
       })) as LoanRecord[];
       
-      console.log(`✅ Complete dataset loaded: ${transformedRecords.length} records`);
+      console.log(`✅ Complete dataset loaded: ${transformedRecords.length} records in ${totalBatches} parallel batches`);
       setCompleteDataset(transformedRecords);
       setAllDataLoaded(true);
       return transformedRecords;
