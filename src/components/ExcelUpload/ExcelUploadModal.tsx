@@ -117,7 +117,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                 </CardTitle>
                 <CardDescription>
                   {showExistingData 
-                    ? `View and manage your existing loan portfolio data ${totalRecords > 0 ? `(${totalRecords.toLocaleString()} total records)` : ''}`
+                    ? `View and manage your existing loan portfolio data ${allData.length > 0 ? `(${allData.length.toLocaleString()} total records)` : ''}`
                     : "Upload your loan portfolio data in .xlsx or .xls format. Looking for 'loan_tape' worksheet."
                   }
                 </CardDescription>
@@ -145,7 +145,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                       <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
                       Refresh
                     </Button>
-                    {totalRecords > 0 && (
+                    {allData.length > 0 && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -162,7 +162,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Complete Dataset?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete all {totalRecords.toLocaleString()} loan records from your account.
+                              This action cannot be undone. This will permanently delete all {allData.length.toLocaleString()} loan records from your account.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -199,7 +199,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
               {showExistingData && selectedDatasetName && (
                 <DataFilterPanel
                   datasetName={selectedDatasetName}
-                  totalRecords={totalRecords}
+                  totalRecords={allData.length}
                   onFilteredDataChange={onFilteredDataChange}
                   onSaveFilteredDataset={onSaveFilteredDataset}
                   isProcessing={isProcessing}

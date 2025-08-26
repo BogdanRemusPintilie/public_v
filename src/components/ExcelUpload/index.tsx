@@ -80,47 +80,67 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     await loadDatasetData(datasetName);
   };
 
-  // FIXED: Use efficient dataset-specific query instead of filtering all data
+  // Load all dataset data for filtering (note: this loads all records at once)
   const loadDatasetData = async (datasetName: string, page = 0) => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log(`📊 LOADING DATASET DATA: ${datasetName} - Page ${page + 1}`);
+      console.log(`📊 LOADING ALL DATASET DATA: ${datasetName}`);
       
-      // Use the new efficient dataset-specific query
-      const result = await getLoanDataByDataset(datasetName, page, PAGE_SIZE);
+      // Load all data for this dataset using pagination
+      let allRecords: LoanRecord[] = [];
+      let currentPage = 0;
+      let hasMoreData = true;
+      const batchSize = 1000;
       
-      console.log(`📊 DATASET DATA LOADED: ${result.data.length} records for ${datasetName} (Page ${page + 1})`);
-      
-      if (page === 0) {
-        // First page - reset all data
-        setPreviewData(result.data);
-        setAllData(result.data);
-        setFilteredData(result.data);
-        setCurrentPage(0);
+      while (hasMoreData) {
+        console.log(`📊 Loading batch ${currentPage + 1} with ${batchSize} records...`);
+        const result = await getLoanDataByDataset(datasetName, currentPage, batchSize);
         
         if (result.data.length > 0) {
-          // Calculate portfolio summary server-side for entire dataset (avoiding 1000-row limit)
-          const portfolioSummary = await getPortfolioSummary(datasetName);
-          setPortfolioSummary(portfolioSummary);
+          allRecords = [...allRecords, ...result.data];
+          console.log(`📊 Loaded ${result.data.length} records (Total: ${allRecords.length})`);
           
-          toast({
-            title: "Dataset Loaded",
-            description: `Loaded ${result.data.length.toLocaleString()} records from "${datasetName}" (${result.totalCount.toLocaleString()} total)`,
-          });
+          hasMoreData = result.hasMore;
+          currentPage++;
         } else {
-          setPortfolioSummary(null);
-          toast({
-            title: "No Data Found",
-            description: `No records found in dataset "${datasetName}"`,
-          });
+          hasMoreData = false;
+        }
+        
+        // Safety check to prevent infinite loops
+        if (currentPage > 200) {
+          console.warn('⚠️ Stopping at 200 batches to prevent infinite loop');
+          break;
         }
       }
       
-      // Set pagination info
-      setTotalRecords(result.totalCount);
-      setHasMore(result.hasMore);
+      console.log(`✅ COMPLETE DATASET LOADED: ${allRecords.length} total records for ${datasetName}`);
+      
+      // Set all data at once
+      setAllData(allRecords);
+      setFilteredData(allRecords);
+      setPreviewData(allRecords.slice(0, PAGE_SIZE)); // Show first page in table
+      setCurrentPage(0);
+      setTotalRecords(allRecords.length);
+      setHasMore(allRecords.length > PAGE_SIZE);
+      
+      if (allRecords.length > 0) {
+        // Calculate portfolio summary server-side for entire dataset
+        const portfolioSummary = await getPortfolioSummary(datasetName);
+        setPortfolioSummary(portfolioSummary);
+        
+        toast({
+          title: "Dataset Loaded",
+          description: `Loaded ${allRecords.length.toLocaleString()} records from "${datasetName}"`,
+        });
+      } else {
+        setPortfolioSummary(null);
+        toast({
+          title: "No Data Found",
+          description: `No records found in dataset "${datasetName}"`,
+        });
+      }
       
     } catch (error) {
       console.error('❌ ERROR loading dataset:', error);
@@ -377,7 +397,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   const handleDeleteCompleteDataset = async () => {
-    if (!user || !selectedDatasetName || totalRecords === 0) {
+    if (!user || !selectedDatasetName || allData.length === 0) {
       toast({
         title: "No Dataset to Delete",
         description: "No dataset selected to delete",
