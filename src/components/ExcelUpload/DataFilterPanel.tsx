@@ -274,6 +274,16 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
 
   const remainingTerms = getUniqueValues('remaining_term') as number[];
 
+  // Debug logging to track record counts
+  console.log('🔍 DataFilterPanel Debug:', {
+    totalRecords,
+    completeDatasetLength: completeDataset.length,
+    filteredDataLength: filteredData.length,
+    allDataLoaded,
+    showFiltered,
+    datasetName
+  });
+
   return (
     <Card className="mb-6">
       <CardHeader>
