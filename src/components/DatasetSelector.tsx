@@ -125,6 +125,10 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
       setHasInitiallyLoaded(false);
       setLastRefreshTrigger(0);
       setSelectedDatasetForManagement(null);
+    } else if (isOpen) {
+      // Clear cache when modal opens to ensure fresh data
+      console.log('🔄 MODAL OPENED - Clearing cache for fresh data');
+      clearDatasetCache();
     }
   }, [isOpen]);
 

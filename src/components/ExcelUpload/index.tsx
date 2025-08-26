@@ -238,35 +238,19 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
-      // Enhanced refresh mechanism with multiple triggers and longer delays
-      const timestamp = Date.now();
+      // Clear dataset cache immediately to ensure fresh data
+      clearDatasetCache();
       
-      // Trigger immediate refresh
+      // Enhanced refresh mechanism
+      const timestamp = Date.now();
       setDatasetRefreshTrigger(timestamp);
       
-      // Clear dataset cache and notify parent component about the new dataset
-      clearDatasetCache();
+      // Notify parent component about the new dataset
       if (onDatasetUploaded) {
         onDatasetUploaded();
       }
       
-      console.log('🔄 DATASET REFRESH TRIGGERED (immediate):', timestamp);
-      
-      // Wait for database consistency
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Trigger secondary refresh to ensure data appears
-      const secondaryTimestamp = timestamp + 1;
-      setDatasetRefreshTrigger(secondaryTimestamp);
-      console.log('🔄 DATASET REFRESH TRIGGERED (secondary):', secondaryTimestamp);
-      
-      // Wait a bit more and trigger final refresh
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Final refresh to be absolutely sure
-      const finalTimestamp = timestamp + 2;
-      setDatasetRefreshTrigger(finalTimestamp);
-      console.log('🔄 DATASET REFRESH TRIGGERED (final):', finalTimestamp);
+      console.log('🔄 DATASET REFRESH TRIGGERED:', timestamp);
       
       toast({
         title: "Filtered Dataset Saved Successfully",
@@ -553,11 +537,13 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       console.log('✅ UPLOAD SUCCESSFUL - Data saved to database');
       
       // Enhanced refresh mechanism
+      // Clear dataset cache immediately to ensure fresh data
+      clearDatasetCache();
+      
       const newTrigger = Date.now();
       setDatasetRefreshTrigger(newTrigger);
       
-      // Clear dataset cache and notify parent component about the new dataset
-      clearDatasetCache();
+      // Notify parent component about the new dataset
       if (onDatasetUploaded) {
         onDatasetUploaded();
       }
