@@ -147,7 +147,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     setFilteredData([]);
     setShowFiltered(false);
     setFilteredCount(0);
-    onFilteredDataChange([]);
+    onFilteredDataChange([], null); // Pass null filters to indicate no filters
     
     // Reset portfolio summary to original dataset summary
     getPortfolioSummary(datasetName).then(originalSummary => {

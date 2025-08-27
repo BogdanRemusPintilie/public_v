@@ -103,7 +103,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       // Set minimal data for immediate display
       setPreviewData(firstPageRecords);
       setFilteredData([]); // Clear filtered data
-      setAllData([]); // Don't load all data initially
+      setCurrentFilters(null); // Clear any active filters
+      setAllData([]); // Don't load all data initially - use totalRecords instead
       setCurrentPage(0);
       setTotalRecords(totalCount);
       setHasMore(totalCount > PAGE_SIZE);
@@ -139,7 +140,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setFilteredData(filtered);
     setCurrentFilters(filters);
     
-    if (filtered.length === 0) {
+    if (filtered.length === 0 && filters === null) {
+      // Clear filters case - reset to show full dataset
       // If no filters applied, get fresh portfolio summary from database
       if (selectedDatasetName) {
         const portfolioSummary = await getPortfolioSummary(selectedDatasetName);

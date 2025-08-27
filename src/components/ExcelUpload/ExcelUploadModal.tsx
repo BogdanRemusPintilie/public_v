@@ -203,7 +203,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
               {showExistingData && selectedDatasetName && (
                 <DataFilterPanel
                   datasetName={selectedDatasetName}
-                  totalRecords={allData.length}
+                  totalRecords={totalRecords}
                   onFilteredDataChange={onFilteredDataChange}
                   onSaveFilteredDataset={onSaveFilteredDataset}
                   onPortfolioSummaryChange={onPortfolioSummaryChange}
@@ -215,7 +215,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                 <PortfolioSummary portfolioSummary={portfolioSummary} />
               )}
 
-              {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
+              {(previewData.length > 0 || (showExistingData && totalRecords > 0)) && (
                 <>
                   <PortfolioCharts 
                     allData={showExistingData ? (filteredData.length > 0 ? filteredData : allData) : allData}
@@ -223,6 +223,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                     showExistingData={showExistingData}
                     selectedDatasetName={selectedDatasetName}
                     filters={currentFilters}
+                    totalRecords={totalRecords}
                   />
 
                   <DataPreviewTable
