@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Filter, X, Save, CheckCircle } from 'lucide-react';
 import { LoanRecord, FilterCriteria, getLoanDataByDataset, getPortfolioSummary } from '@/utils/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FilterCriteriaForm {
   minLoanAmount: string;
@@ -158,32 +159,31 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const handleSaveFilteredDataset = async () => {
     if (saveDatasetName.trim() && filteredCount > 0) {
       try {
-        console.log('🔄 SAVING FILTERED DATASET:', {
+        console.log('🔄 SAVING FILTERED DATASET (SERVER-SIDE):', {
           name: saveDatasetName.trim(),
-          totalFilteredRecords: filteredCount,
-          displayedRecords: filteredData.length
+          totalFilteredRecords: filteredCount
         });
         
-        // Fetch ALL filtered records for saving, not just the displayed 1000
-        console.log('📥 FETCHING ALL FILTERED RECORDS...');
+        // Use edge function for efficient server-side copying
         const currentFilters = convertFormToFilterCriteria(filterCriteria);
-        const allFilteredResult = await getLoanDataByDataset(datasetName, 0, filteredCount, currentFilters);
-        const allFilteredRecords = allFilteredResult.data || [];
         
-        console.log('✅ FETCHED ALL FILTERED RECORDS:', {
-          expected: filteredCount,
-          actual: allFilteredRecords.length
+        const { data, error } = await supabase.functions.invoke('copy-filtered-dataset', {
+          body: {
+            sourceDatasetName: datasetName,
+            newDatasetName: saveDatasetName.trim(),
+            filters: currentFilters
+          }
         });
+
+        if (error) {
+          console.error('❌ Server-side copy failed:', error);
+          throw new Error(`Failed to copy dataset: ${error.message}`);
+        }
+
+        console.log('✅ SERVER-SIDE COPY SUCCESSFUL:', data);
         
-        // Prepare clean data without database-specific fields
-        const cleanFilteredData = allFilteredRecords.map(record => {
-          const { id, created_at, ...cleanRecord } = record;
-          return cleanRecord;
-        });
-        
-        console.log('🧹 CLEANED DATA SAMPLE:', cleanFilteredData[0]);
-        
-        await onSaveFilteredDataset(cleanFilteredData, saveDatasetName.trim());
+        // Call the original save function with empty array since the work is done server-side
+        await onSaveFilteredDataset([], saveDatasetName.trim());
         
         setSaveSuccess(true);
         
