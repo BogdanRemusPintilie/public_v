@@ -150,12 +150,12 @@ export const getLoanDataByDataset = async (
       dataQuery = dataQuery.lte('interest_rate', filters.maxInterestRate);
     }
     if (filters.minRemainingTerm !== undefined) {
-      countQuery = countQuery.gte('remaining_term', filters.minRemainingTerm.toString());
-      dataQuery = dataQuery.gte('remaining_term', filters.minRemainingTerm.toString());
+      countQuery = countQuery.gte('remaining_term::numeric', filters.minRemainingTerm);
+      dataQuery = dataQuery.gte('remaining_term::numeric', filters.minRemainingTerm);
     }
     if (filters.maxRemainingTerm !== undefined) {
-      countQuery = countQuery.lte('remaining_term', filters.maxRemainingTerm.toString());
-      dataQuery = dataQuery.lte('remaining_term', filters.maxRemainingTerm.toString());
+      countQuery = countQuery.lte('remaining_term::numeric', filters.maxRemainingTerm);
+      dataQuery = dataQuery.lte('remaining_term::numeric', filters.maxRemainingTerm);
     }
     if (filters.minPD !== undefined) {
       countQuery = countQuery.gte('pd', filters.minPD);
