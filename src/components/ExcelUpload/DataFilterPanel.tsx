@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Filter, X, Save, CheckCircle } from 'lucide-react';
-import { LoanRecord, FilterCriteria, getLoanDataByDataset } from '@/utils/supabase';
+import { LoanRecord, FilterCriteria, getLoanDataByDataset, getPortfolioSummary } from '@/utils/supabase';
 
 interface FilterCriteriaForm {
   minLoanAmount: string;
@@ -27,6 +27,7 @@ interface DataFilterPanelProps {
   totalRecords: number;
   onFilteredDataChange: (filteredData: LoanRecord[]) => void;
   onSaveFilteredDataset: (filteredData: LoanRecord[], datasetName: string) => void;
+  onPortfolioSummaryChange: (summary: any) => void;
   isProcessing: boolean;
 }
 
@@ -35,6 +36,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   totalRecords,
   onFilteredDataChange,
   onSaveFilteredDataset,
+  onPortfolioSummaryChange,
   isProcessing
 }) => {
   const [filterCriteria, setFilterCriteria] = useState<FilterCriteriaForm>({
@@ -94,6 +96,10 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       
       console.log(`✅ DATABASE FILTER COMPLETE: ${result.totalCount} total matching records, loaded ${result.data.length} for display`);
       
+      // Update portfolio summary with filtered data
+      const filteredSummary = await getPortfolioSummary(datasetName, filters);
+      onPortfolioSummaryChange(filteredSummary);
+      
       setFilteredData(result.data);
       setShowFiltered(true);
       onFilteredDataChange(result.data);
@@ -121,6 +127,11 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     setShowFiltered(false);
     setFilteredCount(0);
     onFilteredDataChange([]);
+    
+    // Reset portfolio summary to original dataset summary
+    getPortfolioSummary(datasetName).then(originalSummary => {
+      onPortfolioSummaryChange(originalSummary);
+    }).catch(console.error);
   };
 
   const handleSaveFilteredDataset = async () => {

@@ -642,6 +642,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         onFileDrop={handleFileDrop}
         onFilteredDataChange={handleFilteredDataChange}
         onSaveFilteredDataset={handleSaveFilteredDataset}
+        onPortfolioSummaryChange={setPortfolioSummary}
       />
       
       <DatasetSharingManager 

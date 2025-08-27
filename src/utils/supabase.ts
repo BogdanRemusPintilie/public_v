@@ -496,24 +496,101 @@ export interface PortfolioSummary {
   totalRecords: number;
 }
 
-export const getPortfolioSummary = async (datasetName: string): Promise<PortfolioSummary | null> => {
-  const { data, error } = await supabase
-    .rpc('get_portfolio_summary', { dataset_name_param: datasetName });
+export const getPortfolioSummary = async (datasetName: string, filters?: FilterCriteria): Promise<PortfolioSummary | null> => {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    throw new Error('User not authenticated');
+  }
+
+  // If no filters applied, use the optimized database function
+  if (!filters || Object.values(filters).every(val => val === undefined)) {
+    const { data, error } = await supabase
+      .rpc('get_portfolio_summary', { dataset_name_param: datasetName });
+
+    if (error) {
+      console.error('Error fetching portfolio summary:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const summary = data[0];
+    return {
+      totalValue: Number(summary.total_value) || 0,
+      avgInterestRate: Number(summary.avg_interest_rate) || 0,
+      highRiskLoans: Number(summary.high_risk_loans) || 0,
+      totalRecords: Number(summary.total_records) || 0
+    };
+  }
+
+  // For filtered data, fetch with the same filtering logic as getLoanDataByDataset
+  let query = supabase
+    .from('loan_data')
+    .select('opening_balance, interest_rate, pd')
+    .eq('dataset_name', datasetName)
+    .eq('user_id', user.id);
+
+  // Apply the same filters as in getLoanDataByDataset
+  if (filters.minLoanAmount !== undefined) {
+    query = query.gte('opening_balance', filters.minLoanAmount);
+  }
+  if (filters.maxLoanAmount !== undefined) {
+    query = query.lte('opening_balance', filters.maxLoanAmount);
+  }
+  if (filters.minInterestRate !== undefined) {
+    query = query.gte('interest_rate', filters.minInterestRate);
+  }
+  if (filters.maxInterestRate !== undefined) {
+    query = query.lte('interest_rate', filters.maxInterestRate);
+  }
+  if (filters.minRemainingTerm !== undefined) {
+    query = query.gte('remaining_term', filters.minRemainingTerm);
+  }
+  if (filters.maxRemainingTerm !== undefined) {
+    query = query.lte('remaining_term', filters.maxRemainingTerm);
+  }
+  if (filters.minPD !== undefined) {
+    query = query.gte('pd', filters.minPD);
+  }
+  if (filters.maxPD !== undefined) {
+    query = query.lte('pd', filters.maxPD);
+  }
+  if (filters.minLGD !== undefined) {
+    query = query.gte('lgd', filters.minLGD);
+  }
+  if (filters.maxLGD !== undefined) {
+    query = query.lte('lgd', filters.maxLGD);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching portfolio summary:', error);
+    console.error('Error fetching filtered portfolio summary:', error);
     throw error;
   }
 
   if (!data || data.length === 0) {
-    return null;
+    return {
+      totalValue: 0,
+      avgInterestRate: 0,
+      highRiskLoans: 0,
+      totalRecords: 0
+    };
   }
 
-  const summary = data[0];
+  const totalValue = data.reduce((sum, loan) => sum + (loan.opening_balance || 0), 0);
+  const avgInterestRate = totalValue > 0 ? 
+    data.reduce((sum, loan) => sum + ((loan.interest_rate || 0) * (loan.opening_balance || 0)), 0) / totalValue : 0;
+  const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.10).length;
+  const totalRecords = data.length;
+
   return {
-    totalValue: Number(summary.total_value) || 0,
-    avgInterestRate: Number(summary.avg_interest_rate) || 0,
-    highRiskLoans: Number(summary.high_risk_loans) || 0,
-    totalRecords: Number(summary.total_records) || 0
+    totalValue,
+    avgInterestRate,
+    highRiskLoans,
+    totalRecords
   };
 };
