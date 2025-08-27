@@ -25,7 +25,7 @@ interface FilterCriteriaForm {
 interface DataFilterPanelProps {
   datasetName: string;
   totalRecords: number;
-  onFilteredDataChange: (filteredData: LoanRecord[]) => void;
+  onFilteredDataChange: (filteredData: LoanRecord[], filters?: FilterCriteria) => void;
   onSaveFilteredDataset: (filteredData: LoanRecord[], datasetName: string) => void;
   onPortfolioSummaryChange: (summary: any) => void;
   isProcessing: boolean;
@@ -123,7 +123,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       
       setFilteredData(result.data);
       setShowFiltered(true);
-      onFilteredDataChange(result.data);
+      onFilteredDataChange(result.data, filters);
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
