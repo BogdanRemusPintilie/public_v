@@ -62,16 +62,37 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const convertFormToFilterCriteria = (formCriteria: FilterCriteriaForm): FilterCriteria => {
     const filters: FilterCriteria = {};
     
-    if (formCriteria.minLoanAmount) filters.minLoanAmount = parseFloat(formCriteria.minLoanAmount);
-    if (formCriteria.maxLoanAmount) filters.maxLoanAmount = parseFloat(formCriteria.maxLoanAmount);
-    if (formCriteria.minInterestRate) filters.minInterestRate = parseFloat(formCriteria.minInterestRate);
-    if (formCriteria.maxInterestRate) filters.maxInterestRate = parseFloat(formCriteria.maxInterestRate);
-    if (formCriteria.minRemainingTerm) filters.minRemainingTerm = parseFloat(formCriteria.minRemainingTerm);
-    if (formCriteria.maxRemainingTerm) filters.maxRemainingTerm = parseFloat(formCriteria.maxRemainingTerm);
-    if (formCriteria.minPD) filters.minPD = parseFloat(formCriteria.minPD) / 100; // Convert percentage to decimal
-    if (formCriteria.maxPD) filters.maxPD = parseFloat(formCriteria.maxPD) / 100; // Convert percentage to decimal
-    if (formCriteria.minLGD) filters.minLGD = parseFloat(formCriteria.minLGD) / 100; // Convert percentage to decimal
-    if (formCriteria.maxLGD) filters.maxLGD = parseFloat(formCriteria.maxLGD) / 100; // Convert percentage to decimal
+    // Only add filters if the value is not empty and is a valid number
+    if (formCriteria.minLoanAmount && !isNaN(parseFloat(formCriteria.minLoanAmount))) {
+      filters.minLoanAmount = parseFloat(formCriteria.minLoanAmount);
+    }
+    if (formCriteria.maxLoanAmount && !isNaN(parseFloat(formCriteria.maxLoanAmount))) {
+      filters.maxLoanAmount = parseFloat(formCriteria.maxLoanAmount);
+    }
+    if (formCriteria.minInterestRate && !isNaN(parseFloat(formCriteria.minInterestRate))) {
+      filters.minInterestRate = parseFloat(formCriteria.minInterestRate);
+    }
+    if (formCriteria.maxInterestRate && !isNaN(parseFloat(formCriteria.maxInterestRate))) {
+      filters.maxInterestRate = parseFloat(formCriteria.maxInterestRate);
+    }
+    if (formCriteria.minRemainingTerm && !isNaN(parseFloat(formCriteria.minRemainingTerm))) {
+      filters.minRemainingTerm = parseFloat(formCriteria.minRemainingTerm);
+    }
+    if (formCriteria.maxRemainingTerm && !isNaN(parseFloat(formCriteria.maxRemainingTerm))) {
+      filters.maxRemainingTerm = parseFloat(formCriteria.maxRemainingTerm);
+    }
+    if (formCriteria.minPD && !isNaN(parseFloat(formCriteria.minPD))) {
+      filters.minPD = parseFloat(formCriteria.minPD) / 100; // Convert percentage to decimal
+    }
+    if (formCriteria.maxPD && !isNaN(parseFloat(formCriteria.maxPD))) {
+      filters.maxPD = parseFloat(formCriteria.maxPD) / 100; // Convert percentage to decimal
+    }
+    if (formCriteria.minLGD && !isNaN(parseFloat(formCriteria.minLGD))) {
+      filters.minLGD = parseFloat(formCriteria.minLGD) / 100; // Convert percentage to decimal
+    }
+    if (formCriteria.maxLGD && !isNaN(parseFloat(formCriteria.maxLGD))) {
+      filters.maxLGD = parseFloat(formCriteria.maxLGD) / 100; // Convert percentage to decimal
+    }
     
     return filters;
   };
