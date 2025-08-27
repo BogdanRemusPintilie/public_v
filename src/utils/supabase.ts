@@ -64,7 +64,7 @@ export const insertLoanData = async (
     const batchWithUserId = batch.map(record => ({
       ...record,
       user_id: user.id, // Explicitly set the user_id for RLS compliance
-      remaining_term: String(record.remaining_term), // Cast to string for TypeScript compatibility
+      remaining_term: Number(record.remaining_term), // Cast to numeric for database compatibility
     }));
 
     console.log('💾 INSERTING BATCH:', {

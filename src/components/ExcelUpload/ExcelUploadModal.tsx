@@ -216,7 +216,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
               {(previewData.length > 0 || (showExistingData && allData.length > 0)) && (
                 <>
                   <PortfolioCharts 
-                    allData={showExistingData ? filteredData : allData}
+                    allData={showExistingData ? (filteredData.length > 0 ? filteredData : allData) : allData}
                     previewData={previewData}
                     showExistingData={showExistingData}
                   />
