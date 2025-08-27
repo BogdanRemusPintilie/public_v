@@ -156,16 +156,27 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   };
 
   const handleSaveFilteredDataset = async () => {
-    if (saveDatasetName.trim() && filteredData.length > 0) {
+    if (saveDatasetName.trim() && filteredCount > 0) {
       try {
         console.log('🔄 SAVING FILTERED DATASET:', {
           name: saveDatasetName.trim(),
-          recordCount: filteredData.length,
-          sampleRecord: filteredData[0]
+          totalFilteredRecords: filteredCount,
+          displayedRecords: filteredData.length
+        });
+        
+        // Fetch ALL filtered records for saving, not just the displayed 1000
+        console.log('📥 FETCHING ALL FILTERED RECORDS...');
+        const currentFilters = convertFormToFilterCriteria(filterCriteria);
+        const allFilteredResult = await getLoanDataByDataset(datasetName, 0, filteredCount, currentFilters);
+        const allFilteredRecords = allFilteredResult.data || [];
+        
+        console.log('✅ FETCHED ALL FILTERED RECORDS:', {
+          expected: filteredCount,
+          actual: allFilteredRecords.length
         });
         
         // Prepare clean data without database-specific fields
-        const cleanFilteredData = filteredData.map(record => {
+        const cleanFilteredData = allFilteredRecords.map(record => {
           const { id, created_at, ...cleanRecord } = record;
           return cleanRecord;
         });
