@@ -8,7 +8,7 @@ export interface LoanRecord {
   loan_amount: number;
   interest_rate: number;
   term: number;
-  remaining_term: number | null;
+  remaining_term: number;
   lgd: number;
   ltv: number;
   opening_balance: number;
@@ -60,11 +60,11 @@ export const insertLoanData = async (
   for (let i = 0; i < totalRecords; i += BATCH_SIZE) {
     const batch = loanData.slice(i, i + BATCH_SIZE);
 
-    // Ensure all records have the correct user_id and convert types for database
+    // Ensure all records have the correct user_id and cast types for database insert
     const batchWithUserId = batch.map(record => ({
       ...record,
       user_id: user.id, // Explicitly set the user_id for RLS compliance
-      remaining_term: record.remaining_term?.toString() || null, // Convert number to string for database
+      remaining_term: String(record.remaining_term), // Cast to string for TypeScript compatibility
     }));
 
     console.log('💾 INSERTING BATCH:', {
@@ -150,14 +150,12 @@ export const getLoanDataByDataset = async (
       dataQuery = dataQuery.lte('interest_rate', filters.maxInterestRate);
     }
     if (filters.minRemainingTerm !== undefined) {
-      // Use a function-based filter for numeric comparison on text field
-      countQuery = countQuery.filter('remaining_term', 'gte', filters.minRemainingTerm);
-      dataQuery = dataQuery.filter('remaining_term', 'gte', filters.minRemainingTerm);
+      countQuery = countQuery.gte('remaining_term', filters.minRemainingTerm);
+      dataQuery = dataQuery.gte('remaining_term', filters.minRemainingTerm);
     }
     if (filters.maxRemainingTerm !== undefined) {
-      // Use a function-based filter for numeric comparison on text field  
-      countQuery = countQuery.filter('remaining_term', 'lte', filters.maxRemainingTerm);
-      dataQuery = dataQuery.filter('remaining_term', 'lte', filters.maxRemainingTerm);
+      countQuery = countQuery.lte('remaining_term', filters.maxRemainingTerm);
+      dataQuery = dataQuery.lte('remaining_term', filters.maxRemainingTerm);
     }
     if (filters.minPD !== undefined) {
       countQuery = countQuery.gte('pd', filters.minPD);
@@ -198,11 +196,11 @@ export const getLoanDataByDataset = async (
   const totalCount = count || 0;
   const hasMore = startIndex + pageSize < totalCount;
 
-  // Transform database columns back to frontend interface
+  // Transform data to ensure remaining_term is properly typed as number
   const transformedData = (data || []).map(record => ({
     ...record,
-    remaining_term: record.remaining_term ? parseFloat(record.remaining_term) : null,
-  }));
+    remaining_term: Number(record.remaining_term), // Ensure it's always a number
+  })) as LoanRecord[];
 
   return { data: transformedData, totalCount, hasMore };
 };
