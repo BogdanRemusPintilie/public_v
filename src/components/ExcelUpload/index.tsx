@@ -27,6 +27,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
   const [allData, setAllData] = useState<LoanRecord[]>([]);
   const [filteredData, setFilteredData] = useState<LoanRecord[]>([]);
+  const [currentFilters, setCurrentFilters] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
@@ -136,6 +137,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
 
   const handleFilteredDataChange = async (filtered: LoanRecord[], filters?: any) => {
     setFilteredData(filtered);
+    setCurrentFilters(filters);
     
     if (filtered.length === 0) {
       // If no filters applied, get fresh portfolio summary from database
@@ -655,6 +657,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         onFilteredDataChange={handleFilteredDataChange}
         onSaveFilteredDataset={handleSaveFilteredDataset}
         onPortfolioSummaryChange={setPortfolioSummary}
+        currentFilters={currentFilters}
       />
       
       <DatasetSharingManager 

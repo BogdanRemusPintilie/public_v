@@ -423,6 +423,44 @@ export type Database = {
           total_value: number
         }[]
       }
+      get_loan_size_distribution: {
+        Args: {
+          dataset_name_param: string
+          max_interest_rate?: number
+          max_lgd?: number
+          max_loan_amount?: number
+          max_pd?: number
+          max_remaining_term?: number
+          min_interest_rate?: number
+          min_lgd?: number
+          min_loan_amount?: number
+          min_pd?: number
+          min_remaining_term?: number
+        }
+        Returns: {
+          count: number
+          range_name: string
+        }[]
+      }
+      get_maturity_distribution: {
+        Args: {
+          dataset_name_param: string
+          max_interest_rate?: number
+          max_lgd?: number
+          max_loan_amount?: number
+          max_pd?: number
+          max_remaining_term?: number
+          min_interest_rate?: number
+          min_lgd?: number
+          min_loan_amount?: number
+          min_pd?: number
+          min_remaining_term?: number
+        }
+        Returns: {
+          count: number
+          range_name: string
+        }[]
+      }
       get_portfolio_summary: {
         Args:
           | { dataset_name_param: string }

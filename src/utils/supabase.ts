@@ -541,3 +541,65 @@ export const getPortfolioSummary = async (datasetName: string, filters?: FilterC
     return null;
   }
 };
+
+// Chart data functions
+export const getMaturityDistribution = async (
+  datasetName: string,
+  filters?: FilterCriteria
+): Promise<{ range: string; count: number }[]> => {
+  const { data, error } = await supabase.rpc('get_maturity_distribution', {
+    dataset_name_param: datasetName,
+    min_loan_amount: filters?.minLoanAmount || null,
+    max_loan_amount: filters?.maxLoanAmount || null,
+    min_interest_rate: filters?.minInterestRate || null,
+    max_interest_rate: filters?.maxInterestRate || null,
+    min_remaining_term: filters?.minRemainingTerm || null,
+    max_remaining_term: filters?.maxRemainingTerm || null,
+    min_pd: filters?.minPD || null,
+    max_pd: filters?.maxPD || null,
+    min_lgd: filters?.minLGD || null,
+    max_lgd: filters?.maxLGD || null,
+  });
+
+  if (error) {
+    console.error('Error fetching maturity distribution:', error);
+    return [];
+  }
+
+  return data?.map((item: any) => ({
+    range: item.range_name,
+    count: Number(item.count)
+  })) || [];
+};
+
+export const getLoanSizeDistribution = async (
+  datasetName: string,
+  filters?: FilterCriteria
+): Promise<{ name: string; value: number; fill: string }[]> => {
+  const { data, error } = await supabase.rpc('get_loan_size_distribution', {
+    dataset_name_param: datasetName,
+    min_loan_amount: filters?.minLoanAmount || null,
+    max_loan_amount: filters?.maxLoanAmount || null,
+    min_interest_rate: filters?.minInterestRate || null,
+    max_interest_rate: filters?.maxInterestRate || null,
+    min_remaining_term: filters?.minRemainingTerm || null,
+    max_remaining_term: filters?.maxRemainingTerm || null,
+    min_pd: filters?.minPD || null,
+    max_pd: filters?.maxPD || null,
+    min_lgd: filters?.minLGD || null,
+    max_lgd: filters?.maxLGD || null,
+  });
+
+  if (error) {
+    console.error('Error fetching loan size distribution:', error);
+    return [];
+  }
+
+  const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
+  
+  return data?.map((item: any, index: number) => ({
+    name: item.range_name,
+    value: Number(item.count),
+    fill: colors[index % colors.length]
+  })).filter((item: any) => item.value > 0) || [];
+};

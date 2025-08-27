@@ -1,21 +1,29 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { LoanRecord } from '@/utils/supabase';
+import { LoanRecord, getMaturityDistribution, getLoanSizeDistribution, FilterCriteria } from '@/utils/supabase';
 
 interface PortfolioChartsProps {
   allData: LoanRecord[];
   previewData: LoanRecord[];
   showExistingData: boolean;
+  selectedDatasetName?: string;
+  filters?: FilterCriteria;
 }
 
 export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   allData,
   previewData,
-  showExistingData
+  showExistingData,
+  selectedDatasetName,
+  filters
 }) => {
+  const [maturityData, setMaturityData] = useState<{ range: string; count: number }[]>([]);
+  const [loanSizeData, setLoanSizeData] = useState<{ name: string; value: number; fill: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const chartConfig = {
     count: {
       label: "Count",
@@ -23,8 +31,8 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
     },
   };
 
-  const getMaturityDistribution = () => {
-    // Use allData for charts when showing existing data, previewData for uploads
+  // Client-side calculation for preview mode (when uploading files)
+  const getClientSideMaturityDistribution = () => {
     const dataToUse = showExistingData ? allData : previewData;
     if (dataToUse.length === 0) return [];
     
@@ -43,8 +51,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
     }));
   };
 
-  const getLoanSizeDistribution = () => {
-    // Use allData for charts when showing existing data, previewData for uploads
+  const getClientSideLoanSizeDistribution = () => {
     const dataToUse = showExistingData ? allData : previewData;
     if (dataToUse.length === 0) return [];
     
@@ -67,6 +74,39 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
     })).filter(item => item.value > 0);
   };
 
+  // Load chart data from database for existing datasets
+  useEffect(() => {
+    const loadChartData = async () => {
+      if (showExistingData && selectedDatasetName) {
+        setLoading(true);
+        try {
+          const [maturityDist, loanSizeDist] = await Promise.all([
+            getMaturityDistribution(selectedDatasetName, filters),
+            getLoanSizeDistribution(selectedDatasetName, filters)
+          ]);
+          
+          setMaturityData(maturityDist);
+          setLoanSizeData(loanSizeDist);
+        } catch (error) {
+          console.error('Error loading chart data:', error);
+          // Fallback to client-side calculations
+          setMaturityData(getClientSideMaturityDistribution());
+          setLoanSizeData(getClientSideLoanSizeDistribution());
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // For preview mode, use client-side calculations
+        setMaturityData(getClientSideMaturityDistribution());
+        setLoanSizeData(getClientSideLoanSizeDistribution());
+      }
+    };
+
+    loadChartData();
+  }, [showExistingData, selectedDatasetName, filters, allData, previewData]);
+
+  const totalRecords = showExistingData ? allData.length : previewData.length;
+
   return (
     <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
@@ -74,13 +114,16 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
           <CardTitle className="text-lg">
             Loan Distribution by Maturity
             {showExistingData && (
-              <span className="text-sm text-gray-500 block">Based on all {allData.length.toLocaleString()} records</span>
+              <span className="text-sm text-gray-500 block">
+                Based on {loading ? 'loading...' : `${totalRecords.toLocaleString()} records`}
+                {filters && Object.values(filters).some(v => v !== undefined) && ' (filtered)'}
+              </span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[300px]">
-            <BarChart data={getMaturityDistribution()}>
+            <BarChart data={maturityData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="range" 
@@ -102,7 +145,10 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
           <CardTitle className="text-lg">
             Portfolio Composition by Loan Size
             {showExistingData && (
-              <span className="text-sm text-gray-500 block">Based on all {allData.length.toLocaleString()} records</span>
+              <span className="text-sm text-gray-500 block">
+                Based on {loading ? 'loading...' : `${totalRecords.toLocaleString()} records`}
+                {filters && Object.values(filters).some(v => v !== undefined) && ' (filtered)'}
+              </span>
             )}
           </CardTitle>
         </CardHeader>
@@ -110,7 +156,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
           <ChartContainer config={chartConfig} className="h-[300px]">
             <PieChart>
               <Pie
-                data={getLoanSizeDistribution()}
+                data={loanSizeData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -119,7 +165,7 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
                 fill="#8884d8"
                 dataKey="value"
               >
-                {getLoanSizeDistribution().map((entry, index) => (
+                {loanSizeData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
