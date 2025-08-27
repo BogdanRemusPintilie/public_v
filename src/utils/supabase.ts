@@ -426,10 +426,10 @@ export interface PortfolioSummary {
 }
 
 export const getPortfolioSummary = async (datasetName: string): Promise<PortfolioSummary | null> => {
-  const { data, error } = await (supabase as any)
-    .rpc('get_portfolio_summary', { 
-      dataset_name_param: datasetName 
-    });
+  const { data, error } = await supabase
+    .from('loan_data')
+    .select('opening_balance, interest_rate, pd')
+    .eq('dataset_name', datasetName);
 
   if (error) {
     console.error('Error fetching portfolio summary:', error);
@@ -440,11 +440,16 @@ export const getPortfolioSummary = async (datasetName: string): Promise<Portfoli
     return null;
   }
 
-  const summary = data[0];
+  const totalValue = data.reduce((sum, loan) => sum + (loan.opening_balance || 0), 0);
+  const avgInterestRate = totalValue > 0 ? 
+    data.reduce((sum, loan) => sum + ((loan.interest_rate || 0) * (loan.opening_balance || 0)), 0) / totalValue : 0;
+  const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.10).length;
+  const totalRecords = data.length;
+
   return {
-    totalValue: parseFloat(summary.total_value) || 0,
-    avgInterestRate: parseFloat(summary.avg_interest_rate) || 0,
-    highRiskLoans: parseInt(summary.high_risk_loans) || 0,
-    totalRecords: parseInt(summary.total_records) || 0
+    totalValue,
+    avgInterestRate,
+    highRiskLoans,
+    totalRecords
   };
 };
