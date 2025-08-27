@@ -112,7 +112,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     if (!user) return;
     
     try {
-      const { data, error } = await supabase.rpc('get_dataset_summaries');
+      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
       
       if (error) {
         console.error('Error fetching datasets:', error);

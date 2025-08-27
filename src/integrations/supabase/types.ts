@@ -412,7 +412,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      get_dataset_summaries: {
+      get_dataset_summaries_optimized: {
         Args: Record<PropertyKey, never>
         Returns: {
           avg_interest_rate: number

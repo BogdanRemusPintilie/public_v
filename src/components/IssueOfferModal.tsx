@@ -244,7 +244,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
 
   const fetchDatasetSummary = async (datasetName: string) => {
     try {
-      const { data, error } = await supabase.rpc('get_dataset_summaries');
+      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
       
       if (error) throw error;
       

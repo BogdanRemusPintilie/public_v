@@ -40,7 +40,7 @@ export const preloadTrancheData = async (user: any) => {
       
       // Fetch datasets and structures in parallel
       const [datasetsResponse, structuresResponse] = await Promise.all([
-        supabase.rpc('get_dataset_summaries'),
+        supabase.rpc('get_dataset_summaries_optimized'),
         supabase
           .from('tranche_structures')
           .select('*')
@@ -103,7 +103,7 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_dataset_summaries');
+      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
       
       if (error) {
         console.error('Error fetching datasets:', error);
