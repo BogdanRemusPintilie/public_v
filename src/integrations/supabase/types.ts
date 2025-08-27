@@ -206,7 +206,7 @@ export type Database = {
           ltv: number
           opening_balance: number
           pd: number | null
-          remaining_term: string
+          remaining_term: number
           term: number
           updated_at: string
           user_id: string
@@ -223,7 +223,7 @@ export type Database = {
           ltv: number
           opening_balance: number
           pd?: number | null
-          remaining_term: string
+          remaining_term: number
           term: number
           updated_at?: string
           user_id: string
@@ -240,7 +240,7 @@ export type Database = {
           ltv?: number
           opening_balance?: number
           pd?: number | null
-          remaining_term?: string
+          remaining_term?: number
           term?: number
           updated_at?: string
           user_id?: string
