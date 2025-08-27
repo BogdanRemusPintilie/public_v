@@ -81,58 +81,37 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   // Load all dataset data for filtering (note: this loads all records at once)
-  const loadDatasetData = async (datasetName: string, page = 0) => {
+  const loadDatasetData = async (datasetName: string) => {
     if (!user) return;
     
     try {
       setIsProcessing(true);
-      console.log(`📊 LOADING ALL DATASET DATA: ${datasetName}`);
+      console.log(`📊 LOADING DATASET SUMMARY: ${datasetName}`);
       
-      // Load all data for this dataset using pagination
-      let allRecords: LoanRecord[] = [];
-      let currentPage = 0;
-      let hasMoreData = true;
-      const batchSize = 1000;
+      // First, load portfolio summary immediately (fast)
+      const portfolioSummary = await getPortfolioSummary(datasetName);
+      setPortfolioSummary(portfolioSummary);
       
-      while (hasMoreData) {
-        console.log(`📊 Loading batch ${currentPage + 1} with ${batchSize} records...`);
-        const result = await getLoanDataByDataset(datasetName, currentPage, batchSize);
-        
-        if (result.data.length > 0) {
-          allRecords = [...allRecords, ...result.data];
-          console.log(`📊 Loaded ${result.data.length} records (Total: ${allRecords.length})`);
-          
-          hasMoreData = result.hasMore;
-          currentPage++;
-        } else {
-          hasMoreData = false;
-        }
-        
-        // Safety check to prevent infinite loops
-        if (currentPage > 200) {
-          console.warn('⚠️ Stopping at 200 batches to prevent infinite loop');
-          break;
-        }
-      }
+      // Get the total count without loading all data
+      const firstBatch = await getLoanDataByDataset(datasetName, 0, PAGE_SIZE);
+      const firstPageRecords = firstBatch.data || [];
+      const totalCount = firstBatch.totalCount || 0;
       
-      console.log(`✅ COMPLETE DATASET LOADED: ${allRecords.length} total records for ${datasetName}`);
+      console.log(`✅ DATASET SUMMARY LOADED: ${totalCount} total records, showing first ${firstPageRecords.length}`);
       
-      // Set all data at once
-      setAllData(allRecords);
-      setFilteredData(allRecords);
-      setPreviewData(allRecords.slice(0, PAGE_SIZE)); // Show first page in table
+      // Set minimal data for immediate display
+      setPreviewData(firstPageRecords);
+      setFilteredData([]); // Clear filtered data
+      setAllData([]); // Don't load all data initially
       setCurrentPage(0);
-      setTotalRecords(allRecords.length);
-      setHasMore(allRecords.length > PAGE_SIZE);
+      setTotalRecords(totalCount);
+      setHasMore(totalCount > PAGE_SIZE);
       
-      if (allRecords.length > 0) {
-        // Calculate portfolio summary server-side for entire dataset
-        const portfolioSummary = await getPortfolioSummary(datasetName);
-        setPortfolioSummary(portfolioSummary);
-        
+      
+      if (totalCount > 0) {
         toast({
-          title: "Dataset Loaded",
-          description: `Loaded ${allRecords.length.toLocaleString()} records from "${datasetName}"`,
+          title: "Dataset Selected",
+          description: `Dataset "${datasetName}" has ${totalCount.toLocaleString()} records. Use filters or pagination to view data.`,
         });
       } else {
         setPortfolioSummary(null);
