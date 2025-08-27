@@ -150,12 +150,14 @@ export const getLoanDataByDataset = async (
       dataQuery = dataQuery.lte('interest_rate', filters.maxInterestRate);
     }
     if (filters.minRemainingTerm !== undefined) {
-      countQuery = countQuery.gte('remaining_term::numeric', filters.minRemainingTerm);
-      dataQuery = dataQuery.gte('remaining_term::numeric', filters.minRemainingTerm);
+      // Use a function-based filter for numeric comparison on text field
+      countQuery = countQuery.filter('remaining_term', 'gte', filters.minRemainingTerm);
+      dataQuery = dataQuery.filter('remaining_term', 'gte', filters.minRemainingTerm);
     }
     if (filters.maxRemainingTerm !== undefined) {
-      countQuery = countQuery.lte('remaining_term::numeric', filters.maxRemainingTerm);
-      dataQuery = dataQuery.lte('remaining_term::numeric', filters.maxRemainingTerm);
+      // Use a function-based filter for numeric comparison on text field  
+      countQuery = countQuery.filter('remaining_term', 'lte', filters.maxRemainingTerm);
+      dataQuery = dataQuery.filter('remaining_term', 'lte', filters.maxRemainingTerm);
     }
     if (filters.minPD !== undefined) {
       countQuery = countQuery.gte('pd', filters.minPD);
