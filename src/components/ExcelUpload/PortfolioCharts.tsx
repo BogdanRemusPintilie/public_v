@@ -12,6 +12,7 @@ interface PortfolioChartsProps {
   selectedDatasetName?: string;
   filters?: FilterCriteria;
   totalRecords?: number; // Total dataset size from parent
+  filteredCount?: number; // Actual filtered count when filters are applied
 }
 
 export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
@@ -20,7 +21,8 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   showExistingData,
   selectedDatasetName,
   filters,
-  totalRecords: parentTotalRecords
+  totalRecords: parentTotalRecords,
+  filteredCount
 }) => {
   const [maturityData, setMaturityData] = useState<{ range: string; count: number }[]>([]);
   const [loanSizeData, setLoanSizeData] = useState<{ name: string; value: number; fill: string }[]>([]);
@@ -110,9 +112,9 @@ export const PortfolioCharts: React.FC<PortfolioChartsProps> = ({
   // Get total records from the appropriate source
   const getTotalRecords = () => {
     if (showExistingData) {
-      // If we have active filters, show the filtered data count
-      if (filters && Object.values(filters).some(v => v !== undefined) && allData.length > 0) {
-        return allData.length; // This is the filtered data count
+      // If we have active filters, show the actual filtered count from database
+      if (filters && Object.values(filters).some(v => v !== undefined)) {
+        return filteredCount || 0; // This is the actual total filtered count from database
       }
       // Otherwise use the total dataset size from parent (which comes from totalRecords state)
       return parentTotalRecords || 0;

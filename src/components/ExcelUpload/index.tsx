@@ -28,6 +28,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [allData, setAllData] = useState<LoanRecord[]>([]);
   const [filteredData, setFilteredData] = useState<LoanRecord[]>([]);
   const [currentFilters, setCurrentFilters] = useState<any>(null);
+  const [filteredCount, setFilteredCount] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
@@ -136,9 +137,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
-  const handleFilteredDataChange = async (filtered: LoanRecord[], filters?: any) => {
+  const handleFilteredDataChange = async (filtered: LoanRecord[], filters?: any, actualFilteredCount?: number) => {
     setFilteredData(filtered);
     setCurrentFilters(filters);
+    setFilteredCount(actualFilteredCount || 0);
     
     if (filtered.length === 0 && filters === null) {
       // Clear filters case - reset to show full dataset
@@ -660,6 +662,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         onSaveFilteredDataset={handleSaveFilteredDataset}
         onPortfolioSummaryChange={setPortfolioSummary}
         currentFilters={currentFilters}
+        filteredCount={filteredCount}
       />
       
       <DatasetSharingManager 

@@ -25,7 +25,7 @@ interface FilterCriteriaForm {
 interface DataFilterPanelProps {
   datasetName: string;
   totalRecords: number;
-  onFilteredDataChange: (filteredData: LoanRecord[], filters?: FilterCriteria) => void;
+  onFilteredDataChange: (filteredData: LoanRecord[], filters?: FilterCriteria, filteredCount?: number) => void;
   onSaveFilteredDataset: (filteredData: LoanRecord[], datasetName: string) => void;
   onPortfolioSummaryChange: (summary: any) => void;
   isProcessing: boolean;
@@ -123,7 +123,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       
       setFilteredData(result.data);
       setShowFiltered(true);
-      onFilteredDataChange(result.data, filters);
+      onFilteredDataChange(result.data, filters, countResult.totalCount);
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
@@ -147,7 +147,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     setFilteredData([]);
     setShowFiltered(false);
     setFilteredCount(0);
-    onFilteredDataChange([], null); // Pass null filters to indicate no filters
+    onFilteredDataChange([], null, 0); // Pass 0 as filtered count when clearing
     
     // Reset portfolio summary to original dataset summary
     getPortfolioSummary(datasetName).then(originalSummary => {

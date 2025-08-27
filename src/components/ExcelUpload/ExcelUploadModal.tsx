@@ -58,6 +58,7 @@ interface ExcelUploadModalProps {
   onSaveFilteredDataset: (filteredData: LoanRecord[], datasetName: string) => void;
   onPortfolioSummaryChange: (summary: any) => void;
   currentFilters?: any;
+  filteredCount?: number;
 }
 
 export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
@@ -91,7 +92,8 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   onFilteredDataChange,
   onSaveFilteredDataset,
   onPortfolioSummaryChange,
-  currentFilters
+  currentFilters,
+  filteredCount
 }) => {
   if (!isOpen) return null;
 
@@ -224,6 +226,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                     selectedDatasetName={selectedDatasetName}
                     filters={currentFilters}
                     totalRecords={totalRecords}
+                    filteredCount={filteredCount}
                   />
 
                   <DataPreviewTable
