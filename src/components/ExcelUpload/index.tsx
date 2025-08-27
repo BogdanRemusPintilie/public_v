@@ -269,9 +269,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('🔄 DATASET REFRESH TRIGGERED:', timestamp);
       
+      const recordCount = filteredRecords.length > 0 ? filteredRecords.length : 'all filtered';
+      
       toast({
         title: "Filtered Dataset Saved Successfully",
-        description: `Successfully saved ${filteredRecords.length} records as "${newDatasetName}". The dataset should now appear in "Select Dataset to Manage" within a few seconds.`,
+        description: `Successfully saved ${recordCount} records as "${newDatasetName}". The dataset should now appear in "Select Dataset to Manage" within a few seconds.`,
         duration: 8000,
       });
       

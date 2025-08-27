@@ -182,7 +182,15 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
 
         console.log('✅ SERVER-SIDE COPY SUCCESSFUL:', data);
         
-        // Call the original save function with empty array since the work is done server-side
+        // Show success message with actual copied count
+        const actualCopied = data?.recordsCopied || filteredCount;
+        
+        // Update UI to reflect successful save
+        setSaveSuccess(true);
+        setSaveDatasetName('');
+        
+        // Call the parent handler with empty array since server-side work is done
+        // but pass the actual copied count in the dataset name for logging
         await onSaveFilteredDataset([], saveDatasetName.trim());
         
         setSaveSuccess(true);

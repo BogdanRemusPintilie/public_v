@@ -408,6 +408,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      copy_filtered_dataset: {
+        Args: {
+          p_max_interest_rate?: number
+          p_max_lgd?: number
+          p_max_loan_amount?: number
+          p_max_pd?: number
+          p_max_remaining_term?: number
+          p_min_interest_rate?: number
+          p_min_lgd?: number
+          p_min_loan_amount?: number
+          p_min_pd?: number
+          p_min_remaining_term?: number
+          p_new_dataset: string
+          p_source_dataset: string
+          p_user_id: string
+        }
+        Returns: {
+          records_copied: number
+        }[]
+      }
       create_loan_data_table: {
         Args: Record<PropertyKey, never>
         Returns: undefined

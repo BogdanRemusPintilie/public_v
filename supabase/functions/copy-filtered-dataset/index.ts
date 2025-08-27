@@ -76,188 +76,45 @@ Deno.serve(async (req) => {
       filters
     });
 
-    // Build the WHERE clause for filtering
-    let whereConditions = ['user_id = $1', 'dataset_name = $2'];
-    let params: any[] = [user.id, sourceDatasetName];
-    let paramIndex = 3;
-
-    if (filters.minLoanAmount !== undefined) {
-      whereConditions.push(`loan_amount >= $${paramIndex}`);
-      params.push(filters.minLoanAmount);
-      paramIndex++;
-    }
-    if (filters.maxLoanAmount !== undefined) {
-      whereConditions.push(`loan_amount <= $${paramIndex}`);
-      params.push(filters.maxLoanAmount);
-      paramIndex++;
-    }
-    if (filters.minInterestRate !== undefined) {
-      whereConditions.push(`interest_rate >= $${paramIndex}`);
-      params.push(filters.minInterestRate);
-      paramIndex++;
-    }
-    if (filters.maxInterestRate !== undefined) {
-      whereConditions.push(`interest_rate <= $${paramIndex}`);
-      params.push(filters.maxInterestRate);
-      paramIndex++;
-    }
-    if (filters.minRemainingTerm !== undefined) {
-      whereConditions.push(`remaining_term >= $${paramIndex}`);
-      params.push(filters.minRemainingTerm);
-      paramIndex++;
-    }
-    if (filters.maxRemainingTerm !== undefined) {
-      whereConditions.push(`remaining_term <= $${paramIndex}`);
-      params.push(filters.maxRemainingTerm);
-      paramIndex++;
-    }
-    if (filters.minPD !== undefined) {
-      whereConditions.push(`COALESCE(pd, 0) >= $${paramIndex}`);
-      params.push(filters.minPD);
-      paramIndex++;
-    }
-    if (filters.maxPD !== undefined) {
-      whereConditions.push(`COALESCE(pd, 0) <= $${paramIndex}`);
-      params.push(filters.maxPD);
-      paramIndex++;
-    }
-    if (filters.minLGD !== undefined) {
-      whereConditions.push(`COALESCE(lgd, 0) >= $${paramIndex}`);
-      params.push(filters.minLGD);
-      paramIndex++;
-    }
-    if (filters.maxLGD !== undefined) {
-      whereConditions.push(`COALESCE(lgd, 0) <= $${paramIndex}`);
-      params.push(filters.maxLGD);
-      paramIndex++;
-    }
-
-    // Add the new dataset name parameter
-    params.push(newDatasetName);
-    const newDatasetParamIndex = paramIndex;
-
-    // Build the SQL query for server-side copy
-    const copyQuery = `
-      INSERT INTO loan_data (
-        user_id, dataset_name, loan_amount, interest_rate, term, remaining_term,
-        lgd, ltv, opening_balance, pd, file_name, worksheet_name
-      )
-      SELECT 
-        user_id, $${newDatasetParamIndex} as dataset_name, loan_amount, interest_rate, term, remaining_term,
-        lgd, ltv, opening_balance, pd, file_name, worksheet_name
-      FROM loan_data 
-      WHERE ${whereConditions.join(' AND ')}
-    `;
-
-    console.log('🗃️ EXECUTING SERVER-SIDE COPY:', {
-      query: copyQuery,
-      paramCount: params.length
+    // Use the new database function for efficient server-side copying
+    const { data: copyResult, error: copyError } = await supabase.rpc('copy_filtered_dataset', {
+      p_source_dataset: sourceDatasetName,
+      p_new_dataset: newDatasetName,
+      p_user_id: user.id,
+      p_min_loan_amount: filters.minLoanAmount || null,
+      p_max_loan_amount: filters.maxLoanAmount || null,
+      p_min_interest_rate: filters.minInterestRate || null,
+      p_max_interest_rate: filters.maxInterestRate || null,
+      p_min_remaining_term: filters.minRemainingTerm || null,
+      p_max_remaining_term: filters.maxRemainingTerm || null,
+      p_min_pd: filters.minPD || null,
+      p_max_pd: filters.maxPD || null,
+      p_min_lgd: filters.minLGD || null,
+      p_max_lgd: filters.maxLGD || null,
     });
 
-    // Execute the server-side copy operation
-    const { data, error } = await supabase.rpc('exec_sql_function', {
-      sql_query: copyQuery,
-      params: params
-    });
-
-    if (error) {
-      console.error('❌ Database copy failed:', error);
-      
-      // Try using a direct insert-select approach
-      console.log('🔄 TRYING DIRECT INSERT-SELECT...');
-      
-      // Get the filtered records first
-      let query = supabase
-        .from('loan_data')
-        .select('user_id, loan_amount, interest_rate, term, remaining_term, lgd, ltv, opening_balance, pd, file_name, worksheet_name')
-        .eq('user_id', user.id)
-        .eq('dataset_name', sourceDatasetName);
-
-      // Apply filters
-      if (filters.minLoanAmount !== undefined) query = query.gte('loan_amount', filters.minLoanAmount);
-      if (filters.maxLoanAmount !== undefined) query = query.lte('loan_amount', filters.maxLoanAmount);
-      if (filters.minInterestRate !== undefined) query = query.gte('interest_rate', filters.minInterestRate);
-      if (filters.maxInterestRate !== undefined) query = query.lte('interest_rate', filters.maxInterestRate);
-      if (filters.minRemainingTerm !== undefined) query = query.gte('remaining_term', filters.minRemainingTerm);
-      if (filters.maxRemainingTerm !== undefined) query = query.lte('remaining_term', filters.maxRemainingTerm);
-      if (filters.minPD !== undefined) query = query.gte('pd', filters.minPD);
-      if (filters.maxPD !== undefined) query = query.lte('pd', filters.maxPD);
-      if (filters.minLGD !== undefined) query = query.gte('lgd', filters.minLGD);
-      if (filters.maxLGD !== undefined) query = query.lte('lgd', filters.maxLGD);
-
-      const { data: sourceRecords, error: selectError } = await query;
-      
-      if (selectError) {
-        console.error('❌ Failed to select source records:', selectError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to read source dataset', details: selectError.message }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-
-      console.log(`📊 Found ${sourceRecords?.length || 0} records to copy`);
-
-      // Prepare records for insertion
-      const recordsToInsert = sourceRecords?.map(record => ({
-        ...record,
-        dataset_name: newDatasetName,
-        user_id: user.id
-      })) || [];
-
-      // Insert in batches to avoid timeout
-      const BATCH_SIZE = 1000;
-      let totalInserted = 0;
-
-      for (let i = 0; i < recordsToInsert.length; i += BATCH_SIZE) {
-        const batch = recordsToInsert.slice(i, i + BATCH_SIZE);
-        console.log(`📝 Inserting batch ${Math.floor(i / BATCH_SIZE) + 1}, records ${i + 1}-${Math.min(i + BATCH_SIZE, recordsToInsert.length)}`);
-        
-        const { error: insertError } = await supabase
-          .from('loan_data')
-          .insert(batch);
-
-        if (insertError) {
-          console.error('❌ Batch insert failed:', insertError);
-          return new Response(
-            JSON.stringify({ 
-              error: 'Failed to insert records', 
-              details: insertError.message,
-              insertedSoFar: totalInserted
-            }),
-            { 
-              status: 500, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-
-        totalInserted += batch.length;
-      }
-
-      console.log(`✅ Successfully copied ${totalInserted} records to dataset "${newDatasetName}"`);
-
+    if (copyError) {
+      console.error('❌ Database function copy failed:', copyError);
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          message: `Successfully copied ${totalInserted} filtered records to "${newDatasetName}"`,
-          recordsCopied: totalInserted
+          error: 'Failed to copy dataset', 
+          details: copyError.message 
         }),
         { 
-          status: 200, 
+          status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
-    console.log('✅ Server-side copy completed successfully');
+    const recordsCopied = copyResult?.[0]?.records_copied || 0;
+    console.log(`✅ Successfully copied ${recordsCopied} records to dataset "${newDatasetName}"`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully copied filtered records to "${newDatasetName}"` 
+        message: `Successfully copied ${recordsCopied} filtered records to "${newDatasetName}"`,
+        recordsCopied: recordsCopied
       }),
       { 
         status: 200, 
