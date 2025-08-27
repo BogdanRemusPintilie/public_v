@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Filter, X, Save, CheckCircle } from 'lucide-react';
-import { LoanRecord } from '@/utils/supabase';
+import { LoanRecord, FilterCriteria, getLoanDataByDataset } from '@/utils/supabase';
 
-interface FilterCriteria {
+interface FilterCriteriaForm {
   minLoanAmount: string;
   maxLoanAmount: string;
   minInterestRate: string;
@@ -37,7 +37,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   onSaveFilteredDataset,
   isProcessing
 }) => {
-  const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>({
+  const [filterCriteria, setFilterCriteria] = useState<FilterCriteriaForm>({
     minLoanAmount: '',
     maxLoanAmount: '',
     minInterestRate: '',
@@ -54,192 +54,53 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
   const [saveDatasetName, setSaveDatasetName] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [isLoadingAllData, setIsLoadingAllData] = useState(false);
-  const [allDataLoaded, setAllDataLoaded] = useState(false);
-  const [completeDataset, setCompleteDataset] = useState<LoanRecord[]>([]);
+  const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+  const [filteredCount, setFilteredCount] = useState(0);
 
-  const loadCompleteDataset = async () => {
-    console.log('🚀 ULTRA-FAST FILTERING LOAD - SMALLER BATCHES...');
-    try {
-      setIsLoadingAllData(true);
-      
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      // First get total count with timeout protection
-      const { count: totalCount, error: countError } = await supabase
-        .from('loan_data')
-        .select('*', { count: 'exact', head: true })
-        .eq('dataset_name', datasetName);
-      
-      if (countError) {
-        console.error('❌ Error getting count:', countError);
-        throw countError;
-      }
-      
-      console.log(`📊 TOTAL RECORDS TO LOAD: ${totalCount}`);
-      
-      if (!totalCount || totalCount === 0) {
-        setCompleteDataset([]);
-        setAllDataLoaded(true);
-        return [];
-      }
-      
-      // Use smaller batches to avoid timeouts - 500 records per batch
-      const batchSize = 500;
-      const totalBatches = Math.ceil(totalCount / batchSize);
-      
-      console.log(`🚀 Loading ${totalBatches} small batches of ${batchSize} records each for speed`);
-      
-      // Process in smaller groups to avoid overwhelming the database
-      const groupSize = 6; // Max 6 parallel requests at once
-      const groups = Math.ceil(totalBatches / groupSize);
-      let allRecords: any[] = [];
-      
-      for (let group = 0; group < groups; group++) {
-        const startBatch = group * groupSize;
-        const endBatch = Math.min(startBatch + groupSize, totalBatches);
-        
-        console.log(`⚡ Processing group ${group + 1}/${groups}: batches ${startBatch + 1}-${endBatch}`);
-        
-        // Create promises for this group
-        const groupPromises = [];
-        for (let i = startBatch; i < endBatch; i++) {
-          const offset = i * batchSize;
-          const batchPromise = supabase
-            .from('loan_data')
-            .select('id, opening_balance, interest_rate, remaining_term, pd, lgd, loan_amount, term, ltv, dataset_name, user_id, created_at')
-            .eq('dataset_name', datasetName)
-            .order('created_at', { ascending: false })
-            .range(offset, offset + batchSize - 1);
-            
-          groupPromises.push(batchPromise);
-        }
-        
-        // Execute this group in parallel
-        const groupResults = await Promise.all(groupPromises);
-        
-        // Process results for this group
-        for (let j = 0; j < groupResults.length; j++) {
-          const { data, error } = groupResults[j];
-          const batchIndex = startBatch + j + 1;
-          
-          if (error) {
-            console.error(`❌ Error in batch ${batchIndex}:`, error);
-            throw error;
-          }
-          
-          if (data && data.length > 0) {
-            allRecords = [...allRecords, ...data];
-            console.log(`📈 Batch ${batchIndex}/${totalBatches} completed: ${allRecords.length} total records loaded`);
-          }
-        }
-        
-        // Small delay between groups to be nice to the database
-        if (group < groups - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-      
-      // Transform data to match LoanRecord interface
-      const transformedRecords = allRecords.map(record => ({
-        ...record,
-        remaining_term: typeof record.remaining_term === 'string' ? parseFloat(record.remaining_term) : record.remaining_term
-      })) as LoanRecord[];
-      
-      console.log(`✅ Complete dataset loaded: ${transformedRecords.length} records in ${totalBatches} small batches`);
-      setCompleteDataset(transformedRecords);
-      setAllDataLoaded(true);
-      return transformedRecords;
-    } catch (error) {
-      console.error('❌ Error loading complete dataset:', error);
-      setCompleteDataset([]);
-      setAllDataLoaded(false);
-      throw error;
-    } finally {
-      setIsLoadingAllData(false);
-    }
+  const convertFormToFilterCriteria = (formCriteria: FilterCriteriaForm): FilterCriteria => {
+    const filters: FilterCriteria = {};
+    
+    if (formCriteria.minLoanAmount) filters.minLoanAmount = parseFloat(formCriteria.minLoanAmount);
+    if (formCriteria.maxLoanAmount) filters.maxLoanAmount = parseFloat(formCriteria.maxLoanAmount);
+    if (formCriteria.minInterestRate) filters.minInterestRate = parseFloat(formCriteria.minInterestRate);
+    if (formCriteria.maxInterestRate) filters.maxInterestRate = parseFloat(formCriteria.maxInterestRate);
+    if (formCriteria.minRemainingTerm) filters.minRemainingTerm = parseFloat(formCriteria.minRemainingTerm);
+    if (formCriteria.maxRemainingTerm) filters.maxRemainingTerm = parseFloat(formCriteria.maxRemainingTerm);
+    if (formCriteria.minPD) filters.minPD = parseFloat(formCriteria.minPD) / 100; // Convert percentage to decimal
+    if (formCriteria.maxPD) filters.maxPD = parseFloat(formCriteria.maxPD) / 100; // Convert percentage to decimal
+    if (formCriteria.minLGD) filters.minLGD = parseFloat(formCriteria.minLGD) / 100; // Convert percentage to decimal
+    if (formCriteria.maxLGD) filters.maxLGD = parseFloat(formCriteria.maxLGD) / 100; // Convert percentage to decimal
+    
+    return filters;
   };
 
   const applyFilters = async () => {
     try {
-      setIsLoadingAllData(true);
+      setIsLoadingFilters(true);
       
-      // Force reload the complete dataset every time to avoid stale cache
-      console.log('🔄 FORCING RELOAD of complete dataset...');
-      setAllDataLoaded(false);
-      setCompleteDataset([]);
-      
-      console.log('🚨 ABOUT TO CALL loadCompleteDataset...');
-      
-      // Load complete dataset if not already loaded
-      const allData = await loadCompleteDataset();
-      
-      console.log('🚨 loadCompleteDataset RETURNED:', { 
-        length: allData.length, 
-        isArray: Array.isArray(allData),
-        firstRecord: allData[0] 
-      });
-      
-      console.log(`🔍 APPLYING FILTERS - Dataset size: ${allData.length} records`);
+      console.log('🔍 APPLYING DATABASE FILTERS...');
       console.log('🔍 FILTER CRITERIA:', filterCriteria);
       
-      const filtered = allData.filter(record => {
-        // Loan amount filter
-        if (filterCriteria.minLoanAmount && record.opening_balance < parseFloat(filterCriteria.minLoanAmount)) {
-          return false;
-        }
-        if (filterCriteria.maxLoanAmount && record.opening_balance > parseFloat(filterCriteria.maxLoanAmount)) {
-          return false;
-        }
-
-        // Interest rate filter
-        if (filterCriteria.minInterestRate && record.interest_rate < parseFloat(filterCriteria.minInterestRate)) {
-          return false;
-        }
-        if (filterCriteria.maxInterestRate && record.interest_rate > parseFloat(filterCriteria.maxInterestRate)) {
-          return false;
-        }
-
-        // Remaining term filter
-        if (filterCriteria.minRemainingTerm && parseFloat(record.remaining_term?.toString() || '0') < parseFloat(filterCriteria.minRemainingTerm)) {
-          return false;
-        }
-        if (filterCriteria.maxRemainingTerm && parseFloat(record.remaining_term?.toString() || '0') > parseFloat(filterCriteria.maxRemainingTerm)) {
-          return false;
-        }
-
-        // PD filter (convert percentage input to decimal for comparison)
-        if (filterCriteria.minPD && record.pd) {
-          const minPDDecimal = parseFloat(filterCriteria.minPD) / 100;
-          if (record.pd < minPDDecimal) return false;
-        }
-        if (filterCriteria.maxPD && record.pd) {
-          const maxPDDecimal = parseFloat(filterCriteria.maxPD) / 100;
-          if (record.pd > maxPDDecimal) return false;
-        }
-
-        // LGD filter (convert percentage input to decimal for comparison)
-        if (filterCriteria.minLGD && record.lgd) {
-          const minLGDDecimal = parseFloat(filterCriteria.minLGD) / 100;
-          if (record.lgd < minLGDDecimal) return false;
-        }
-        if (filterCriteria.maxLGD && record.lgd) {
-          const maxLGDDecimal = parseFloat(filterCriteria.maxLGD) / 100;
-          if (record.lgd > maxLGDDecimal) return false;
-        }
-
-        return true;
-      });
-
-      console.log(`✅ FILTER COMPLETE: ${filtered.length} records out of ${allData.length} total records`);
+      // Convert form criteria to database filter format
+      const filters = convertFormToFilterCriteria(filterCriteria);
+      console.log('🔍 CONVERTED FILTERS:', filters);
       
-      setFilteredData(filtered);
+      // First, get just the count to show how many records match
+      const countResult = await getLoanDataByDataset(datasetName, 0, 1, filters);
+      setFilteredCount(countResult.totalCount);
+      
+      // Load a reasonable amount of filtered data for display (first 1000 records)
+      const result = await getLoanDataByDataset(datasetName, 0, 1000, filters);
+      
+      console.log(`✅ DATABASE FILTER COMPLETE: ${result.totalCount} total matching records, loaded ${result.data.length} for display`);
+      
+      setFilteredData(result.data);
       setShowFiltered(true);
-      onFilteredDataChange(filtered);
+      onFilteredDataChange(result.data);
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
-      setIsLoadingAllData(false);
+      setIsLoadingFilters(false);
     }
   };
 
@@ -258,6 +119,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     });
     setFilteredData([]);
     setShowFiltered(false);
+    setFilteredCount(0);
     onFilteredDataChange([]);
   };
 
@@ -296,14 +158,6 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     }
   };
 
-  const getUniqueValues = (field: keyof LoanRecord) => {
-    if (!allDataLoaded || completeDataset.length === 0) {
-      return [];
-    }
-    return [...new Set(completeDataset.map(record => record[field]))].filter(Boolean);
-  };
-
-  const remainingTerms = getUniqueValues('remaining_term') as number[];
 
   return (
     <Card className="mb-6">
@@ -313,17 +167,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           Data Filters
           {showFiltered && (
             <span className="text-sm font-normal text-gray-600">
-              ({filteredData.length.toLocaleString()} of {completeDataset.length.toLocaleString()} records)
-            </span>
-          )}
-          {!allDataLoaded && (
-            <span className="text-sm font-normal text-orange-600">
-              (Will load all records for filtering)
-            </span>
-          )}
-          {allDataLoaded && !showFiltered && (
-            <span className="text-sm font-normal text-green-600">
-              ({completeDataset.length.toLocaleString()} records loaded)
+              ({filteredCount.toLocaleString()} matching records, showing {filteredData.length.toLocaleString()})
             </span>
           )}
         </CardTitle>
@@ -428,11 +272,11 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={applyFilters} disabled={isProcessing || isLoadingAllData}>
-            {isLoadingAllData ? (
+          <Button onClick={applyFilters} disabled={isProcessing || isLoadingFilters}>
+            {isLoadingFilters ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Loading all data...
+                Filtering...
               </>
             ) : (
               <>
@@ -444,7 +288,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
           
           {showFiltered && (
             <>
-              <Button variant="outline" onClick={clearFilters} disabled={isProcessing || isLoadingAllData}>
+              <Button variant="outline" onClick={clearFilters} disabled={isProcessing || isLoadingFilters}>
                 <X className="h-4 w-4 mr-2" />
                 Clear Filters
               </Button>
@@ -453,7 +297,7 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
                 <Button 
                   variant="secondary" 
                   onClick={() => setShowSaveDialog(true)}
-                  disabled={isProcessing || isLoadingAllData}
+                  disabled={isProcessing || isLoadingFilters}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Filtered Dataset
@@ -465,9 +309,9 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
 
         {showSaveDialog && (
           <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Label>Save Filtered Dataset ({filteredData.length.toLocaleString()} records)</Label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Label>Save Filtered Dataset ({filteredCount.toLocaleString()} total records)</Label>
                 {saveSuccess && (
                   <div className="flex items-center gap-1 text-green-600">
                     <CheckCircle className="h-4 w-4" />

@@ -91,29 +91,100 @@ export const insertLoanData = async (
   console.log('✅ ALL BATCHES INSERTED SUCCESSFULLY');
 };
 
+export interface FilterCriteria {
+  minLoanAmount?: number;
+  maxLoanAmount?: number;
+  minInterestRate?: number;
+  maxInterestRate?: number;
+  minRemainingTerm?: number;
+  maxRemainingTerm?: number;
+  minPD?: number;
+  maxPD?: number;
+  minLGD?: number;
+  maxLGD?: number;
+}
+
 export const getLoanDataByDataset = async (
   datasetName: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  filters?: FilterCriteria
 ): Promise<{ data: LoanRecord[]; totalCount: number; hasMore: boolean }> => {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    throw new Error('User not authenticated');
+  }
+
   const startIndex = page * pageSize;
   
-  // Fetch total count first
-  const { count, error: countError } = await supabase
+  // Build the query with filters
+  let countQuery = supabase
     .from('loan_data')
     .select('*', { count: 'exact', head: true })
-    .eq('dataset_name', datasetName);
+    .eq('dataset_name', datasetName)
+    .eq('user_id', user.id);
+
+  let dataQuery = supabase
+    .from('loan_data')
+    .select('*')
+    .eq('dataset_name', datasetName)
+    .eq('user_id', user.id);
+
+  // Apply filters if provided
+  if (filters) {
+    if (filters.minLoanAmount !== undefined) {
+      countQuery = countQuery.gte('opening_balance', filters.minLoanAmount);
+      dataQuery = dataQuery.gte('opening_balance', filters.minLoanAmount);
+    }
+    if (filters.maxLoanAmount !== undefined) {
+      countQuery = countQuery.lte('opening_balance', filters.maxLoanAmount);
+      dataQuery = dataQuery.lte('opening_balance', filters.maxLoanAmount);
+    }
+    if (filters.minInterestRate !== undefined) {
+      countQuery = countQuery.gte('interest_rate', filters.minInterestRate);
+      dataQuery = dataQuery.gte('interest_rate', filters.minInterestRate);
+    }
+    if (filters.maxInterestRate !== undefined) {
+      countQuery = countQuery.lte('interest_rate', filters.maxInterestRate);
+      dataQuery = dataQuery.lte('interest_rate', filters.maxInterestRate);
+    }
+    if (filters.minRemainingTerm !== undefined) {
+      countQuery = countQuery.gte('remaining_term', filters.minRemainingTerm.toString());
+      dataQuery = dataQuery.gte('remaining_term', filters.minRemainingTerm.toString());
+    }
+    if (filters.maxRemainingTerm !== undefined) {
+      countQuery = countQuery.lte('remaining_term', filters.maxRemainingTerm.toString());
+      dataQuery = dataQuery.lte('remaining_term', filters.maxRemainingTerm.toString());
+    }
+    if (filters.minPD !== undefined) {
+      countQuery = countQuery.gte('pd', filters.minPD);
+      dataQuery = dataQuery.gte('pd', filters.minPD);
+    }
+    if (filters.maxPD !== undefined) {
+      countQuery = countQuery.lte('pd', filters.maxPD);
+      dataQuery = dataQuery.lte('pd', filters.maxPD);
+    }
+    if (filters.minLGD !== undefined) {
+      countQuery = countQuery.gte('lgd', filters.minLGD);
+      dataQuery = dataQuery.gte('lgd', filters.minLGD);
+    }
+    if (filters.maxLGD !== undefined) {
+      countQuery = countQuery.lte('lgd', filters.maxLGD);
+      dataQuery = dataQuery.lte('lgd', filters.maxLGD);
+    }
+  }
+  
+  // Execute count query
+  const { count, error: countError } = await countQuery;
   
   if (countError) {
     console.error('Error fetching total count:', countError);
     throw countError;
   }
   
-  // Then fetch the data
-  const { data, error } = await supabase
-    .from('loan_data')
-    .select('*')
-    .eq('dataset_name', datasetName)
+  // Execute data query with pagination
+  const { data, error } = await dataQuery
     .range(startIndex, startIndex + pageSize - 1)
     .order('created_at', { ascending: false });
 
