@@ -242,8 +242,9 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     setShowStructureDataset(false);
     setSelectedDatasetForStructure('');
     setEditingStructure(null);
-    // Refresh structures when returning from structure creation
-    fetchTrancheStructures();
+    // Invalidate cache and force refresh when returning from structure creation
+    preloadedStructures = null;
+    fetchTrancheStructures(true);
   };
 
   const handleCloseManageStructure = () => {
