@@ -721,8 +721,14 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
           
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Your tranching report for <strong>{pdfTitle.replace('Tranching Report - ', '')}</strong> is ready to download.
+              Your tranching report for <strong>{pdfTitle.replace('Tranching Report - ', '')}</strong> is ready.
             </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-700">
+                <strong>Recommended:</strong> Download the PDF to view it with your preferred PDF reader for the best experience.
+              </p>
+            </div>
             
             <div className="flex flex-col space-y-3">
               <Button
@@ -773,24 +779,30 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                 variant="outline"
                 onClick={() => {
                   console.log('🔗 Opening in new tab:', pdfUrl);
-                  // Open in new tab as fallback
                   const newWindow = window.open(pdfUrl, '_blank');
                   if (!newWindow) {
                     toast({
                       title: "Popup Blocked",
-                      description: "Please allow popups for this site or try the download option",
+                      description: "Please allow popups for this site or use the download option",
                       variant: "destructive",
+                    });
+                  } else {
+                    toast({
+                      title: "Opening PDF",
+                      description: "If the PDF doesn't display, please use the download option",
+                      variant: "default",
                     });
                   }
                 }}
                 className="flex items-center justify-center space-x-2"
               >
-                <span>Open in New Tab</span>
+                <span>Try Open in Browser</span>
               </Button>
             </div>
             
-            <div className="text-xs text-gray-500 text-center">
-              The PDF will download to your default download folder
+            <div className="text-xs text-gray-500 text-center space-y-1">
+              <div>The PDF will download to your default download folder</div>
+              <div className="text-yellow-600">Note: Browser viewing may not work in all browsers due to security policies</div>
             </div>
           </div>
         </DialogContent>
