@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2 } from 'lucide-react';
+import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2, FileCheck } from 'lucide-react';
 import StructureDatasetPage from './StructureDatasetPage';
 import TrancheAnalyticsView from './TrancheAnalyticsView';
 import { TrancheStructure } from '@/utils/supabase';
@@ -356,6 +356,21 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                               >
                                 <BarChart3 className="h-4 w-4" />
                                 <span>Structure Dataset</span>
+                              </Button>
+                              
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  // TODO: Implement tranching report functionality
+                                  toast({
+                                    title: "Coming Soon",
+                                    description: "Tranching report functionality will be available soon",
+                                  });
+                                }}
+                                className="flex items-center space-x-2 border-green-200 hover:bg-green-50"
+                              >
+                                <FileCheck className="h-4 w-4" />
+                                <span>Run and Review Tranching Report</span>
                               </Button>
                               
                               <Button
