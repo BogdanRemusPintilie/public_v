@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2, FileCheck } from 'lucide-react';
+import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2, FileCheck, Upload } from 'lucide-react';
 import StructureDatasetPage from './StructureDatasetPage';
 import TrancheAnalyticsView from './TrancheAnalyticsView';
 import { TrancheStructure } from '@/utils/supabase';
@@ -88,6 +90,9 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const [selectedDatasetForManagement, setSelectedDatasetForManagement] = useState<string>('');
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [selectedStructureForAnalytics, setSelectedStructureForAnalytics] = useState<TrancheStructure | null>(null);
+  const [reportUploadOpen, setReportUploadOpen] = useState(false);
+  const [reportUploadDataset, setReportUploadDataset] = useState<string>('');
+  const [uploadingReport, setUploadingReport] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -276,6 +281,117 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     return trancheStructures.filter(structure => structure.dataset_name === datasetName);
   };
 
+  // Helper function to get report file path
+  const getReportPath = (datasetName: string) => {
+    if (!user?.id) return '';
+    const encodedDatasetName = encodeURIComponent(datasetName);
+    return `tranching-reports/${user.id}/${encodedDatasetName}/report.pdf`;
+  };
+
+  // Open tranching report - check if exists, if not prompt upload
+  const openTranchingReport = async (datasetName: string) => {
+    if (!user?.id) return;
+    
+    try {
+      const filePath = getReportPath(datasetName);
+      
+      // Check if report exists
+      const { data: fileData } = await supabase.storage
+        .from('investor-reports')
+        .list(`tranching-reports/${user.id}/${encodeURIComponent(datasetName)}`);
+      
+      const reportExists = fileData?.some(file => file.name === 'report.pdf');
+      
+      if (reportExists) {
+        // Generate signed URL and open in new tab
+        const { data: urlData, error } = await supabase.storage
+          .from('investor-reports')
+          .createSignedUrl(filePath, 3600); // 1 hour expiry
+        
+        if (error) {
+          console.error('Error generating signed URL:', error);
+          toast({
+            title: "Error",
+            description: "Failed to open report",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        window.open(urlData.signedUrl, '_blank');
+      } else {
+        // No report exists, prompt upload
+        setReportUploadDataset(datasetName);
+        setReportUploadOpen(true);
+      }
+    } catch (error) {
+      console.error('Error checking report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check for existing report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle report upload
+  const handleUploadReport = async (file: File) => {
+    if (!user?.id || !reportUploadDataset) return;
+    
+    setUploadingReport(true);
+    
+    try {
+      const filePath = getReportPath(reportUploadDataset);
+      
+      // Upload file
+      const { error: uploadError } = await supabase.storage
+        .from('investor-reports')
+        .upload(filePath, file, { upsert: true });
+      
+      if (uploadError) {
+        console.error('Error uploading report:', uploadError);
+        toast({
+          title: "Upload Error",
+          description: "Failed to upload report",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Generate signed URL and open immediately
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from('investor-reports')
+        .createSignedUrl(filePath, 3600);
+      
+      if (urlError) {
+        console.error('Error generating signed URL:', urlError);
+        toast({
+          title: "Error",
+          description: "Report uploaded but failed to open",
+          variant: "destructive",
+        });
+      } else {
+        window.open(urlData.signedUrl, '_blank');
+        toast({
+          title: "Success",
+          description: "Report uploaded and opened successfully",
+        });
+      }
+      
+      setReportUploadOpen(false);
+      setReportUploadDataset('');
+    } catch (error) {
+      console.error('Error uploading report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload report",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingReport(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -360,13 +476,7 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                               
                               <Button
                                 variant="outline"
-                                onClick={() => {
-                                  // TODO: Implement tranching report functionality
-                                  toast({
-                                    title: "Coming Soon",
-                                    description: "Tranching report functionality will be available soon",
-                                  });
-                                }}
+                                onClick={() => openTranchingReport(dataset.dataset_name)}
                                 className="flex items-center space-x-2 border-green-200 hover:bg-green-50"
                               >
                                 <FileCheck className="h-4 w-4" />
@@ -512,6 +622,65 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         onClose={() => setShowAnalytics(false)}
         structure={selectedStructureForAnalytics}
       />
+
+      {/* Report Upload Dialog */}
+      <Dialog open={reportUploadOpen} onOpenChange={setReportUploadOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Upload className="h-5 w-5 text-green-600" />
+              <span>Upload Tranching Report</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              No tranching report found for "{reportUploadDataset}". Please upload a PDF report to continue.
+            </p>
+            
+            <div className="space-y-2">
+              <Label htmlFor="report-upload">Select PDF Report</Label>
+              <Input
+                id="report-upload"
+                type="file"
+                accept=".pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.type !== 'application/pdf') {
+                      toast({
+                        title: "Invalid File",
+                        description: "Please select a PDF file",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    handleUploadReport(file);
+                  }
+                }}
+                disabled={uploadingReport}
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setReportUploadOpen(false)}
+                disabled={uploadingReport}
+              >
+                Cancel
+              </Button>
+            </div>
+            
+            {uploadingReport && (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                <span className="ml-2 text-sm text-gray-600">Uploading...</span>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
