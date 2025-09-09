@@ -93,6 +93,9 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const [reportUploadOpen, setReportUploadOpen] = useState(false);
   const [reportUploadDataset, setReportUploadDataset] = useState<string>('');
   const [uploadingReport, setUploadingReport] = useState(false);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string>('');
+  const [pdfTitle, setPdfTitle] = useState<string>('');
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -318,7 +321,10 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
           return;
         }
         
-        window.open(urlData.signedUrl, '_blank');
+        // Show PDF in inline viewer instead of new tab
+        setPdfUrl(urlData.signedUrl);
+        setPdfTitle(`Tranching Report - ${datasetName}`);
+        setPdfViewerOpen(true);
       } else {
         // No report exists, prompt upload
         setReportUploadDataset(datasetName);
@@ -371,10 +377,13 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
           variant: "destructive",
         });
       } else {
-        window.open(urlData.signedUrl, '_blank');
+        // Show PDF in inline viewer instead of new tab
+        setPdfUrl(urlData.signedUrl);
+        setPdfTitle(`Tranching Report - ${reportUploadDataset}`);
+        setPdfViewerOpen(true);
         toast({
           title: "Success",
-          description: "Report uploaded and opened successfully",
+          description: "Report uploaded successfully",
         });
       }
       
@@ -677,6 +686,28 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
                 <span className="ml-2 text-sm text-gray-600">Uploading...</span>
               </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Viewer Dialog */}
+      <Dialog open={pdfViewerOpen} onOpenChange={setPdfViewerOpen}>
+        <DialogContent className="max-w-6xl max-h-[95vh] w-[95vw] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="flex items-center space-x-2">
+              <FileCheck className="h-5 w-5 text-green-600" />
+              <span>{pdfTitle}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 p-6 pt-4">
+            {pdfUrl && (
+              <iframe
+                src={pdfUrl}
+                className="w-full h-[80vh] border border-gray-200 rounded-lg"
+                title={pdfTitle}
+              />
             )}
           </div>
         </DialogContent>
