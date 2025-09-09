@@ -700,52 +700,56 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
 
       {/* PDF Viewer Dialog */}
       <Dialog open={pdfViewerOpen} onOpenChange={setPdfViewerOpen}>
-        <DialogContent className="max-w-6xl max-h-[95vh] w-[95vw] p-0">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FileCheck className="h-5 w-5 text-green-600" />
-                <span>{pdfTitle}</span>
-              </div>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <FileCheck className="h-5 w-5 text-green-600" />
+              <span>Tranching Report Ready</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Your tranching report for <strong>{pdfTitle.replace('Tranching Report - ', '')}</strong> is ready to download.
+            </p>
+            
+            <div className="flex flex-col space-y-3">
               <Button
-                variant="outline"
                 onClick={() => {
-                  // Download the PDF instead of viewing inline
+                  // Download the PDF
                   const link = document.createElement('a');
                   link.href = pdfUrl;
                   link.download = `${pdfTitle}.pdf`;
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
+                  
+                  toast({
+                    title: "Download Started",
+                    description: "Your tranching report is downloading",
+                  });
                 }}
-                className="flex items-center space-x-2"
+                className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700"
               >
                 <FileText className="h-4 w-4" />
-                <span>Download PDF</span>
+                <span>Download Tranching Report</span>
               </Button>
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex-1 p-6 pt-4">
-            {pdfUrl && (
-              <div className="space-y-4">
-                <iframe
-                  src={pdfUrl}
-                  className="w-full h-[80vh] border border-gray-200 rounded-lg"
-                  title={pdfTitle}
-                  onError={() => {
-                    toast({
-                      title: "PDF Display Issue",
-                      description: "Your browser blocked the PDF display. Please use the Download button above.",
-                      variant: "default",
-                    });
-                  }}
-                />
-                <div className="text-sm text-gray-600 text-center">
-                  If the PDF doesn't display above, click the "Download PDF" button to view it locally.
-                </div>
-              </div>
-            )}
+              
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Open in new tab as fallback
+                  window.open(pdfUrl, '_blank');
+                }}
+                className="flex items-center justify-center space-x-2"
+              >
+                <span>Open in New Tab</span>
+              </Button>
+            </div>
+            
+            <div className="text-xs text-gray-500 text-center">
+              The PDF will download to your default download folder
+            </div>
           </div>
         </DialogContent>
       </Dialog>
