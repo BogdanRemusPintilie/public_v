@@ -297,14 +297,18 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     
     try {
       const filePath = getReportPath(datasetName);
+      console.log('🔍 Checking for report at path:', filePath);
       
       // First try to generate a signed URL directly - if it works, the file exists
       const { data: urlData, error: urlError } = await supabase.storage
         .from('investor-reports')
         .createSignedUrl(filePath, 3600);
       
+      console.log('📝 Signed URL result:', { urlData, urlError });
+      
       if (!urlError && urlData?.signedUrl) {
         // File exists, show it
+        console.log('✅ File exists, showing PDF viewer');
         setPdfUrl(urlData.signedUrl);
         setPdfTitle(`Tranching Report - ${datasetName}`);
         setPdfViewerOpen(true);
@@ -312,18 +316,24 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
       }
       
       // If direct URL generation failed, try listing files as backup
+      console.log('🔍 Direct URL failed, trying file listing...');
       const encodedDatasetName = encodeURIComponent(datasetName);
       const { data: fileData, error: listError } = await supabase.storage
         .from('investor-reports')
         .list(`tranching-reports/${user.id}/${encodedDatasetName}`);
       
+      console.log('📁 File listing result:', { fileData, listError });
+      
       const reportExists = fileData?.some(file => file.name === 'report.pdf');
+      console.log('📊 Report exists check:', reportExists);
       
       if (reportExists) {
         // Try again to generate URL
         const { data: retryUrlData, error: retryError } = await supabase.storage
           .from('investor-reports')
           .createSignedUrl(filePath, 3600);
+        
+        console.log('🔄 Retry URL result:', { retryUrlData, retryError });
         
         if (!retryError && retryUrlData?.signedUrl) {
           setPdfUrl(retryUrlData.signedUrl);
@@ -334,11 +344,12 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
       }
       
       // No report exists, prompt upload
+      console.log('❌ No report found, prompting upload');
       setReportUploadDataset(datasetName);
       setReportUploadOpen(true);
       
     } catch (error) {
-      console.error('Error checking report:', error);
+      console.error('💥 Error checking report:', error);
       toast({
         title: "Error",
         description: "Failed to check for existing report",
@@ -715,19 +726,42 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
             
             <div className="flex flex-col space-y-3">
               <Button
-                onClick={() => {
-                  // Download the PDF
-                  const link = document.createElement('a');
-                  link.href = pdfUrl;
-                  link.download = `${pdfTitle}.pdf`;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                  
-                  toast({
-                    title: "Download Started",
-                    description: "Your tranching report is downloading",
-                  });
+                onClick={async () => {
+                  try {
+                    console.log('🔽 Download button clicked, URL:', pdfUrl);
+                    
+                    // Try fetch approach first
+                    const response = await fetch(pdfUrl);
+                    console.log('📡 Fetch response:', response.status, response.ok);
+                    
+                    if (response.ok) {
+                      const blob = await response.blob();
+                      console.log('📦 Blob created:', blob.size, 'bytes');
+                      
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `${pdfTitle}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Download Started",
+                        description: "Your tranching report is downloading",
+                      });
+                    } else {
+                      throw new Error(`HTTP ${response.status}`);
+                    }
+                  } catch (error) {
+                    console.error('💥 Download failed:', error);
+                    toast({
+                      title: "Download Failed",
+                      description: "Could not download the PDF. Try the 'Open in New Tab' option.",
+                      variant: "destructive",
+                    });
+                  }
                 }}
                 className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700"
               >
@@ -738,8 +772,16 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
               <Button
                 variant="outline"
                 onClick={() => {
+                  console.log('🔗 Opening in new tab:', pdfUrl);
                   // Open in new tab as fallback
-                  window.open(pdfUrl, '_blank');
+                  const newWindow = window.open(pdfUrl, '_blank');
+                  if (!newWindow) {
+                    toast({
+                      title: "Popup Blocked",
+                      description: "Please allow popups for this site or try the download option",
+                      variant: "destructive",
+                    });
+                  }
                 }}
                 className="flex items-center justify-center space-x-2"
               >
