@@ -298,38 +298,45 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     try {
       const filePath = getReportPath(datasetName);
       
-      // Check if report exists
-      const { data: fileData } = await supabase.storage
+      // First try to generate a signed URL directly - if it works, the file exists
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('investor-reports')
-        .list(`tranching-reports/${user.id}/${encodeURIComponent(datasetName)}`);
+        .createSignedUrl(filePath, 3600);
+      
+      if (!urlError && urlData?.signedUrl) {
+        // File exists, show it
+        setPdfUrl(urlData.signedUrl);
+        setPdfTitle(`Tranching Report - ${datasetName}`);
+        setPdfViewerOpen(true);
+        return;
+      }
+      
+      // If direct URL generation failed, try listing files as backup
+      const encodedDatasetName = encodeURIComponent(datasetName);
+      const { data: fileData, error: listError } = await supabase.storage
+        .from('investor-reports')
+        .list(`tranching-reports/${user.id}/${encodedDatasetName}`);
       
       const reportExists = fileData?.some(file => file.name === 'report.pdf');
       
       if (reportExists) {
-        // Generate signed URL and open in new tab
-        const { data: urlData, error } = await supabase.storage
+        // Try again to generate URL
+        const { data: retryUrlData, error: retryError } = await supabase.storage
           .from('investor-reports')
-          .createSignedUrl(filePath, 3600); // 1 hour expiry
+          .createSignedUrl(filePath, 3600);
         
-        if (error) {
-          console.error('Error generating signed URL:', error);
-          toast({
-            title: "Error",
-            description: "Failed to open report",
-            variant: "destructive",
-          });
+        if (!retryError && retryUrlData?.signedUrl) {
+          setPdfUrl(retryUrlData.signedUrl);
+          setPdfTitle(`Tranching Report - ${datasetName}`);
+          setPdfViewerOpen(true);
           return;
         }
-        
-        // Show PDF in inline viewer instead of new tab
-        setPdfUrl(urlData.signedUrl);
-        setPdfTitle(`Tranching Report - ${datasetName}`);
-        setPdfViewerOpen(true);
-      } else {
-        // No report exists, prompt upload
-        setReportUploadDataset(datasetName);
-        setReportUploadOpen(true);
       }
+      
+      // No report exists, prompt upload
+      setReportUploadDataset(datasetName);
+      setReportUploadOpen(true);
+      
     } catch (error) {
       console.error('Error checking report:', error);
       toast({
@@ -695,19 +702,49 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
       <Dialog open={pdfViewerOpen} onOpenChange={setPdfViewerOpen}>
         <DialogContent className="max-w-6xl max-h-[95vh] w-[95vw] p-0">
           <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="flex items-center space-x-2">
-              <FileCheck className="h-5 w-5 text-green-600" />
-              <span>{pdfTitle}</span>
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FileCheck className="h-5 w-5 text-green-600" />
+                <span>{pdfTitle}</span>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Download the PDF instead of viewing inline
+                  const link = document.createElement('a');
+                  link.href = pdfUrl;
+                  link.download = `${pdfTitle}.pdf`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="flex items-center space-x-2"
+              >
+                <FileText className="h-4 w-4" />
+                <span>Download PDF</span>
+              </Button>
             </DialogTitle>
           </DialogHeader>
           
           <div className="flex-1 p-6 pt-4">
             {pdfUrl && (
-              <iframe
-                src={pdfUrl}
-                className="w-full h-[80vh] border border-gray-200 rounded-lg"
-                title={pdfTitle}
-              />
+              <div className="space-y-4">
+                <iframe
+                  src={pdfUrl}
+                  className="w-full h-[80vh] border border-gray-200 rounded-lg"
+                  title={pdfTitle}
+                  onError={() => {
+                    toast({
+                      title: "PDF Display Issue",
+                      description: "Your browser blocked the PDF display. Please use the Download button above.",
+                      variant: "default",
+                    });
+                  }}
+                />
+                <div className="text-sm text-gray-600 text-center">
+                  If the PDF doesn't display above, click the "Download PDF" button to view it locally.
+                </div>
+              </div>
             )}
           </div>
         </DialogContent>
