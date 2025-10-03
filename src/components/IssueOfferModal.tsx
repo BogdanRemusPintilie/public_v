@@ -724,7 +724,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                    {/* Transaction Key Figures */}
                   <div className="space-y-4">
                     <Label className="text-sm font-medium">Transaction Key Figures & Metrics</Label>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs">Expected Pool Size (Millions)</Label>
                         <Input placeholder="e.g., 500" />
@@ -732,22 +732,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                       <div className="space-y-2">
                         <Label className="text-xs">Weighted Avg Life (years)</Label>
                         <Input placeholder="e.g., 3.5 years" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Expected Rating</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="aaa">AAA</SelectItem>
-                            <SelectItem value="aa">AA</SelectItem>
-                            <SelectItem value="a">A</SelectItem>
-                            <SelectItem value="bbb">BBB</SelectItem>
-                            <SelectItem value="bb">BB</SelectItem>
-                            <SelectItem value="b">B</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                     </div>
                   </div>
@@ -757,7 +741,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                     name="structure_figures"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Comments, Key Figures & Details</FormLabel>
+                        <FormLabel>Additional Comments</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Include any additional key metrics, performance triggers, payment mechanics, or structural features"
