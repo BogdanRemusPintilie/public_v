@@ -1074,7 +1074,7 @@ function StructureSummary({ structure, dataset }: StructureSummaryProps) {
             <div className="text-lg font-bold text-primary">
               {structure.weighted_avg_cost_bps.toFixed(0)} BPS
             </div>
-            <div className="text-sm text-gray-600">Expected Weighted Average Cost</div>
+            <div className="text-sm text-gray-600">Estimated Weighted Average Cost</div>
           </div>
         </div>
       </CardContent>
