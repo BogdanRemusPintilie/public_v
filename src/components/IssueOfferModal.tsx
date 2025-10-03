@@ -857,7 +857,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                       Transaction Key Figures & Metrics
                     </h4>
                     
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 gap-6">
                       <div className="text-center">
                         <span className="text-xs font-medium text-muted-foreground block mb-1">Expected Pool Size</span>
                         <p className="text-lg font-bold text-primary">
@@ -874,13 +874,6 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                         <span className="text-xs font-medium text-muted-foreground block mb-1">Weighted Avg Life</span>
                         <p className="text-lg font-bold text-primary">
                           2.8 years
-                        </p>
-                      </div>
-                      
-                      <div className="text-center">
-                        <span className="text-xs font-medium text-muted-foreground block mb-1">Expected Rating</span>
-                        <p className="text-lg font-bold text-primary">
-                          A-
                         </p>
                       </div>
                     </div>
