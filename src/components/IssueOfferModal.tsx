@@ -767,52 +767,11 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
               
               <div className="space-y-4 text-sm">
                 {/* Basic Offer Details */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="font-medium text-muted-foreground">Offer Name:</span>
-                    <p className="mt-1">{form.watch('offer_name') || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-muted-foreground">Selected Structure:</span>
-                    <p className="mt-1">{selectedStructure?.structure_name || 'Not selected'}</p>
-                  </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">Offer Name:</span>
+                  <p className="mt-1">{form.watch('offer_name') || 'Not specified'}</p>
                 </div>
 
-                {/* Target Investors */}
-                <div>
-                  <span className="font-medium text-muted-foreground">Target Investors:</span>
-                  <div className="mt-1">
-                    {selectedInvestors.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {selectedInvestors.map((investor) => (
-                          <span key={investor} className="px-2 py-1 bg-secondary rounded text-xs">
-                            {investor}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No investors selected</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Email Addresses */}
-                <div>
-                  <span className="font-medium text-muted-foreground">Email Addresses:</span>
-                  <div className="mt-1">
-                    {(emailList.length > 0 || additionalEmails.length > 0) ? (
-                      <div className="flex flex-wrap gap-1">
-                        {[...emailList, ...additionalEmails].map((email) => (
-                          <span key={email} className="px-2 py-1 bg-secondary rounded text-xs">
-                            {email}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No email addresses added</p>
-                    )}
-                  </div>
-                </div>
 
                 {/* Issuer Information */}
                 <div className="grid grid-cols-2 gap-4">
