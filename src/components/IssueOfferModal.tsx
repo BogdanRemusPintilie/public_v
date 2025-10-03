@@ -98,6 +98,7 @@ const offerSchema = z.object({
   structure_synthetic: z.boolean().default(false),
   structure_true_sale: z.boolean().default(false),
   structure_sts: z.boolean().default(false),
+  structure_sector: z.string().optional(),
   structure_consumer_finance: z.boolean().default(false),
   additional_comments: z.string().optional(),
 });
@@ -671,7 +672,7 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                         />
                       </div>
                       
-                      <div className="w-1/3">
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Currency</Label>
                           <Select defaultValue="EUR">
@@ -687,6 +688,33 @@ export function IssueOfferModal({ open, onOpenChange }: IssueOfferModalProps) {
                             </SelectContent>
                           </Select>
                         </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="structure_sector"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Sector</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select sector" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="automotive_project_finance">Automotive Project Finance</SelectItem>
+                                  <SelectItem value="large_corporate_loans">Large Corporate Loans</SelectItem>
+                                  <SelectItem value="consumer_finance">Consumer Finance</SelectItem>
+                                  <SelectItem value="sme_corporate_loans">SME Corporate Loans</SelectItem>
+                                  <SelectItem value="commercial_real_estate">Commercial real-estate</SelectItem>
+                                  <SelectItem value="residential_real_estate">Residential real-estate</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
                     </div>
                   </div>
