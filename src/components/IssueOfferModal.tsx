@@ -931,7 +931,9 @@ function StructureSummary({ structure, dataset }: StructureSummaryProps) {
 
   const calculateTrancheValue = (thickness: number) => {
     if (!dataset) return 0;
-    return (dataset.total_value * thickness) / 100;
+    const baseTotal = Number(dataset?.total_opening_balance ?? dataset?.total_value ?? 0);
+    const pct = Number(thickness ?? 0);
+    return (baseTotal * pct) / 100;
   };
 
   const getTranchePosition = (index: number) => {
@@ -970,7 +972,7 @@ function StructureSummary({ structure, dataset }: StructureSummaryProps) {
           Structure Summary: {structure.structure_name}
         </CardTitle>
         <CardDescription>
-          Dataset: {structure.dataset_name} | Total Value: {formatCurrency(dataset?.total_value || 0)}
+          Dataset: {structure.dataset_name} | Total Value: {formatCurrency(Number(dataset?.total_opening_balance ?? dataset?.total_value ?? 0))}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
