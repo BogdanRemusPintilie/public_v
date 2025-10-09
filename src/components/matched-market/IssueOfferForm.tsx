@@ -470,6 +470,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                   )}
                 />
               )}
+              <h3 className="text-lg font-semibold mt-4">Structure Features</h3>
               <div className="flex items-center space-x-2">
                 <FormField
                   control={form.control}
