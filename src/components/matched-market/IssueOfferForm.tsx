@@ -36,6 +36,8 @@ const offerSchema = z.object({
   structure_sector: z.string().optional(),
   structure_sector_other: z.string().optional(),
   structure_consumer_finance: z.boolean().default(false),
+  expected_pool_size: z.string().optional(),
+  weighted_average_life: z.string().optional(),
   additional_comments: z.string().optional(),
 });
 
@@ -78,6 +80,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
       structure_sector: '',
       structure_sector_other: '',
       structure_consumer_finance: false,
+      expected_pool_size: '',
+      weighted_average_life: '',
       additional_comments: '',
     },
   });
@@ -533,6 +537,47 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                   )}
                 />
               </div>
+              
+              <h3 className="text-lg font-semibold mt-6">Transaction Key Figures & Metrics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="expected_pool_size"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expected Pool Size (Millions)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="Enter pool size in millions" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="weighted_average_life"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Weighted Average Life (Years)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="Enter weighted average life" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="additional_comments"
