@@ -53,6 +53,7 @@ export type Database = {
           needs_ocr: boolean | null
           status: string | null
           updated_at: string | null
+          user_id: string
           warnings: Json | null
         }
         Insert: {
@@ -63,6 +64,7 @@ export type Database = {
           needs_ocr?: boolean | null
           status?: string | null
           updated_at?: string | null
+          user_id: string
           warnings?: Json | null
         }
         Update: {
@@ -73,6 +75,7 @@ export type Database = {
           needs_ocr?: boolean | null
           status?: string | null
           updated_at?: string | null
+          user_id?: string
           warnings?: Json | null
         }
         Relationships: []

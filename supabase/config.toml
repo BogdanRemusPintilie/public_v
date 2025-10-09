@@ -3,3 +3,6 @@ project_id = "oaormiiytqivgahmtxfj"
 
 [functions.extract-pdf-data]
 verify_jwt = false
+
+[functions.send-share-notification]
+verify_jwt = true
