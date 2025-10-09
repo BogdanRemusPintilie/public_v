@@ -503,6 +503,62 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Review Your Offer</CardTitle>
+              <CardDescription>Summary of your offer details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-muted-foreground text-sm">Offer Name</Label>
+                  <p className="text-base font-medium mt-1">
+                    {form.watch('offer_name') || '-'}
+                  </p>
+                </div>
+                
+                <div>
+                  <Label className="text-muted-foreground text-sm">Business Focus</Label>
+                  <p className="text-base font-medium mt-1">
+                    {form.watch('issuer_business_focus') || '-'}
+                  </p>
+                </div>
+                
+                <div>
+                  <Label className="text-muted-foreground text-sm">Structure Type</Label>
+                  <p className="text-base font-medium mt-1">
+                    {form.watch('structure_type') || '-'}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Transaction Key Figures & Metrics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-muted-foreground text-sm">Expected Pool Size</Label>
+                    <p className="text-base font-medium mt-1">
+                      {selectedDataset?.total_opening_balance 
+                        ? `€${selectedDataset.total_opening_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : '-'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-muted-foreground text-sm">Weighted Average Life</Label>
+                    <p className="text-base font-medium mt-1">
+                      {selectedStructure?.weighted_avg_cost_bps
+                        ? `${(selectedStructure.weighted_avg_cost_bps / 100).toFixed(2)}%`
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="flex gap-4 justify-end">
             <Button
               type="button"
