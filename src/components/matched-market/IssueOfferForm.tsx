@@ -34,6 +34,7 @@ const offerSchema = z.object({
   structure_true_sale: z.boolean().default(false),
   structure_sts: z.boolean().default(false),
   structure_sector: z.string().optional(),
+  structure_sector_other: z.string().optional(),
   structure_consumer_finance: z.boolean().default(false),
   additional_comments: z.string().optional(),
 });
@@ -74,6 +75,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
       structure_synthetic: false,
       structure_true_sale: false,
       structure_sts: false,
+      structure_sector: '',
+      structure_sector_other: '',
       structure_consumer_finance: false,
       additional_comments: '',
     },
@@ -195,6 +198,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
           structure_synthetic: data.structure_synthetic,
           structure_true_sale: data.structure_true_sale,
           structure_sts: data.structure_sts,
+          structure_sector: data.structure_sector === 'Other' ? data.structure_sector_other : data.structure_sector,
           structure_consumer_finance: data.structure_consumer_finance,
           additional_comments: data.additional_comments || null,
         });
@@ -425,6 +429,47 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="structure_sector"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sector</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a sector" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Automotive project Finance">Automotive project Finance</SelectItem>
+                        <SelectItem value="Large Corporate Loans">Large Corporate Loans</SelectItem>
+                        <SelectItem value="SME Corporate Loans">SME Corporate Loans</SelectItem>
+                        <SelectItem value="Consumer Finance">Consumer Finance</SelectItem>
+                        <SelectItem value="Commercial real-estate">Commercial real-estate</SelectItem>
+                        <SelectItem value="Residential real-estate">Residential real-estate</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {form.watch('structure_sector') === 'Other' && (
+                <FormField
+                  control={form.control}
+                  name="structure_sector_other"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Specify Other Sector</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter sector name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <div className="flex items-center space-x-2">
                 <FormField
                   control={form.control}
