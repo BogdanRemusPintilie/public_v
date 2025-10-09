@@ -13,6 +13,7 @@ import PDAnalysis from "./pages/PDAnalysis";
 import InvestorReport from "./pages/InvestorReport";
 import SRTPlatform from "./pages/SRTPlatform";
 import { InvestorManagement } from "./pages/InvestorManagement";
+import { IssueOffer, ManageOffers, OfferDetails } from "./pages/MatchedMarket";
 
 import NotFound from "./pages/NotFound";
 
@@ -58,6 +59,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <InvestorManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matched-market/issue-offer" 
+              element={
+                <ProtectedRoute>
+                  <IssueOffer />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matched-market/manage-offers" 
+              element={
+                <ProtectedRoute>
+                  <ManageOffers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matched-market/offers/:id" 
+              element={
+                <ProtectedRoute>
+                  <OfferDetails />
                 </ProtectedRoute>
               } 
             />

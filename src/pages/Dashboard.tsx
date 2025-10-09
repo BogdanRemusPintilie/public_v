@@ -12,8 +12,6 @@ import ExcelUpload from '@/components/ExcelUpload';
 import DatasetManager from '@/components/DatasetManager';
 import DataExtractor from '@/components/DataExtractor';
 import TrancheAnalysisDashboard from '@/components/TrancheAnalysisDashboard';
-import { IssueOfferModal } from '@/components/IssueOfferModal';
-import { ManageOfferModal } from '@/components/ManageOfferModal';
 import RegulatoryReportingUpload from '@/components/RegulatoryReportingUpload';
 import InvestorReportingUpload from '@/components/InvestorReportingUpload';
 import ExtractionTool from '@/components/ExtractionTool';
@@ -32,8 +30,6 @@ const Dashboard = () => {
   const [showTrancheAnalysis, setShowTrancheAnalysis] = useState(false);
   const [preTradePopoverOpen, setPreTradePopoverOpen] = useState(false);
   const [globalRefreshTrigger, setGlobalRefreshTrigger] = useState(0);
-  const [showIssueOfferModal, setShowIssueOfferModal] = useState(false);
-  const [showManageOfferModal, setShowManageOfferModal] = useState(false);
   const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
   const [showInvestorReporting, setShowInvestorReporting] = useState(false);
   const [showExtractionTool, setShowExtractionTool] = useState(false);
@@ -120,9 +116,9 @@ const Dashboard = () => {
 
   const handleMatchedMarket = (action: string) => {
     if (action === 'Create Offer') {
-      setShowIssueOfferModal(true);
+      navigate('/matched-market/issue-offer');
     } else if (action === 'Manage Offer') {
-      setShowManageOfferModal(true);
+      navigate('/matched-market/manage-offers');
     } else {
       toast({
         title: "Matched Market",
@@ -499,16 +495,6 @@ const Dashboard = () => {
       <TrancheAnalysisDashboard
         isOpen={showTrancheAnalysis}
         onClose={() => setShowTrancheAnalysis(false)}
-      />
-      
-      <IssueOfferModal
-        open={showIssueOfferModal}
-        onOpenChange={setShowIssueOfferModal}
-      />
-      
-      <ManageOfferModal 
-        isOpen={showManageOfferModal}
-        onClose={() => setShowManageOfferModal(false)}
       />
       
       <RegulatoryReportingUpload
