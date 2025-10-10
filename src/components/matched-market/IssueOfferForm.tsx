@@ -411,7 +411,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Automotive project Finance">Automotive project Finance</SelectItem>
+                        <SelectItem value="Automotive Finance">Automotive Finance</SelectItem>
+                        <SelectItem value="Project Finance">Project Finance</SelectItem>
                         <SelectItem value="Large Corporate Loans">Large Corporate Loans</SelectItem>
                         <SelectItem value="SME Corporate Loans">SME Corporate Loans</SelectItem>
                         <SelectItem value="Consumer Finance">Consumer Finance</SelectItem>
