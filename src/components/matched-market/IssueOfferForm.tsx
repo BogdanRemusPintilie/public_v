@@ -398,12 +398,12 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
               <CardDescription>Provide details about the structure</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <h3 className="text-lg font-semibold">Sector</h3>
               <FormField
                 control={form.control}
                 name="structure_sector"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sector</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
