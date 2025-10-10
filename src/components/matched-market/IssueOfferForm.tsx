@@ -134,6 +134,9 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
             total_loan_amount: totalAmount,
             total_opening_balance: totalBalance
           });
+          
+          // Set the overall asset pool size in millions
+          form.setValue('expected_pool_size', (totalBalance / 1000000).toFixed(2));
         }
       } catch (error) {
         console.error('Error fetching dataset summary:', error);
@@ -496,7 +499,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                   name="expected_pool_size"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Expected Pool Size (Millions)</FormLabel>
+                      <FormLabel>Overall Asset Pool Size (Millions)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
