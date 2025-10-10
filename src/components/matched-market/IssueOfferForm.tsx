@@ -576,7 +576,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                 <h3 className="text-lg font-semibold mb-4">Transaction Key Figures & Metrics</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label className="text-muted-foreground text-sm">Expected Pool Size</Label>
+                    <Label className="text-muted-foreground text-sm">Overall Asset Pool Size</Label>
                     <p className="text-base font-medium mt-1">
                       {selectedDataset?.total_opening_balance 
                         ? `€${selectedDataset.total_opening_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
