@@ -33,7 +33,6 @@ const offerSchema = z.object({
   structure_sts: z.boolean().default(false),
   structure_sector: z.string().optional(),
   structure_sector_other: z.string().optional(),
-  structure_consumer_finance: z.boolean().default(false),
   expected_pool_size: z.string().optional(),
   weighted_average_life: z.string().optional(),
   additional_comments: z.string().optional(),
@@ -75,7 +74,6 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
       structure_sts: false,
       structure_sector: '',
       structure_sector_other: '',
-      structure_consumer_finance: false,
       expected_pool_size: '',
       weighted_average_life: '',
       additional_comments: '',
@@ -197,7 +195,6 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
           structure_true_sale: data.structure_true_sale,
           structure_sts: data.structure_sts,
           structure_sector: data.structure_sector === 'Other' ? data.structure_sector_other : data.structure_sector,
-          structure_consumer_finance: data.structure_consumer_finance,
           additional_comments: data.additional_comments || null,
         });
 
@@ -486,21 +483,6 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                         />
                       </FormControl>
                       <FormLabel className="text-sm font-normal">STS</FormLabel>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="structure_consumer_finance"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm font-normal">Consumer Finance</FormLabel>
                     </FormItem>
                   )}
                 />
