@@ -13,7 +13,8 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
       style: 'currency',
       currency: 'EUR',
       notation: 'compact',
-      maximumFractionDigits: 1,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
