@@ -28,8 +28,6 @@ const offerSchema = z.object({
   issuer_nationality: z.string().optional(),
   issuer_overview: z.string().optional(),
   issuer_business_focus: z.string().optional(),
-  structure_type: z.string().optional(),
-  structure_figures: z.string().optional(),
   structure_synthetic: z.boolean().default(false),
   structure_true_sale: z.boolean().default(false),
   structure_sts: z.boolean().default(false),
@@ -72,8 +70,6 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
       issuer_nationality: '',
       issuer_overview: '',
       issuer_business_focus: '',
-      structure_type: '',
-      structure_figures: '',
       structure_synthetic: false,
       structure_true_sale: false,
       structure_sts: false,
@@ -197,8 +193,6 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
           issuer_nationality: data.issuer_nationality || null,
           issuer_overview: data.issuer_overview || null,
           issuer_business_focus: data.issuer_business_focus || null,
-          structure_type: data.structure_type || null,
-          structure_figures: data.structure_figures || null,
           structure_synthetic: data.structure_synthetic,
           structure_true_sale: data.structure_true_sale,
           structure_sts: data.structure_sts,
@@ -409,32 +403,6 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
-                name="structure_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Structure Type</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter structure type" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="structure_figures"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Key Figures of the Structure</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Enter key figures of the structure" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="structure_sector"
                 render={({ field }) => (
                   <FormItem>
@@ -612,13 +580,6 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                   <Label className="text-muted-foreground text-sm">Business Focus</Label>
                   <p className="text-base font-medium mt-1">
                     {form.watch('issuer_business_focus') || '-'}
-                  </p>
-                </div>
-                
-                <div>
-                  <Label className="text-muted-foreground text-sm">Structure Type</Label>
-                  <p className="text-base font-medium mt-1">
-                    {form.watch('structure_type') || '-'}
                   </p>
                 </div>
               </div>
