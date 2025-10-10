@@ -588,8 +588,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                   <div>
                     <Label className="text-muted-foreground text-sm">Weighted Average Life</Label>
                     <p className="text-base font-medium mt-1">
-                      {selectedStructure?.weighted_avg_cost_bps
-                        ? `${(selectedStructure.weighted_avg_cost_bps / 100).toFixed(2)}%`
+                      {form.watch('weighted_average_life')
+                        ? `${form.watch('weighted_average_life')} years`
                         : '-'}
                     </p>
                   </div>
