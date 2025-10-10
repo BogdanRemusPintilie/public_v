@@ -416,12 +416,12 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="Automotive Finance">Automotive Finance</SelectItem>
-                        <SelectItem value="Project Finance">Project Finance</SelectItem>
-                        <SelectItem value="Large Corporate Loans">Large Corporate Loans</SelectItem>
-                        <SelectItem value="SME Corporate Loans">SME Corporate Loans</SelectItem>
-                        <SelectItem value="Consumer Finance">Consumer Finance</SelectItem>
                         <SelectItem value="Commercial real-estate">Commercial real-estate</SelectItem>
+                        <SelectItem value="Consumer Finance">Consumer Finance</SelectItem>
+                        <SelectItem value="Large Corporate Loans">Large Corporate Loans</SelectItem>
+                        <SelectItem value="Project Finance">Project Finance</SelectItem>
                         <SelectItem value="Residential real-estate">Residential real-estate</SelectItem>
+                        <SelectItem value="SME Corporate Loans">SME Corporate Loans</SelectItem>
                         <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
