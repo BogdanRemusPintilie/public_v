@@ -135,10 +135,9 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
             total_opening_balance: totalBalance
           });
           
-          // Set the overall asset pool size and weighted average life in millions
+          // Set the overall asset pool size in millions
           const poolSizeInMillions = (totalBalance / 1000000).toFixed(2);
           form.setValue('expected_pool_size', poolSizeInMillions);
-          form.setValue('weighted_average_life', poolSizeInMillions);
         }
       } catch (error) {
         console.error('Error fetching dataset summary:', error);
