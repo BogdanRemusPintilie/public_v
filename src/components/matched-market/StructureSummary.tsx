@@ -1,13 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StructureSummaryProps {
   structure: any;
   dataset: any;
 }
 
+interface DatasetSummary {
+  dataset_name: string;
+  record_count: number;
+  total_value: number;
+  avg_interest_rate: number;
+  high_risk_count: number;
+  created_at: string;
+}
+
 export function StructureSummary({ structure, dataset }: StructureSummaryProps) {
+  const [datasetSummary, setDatasetSummary] = useState<DatasetSummary | null>(null);
+
+  useEffect(() => {
+    const fetchDatasetSummary = async () => {
+      if (!structure?.dataset_name) return;
+
+      try {
+        const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
+        
+        if (error) {
+          console.error('Error fetching dataset summary:', error);
+          return;
+        }
+
+        const summary = data?.find((d: DatasetSummary) => d.dataset_name === structure.dataset_name);
+        if (summary) {
+          setDatasetSummary(summary);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchDatasetSummary();
+  }, [structure?.dataset_name]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -19,8 +55,8 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
   };
 
   const calculateTrancheValue = (thickness: number) => {
-    if (!dataset) return 0;
-    const baseTotal = Number(dataset?.total_opening_balance ?? dataset?.total_value ?? 0);
+    // Use database-aggregated total_value from get_dataset_summaries_optimized (same as analytics)
+    const baseTotal = datasetSummary?.total_value || 0;
     const pct = Number(thickness ?? 0);
     return (baseTotal * pct) / 100;
   };
@@ -60,7 +96,7 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
           Structure Summary: {structure.structure_name}
         </CardTitle>
         <CardDescription>
-          Dataset: {structure.dataset_name} | Total Value: {formatCurrency(Number(dataset?.total_opening_balance ?? dataset?.total_value ?? 0))}
+          Dataset: {structure.dataset_name} | Total Value: {formatCurrency(datasetSummary?.total_value || 0)}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
