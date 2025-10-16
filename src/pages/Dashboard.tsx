@@ -280,53 +280,70 @@ const Dashboard = () => {
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-purple-100">
-                    <Handshake className="h-5 w-5 text-purple-600" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Users className="h-6 w-6 text-green-600" />
                   </div>
-                  <CardTitle className="text-xl">Matched Market</CardTitle>
+                  <div>
+                    <CardTitle className="text-xl font-bold text-gray-900">Matched Market</CardTitle>
+                    <CardDescription>Share or access transactions in progress, manage pricing and ready transaction for execution</CardDescription>
+                  </div>
                 </div>
               </div>
-              <CardDescription className="mt-2">
-                {userType === 'investor' 
-                  ? 'View and respond to matched market offers and NDAs'
-                  : 'Issue and manage matched market offers for tranche structures'}
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-3">
-                {userType === 'issuer' && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => navigate('/matched-market/issue-offer')}
-                    >
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Active Transactions</span>
+                  <div className="flex items-center space-x-2">
+                    <Activity className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-green-600">8 In Progress</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Pricing Updates</span>
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-blue-600">3 Pending</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Ready for Execution</span>
+                  <div className="flex items-center space-x-2">
+                    <FileCheck className="h-4 w-4 text-orange-500" />
+                    <span className="text-sm text-orange-600">5 Ready</span>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="w-full bg-green-600 hover:bg-green-700">
+                      Manage Market Transactions
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-64">
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Create Offer')}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Issue New Offer
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => navigate('/matched-market/manage-offers')}
-                    >
+                      Create Offer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manage Offer
+                    </DropdownMenuItem>
+                    {userType === 'investor' && (
+                      <DropdownMenuItem onClick={() => navigate('/matched-market/manage-nda')}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Manage NDAs
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Review Completed Transactions')}>
                       <Eye className="h-4 w-4 mr-2" />
-                      Manage My Offers
-                    </Button>
-                  </>
-                )}
-                
-                {userType === 'investor' && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => navigate('/matched-market/manage-nda')}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Manage NDAs
-                  </Button>
-                )}
+                      Review Completed Transactions
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardContent>
           </Card>
