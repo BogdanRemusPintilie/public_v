@@ -342,6 +342,10 @@ const Dashboard = () => {
                         Manage NDAs
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Transaction Hub')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Transaction Hub
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleMatchedMarket('Review Completed Transactions')}>
                       <Eye className="h-4 w-4 mr-2" />
                       Review Completed Transactions
