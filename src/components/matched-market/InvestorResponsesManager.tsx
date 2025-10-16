@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, Database, FileText } from 'lucide-react';
+import { Loader2, CheckCircle, Database, FileText, MessageSquare } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 interface InvestorResponsesManagerProps {
   offerId: string;
@@ -24,6 +25,8 @@ interface InvestorResponse {
   investor_email?: string;
   investor_name?: string;
   has_data_access?: boolean;
+  nda_status?: string;
+  issuer_response?: string;
 }
 
 export function InvestorResponsesManager({ offerId, datasetName }: InvestorResponsesManagerProps) {
@@ -32,6 +35,8 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
   const [responses, setResponses] = useState<InvestorResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [grantingAccess, setGrantingAccess] = useState<string | null>(null);
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  const [issuerResponse, setIssuerResponse] = useState<string>('');
 
   useEffect(() => {
     fetchResponses();
@@ -64,10 +69,19 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
             .eq('shared_with_user_id', response.investor_id)
             .single();
 
+          // Check NDA status for this offer
+          const { data: ndaData } = await supabase
+            .from('ndas')
+            .select('status')
+            .eq('offer_id', offerId)
+            .eq('investor_id', response.investor_id)
+            .single();
+
           return {
             ...response,
             investor_email: userData?.user?.email || 'Unknown',
-            has_data_access: !!shareData
+            has_data_access: !!shareData,
+            nda_status: ndaData?.status || 'not_sent'
           };
         })
       );
@@ -122,6 +136,33 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
     }
   };
 
+  const handleSaveResponse = async (responseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('offer_responses')
+        .update({ issuer_response })
+        .eq('id', responseId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Response Saved',
+        description: 'Your response has been sent to the investor',
+      });
+
+      setRespondingTo(null);
+      setIssuerResponse('');
+      fetchResponses();
+    } catch (error: any) {
+      console.error('Error saving response:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save response',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'interested':
@@ -132,6 +173,19 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
         return <Badge variant="secondary">Not Interested</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getNDABadge = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return <Badge className="bg-green-600">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      case 'pending':
+        return <Badge variant="outline">Pending</Badge>;
+      default:
+        return <Badge variant="secondary">Not Sent</Badge>;
     }
   };
 
@@ -169,76 +223,161 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Investor Responses ({responses.length})
+          Investor Interest ({responses.length})
         </CardTitle>
         <CardDescription>
-          View confirmations of interest and manage data access for investors
+          View investor confirmations and manage responses
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Investor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Indicative Price</TableHead>
-                <TableHead>Comments</TableHead>
-                <TableHead>Response Date</TableHead>
-                <TableHead className="text-center">Data Access</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {responses.map((response) => (
-                <TableRow key={response.id}>
-                  <TableCell className="font-medium">
-                    {response.investor_email}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(response.status)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {response.indicative_price 
-                      ? `€${response.indicative_price.toLocaleString()}`
-                      : '-'
-                    }
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {response.comments || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(response.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {response.has_data_access ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm text-green-600">Granted</span>
+        <div className="space-y-6">
+          {responses.map((response) => (
+            <Card key={response.id} className="border-l-4 border-l-blue-500">
+              <CardContent className="pt-6">
+                <div className="grid gap-4">
+                  {/* Investor Info Header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-lg">{response.investor_email}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(response.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 items-end">
+                      {getStatusBadge(response.status)}
+                      {getNDABadge(response.nda_status || 'not_sent')}
+                    </div>
+                  </div>
+
+                  {/* Response Details */}
+                  <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Confirmation Status</p>
+                      <p className="text-base mt-1">
+                        {response.status === 'interested' && 'Confirmed Interest'}
+                        {response.status === 'formal_indication' && 'Formal Indication Submitted'}
+                        {response.status === 'not_interested' && 'Declined Offer'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">NDA Status</p>
+                      <p className="text-base mt-1">
+                        {response.nda_status === 'accepted' && 'NDA Accepted'}
+                        {response.nda_status === 'rejected' && 'NDA Rejected'}
+                        {response.nda_status === 'pending' && 'NDA Pending Review'}
+                        {response.nda_status === 'not_sent' && 'NDA Not Sent'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Indicative Price & Questions */}
+                  <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Indicative Price</p>
+                      <p className="text-base mt-1 font-semibold">
+                        {response.indicative_price 
+                          ? `€${response.indicative_price.toLocaleString()}`
+                          : 'Not provided'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Data Access</p>
+                      <div className="mt-1">
+                        {response.has_data_access ? (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span className="text-sm text-green-600 font-medium">Access Granted</span>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleGrantAccess(response.investor_id, response.investor_email || '')}
+                            disabled={grantingAccess === response.investor_id}
+                          >
+                            {grantingAccess === response.investor_id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Granting...
+                              </>
+                            ) : (
+                              <>
+                                <Database className="h-4 w-4 mr-2" />
+                                Grant Access
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Investor Comments/Questions */}
+                  {response.comments && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm font-medium text-muted-foreground">Additional Questions</p>
+                      <p className="text-base mt-1 bg-muted p-3 rounded-md">{response.comments}</p>
+                    </div>
+                  )}
+
+                  {/* Issuer Response Section */}
+                  <div className="pt-2 border-t">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Issuer Response</p>
+                    {respondingTo === response.id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={issuerResponse}
+                          onChange={(e) => setIssuerResponse(e.target.value)}
+                          placeholder="Type your response to the investor..."
+                          rows={4}
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleSaveResponse(response.id)} size="sm">
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Send Response
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setRespondingTo(null);
+                              setIssuerResponse('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : response.issuer_response ? (
+                      <div className="bg-blue-50 p-3 rounded-md">
+                        <p className="text-base">{response.issuer_response}</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => {
+                            setRespondingTo(response.id);
+                            setIssuerResponse(response.issuer_response || '');
+                          }}
+                        >
+                          Edit Response
+                        </Button>
                       </div>
                     ) : (
                       <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleGrantAccess(response.investor_id, response.investor_email || '')}
-                        disabled={grantingAccess === response.investor_id}
+                        onClick={() => setRespondingTo(response.id)}
                       >
-                        {grantingAccess === response.investor_id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Granting...
-                          </>
-                        ) : (
-                          <>
-                            <Database className="h-4 w-4 mr-2" />
-                            Grant Access
-                          </>
-                        )}
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Add Response
                       </Button>
                     )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </CardContent>
     </Card>
