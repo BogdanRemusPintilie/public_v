@@ -338,14 +338,12 @@ const Dashboard = () => {
                         Manage Offer
                       </DropdownMenuItem>
                     )}
-                    {userType === 'investor' && (
-                      <DropdownMenuItem onClick={() => navigate('/matched-market/manage-nda')}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Manage NDAs
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Transaction Hub')}>
+                    <DropdownMenuItem onClick={() => navigate('/matched-market/manage-nda')}>
                       <FileText className="h-4 w-4 mr-2" />
+                      Manage NDAs
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMatchedMarket('Transaction Hub')}>
+                      <Handshake className="h-4 w-4 mr-2" />
                       Transaction Hub
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleMatchedMarket('Review Completed Transactions')}>
