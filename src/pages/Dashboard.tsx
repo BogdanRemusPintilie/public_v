@@ -330,10 +330,12 @@ const Dashboard = () => {
                         Create Offer
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Manage Offer
-                    </DropdownMenuItem>
+                    {userType === 'issuer' && (
+                      <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Manage Offer
+                      </DropdownMenuItem>
+                    )}
                     {userType === 'investor' && (
                       <DropdownMenuItem onClick={() => navigate('/matched-market/manage-nda')}>
                         <FileText className="h-4 w-4 mr-2" />
