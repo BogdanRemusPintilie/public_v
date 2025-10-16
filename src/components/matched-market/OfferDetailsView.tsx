@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileText } from 'lucide-react';
 import { InvestorResponseForm } from './InvestorResponseForm';
+import { InvestorResponsesManager } from './InvestorResponsesManager';
 import { useUserType } from '@/hooks/useUserType';
 
 interface OfferDetailsViewProps {
@@ -232,6 +233,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
           </CardContent>
         </Card>
+      )}
+
+      {userType === 'issuer' && offer.structure?.dataset_name && (
+        <InvestorResponsesManager 
+          offerId={offer.id} 
+          datasetName={offer.structure.dataset_name}
+        />
       )}
 
       {userType === 'investor' && (
