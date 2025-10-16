@@ -39,10 +39,14 @@ const OfferDetails = () => {
         description: error.message,
         variant: 'destructive',
       });
-      navigate('/matched-market/manage-offers');
+      navigate('/matched-market/transaction-hub');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    navigate('/matched-market/transaction-hub');
   };
 
   if (isLoading) {
@@ -59,11 +63,11 @@ const OfferDetails = () => {
         <div className="mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/matched-market/manage-offers')}
+            onClick={handleBack}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Manage Offers
+            Back to Transaction Hub
           </Button>
           
           <h1 className="text-3xl font-bold mb-2">{offer?.offer_name}</h1>
