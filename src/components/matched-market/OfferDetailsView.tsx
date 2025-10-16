@@ -230,26 +230,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               </div>
             </div>
 
-            {/* Risk Summary */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Risk Summary</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="border rounded-lg p-4 space-y-2">
-                  <h4 className="font-medium text-sm text-muted-foreground">Credit Enhancement</h4>
-                  <p className="text-sm">
-                    Total subordination provides {offer.structure.tranches[0]?.subordination || 0}% protection for senior tranches
-                  </p>
-                </div>
-                <div className="border rounded-lg p-4 space-y-2">
-                  <h4 className="font-medium text-sm text-muted-foreground">Structure Type</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    {offer.structure_synthetic && <Badge variant="secondary">Synthetic</Badge>}
-                    {offer.structure_true_sale && <Badge variant="secondary">True Sale</Badge>}
-                    {offer.structure_sts && <Badge variant="secondary">STS</Badge>}
-                  </div>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       )}
