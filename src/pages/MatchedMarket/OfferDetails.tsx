@@ -26,6 +26,54 @@ const OfferDetails = () => {
   const fetchOffer = async () => {
     try {
       setIsLoading(true);
+      
+      // Handle demo offer
+      if (id === 'demo-offer') {
+        setOffer({
+          id: 'demo-offer',
+          offer_name: 'Investor Demo Offer',
+          issuer_nationality: 'British',
+          issuer_overview: 'British CIB',
+          issuer_business_focus: 'SME Corporate loans, Large Corporate loans and consumer finance',
+          structure_synthetic: true,
+          structure_true_sale: false,
+          structure_sts: false,
+          structure_consumer_finance: false,
+          additional_comments: 'Overall Asset Pool Size: €14.82M, Weighted Average Life: 4 years',
+          status: 'active',
+          structure: {
+            id: 'demo-structure',
+            structure_name: '400m (Demo Data Lite)',
+            dataset_name: 'Demo Dataset',
+            tranches: [
+              {
+                name: 'Senior Tranche',
+                size: 10000000,
+                coupon: 2.5,
+                subordination: 30,
+                rating: 'AAA'
+              },
+              {
+                name: 'Mezzanine Tranche',
+                size: 3000000,
+                coupon: 5.0,
+                subordination: 10,
+                rating: 'BBB'
+              },
+              {
+                name: 'Equity Tranche',
+                size: 1820000,
+                coupon: 0,
+                subordination: 0,
+                rating: 'Unrated'
+              }
+            ]
+          }
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('offers')
         .select(`
