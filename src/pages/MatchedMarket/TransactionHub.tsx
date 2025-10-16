@@ -111,6 +111,9 @@ export default function TransactionHub() {
           }
         };
         proposed.push(demoOffer);
+
+        // Create demo NDA for the demo offer
+        await createDemoNDA(user.id);
       }
 
       setProposedOffers(proposed);
@@ -125,6 +128,60 @@ export default function TransactionHub() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createDemoNDA = async (investorId: string) => {
+    try {
+      // Check if demo NDA already exists
+      const { data: existingNDA } = await supabase
+        .from('ndas')
+        .select('id')
+        .eq('investor_id', investorId)
+        .eq('offer_id', 'demo-offer')
+        .maybeSingle();
+
+      if (existingNDA) return;
+
+      // Create demo NDA
+      await supabase
+        .from('ndas')
+        .insert({
+          id: 'demo-nda',
+          issuer_id: investorId, // Using same ID for demo purposes
+          investor_id: investorId,
+          offer_id: 'demo-offer',
+          nda_title: 'Non-Disclosure Agreement - Investor Demo Offer',
+          nda_content: `CONFIDENTIALITY AND NON-DISCLOSURE AGREEMENT
+
+This Confidentiality and Non-Disclosure Agreement ("Agreement") is entered into by and between British CIB ("Disclosing Party") and the undersigned investor ("Receiving Party").
+
+1. CONFIDENTIAL INFORMATION
+The Disclosing Party agrees to disclose certain confidential information relating to the Investor Demo Offer, including but not limited to:
+   - Detailed tranche structure analysis
+   - Portfolio composition and performance metrics
+   - Asset pool characteristics and risk assessments
+   - Pricing and economic terms
+
+2. OBLIGATIONS
+The Receiving Party agrees to:
+   a) Maintain strict confidentiality of all disclosed information
+   b) Use the information solely for evaluating the investment opportunity
+   c) Not disclose any information to third parties without prior written consent
+   d) Return or destroy all confidential materials upon request
+
+3. TERM
+This Agreement shall remain in effect for a period of two (2) years from the date of acceptance.
+
+4. GOVERNING LAW
+This Agreement shall be governed by the laws of England and Wales.
+
+By accepting this NDA, you acknowledge that you have read, understood, and agree to be bound by its terms and conditions.`,
+          status: 'pending',
+        });
+    } catch (error) {
+      console.error('Error creating demo NDA:', error);
+      // Don't show error to user for demo NDA creation
     }
   };
 

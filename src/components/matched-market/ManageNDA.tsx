@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, FileText, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 
 interface NDA {
   id: string;
@@ -22,6 +23,7 @@ interface NDA {
 const ManageNDA = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [ndas, setNdas] = useState<NDA[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -41,7 +43,50 @@ const ManageNDA = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNdas((data || []) as NDA[]);
+      
+      let ndasList = (data || []) as NDA[];
+      
+      // Add demo NDA if no NDAs exist
+      if (ndasList.length === 0) {
+        const demoNDA: NDA = {
+          id: 'demo-nda',
+          issuer_id: user.id,
+          investor_id: user.id,
+          offer_id: 'demo-offer',
+          nda_title: 'Non-Disclosure Agreement - Investor Demo Offer',
+          nda_content: `CONFIDENTIALITY AND NON-DISCLOSURE AGREEMENT
+
+This Confidentiality and Non-Disclosure Agreement ("Agreement") is entered into by and between British CIB ("Disclosing Party") and the undersigned investor ("Receiving Party").
+
+1. CONFIDENTIAL INFORMATION
+The Disclosing Party agrees to disclose certain confidential information relating to the Investor Demo Offer, including but not limited to:
+   - Detailed tranche structure analysis
+   - Portfolio composition and performance metrics
+   - Asset pool characteristics and risk assessments
+   - Pricing and economic terms
+
+2. OBLIGATIONS
+The Receiving Party agrees to:
+   a) Maintain strict confidentiality of all disclosed information
+   b) Use the information solely for evaluating the investment opportunity
+   c) Not disclose any information to third parties without prior written consent
+   d) Return or destroy all confidential materials upon request
+
+3. TERM
+This Agreement shall remain in effect for a period of two (2) years from the date of acceptance.
+
+4. GOVERNING LAW
+This Agreement shall be governed by the laws of England and Wales.
+
+By accepting this NDA, you acknowledge that you have read, understood, and agree to be bound by its terms and conditions.`,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        ndasList = [demoNDA];
+      }
+      
+      setNdas(ndasList);
     } catch (error) {
       console.error('Error fetching NDAs:', error);
       toast({
@@ -146,7 +191,7 @@ const ManageNDA = () => {
                   ) : (
                     <>
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      Accept
+                      Accept NDA
                     </>
                   )}
                 </Button>
@@ -166,6 +211,16 @@ const ManageNDA = () => {
                   )}
                 </Button>
               </div>
+            )}
+
+            {nda.status === 'accepted' && (
+              <Button
+                onClick={() => navigate(`/matched-market/offers/${nda.offer_id}`)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Access further detail
+              </Button>
             )}
           </CardContent>
         </Card>
