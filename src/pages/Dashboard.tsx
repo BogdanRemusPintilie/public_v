@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye, Globe } from 'lucide-react';
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye, Globe, UserCog } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ import InvestorReportingUpload from '@/components/InvestorReportingUpload';
 import ExtractionTool from '@/components/ExtractionTool';
 import { preloadDatasets } from '@/components/DatasetSelector';
 import { preloadTrancheData } from '@/components/TrancheAnalysisDashboard';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const [showRegulatoryReporting, setShowRegulatoryReporting] = useState(false);
   const [showInvestorReporting, setShowInvestorReporting] = useState(false);
   const [showExtractionTool, setShowExtractionTool] = useState(false);
+  const { isAdmin } = useAdminCheck();
 
   // Handle navigation from PDAnalysis page
   useEffect(() => {
@@ -156,6 +158,17 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome back, {user?.email}</span>
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/admin/users')}
+                  className="gap-2"
+                >
+                  <UserCog className="h-4 w-4" />
+                  Admin Panel
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout

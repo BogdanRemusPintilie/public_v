@@ -14,7 +14,7 @@ import InvestorReport from "./pages/InvestorReport";
 import SRTPlatform from "./pages/SRTPlatform";
 import { InvestorManagement } from "./pages/InvestorManagement";
 import { IssueOffer, ManageOffers, OfferDetails } from "./pages/MatchedMarket";
-
+import AdminUserManagement from "./pages/AdminUserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +83,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <OfferDetails />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/users" 
+              element={
+                <ProtectedRoute>
+                  <AdminUserManagement />
                 </ProtectedRoute>
               } 
             />
