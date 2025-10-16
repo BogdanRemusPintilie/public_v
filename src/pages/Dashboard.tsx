@@ -123,6 +123,8 @@ const Dashboard = () => {
       navigate('/matched-market/issue-offer');
     } else if (action === 'Manage Offer') {
       navigate('/matched-market/manage-offers');
+    } else if (action === 'Transaction Hub') {
+      navigate('/matched-market/transaction-hub');
     } else {
       toast({
         title: "Matched Market",
