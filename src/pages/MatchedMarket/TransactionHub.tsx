@@ -187,16 +187,18 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
 
   const handleAccept = async (offer: any) => {
     try {
-      // Create or update response record
-      const { error } = await supabase
-        .from('offer_responses')
-        .upsert({
-          offer_id: offer.id,
-          investor_id: user!.id,
-          status: 'accepted',
-        });
+      // Skip database operation for demo offer
+      if (offer.id !== 'demo-offer') {
+        const { error } = await supabase
+          .from('offer_responses')
+          .upsert({
+            offer_id: offer.id,
+            investor_id: user!.id,
+            status: 'accepted',
+          });
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       toast({
         title: 'Offer Accepted',
@@ -209,6 +211,37 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
       toast({
         title: 'Error',
         description: 'Failed to accept offer',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUnaccept = async (offer: any) => {
+    try {
+      // Delete the response to move it back to proposed
+      if (offer.id !== 'demo-offer') {
+        const { error } = await supabase
+          .from('offer_responses')
+          .delete()
+          .eq('offer_id', offer.id)
+          .eq('investor_id', user!.id);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Offer Reset',
+        description: 'Offer moved back to proposed',
+      });
+
+      // Refresh offers
+      fetchAllOffers();
+      setActiveTab('proposed');
+    } catch (error: any) {
+      console.error('Error resetting offer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reset offer',
         variant: 'destructive',
       });
     }
@@ -329,13 +362,22 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
         {!showActions && (
           <>
             <Separator />
-            <Button 
-              onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
-              className="w-full"
-              variant="outline"
-            >
-              View Details
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
+                className="flex-1"
+                variant="outline"
+              >
+                View Details
+              </Button>
+              <Button 
+                onClick={() => handleUnaccept(offer)}
+                className="flex-1"
+                variant="secondary"
+              >
+                Reset to Proposed
+              </Button>
+            </div>
           </>
         )}
       </CardContent>
