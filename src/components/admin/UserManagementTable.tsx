@@ -51,29 +51,35 @@ export const UserManagementTable = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          user_id,
-          email,
-          full_name,
-          company,
-          user_roles (
-            role,
-            user_type
-          )
-        `);
+      // Fetch profiles and user_roles separately, then join client-side
+      const [profilesResult, rolesResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('user_id, email, full_name, company'),
+        supabase
+          .from('user_roles')
+          .select('user_id, role, user_type')
+      ]);
 
-      if (error) throw error;
+      if (profilesResult.error) throw profilesResult.error;
+      if (rolesResult.error) throw rolesResult.error;
 
-      const formattedUsers = data?.map((user: any) => ({
-        user_id: user.user_id,
-        email: user.email,
-        full_name: user.full_name,
-        company: user.company,
-        role: (user.user_roles?.[0]?.role || 'viewer') as AppRole,
-        user_type: (user.user_roles?.[0]?.user_type || 'investor') as AppUserType,
-      })) || [];
+      // Create a map of user roles for quick lookup
+      const rolesMap = new Map(
+        rolesResult.data?.map(role => [role.user_id, role]) || []
+      );
+
+      const formattedUsers = profilesResult.data?.map((profile: any) => {
+        const roleData = rolesMap.get(profile.user_id);
+        return {
+          user_id: profile.user_id,
+          email: profile.email,
+          full_name: profile.full_name,
+          company: profile.company,
+          role: (roleData?.role || 'viewer') as AppRole,
+          user_type: (roleData?.user_type || 'investor') as AppUserType,
+        };
+      }) || [];
 
       setUsers(formattedUsers);
     } catch (error) {
