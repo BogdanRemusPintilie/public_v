@@ -130,60 +130,129 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="indicativePrice">Indicative Price (%)</Label>
-            <Input
-              id="indicativePrice"
-              type="number"
-              step="0.01"
-              placeholder="Enter indicative price"
-              value={formData.indicativePrice}
-              onChange={(e) => setFormData({ ...formData, indicativePrice: e.target.value })}
-            />
-            <p className="text-xs text-muted-foreground">
-              Provide your indicative pricing as a percentage point
-            </p>
+        {existingResponse && !isSubmitting ? (
+          <div className="space-y-6">
+            {/* Display submitted response */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Your Indicative Price</p>
+                  <p className="text-2xl font-bold mt-1">
+                    {formData.indicativePrice ? `${formData.indicativePrice}%` : 'Not provided'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <p className="text-base mt-1 font-medium">Interest Confirmed</p>
+                </div>
+              </div>
+              
+              {formData.comments && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Your Comments</p>
+                  <p className="text-base mt-1 bg-background p-3 rounded-md">{formData.comments}</p>
+                </div>
+              )}
+
+              <div className="text-xs text-muted-foreground">
+                Submitted on {new Date(existingResponse.created_at).toLocaleDateString()}
+              </div>
+            </div>
+
+            {/* Edit form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="indicativePrice">Update Indicative Price (%)</Label>
+                <Input
+                  id="indicativePrice"
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter indicative price"
+                  value={formData.indicativePrice}
+                  onChange={(e) => setFormData({ ...formData, indicativePrice: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="comments">Update Comments</Label>
+                <Textarea
+                  id="comments"
+                  placeholder="Add any key comments or questions..."
+                  value={formData.comments}
+                  onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                  rows={4}
+                />
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Update Response
+                  </>
+                )}
+              </Button>
+            </form>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="indicativePrice">Indicative Price (%)</Label>
+              <Input
+                id="indicativePrice"
+                type="number"
+                step="0.01"
+                placeholder="Enter indicative price"
+                value={formData.indicativePrice}
+                onChange={(e) => setFormData({ ...formData, indicativePrice: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Provide your indicative pricing as a percentage point
+              </p>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="comments">Comments</Label>
-            <Textarea
-              id="comments"
-              placeholder="Add any key comments or questions..."
-              value={formData.comments}
-              onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-              rows={4}
-            />
-            <p className="text-xs text-muted-foreground">
-              Share any requirements, concerns, or questions
-            </p>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="comments">Comments</Label>
+              <Textarea
+                id="comments"
+                placeholder="Add any key comments or questions..."
+                value={formData.comments}
+                onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">
+                Share any requirements, concerns, or questions
+              </p>
+            </div>
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                {existingResponse ? 'Update Response' : 'Submit Interest'}
-              </>
-            )}
-          </Button>
-
-          {existingResponse && (
-            <p className="text-xs text-center text-muted-foreground">
-              You submitted a response on {new Date(existingResponse.created_at).toLocaleDateString()}
-            </p>
-          )}
-        </form>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Submit Interest
+                </>
+              )}
+            </Button>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
