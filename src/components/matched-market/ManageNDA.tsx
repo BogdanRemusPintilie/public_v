@@ -27,6 +27,7 @@ const ManageNDA = () => {
   const [ndas, setNdas] = useState<NDA[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [acceptedNdaId, setAcceptedNdaId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -109,10 +110,18 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: `NDA ${newStatus}`,
-      });
+      if (newStatus === 'accepted') {
+        setAcceptedNdaId(ndaId);
+        toast({
+          title: 'NDA Accepted',
+          description: 'You can now access detailed transaction information',
+        });
+      } else {
+        toast({
+          title: 'NDA Declined',
+          description: 'You have declined this NDA',
+        });
+      }
 
       await fetchNDAs();
     } catch (error) {
@@ -125,6 +134,10 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const handleAccessDetails = (offerId: string) => {
+    navigate(`/matched-market/offers/${offerId}`);
   };
 
   const getStatusBadge = (status: string) => {
@@ -154,6 +167,36 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
         <CardContent className="p-8 text-center">
           <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">No NDAs received yet</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show acceptance confirmation for just-accepted NDA
+  const justAcceptedNda = ndas.find(nda => nda.id === acceptedNdaId);
+  if (justAcceptedNda) {
+    return (
+      <Card className="border-green-200 bg-green-50">
+        <CardContent className="p-8">
+          <div className="text-center space-y-6">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-green-900 mb-2">NDA Accepted Successfully</h3>
+              <p className="text-green-700">
+                You can now access detailed transaction information for this offer
+              </p>
+            </div>
+            <Button
+              onClick={() => handleAccessDetails(justAcceptedNda.offer_id)}
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <ExternalLink className="h-5 w-5 mr-2" />
+              Access transaction details
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -215,11 +258,11 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
 
             {nda.status === 'accepted' && (
               <Button
-                onClick={() => navigate(`/matched-market/offers/${nda.offer_id}`)}
+                onClick={() => handleAccessDetails(nda.offer_id)}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Access further detail
+                Access transaction details
               </Button>
             )}
           </CardContent>

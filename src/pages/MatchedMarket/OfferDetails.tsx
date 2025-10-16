@@ -88,7 +88,8 @@ const OfferDetails = () => {
             {userType === 'investor' ? 'Back to Transaction Hub' : 'Back to Manage Offers'}
           </Button>
           
-          <h1 className="text-3xl font-bold mb-2">{offer?.offer_name}</h1>
+          <h1 className="text-3xl font-bold mb-2">Offer Summary</h1>
+          <p className="text-xl text-muted-foreground">{offer?.offer_name}</p>
           <p className="text-muted-foreground">
             View and manage offer details and investor interactions
           </p>
