@@ -406,6 +406,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+          user_type: Database["public"]["Enums"]["app_user_type"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+          user_type: Database["public"]["Enums"]["app_user_type"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+          user_type?: Database["public"]["Enums"]["app_user_type"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -525,6 +552,14 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
         }[]
       }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_user_type: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_user_type"]
+      }
       get_user_unique_datasets: {
         Args: { input_user_id: string }
         Returns: {
@@ -539,8 +574,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_user_type: {
+        Args: {
+          _type: Database["public"]["Enums"]["app_user_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "viewer"
+      app_user_type: "investor" | "issuer"
       company_type: "seer_capital" | "general"
       user_role: "admin" | "company_user" | "viewer"
     }
@@ -670,6 +721,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "viewer"],
+      app_user_type: ["investor", "issuer"],
       company_type: ["seer_capital", "general"],
       user_role: ["admin", "company_user", "viewer"],
     },
