@@ -120,7 +120,16 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
       {offer.structure && (
         <Card>
-          <CardContent className="space-y-6 pt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Tranching Analysis Document
+            </CardTitle>
+            <CardDescription>
+              Detailed structure analysis for {offer.structure.structure_name}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
             {/* Portfolio Overview */}
             <div>
               <h3 className="font-semibold text-lg mb-3">Portfolio Overview</h3>
