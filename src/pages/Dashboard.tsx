@@ -324,10 +324,12 @@ const Dashboard = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-64">
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Create Offer')}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Offer
-                    </DropdownMenuItem>
+                    {userType === 'issuer' && (
+                      <DropdownMenuItem onClick={() => handleMatchedMarket('Create Offer')}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Offer
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
                       <Settings className="h-4 w-4 mr-2" />
                       Manage Offer
