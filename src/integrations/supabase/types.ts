@@ -302,6 +302,7 @@ export type Database = {
           id: string
           indicative_price: number | null
           investor_id: string
+          issuer_response: string | null
           offer_id: string
           status: string
           updated_at: string
@@ -312,6 +313,7 @@ export type Database = {
           id?: string
           indicative_price?: number | null
           investor_id: string
+          issuer_response?: string | null
           offer_id: string
           status: string
           updated_at?: string
@@ -322,6 +324,7 @@ export type Database = {
           id?: string
           indicative_price?: number | null
           investor_id?: string
+          issuer_response?: string | null
           offer_id?: string
           status?: string
           updated_at?: string
