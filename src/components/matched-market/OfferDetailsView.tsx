@@ -151,7 +151,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   <div className="text-2xl font-bold text-primary mt-1">
                     {((offer.structure.tranches.reduce((sum: number, t: any) => {
                       const trancheWeight = t.size / offer.structure.tranches.reduce((s: number, tr: any) => s + tr.size, 0);
-                      return sum + (t.coupon * trancheWeight);
+                      return sum + ((t.coupon || 0) * trancheWeight);
                     }, 0))).toFixed(2)}%
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                           <TableCell className="font-medium">{tranche.name}</TableCell>
                           <TableCell className="text-right">€{(tranche.size / 1000000).toFixed(2)}M</TableCell>
                           <TableCell className="text-right">{percentage.toFixed(1)}%</TableCell>
-                          <TableCell className="text-right">{tranche.coupon.toFixed(2)}%</TableCell>
+                          <TableCell className="text-right">{(tranche.coupon || 0).toFixed(2)}%</TableCell>
                           <TableCell className="text-right">{tranche.subordination}%</TableCell>
                           <TableCell>
                             <Badge variant={tranche.rating === 'AAA' ? 'default' : tranche.rating === 'Unrated' ? 'secondary' : 'outline'}>
