@@ -29,6 +29,7 @@ export default function TransactionHub() {
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [showDeclineConfirmation, setShowDeclineConfirmation] = useState(false);
   const [declinedOfferName, setDeclinedOfferName] = useState('');
+  const [creatingDemo, setCreatingDemo] = useState(false);
 
   useEffect(() => {
     if (user?.email) {
@@ -120,6 +121,78 @@ export default function TransactionHub() {
     }
   };
 
+  const createDemoOffer = async () => {
+    if (!user?.email) return;
+
+    try {
+      setCreatingDemo(true);
+
+      // First, find or create a demo tranche structure
+      let structureId = null;
+      const { data: existingStructure } = await supabase
+        .from('tranche_structures')
+        .select('id')
+        .eq('structure_name', '400m (Demo Data Lite)')
+        .maybeSingle();
+
+      if (existingStructure) {
+        structureId = existingStructure.id;
+      } else {
+        // Create a demo structure
+        const { data: newStructure, error: structureError } = await supabase
+          .from('tranche_structures')
+          .insert({
+            structure_name: '400m (Demo Data Lite)',
+            dataset_name: 'Demo Dataset',
+            tranches: [],
+            user_id: user.id,
+          })
+          .select('id')
+          .single();
+
+        if (structureError) throw structureError;
+        structureId = newStructure.id;
+      }
+
+      // Create the demo offer
+      const { error: offerError } = await supabase
+        .from('offers')
+        .insert({
+          offer_name: 'Investor Demo Offer',
+          structure_id: structureId,
+          user_id: user.id,
+          shared_with_emails: [user.email],
+          issuer_nationality: 'British',
+          issuer_overview: 'British CIB',
+          issuer_business_focus: 'SME Corporate loans, Large Corporate loans and consumer finance',
+          structure_synthetic: true,
+          structure_true_sale: false,
+          structure_sts: false,
+          structure_consumer_finance: false,
+          additional_comments: 'Overall Asset Pool Size: €14.82M, Weighted Average Life: 4 years',
+          status: 'active',
+        });
+
+      if (offerError) throw offerError;
+
+      toast({
+        title: 'Demo Offer Created',
+        description: 'The demo offer has been added to your Proposed Offers',
+      });
+
+      fetchProposedOffers();
+    } catch (error: any) {
+      console.error('Error creating demo offer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create demo offer',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingDemo(false);
+    }
+  };
+
   if (showDeclineConfirmation) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
@@ -185,9 +258,21 @@ export default function TransactionHub() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-gray-500 mb-4">No proposed offers at this time</p>
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                Return to Dashboard
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                  Return to Dashboard
+                </Button>
+                <Button onClick={createDemoOffer} disabled={creatingDemo}>
+                  {creatingDemo ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating Demo...
+                    </>
+                  ) : (
+                    'Load Demo Offer'
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
