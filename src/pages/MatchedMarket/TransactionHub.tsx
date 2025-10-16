@@ -181,12 +181,21 @@ export default function TransactionHub() {
     try {
       setCreatingDemo(true);
 
+      // Verify authentication
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('🔐 Authenticated user:', authUser.id);
+
       // First, find or create a demo tranche structure
       let structureId = null;
       const { data: existingStructure } = await supabase
         .from('tranche_structures')
         .select('id')
         .eq('structure_name', '400m (Demo Data Lite)')
+        .eq('user_id', authUser.id)
         .maybeSingle();
 
       if (existingStructure) {
@@ -199,12 +208,15 @@ export default function TransactionHub() {
             structure_name: '400m (Demo Data Lite)',
             dataset_name: 'Demo Dataset',
             tranches: [],
-            user_id: user.id,
+            user_id: authUser.id,
           })
           .select('id')
           .single();
 
-        if (structureError) throw structureError;
+        if (structureError) {
+          console.error('❌ ERROR creating structure:', structureError);
+          throw structureError;
+        }
         structureId = newStructure.id;
       }
 
@@ -214,7 +226,7 @@ export default function TransactionHub() {
         .insert({
           offer_name: 'Investor Demo Offer',
           structure_id: structureId,
-          user_id: user.id,
+          user_id: authUser.id,
           shared_with_emails: [user.email],
           issuer_nationality: 'British',
           issuer_overview: 'British CIB',
@@ -227,7 +239,10 @@ export default function TransactionHub() {
           status: 'active',
         });
 
-      if (offerError) throw offerError;
+      if (offerError) {
+        console.error('❌ ERROR creating offer:', offerError);
+        throw offerError;
+      }
 
       toast({
         title: 'Demo Offer Created',
