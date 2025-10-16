@@ -301,7 +301,7 @@ export default function TransactionHub() {
             <div className="flex gap-3">
               <Button 
                 onClick={() => handleAccept(offer)}
-                className="flex-1"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Accept Offer
