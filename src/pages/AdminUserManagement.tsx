@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { UserManagementTable } from '@/components/admin/UserManagementTable';
-import { Shield, Users } from 'lucide-react';
+import { Shield, Users, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const AdminUserManagement = () => {
   const navigate = useNavigate();
@@ -36,7 +37,16 @@ const AdminUserManagement = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
+        <div className="mb-6">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/dashboard')}
+            className="gap-2 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+          
           <div className="flex items-center gap-3 mb-2">
             <Shield className="h-8 w-8 text-primary" />
             <h1 className="text-3xl lg:text-4xl font-bold">Admin Panel</h1>
