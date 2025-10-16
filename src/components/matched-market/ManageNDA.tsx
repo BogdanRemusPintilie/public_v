@@ -103,27 +103,51 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
   const handleNDAResponse = async (ndaId: string, newStatus: 'accepted' | 'declined') => {
     setProcessingId(ndaId);
     try {
-      const { error } = await supabase
-        .from('ndas')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', ndaId);
-
-      if (error) throw error;
-
-      if (newStatus === 'accepted') {
-        setAcceptedNdaId(ndaId);
-        toast({
-          title: 'NDA Accepted',
-          description: 'You can now access detailed transaction information',
-        });
+      // Handle demo NDA separately (it's not in the database)
+      if (ndaId === 'demo-nda') {
+        // Update local state only
+        setNdas(prev => prev.map(nda => 
+          nda.id === ndaId 
+            ? { ...nda, status: newStatus, updated_at: new Date().toISOString() }
+            : nda
+        ));
+        
+        if (newStatus === 'accepted') {
+          setAcceptedNdaId(ndaId);
+          toast({
+            title: 'NDA Accepted',
+            description: 'You can now access detailed transaction information',
+          });
+        } else {
+          toast({
+            title: 'NDA Declined',
+            description: 'You have declined this NDA',
+          });
+        }
       } else {
-        toast({
-          title: 'NDA Declined',
-          description: 'You have declined this NDA',
-        });
-      }
+        // Update database for real NDAs
+        const { error } = await supabase
+          .from('ndas')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', ndaId);
 
-      await fetchNDAs();
+        if (error) throw error;
+
+        if (newStatus === 'accepted') {
+          setAcceptedNdaId(ndaId);
+          toast({
+            title: 'NDA Accepted',
+            description: 'You can now access detailed transaction information',
+          });
+        } else {
+          toast({
+            title: 'NDA Declined',
+            description: 'You have declined this NDA',
+          });
+        }
+
+        await fetchNDAs();
+      }
     } catch (error) {
       console.error('Error updating NDA:', error);
       toast({
