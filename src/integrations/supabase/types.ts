@@ -297,24 +297,30 @@ export type Database = {
       }
       offer_responses: {
         Row: {
+          comments: string | null
           created_at: string
           id: string
+          indicative_price: number | null
           investor_id: string
           offer_id: string
           status: string
           updated_at: string
         }
         Insert: {
+          comments?: string | null
           created_at?: string
           id?: string
+          indicative_price?: number | null
           investor_id: string
           offer_id: string
           status: string
           updated_at?: string
         }
         Update: {
+          comments?: string | null
           created_at?: string
           id?: string
+          indicative_price?: number | null
           investor_id?: string
           offer_id?: string
           status?: string

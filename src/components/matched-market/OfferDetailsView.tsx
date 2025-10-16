@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileText } from 'lucide-react';
+import { InvestorResponseForm } from './InvestorResponseForm';
+import { useUserType } from '@/hooks/useUserType';
 
 interface OfferDetailsViewProps {
   offer: any;
@@ -11,6 +13,8 @@ interface OfferDetailsViewProps {
 }
 
 export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
+  const { userType } = useUserType();
+
   return (
     <div className="space-y-6">
       <Card>
@@ -248,6 +252,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {userType === 'investor' && (
+        <InvestorResponseForm 
+          offerId={offer.id} 
+          onResponseSubmitted={onUpdate}
+        />
       )}
     </div>
   );
