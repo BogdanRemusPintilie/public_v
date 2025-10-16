@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye, Globe, UserCog } from 'lucide-react';
+import { Upload, Users, TrendingUp, BarChart3, Database, DollarSign, FileCheck, Activity, LogOut, FolderOpen, Shield, Settings, FileText, BarChart, Trash2, ChevronDown, Plus, Eye, Globe, UserCog, Handshake } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -280,64 +280,53 @@ const Dashboard = () => {
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Users className="h-6 w-6 text-green-600" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-purple-100">
+                    <Handshake className="h-5 w-5 text-purple-600" />
                   </div>
-                  <div>
-                    <CardTitle className="text-xl font-bold text-gray-900">Matched Market</CardTitle>
-                    <CardDescription>Share or access transactions in progress, manage pricing and ready transaction for execution</CardDescription>
-                  </div>
+                  <CardTitle className="text-xl">Matched Market</CardTitle>
                 </div>
               </div>
+              <CardDescription className="mt-2">
+                {userType === 'investor' 
+                  ? 'View and respond to matched market offers and NDAs'
+                  : 'Issue and manage matched market offers for tranche structures'}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Active Transactions</span>
-                  <div className="flex items-center space-x-2">
-                    <Activity className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-green-600">8 In Progress</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Pricing Updates</span>
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm text-blue-600">3 Pending</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Ready for Execution</span>
-                  <div className="flex items-center space-x-2">
-                    <FileCheck className="h-4 w-4 text-orange-500" />
-                    <span className="text-sm text-orange-600">5 Ready</span>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
-                      Manage Market Transactions
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-64">
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Create Offer')}>
+            <CardContent>
+              <div className="grid gap-3">
+                {userType === 'issuer' && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate('/matched-market/issue-offer')}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
-                      Create Offer
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Manage Offer
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Review Completed Transactions')}>
+                      Issue New Offer
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate('/matched-market/manage-offers')}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
-                      Review Completed Transactions
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      Manage My Offers
+                    </Button>
+                  </>
+                )}
+                
+                {userType === 'investor' && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate('/matched-market/manage-nda')}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Manage NDAs
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

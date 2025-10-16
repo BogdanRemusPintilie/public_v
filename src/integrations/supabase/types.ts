@@ -251,6 +251,50 @@ export type Database = {
         }
         Relationships: []
       }
+      ndas: {
+        Row: {
+          created_at: string
+          id: string
+          investor_id: string
+          issuer_id: string
+          nda_content: string
+          nda_title: string
+          offer_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          investor_id: string
+          issuer_id: string
+          nda_content: string
+          nda_title: string
+          offer_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          investor_id?: string
+          issuer_id?: string
+          nda_content?: string
+          nda_title?: string
+          offer_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndas_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           additional_comments: string | null

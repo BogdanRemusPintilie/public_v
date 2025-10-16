@@ -13,7 +13,7 @@ import PDAnalysis from "./pages/PDAnalysis";
 import InvestorReport from "./pages/InvestorReport";
 import SRTPlatform from "./pages/SRTPlatform";
 import { InvestorManagement } from "./pages/InvestorManagement";
-import { IssueOffer, ManageOffers, OfferDetails } from "./pages/MatchedMarket";
+import { IssueOffer, ManageOffers, OfferDetails, ManageNDA } from "./pages/MatchedMarket";
 import AdminUserManagement from "./pages/AdminUserManagement";
 import NotFound from "./pages/NotFound";
 
@@ -87,7 +87,15 @@ const App = () => (
               } 
             />
             <Route 
-              path="/admin/users" 
+              path="/matched-market/manage-nda" 
+              element={
+                <ProtectedRoute>
+                  <ManageNDA />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/users"
               element={
                 <ProtectedRoute>
                   <AdminUserManagement />
