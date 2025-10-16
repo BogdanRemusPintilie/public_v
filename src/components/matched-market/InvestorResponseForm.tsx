@@ -132,7 +132,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="indicativePrice">Indicative Price (€)</Label>
+            <Label htmlFor="indicativePrice">Indicative Price (%)</Label>
             <Input
               id="indicativePrice"
               type="number"
@@ -142,7 +142,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
               onChange={(e) => setFormData({ ...formData, indicativePrice: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              Provide your indicative pricing for this structure
+              Provide your indicative pricing as a percentage point
             </p>
           </div>
 

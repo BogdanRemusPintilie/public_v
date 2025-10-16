@@ -140,7 +140,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
     try {
       const { error } = await supabase
         .from('offer_responses')
-        .update({ issuer_response })
+        .update({ issuer_response: issuerResponse })
         .eq('id', responseId);
 
       if (error) throw error;
@@ -276,7 +276,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                       <p className="text-sm font-medium text-muted-foreground">Indicative Price</p>
                       <p className="text-base mt-1 font-semibold">
                         {response.indicative_price 
-                          ? `€${response.indicative_price.toLocaleString()}`
+                          ? `${response.indicative_price}%`
                           : 'Not provided'
                         }
                       </p>
