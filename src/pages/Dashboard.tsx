@@ -18,9 +18,11 @@ import ExtractionTool from '@/components/ExtractionTool';
 import { preloadDatasets } from '@/components/DatasetSelector';
 import { preloadTrancheData } from '@/components/TrancheAnalysisDashboard';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { useUserType } from '@/hooks/useUserType';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const { userType, isLoading: userTypeLoading } = useUserType();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -185,6 +187,8 @@ const Dashboard = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
+          {/* Pre-trade - Only for Issuers */}
+          {userType === 'issuer' && (
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -270,7 +274,9 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {/* Matched Market - For both Issuers and Investors */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -336,6 +342,8 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Marketplace - Only for Issuers */}
+          {userType === 'issuer' && (
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -396,7 +404,9 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {/* Post-trade - For both Issuers and Investors */}
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
