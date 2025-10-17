@@ -304,14 +304,23 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                     </div>
                   </div>
 
-                  {/* Indicative Price & Questions */}
-                  <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
+                  {/* Pricing Information */}
+                  <div className="grid md:grid-cols-3 gap-4 pt-2 border-t">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Indicative Price</p>
                       <p className="text-base mt-1 font-semibold">
                         {response.indicative_price 
                           ? `${response.indicative_price}%`
                           : 'Not provided'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Firm Price</p>
+                      <p className="text-base mt-1 font-semibold text-green-600">
+                        {response.indicative_price 
+                          ? `${response.indicative_price}%`
+                          : 'Not submitted'
                         }
                       </p>
                     </div>
