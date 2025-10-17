@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useUserType } from '@/hooks/useUserType';
 import { Loader2, Settings } from 'lucide-react';
 import {
   Table,
@@ -16,7 +17,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-const STAGES = [
+// Issuer stages
+const ISSUER_STAGES = [
   'Offer issued',
   'Interest indicated',
   'NDA executed',
@@ -25,6 +27,19 @@ const STAGES = [
   'Full loan tape provided',
   'Firm offer received',
   'Allocation received',
+  'Transaction completed'
+] as const;
+
+// Investor stages
+const INVESTOR_STAGES = [
+  'Offer received',
+  'Interest indicated',
+  'NDA executed',
+  'Transaction details',
+  'Indicative Offer submitted',
+  'Full loan tape received',
+  'Firm offer submitted',
+  'Allocation submitted',
   'Transaction completed'
 ] as const;
 
@@ -47,16 +62,20 @@ export function ManageOffersView() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { userType, isLoading: userTypeLoading } = useUserType();
   const [offers, setOffers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [responseCounts, setResponseCounts] = useState<Record<string, { total: number; interested: number; status: string }>>({});
   const [showKey, setShowKey] = useState(false);
 
+  // Use appropriate stages based on user type
+  const STAGES = userType === 'investor' ? INVESTOR_STAGES : ISSUER_STAGES;
+
   useEffect(() => {
-    if (user) {
+    if (user && !userTypeLoading) {
       fetchOffers();
     }
-  }, [user]);
+  }, [user, userType, userTypeLoading]);
 
   const determineTransactionStatus = (
     offerResponse: any,
@@ -109,75 +128,119 @@ export function ManageOffersView() {
   const fetchOffers = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('offers')
-        .select(`
-          *,
-          structure:tranche_structures(*)
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+      
+      let offersData;
+      
+      // Fetch offers based on user type
+      if (userType === 'investor') {
+        // For investors: fetch offers shared with them
+        const { data, error } = await supabase
+          .from('offers')
+          .select(`
+            *,
+            structure:tranche_structures(*)
+          `)
+          .contains('shared_with_emails', [user?.email || ''])
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setOffers(data || []);
+        if (error) throw error;
+        offersData = data || [];
+      } else {
+        // For issuers: fetch their own offers
+        const { data, error } = await supabase
+          .from('offers')
+          .select(`
+            *,
+            structure:tranche_structures(*)
+          `)
+          .eq('user_id', user?.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        offersData = data || [];
+      }
+      
+      setOffers(offersData);
 
       // Fetch response counts and detailed status for each offer
-      if (data && data.length > 0) {
+      if (offersData && offersData.length > 0) {
         const counts: Record<string, { total: number; interested: number; status: string }> = {};
         
-        for (const offer of data) {
-          // Get all responses for this offer
-          const { data: responses, error: responseError } = await supabase
-            .from('offer_responses')
-            .select('*')
-            .eq('offer_id', offer.id);
+        for (const offer of offersData) {
+          if (userType === 'investor') {
+            // For investors, get their own response to this offer
+            const { data: myResponse, error: responseError } = await supabase
+              .from('offer_responses')
+              .select('*')
+              .eq('offer_id', offer.id)
+              .eq('investor_id', user?.id)
+              .maybeSingle();
 
-          // Get all NDAs for this offer
-          const { data: ndas, error: ndaError } = await supabase
-            .from('ndas')
-            .select('*')
-            .eq('offer_id', offer.id);
+            const { data: myNda, error: ndaError } = await supabase
+              .from('ndas')
+              .select('*')
+              .eq('offer_id', offer.id)
+              .eq('investor_id', user?.id)
+              .maybeSingle();
 
-          if (!responseError && responses) {
-            // Get the most advanced status from all responses
-            let mostAdvancedStatus = 'Offer issued';
-            
-            responses.forEach(response => {
-              const matchingNda = ndas?.find(n => n.investor_id === response.investor_id);
-              const status = determineTransactionStatus(response, matchingNda, offer.id);
-              
-              // Compare status progression (later statuses override earlier ones)
-              const statusPriority = [
-                'Offer issued',
-                'Interest indicated',
-                'NDA executed',
-                'Transaction details',
-                'Indicative offer received',
-                'Full loan tape provided',
-                'Firm offer received',
-                'Allocation received',
-                'Transaction completed'
-              ];
-              
-              const currentPriority = statusPriority.indexOf(mostAdvancedStatus);
-              const newPriority = statusPriority.indexOf(status);
-              
-              if (newPriority > currentPriority) {
-                mostAdvancedStatus = status;
-              }
-            });
-
+            const status = determineTransactionStatus(myResponse, myNda, offer.id);
             counts[offer.id] = {
-              total: responses.length,
-              interested: responses.filter(r => r.status === 'interested').length,
-              status: mostAdvancedStatus
+              total: myResponse ? 1 : 0,
+              interested: myResponse?.status === 'interested' ? 1 : 0,
+              status: status
             };
           } else {
-            counts[offer.id] = {
-              total: 0,
-              interested: 0,
-              status: 'Offer issued'
-            };
+            // For issuers, get all responses to this offer (existing logic)
+            const { data: responses, error: responseError } = await supabase
+              .from('offer_responses')
+              .select('*')
+              .eq('offer_id', offer.id);
+
+            const { data: ndas, error: ndaError } = await supabase
+              .from('ndas')
+              .select('*')
+              .eq('offer_id', offer.id);
+
+            if (!responseError && responses) {
+              let mostAdvancedStatus = 'Offer issued';
+              
+              responses.forEach(response => {
+                const matchingNda = ndas?.find(n => n.investor_id === response.investor_id);
+                const status = determineTransactionStatus(response, matchingNda, offer.id);
+                
+                const statusPriority = [
+                  'Offer issued',
+                  'Interest indicated',
+                  'NDA executed',
+                  'Transaction details',
+                  'Indicative offer received',
+                  'Full loan tape provided',
+                  'Firm offer received',
+                  'Allocation received',
+                  'Transaction completed'
+                ];
+                
+                const currentPriority = statusPriority.indexOf(mostAdvancedStatus);
+                const newPriority = statusPriority.indexOf(status);
+                
+                if (newPriority > currentPriority) {
+                  mostAdvancedStatus = status;
+                }
+              });
+
+              counts[offer.id] = {
+                total: responses.length,
+                interested: responses.filter(r => r.status === 'interested').length,
+                status: mostAdvancedStatus
+              };
+            } else {
+              counts[offer.id] = {
+                total: 0,
+                interested: 0,
+                status: 'Offer issued'
+              };
+            }
           }
         }
         
