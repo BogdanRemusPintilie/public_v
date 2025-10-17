@@ -21,7 +21,7 @@ const STAGES = [
   'Interest indicated',
   'NDA executed',
   'Transaction details',
-  'Indication offer submitted',
+  'Indicative Offer Received',
   'Full loan tape provided',
   'Firm Offer received',
   'Allocation received',
@@ -70,7 +70,7 @@ export function ManageOffersView() {
 
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
-      return 'Indication offer submitted';
+      return 'Indicative Offer Received';
     }
 
     // If investor acknowledged requirements, move to transaction details
@@ -147,7 +147,7 @@ export function ManageOffersView() {
                 'Interest indicated',
                 'NDA executed',
                 'Transaction details',
-                'Indication offer submitted',
+                'Indicative Offer Received',
                 'Full loan tape provided',
                 'Firm Offer received',
                 'Allocation received',
