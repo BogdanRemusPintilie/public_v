@@ -264,6 +264,10 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     if (currentStageIndex < statusIndex) {
       return 'completed';
     } else if (currentStageIndex === statusIndex) {
+      // Special handling for "Interest indicated" stage - show as completed (purple) instead of opened
+      if (transactionStatus === 'Interest indicated' && STAGES[currentStageIndex] === 'Interest indicated') {
+        return 'completed';
+      }
       return 'opened';
     }
     
