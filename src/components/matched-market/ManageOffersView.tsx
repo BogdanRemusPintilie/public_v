@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -293,6 +293,9 @@ export function ManageOffersView() {
                   {stage}
                 </TableHead>
               ))}
+              <TableHead className="text-center w-[120px]">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -303,8 +306,7 @@ export function ManageOffersView() {
               return (
                 <TableRow 
                   key={offer.id}
-                  className="cursor-pointer hover:bg-muted/30"
-                  onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
+                  className="hover:bg-muted/30"
                 >
                   <TableCell className="sticky left-0 bg-card z-10 font-medium border-r text-sm">
                     {offer.offer_name}
@@ -320,6 +322,16 @@ export function ManageOffersView() {
                       </TableCell>
                     );
                   })}
+                  <TableCell className="text-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Manage
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
