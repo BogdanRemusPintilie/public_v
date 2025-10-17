@@ -535,7 +535,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                   {/* Investor Comments/Questions */}
                   {response.comments && (
                     <div className="pt-2 border-t">
-                      <p className="text-sm font-medium text-muted-foreground">Additional Questions</p>
+                      <p className="text-sm font-medium text-muted-foreground">Key Comments</p>
                       <p className="text-base mt-1 bg-muted p-3 rounded-md">{response.comments}</p>
                     </div>
                   )}
