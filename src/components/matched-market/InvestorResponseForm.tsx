@@ -39,7 +39,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
 
       if (data) {
         setExistingResponse(data);
-        setIsInterested(data.status === 'interested');
+        setIsInterested(data.status === 'accepted');
         setComments(data.comments || '');
       }
     } catch (error) {
@@ -72,7 +72,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
       const responseData = {
         offer_id: offerId,
         investor_id: user.id,
-        status: interested ? 'interested' : 'not_interested',
+        status: interested ? 'accepted' : 'declined',
         indicative_price: null,
         comments: comments.trim() || null
       };
