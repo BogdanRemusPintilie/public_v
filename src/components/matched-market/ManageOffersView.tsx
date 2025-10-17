@@ -17,13 +17,13 @@ import {
 } from '@/components/ui/table';
 
 const STAGES = [
-  'Offer Issued',
+  'Offer issued',
   'Interest indicated',
   'NDA executed',
   'Transaction details',
-  'Indicative Offer Received',
+  'Indicative offer received',
   'Full loan tape provided',
-  'Firm Offer received',
+  'Firm offer received',
   'Allocation received',
   'Transaction completed'
 ] as const;
@@ -70,7 +70,7 @@ export function ManageOffersView() {
 
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
-      return 'Indicative Offer Received';
+      return 'Indicative offer received';
     }
 
     // If investor acknowledged requirements, move to transaction details
@@ -85,12 +85,12 @@ export function ManageOffersView() {
 
     // If no response yet, it's just issued
     if (!offerResponse) {
-      return 'Offer Issued';
+      return 'Offer issued';
     }
 
     // If declined, keep at offer issued
     if (offerResponse.status === 'declined') {
-      return 'Offer Issued';
+      return 'Offer issued';
     }
 
     // Interest indicated (interested or accepted)
@@ -98,7 +98,7 @@ export function ManageOffersView() {
       return 'Interest indicated';
     }
 
-    return 'Offer Issued';
+    return 'Offer issued';
   };
 
   const fetchOffers = async () => {
@@ -143,13 +143,13 @@ export function ManageOffersView() {
               
               // Compare status progression (later statuses override earlier ones)
               const statusPriority = [
-                'Offer Issued',
+                'Offer issued',
                 'Interest indicated',
                 'NDA executed',
                 'Transaction details',
-                'Indicative Offer Received',
+                'Indicative offer received',
                 'Full loan tape provided',
-                'Firm Offer received',
+                'Firm offer received',
                 'Allocation received',
                 'Transaction completed'
               ];
@@ -171,7 +171,7 @@ export function ManageOffersView() {
             counts[offer.id] = {
               total: 0,
               interested: 0,
-              status: 'Offer Issued'
+              status: 'Offer issued'
             };
           }
         }
