@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Send, FileText, Database, Download } from 'lucide-react';
+import { Loader2, Send, FileText, Database, Download, CheckCircle2, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 interface InvestorResponseFormProps {
   offerId: string;
@@ -398,6 +399,69 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Previous Requests Section */}
+                {(existingResponse?.questions || existingResponse?.additional_data_needs) && (
+                  <div className="space-y-4 mb-6">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-semibold">Previous Requests</h4>
+                    </div>
+                    
+                    <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+                      {existingResponse.questions && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label className="text-xs text-muted-foreground">Your Questions</Label>
+                            {existingResponse.requirements_acknowledged ? (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Acknowledged
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Clock className="h-3 w-3" />
+                                Pending
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm bg-background p-3 rounded-md border">
+                            {existingResponse.questions}
+                          </p>
+                        </div>
+                      )}
+
+                      {existingResponse.additional_data_needs && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label className="text-xs text-muted-foreground">Additional Data Needs</Label>
+                            {existingResponse.requirements_acknowledged ? (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Acknowledged
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Clock className="h-3 w-3" />
+                                Pending
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm bg-background p-3 rounded-md border">
+                            {existingResponse.additional_data_needs}
+                          </p>
+                        </div>
+                      )}
+
+                      {existingResponse.requirements_acknowledged && existingResponse.requirements_acknowledged_at && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Acknowledged on {new Date(existingResponse.requirements_acknowledged_at).toLocaleDateString()} at {new Date(existingResponse.requirements_acknowledged_at).toLocaleTimeString()}
+                        </p>
+                      )}
+                    </div>
+
+                    <Separator />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="questions">Questions for Issuer</Label>
                   <Textarea
