@@ -3,3 +3,4 @@ export { default as ManageOffers } from './ManageOffers';
 export { default as OfferDetails } from './OfferDetails';
 export { default as ManageNDA } from './ManageNDA';
 export { default as TransactionHub } from './TransactionHub';
+export { default as CompletedTransactions } from './CompletedTransactions';

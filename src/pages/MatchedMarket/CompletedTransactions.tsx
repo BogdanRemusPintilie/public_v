@@ -2,9 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, X } from 'lucide-react';
-import ManageNDAComponent from '@/components/matched-market/ManageNDA';
 
-const ManageNDA = () => {
+const CompletedTransactions = () => {
   const navigate = useNavigate();
 
   return (
@@ -30,17 +29,19 @@ const ManageNDA = () => {
           </div>
           
           <div>
-            <h1 className="text-3xl font-bold mb-2">Manage NDAs</h1>
+            <h1 className="text-3xl font-bold mb-2">Completed Transactions</h1>
             <p className="text-muted-foreground">
-              Review and respond to NDAs sent by issuers
+              Review all completed matched market transactions
             </p>
           </div>
         </div>
 
-        <ManageNDAComponent />
+        <div className="bg-card rounded-lg border shadow-md p-6">
+          <p className="text-muted-foreground">No completed transactions yet.</p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default ManageNDA;
+export default CompletedTransactions;

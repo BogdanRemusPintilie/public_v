@@ -13,7 +13,7 @@ import PDAnalysis from "./pages/PDAnalysis";
 import InvestorReport from "./pages/InvestorReport";
 import SRTPlatform from "./pages/SRTPlatform";
 import { InvestorManagement } from "./pages/InvestorManagement";
-import { IssueOffer, ManageOffers, OfferDetails, ManageNDA, TransactionHub } from "./pages/MatchedMarket";
+import { IssueOffer, ManageOffers, OfferDetails, ManageNDA, TransactionHub, CompletedTransactions } from "./pages/MatchedMarket";
 import AdminUserManagement from "./pages/AdminUserManagement";
 import NotFound from "./pages/NotFound";
 
@@ -99,6 +99,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TransactionHub />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/matched-market/completed-transactions" 
+              element={
+                <ProtectedRoute>
+                  <CompletedTransactions />
                 </ProtectedRoute>
               } 
             />
