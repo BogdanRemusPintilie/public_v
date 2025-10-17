@@ -62,6 +62,21 @@ export default function TransactionHub() {
       return 'Full loan tape submitted';
     }
 
+    // If investor has submitted an indicative price, reflect that immediately
+    if (offerResponse?.indicative_price) {
+      return 'Indicative offer submitted';
+    }
+
+    // If investor acknowledged requirements, move to transaction details
+    if (offerResponse?.requirements_acknowledged) {
+      return 'Transaction details';
+    }
+
+    // NDA executed
+    if (nda?.status === 'accepted') {
+      return 'NDA executed';
+    }
+
     // If no response yet, it's just received
     if (!offerResponse) {
       return 'Offer received';
@@ -72,19 +87,8 @@ export default function TransactionHub() {
       return 'Offer received';
     }
 
-    // If interest indicated (status is interested or accepted)
+    // Interest indicated (interested or accepted)
     if (offerResponse.status === 'interested' || offerResponse.status === 'accepted') {
-      // Check NDA status
-      if (nda?.status === 'accepted') {
-        // NDA executed, check for further progress
-        if (offerResponse.indicative_price) {
-          return 'Indicative offer submitted';
-        }
-        if (offerResponse.requirements_acknowledged) {
-          return 'Transaction details';
-        }
-        return 'NDA executed';
-      }
       return 'Interest indicated';
     }
 
