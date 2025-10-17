@@ -54,8 +54,14 @@ export default function TransactionHub() {
 
   const determineTransactionStatus = (
     offerResponse: any,
-    nda: any
+    nda: any,
+    offerId: string
   ): TransactionStatus => {
+    // Special handling for demo offer
+    if (offerId === 'demo-offer') {
+      return 'Full loan tape submitted';
+    }
+
     // If no response yet, it's just received
     if (!offerResponse) {
       return 'Offer received';
@@ -130,7 +136,7 @@ export default function TransactionHub() {
         
         // Only include if not declined
         if (offerResponse?.status !== 'declined') {
-          const status = determineTransactionStatus(offerResponse, nda);
+          const status = determineTransactionStatus(offerResponse, nda, offer.id);
           
           transactionsList.push({
             id: offer.id,
