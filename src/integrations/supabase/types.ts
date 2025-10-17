@@ -365,6 +365,7 @@ export type Database = {
           additional_comments: string | null
           comments: string | null
           created_at: string
+          expected_pool_size: number | null
           id: string
           issuer_business_focus: string | null
           issuer_nationality: string | null
@@ -375,6 +376,7 @@ export type Database = {
           structure_consumer_finance: boolean | null
           structure_figures: string | null
           structure_id: string
+          structure_sector: string | null
           structure_sts: boolean | null
           structure_synthetic: boolean | null
           structure_true_sale: boolean | null
@@ -382,11 +384,13 @@ export type Database = {
           target_investors: string[] | null
           updated_at: string
           user_id: string
+          weighted_average_life: number | null
         }
         Insert: {
           additional_comments?: string | null
           comments?: string | null
           created_at?: string
+          expected_pool_size?: number | null
           id?: string
           issuer_business_focus?: string | null
           issuer_nationality?: string | null
@@ -397,6 +401,7 @@ export type Database = {
           structure_consumer_finance?: boolean | null
           structure_figures?: string | null
           structure_id: string
+          structure_sector?: string | null
           structure_sts?: boolean | null
           structure_synthetic?: boolean | null
           structure_true_sale?: boolean | null
@@ -404,11 +409,13 @@ export type Database = {
           target_investors?: string[] | null
           updated_at?: string
           user_id: string
+          weighted_average_life?: number | null
         }
         Update: {
           additional_comments?: string | null
           comments?: string | null
           created_at?: string
+          expected_pool_size?: number | null
           id?: string
           issuer_business_focus?: string | null
           issuer_nationality?: string | null
@@ -419,6 +426,7 @@ export type Database = {
           structure_consumer_finance?: boolean | null
           structure_figures?: string | null
           structure_id?: string
+          structure_sector?: string | null
           structure_sts?: boolean | null
           structure_synthetic?: boolean | null
           structure_true_sale?: boolean | null
@@ -426,6 +434,7 @@ export type Database = {
           target_investors?: string[] | null
           updated_at?: string
           user_id?: string
+          weighted_average_life?: number | null
         }
         Relationships: [
           {

@@ -199,6 +199,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
           structure_true_sale: data.structure_true_sale,
           structure_sts: data.structure_sts,
           structure_sector: data.structure_sector === 'Other' ? data.structure_sector_other : data.structure_sector,
+          expected_pool_size: data.expected_pool_size ? parseFloat(data.expected_pool_size) : null,
+          weighted_average_life: data.weighted_average_life ? parseFloat(data.weighted_average_life) : null,
           additional_comments: data.additional_comments || null,
         });
 
