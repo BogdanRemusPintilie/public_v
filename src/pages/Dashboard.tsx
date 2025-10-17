@@ -24,6 +24,11 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const { userType, isLoading: userTypeLoading } = useUserType();
   const navigate = useNavigate();
+  
+  // Debug logging for user type
+  useEffect(() => {
+    console.log('Dashboard - userType:', userType, 'isLoading:', userTypeLoading);
+  }, [userType, userTypeLoading]);
   const location = useLocation();
   const { toast } = useToast();
   const [showExcelUpload, setShowExcelUpload] = useState(false);
