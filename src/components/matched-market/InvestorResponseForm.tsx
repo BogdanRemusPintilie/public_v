@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +20,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingResponse, setExistingResponse] = useState<any>(null);
   const [isInterested, setIsInterested] = useState<boolean | null>(null);
+  const [comments, setComments] = useState('');
 
   useEffect(() => {
     checkExistingResponse();
@@ -37,6 +40,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
       if (data) {
         setExistingResponse(data);
         setIsInterested(data.status === 'interested');
+        setComments(data.comments || '');
       }
     } catch (error) {
       // No existing response
@@ -70,7 +74,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
         investor_id: user.id,
         status: interested ? 'interested' : 'not_interested',
         indicative_price: null,
-        comments: null
+        comments: comments.trim() || null
       };
 
       let error;
@@ -125,13 +129,25 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
       </CardHeader>
       <CardContent>
         {isInterested === null ? (
-          <div className="flex gap-4">
-            <Button 
-              onClick={() => handleInterestResponse(true)}
-              disabled={isSubmitting}
-              className="flex-1"
-              size="lg"
-            >
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="comments">Comments (optional)</Label>
+              <Textarea
+                id="comments"
+                placeholder="Add any comments or questions..."
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                rows={4}
+              />
+            </div>
+            
+            <div className="flex gap-4">
+              <Button 
+                onClick={() => handleInterestResponse(true)}
+                disabled={isSubmitting}
+                className="flex-1"
+                size="lg"
+              >
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -148,6 +164,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
             >
               Not Interested
             </Button>
+          </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -170,6 +187,14 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
                   ? 'The issuer has been notified of your interest and will review your response.'
                   : 'The issuer has been notified.'}
               </p>
+              
+              {comments && (
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-sm font-medium text-muted-foreground">Your Comments</p>
+                  <p className="text-sm mt-1 bg-background p-3 rounded-md">{comments}</p>
+                </div>
+              )}
+              
               {existingResponse && (
                 <p className="text-xs text-muted-foreground mt-3">
                   Submitted on {new Date(existingResponse.created_at).toLocaleDateString()}
