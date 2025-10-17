@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, ChevronRight, FileText, Eye } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Eye, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,20 +15,35 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-// Transaction status progression
-const TRANSACTION_STATUSES = [
+// Transaction stages for investors
+const STAGES = [
   'Offer received',
   'Interest indicated',
   'NDA executed',
-  'Transaction overview',
   'Transaction details',
-  'Indicative offer submitted',
-  'Full loan tape submitted',
-  'Allocation received',
-  'Transaction complete'
+  'Indicative Offer submitted',
+  'Full loan tape received',
+  'Firm offer submitted',
+  'Allocation submitted',
+  'Transaction completed'
 ] as const;
 
-type TransactionStatus = typeof TRANSACTION_STATUSES[number];
+const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'completed') => {
+  switch (stageStatus) {
+    case 'blank':
+      return 'bg-muted';
+    case 'opened':
+      return 'bg-green-500';
+    case 'in-process':
+      return 'bg-amber-500';
+    case 'completed':
+      return 'bg-purple-500';
+    default:
+      return 'bg-muted';
+  }
+};
+
+type TransactionStatus = typeof STAGES[number];
 
 interface Transaction {
   id: string;
@@ -45,6 +60,7 @@ export default function TransactionHub() {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     if (user?.email) {
@@ -59,12 +75,12 @@ export default function TransactionHub() {
   ): TransactionStatus => {
     // Special handling for demo offer
     if (offerId === 'demo-offer') {
-      return 'Full loan tape submitted';
+      return 'Full loan tape received';
     }
 
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
-      return 'Indicative offer submitted';
+      return 'Indicative Offer submitted';
     }
 
     // If investor acknowledged requirements, move to transaction details
@@ -158,7 +174,7 @@ export default function TransactionHub() {
         transactionsList.push({
           id: 'demo-offer',
           offer_name: 'Investor Demo Offer',
-          status: 'Full loan tape submitted',
+          status: 'Full loan tape received',
           issuer_nationality: 'British',
           created_at: new Date().toISOString(),
           offer_id: 'demo-offer',
@@ -235,11 +251,18 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     }
   };
 
-  const getStatusBadgeVariant = (status: TransactionStatus): "default" | "secondary" | "outline" => {
-    const index = TRANSACTION_STATUSES.indexOf(status);
-    if (index <= 1) return "outline"; // Early stages
-    if (index >= 7) return "default"; // Late stages (success)
-    return "secondary"; // Middle stages
+  const getStageStatus = (currentStageIndex: number, transactionStatus: string): 'blank' | 'opened' | 'in-process' | 'completed' => {
+    const statusIndex = STAGES.indexOf(transactionStatus as any);
+    
+    if (statusIndex === -1) return 'blank';
+    
+    if (currentStageIndex < statusIndex) {
+      return 'completed';
+    } else if (currentStageIndex === statusIndex) {
+      return 'opened';
+    }
+    
+    return 'blank';
   };
 
   const handleViewTransaction = (transaction: Transaction) => {
@@ -277,6 +300,13 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
           <div className="flex items-center gap-3">
             <Button 
               variant="outline"
+              onClick={() => setShowKey(!showKey)}
+            >
+              {showKey ? 'Hide Key' : 'Show Key'}
+            </Button>
+            
+            <Button 
+              variant="outline"
               onClick={() => navigate('/matched-market/manage-nda')}
             >
               <FileText className="mr-2 h-4 w-4" />
@@ -293,58 +323,94 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border shadow-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40%]">Transaction Name</TableHead>
-                <TableHead className="w-[25%]">Issuer</TableHead>
-                <TableHead className="w-[25%]">Status</TableHead>
-                <TableHead className="w-[10%] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.length === 0 ? (
+        {/* Color Key */}
+        {showKey && (
+          <Card className="p-4 bg-muted/50 mb-6">
+            <div className="flex justify-between items-start mb-3">
+              <h3 className="font-semibold text-sm">Transaction Stage Key</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowKey(false)}>×</Button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-muted border rounded"></div>
+                <span>Not reached</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-green-500 rounded"></div>
+                <span>Stage opened</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-amber-500 rounded"></div>
+                <span>In process</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-purple-500 rounded"></div>
+                <span>Completed</span>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Stage Grid Table */}
+        <div className="bg-card rounded-lg border shadow-md overflow-x-auto">
+          {transactions.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">No transactions in progress</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                    No transactions in progress
-                  </TableCell>
+                  <TableHead className="sticky left-0 bg-muted/30 z-10 w-[180px] font-semibold">
+                    Transaction Name
+                  </TableHead>
+                  {STAGES.map((stage) => (
+                    <TableHead key={stage} className="text-center w-[100px] text-[11px] px-2 whitespace-normal leading-tight">
+                      {stage}
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-center w-[120px]">
+                    Actions
+                  </TableHead>
                 </TableRow>
-              ) : (
-                transactions.map((transaction) => (
+              </TableHeader>
+              <TableBody>
+                {transactions.map((transaction) => (
                   <TableRow 
                     key={transaction.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleViewTransaction(transaction)}
+                    className="hover:bg-muted/30"
                   >
-                    <TableCell className="font-medium">
+                    <TableCell className="sticky left-0 bg-card z-10 font-medium border-r text-sm">
                       {transaction.offer_name}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {transaction.issuer_nationality || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(transaction.status)}>
-                        {transaction.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
+                    {STAGES.map((stage, index) => {
+                      const stageStatus = getStageStatus(index, transaction.status);
+                      return (
+                        <TableCell 
+                          key={stage} 
+                          className="p-1.5"
+                        >
+                          <div className={`w-full h-10 rounded ${getStageColor(stageStatus)} transition-colors`}></div>
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center">
                       <Button
-                        variant="ghost"
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewTransaction(transaction);
-                        }}
+                        variant="outline"
+                        onClick={() => handleViewTransaction(transaction)}
                       >
-                        <ChevronRight className="h-4 w-4" />
+                        <Settings className="mr-2 h-4 w-4" />
+                        Manage
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </div>
