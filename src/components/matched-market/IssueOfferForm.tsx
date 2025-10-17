@@ -55,6 +55,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
   const [selectedInvestors, setSelectedInvestors] = useState<string[]>([]);
+  const [investorEmails, setInvestorEmails] = useState<string[]>([]);
   const [additionalEmails, setAdditionalEmails] = useState<string[]>([]);
   const [showInvestorSelector, setShowInvestorSelector] = useState(false);
 
@@ -85,6 +86,35 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
       fetchStructures();
     }
   }, [user]);
+
+  useEffect(() => {
+    const fetchInvestorEmails = async () => {
+      if (selectedInvestors.length === 0) {
+        setInvestorEmails([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('investors')
+          .select('investor, contact_email')
+          .in('investor', selectedInvestors);
+
+        if (error) throw error;
+
+        const emails = (data || [])
+          .map(inv => inv.contact_email)
+          .filter((email): email is string => !!email);
+        
+        setInvestorEmails(emails);
+      } catch (error) {
+        console.error('Error fetching investor emails:', error);
+        setInvestorEmails([]);
+      }
+    };
+
+    fetchInvestorEmails();
+  }, [selectedInvestors]);
 
   const fetchStructures = async () => {
     try {
@@ -189,7 +219,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
           user_id: user.id,
           offer_name: data.offer_name,
           structure_id: data.structure_id,
-          shared_with_emails: [...emailList, ...additionalEmails],
+          shared_with_emails: [...emailList, ...additionalEmails, ...investorEmails],
           target_investors: selectedInvestors,
           comments: data.comments || null,
           issuer_nationality: data.issuer_nationality || null,
