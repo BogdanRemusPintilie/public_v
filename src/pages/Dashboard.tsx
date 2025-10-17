@@ -331,6 +331,10 @@ const Dashboard = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-64">
+                    {(() => {
+                      console.log('🔍 MATCHED MARKET DROPDOWN - userType:', userType, 'isLoading:', userTypeLoading);
+                      return null;
+                    })()}
                     {userType === 'issuer' && (
                       <DropdownMenuItem onClick={() => handleMatchedMarket('Create Offer')}>
                         <Plus className="h-4 w-4 mr-2" />
