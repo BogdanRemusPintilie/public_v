@@ -1,44 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Loader2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+// Transaction status progression
+const TRANSACTION_STATUSES = [
+  'Offer received',
+  'Interest indicated',
+  'NDA executed',
+  'Transaction overview',
+  'Transaction details',
+  'Indicative offer submitted',
+  'Full loan tape submitted',
+  'Allocation received',
+  'Transaction complete'
+] as const;
+
+type TransactionStatus = typeof TRANSACTION_STATUSES[number];
+
+interface Transaction {
+  id: string;
+  offer_name: string;
+  status: TransactionStatus;
+  issuer_nationality?: string;
+  created_at: string;
+  offer_id: string;
+}
 
 export default function TransactionHub() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [proposedOffers, setProposedOffers] = useState<any[]>([]);
-  const [acceptedOffers, setAcceptedOffers] = useState<any[]>([]);
-  const [declinedOffers, setDeclinedOffers] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
-  const [selectedOffer, setSelectedOffer] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('proposed');
 
   useEffect(() => {
     if (user?.email) {
-      fetchAllOffers();
+      fetchTransactions();
     }
   }, [user]);
 
-  const fetchAllOffers = async () => {
+  const determineTransactionStatus = (
+    offerResponse: any,
+    nda: any
+  ): TransactionStatus => {
+    // If no response yet, it's just received
+    if (!offerResponse) {
+      return 'Offer received';
+    }
+
+    // If declined, keep at offer received
+    if (offerResponse.status === 'declined') {
+      return 'Offer received';
+    }
+
+    // If interest indicated (status is interested or accepted)
+    if (offerResponse.status === 'interested' || offerResponse.status === 'accepted') {
+      // Check NDA status
+      if (nda?.status === 'accepted') {
+        // NDA executed, check for further progress
+        if (offerResponse.indicative_price) {
+          return 'Indicative offer submitted';
+        }
+        if (offerResponse.requirements_acknowledged) {
+          return 'Transaction details';
+        }
+        return 'NDA executed';
+      }
+      return 'Interest indicated';
+    }
+
+    return 'Offer received';
+  };
+
+  const fetchTransactions = async () => {
     if (!user?.email) return;
 
     try {
@@ -47,14 +94,7 @@ export default function TransactionHub() {
       // Fetch all offers shared with user
       const { data: allOffers, error: offersError } = await supabase
         .from('offers')
-        .select(`
-          *,
-          structure:tranche_structures(
-            id,
-            structure_name,
-            dataset_name
-          )
-        `)
+        .select('*')
         .contains('shared_with_emails', [user.email])
         .eq('status', 'active')
         .order('created_at', { ascending: false });
@@ -64,66 +104,66 @@ export default function TransactionHub() {
       // Fetch user's responses
       const { data: responses, error: responsesError } = await supabase
         .from('offer_responses')
-        .select('offer_id, status')
+        .select('*')
         .eq('investor_id', user.id);
 
       if (responsesError) throw responsesError;
 
-      // Create a map of offer responses
-      const responseMap = new Map(
-        responses?.map(r => [r.offer_id, r.status]) || []
-      );
+      // Fetch NDAs
+      const { data: ndas, error: ndasError } = await supabase
+        .from('ndas')
+        .select('*')
+        .eq('investor_id', user.id);
 
-      // Categorize offers
-      const proposed: any[] = [];
-      const accepted: any[] = [];
-      const declined: any[] = [];
+      if (ndasError) throw ndasError;
+
+      // Create maps
+      const responseMap = new Map(responses?.map(r => [r.offer_id, r]) || []);
+      const ndaMap = new Map(ndas?.map(n => [n.offer_id, n]) || []);
+
+      // Build transactions list
+      const transactionsList: Transaction[] = [];
 
       allOffers?.forEach(offer => {
-        const status = responseMap.get(offer.id);
-        if (status === 'accepted') {
-          accepted.push(offer);
-        } else if (status === 'declined') {
-          declined.push(offer);
-        } else {
-          proposed.push(offer);
+        const offerResponse = responseMap.get(offer.id);
+        const nda = ndaMap.get(offer.id);
+        
+        // Only include if not declined
+        if (offerResponse?.status !== 'declined') {
+          const status = determineTransactionStatus(offerResponse, nda);
+          
+          transactionsList.push({
+            id: offer.id,
+            offer_name: offer.offer_name,
+            status,
+            issuer_nationality: offer.issuer_nationality,
+            created_at: offer.created_at,
+            offer_id: offer.id,
+          });
         }
       });
 
-      // Add demo offer if no offers exist
-      if (proposed.length === 0 && accepted.length === 0 && declined.length === 0) {
-        const demoOffer = {
+      // Add demo transaction if no transactions exist
+      if (transactionsList.length === 0) {
+        transactionsList.push({
           id: 'demo-offer',
           offer_name: 'Investor Demo Offer',
+          status: 'Offer received',
           issuer_nationality: 'British',
-          issuer_overview: 'British CIB',
-          issuer_business_focus: 'SME Corporate loans, Large Corporate loans and consumer finance',
-          structure_synthetic: true,
-          structure_true_sale: false,
-          structure_sts: false,
-          structure_consumer_finance: false,
-          additional_comments: 'Overall Asset Pool Size: €14.82M, Weighted Average Life: 4 years',
-          status: 'active',
-          structure: {
-            id: 'demo-structure',
-            structure_name: '400m (Demo Data Lite)',
-            dataset_name: 'Demo Dataset'
-          }
-        };
-        proposed.push(demoOffer);
+          created_at: new Date().toISOString(),
+          offer_id: 'demo-offer',
+        });
 
-        // Create demo NDA for the demo offer
+        // Create demo NDA
         await createDemoNDA(user.id);
       }
 
-      setProposedOffers(proposed);
-      setAcceptedOffers(accepted);
-      setDeclinedOffers(declined);
+      setTransactions(transactionsList);
     } catch (error: any) {
-      console.error('Error fetching offers:', error);
+      console.error('Error fetching transactions:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load offers',
+        description: 'Failed to load transactions',
         variant: 'destructive',
       });
     } finally {
@@ -185,164 +225,16 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     }
   };
 
-  const handleAccept = async (offer: any) => {
-    try {
-      // Skip database operation for demo offer
-      if (offer.id !== 'demo-offer') {
-        const { error } = await supabase
-          .from('offer_responses')
-          .upsert({
-            offer_id: offer.id,
-            investor_id: user!.id,
-            status: 'accepted',
-          });
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: 'Offer Accepted',
-        description: 'Proceeding to offer details',
-      });
-      
-      navigate(`/matched-market/offers/${offer.id}`);
-    } catch (error: any) {
-      console.error('Error accepting offer:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to accept offer',
-        variant: 'destructive',
-      });
-    }
+  const getStatusBadgeVariant = (status: TransactionStatus): "default" | "secondary" | "outline" => {
+    const index = TRANSACTION_STATUSES.indexOf(status);
+    if (index <= 1) return "outline"; // Early stages
+    if (index >= 7) return "default"; // Late stages (success)
+    return "secondary"; // Middle stages
   };
 
-  const handleDeclineClick = (offer: any) => {
-    setSelectedOffer(offer);
-    setDeclineDialogOpen(true);
+  const handleViewTransaction = (transaction: Transaction) => {
+    navigate(`/matched-market/offers/${transaction.offer_id}`);
   };
-
-  const confirmDecline = async () => {
-    if (!selectedOffer) return;
-
-    try {
-      // Create or update response record
-      const { error } = await supabase
-        .from('offer_responses')
-        .upsert({
-          offer_id: selectedOffer.id,
-          investor_id: user!.id,
-          status: 'declined',
-        });
-
-      if (error) throw error;
-
-      setDeclineDialogOpen(false);
-      
-      toast({
-        title: 'Offer Declined',
-        description: 'The issuer has been notified of your decision',
-      });
-
-      // Refresh offers
-      fetchAllOffers();
-      setActiveTab('declined');
-    } catch (error: any) {
-      console.error('Error declining offer:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to decline offer',
-        variant: 'destructive',
-      });
-    }
-  };
-
-
-  const renderOfferCard = (offer: any, showActions: boolean = true) => (
-    <Card key={offer.id} className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-xl">{offer.offer_name}</CardTitle>
-            <CardDescription className="mt-2">
-              Structure: {offer.structure?.structure_name || 'N/A'} | 
-              Dataset: {offer.structure?.dataset_name || 'N/A'}
-            </CardDescription>
-          </div>
-          <Badge variant="default">{offer.status || 'active'}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {offer.issuer_nationality && (
-          <div>
-            <p className="text-sm font-medium">Issuer Nationality</p>
-            <p className="text-sm text-gray-600">{offer.issuer_nationality}</p>
-          </div>
-        )}
-
-        {offer.issuer_overview && (
-          <div>
-            <p className="text-sm font-medium">Issuer Overview</p>
-            <p className="text-sm text-gray-600">{offer.issuer_overview}</p>
-          </div>
-        )}
-
-        {(offer.structure_synthetic || offer.structure_true_sale || offer.structure_sts) && (
-          <div>
-            <p className="text-sm font-medium mb-2">Structure Features</p>
-            <div className="flex flex-wrap gap-2">
-              {offer.structure_synthetic && <Badge variant="secondary">Synthetic</Badge>}
-              {offer.structure_true_sale && <Badge variant="secondary">True Sale</Badge>}
-              {offer.structure_sts && <Badge variant="secondary">STS</Badge>}
-              {offer.structure_consumer_finance && <Badge variant="secondary">Consumer Finance</Badge>}
-            </div>
-          </div>
-        )}
-
-        {offer.additional_comments && (
-          <div>
-            <p className="text-sm font-medium">Additional Details</p>
-            <p className="text-sm text-gray-600">{offer.additional_comments}</p>
-          </div>
-        )}
-
-        {showActions && (
-          <>
-            <Separator />
-            <div className="flex gap-3">
-              <Button 
-                onClick={() => handleAccept(offer)}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Accept Offer
-              </Button>
-              <Button 
-                variant="destructive"
-                onClick={() => handleDeclineClick(offer)}
-                className="flex-1"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Decline Offer
-              </Button>
-            </div>
-          </>
-        )}
-
-        {!showActions && (
-          <>
-            <Separator />
-            <Button 
-              onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
-              className="w-full"
-              variant="outline"
-            >
-              View Details
-            </Button>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
 
   if (loading) {
     return (
@@ -368,75 +260,75 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
 
         <div className="mb-6">
           <h1 className="text-3xl lg:text-4xl font-bold mb-2">Transaction Hub</h1>
-          <p className="text-gray-600">Review and manage offers from issuers</p>
+          <p className="text-muted-foreground">Track transactions in progress with real-time status updates</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="proposed">
-              Proposed Offers ({proposedOffers.length})
-            </TabsTrigger>
-            <TabsTrigger value="accepted">
-              Accepted Offers ({acceptedOffers.length})
-            </TabsTrigger>
-            <TabsTrigger value="declined">
-              Declined Offers ({declinedOffers.length})
-            </TabsTrigger>
-          </TabsList>
+        <div className="bg-card rounded-lg border shadow-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40%]">Transaction Name</TableHead>
+                <TableHead className="w-[25%]">Issuer</TableHead>
+                <TableHead className="w-[25%]">Status</TableHead>
+                <TableHead className="w-[10%] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
+                    No transactions in progress
+                  </TableCell>
+                </TableRow>
+              ) : (
+                transactions.map((transaction) => (
+                  <TableRow 
+                    key={transaction.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleViewTransaction(transaction)}
+                  >
+                    <TableCell className="font-medium">
+                      {transaction.offer_name}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {transaction.issuer_nationality || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(transaction.status)}>
+                        {transaction.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewTransaction(transaction);
+                        }}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-          <TabsContent value="proposed" className="space-y-6">
-            <div className="grid gap-6">
-              {proposedOffers.map((offer) => renderOfferCard(offer, true))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="accepted" className="space-y-6">
-            {acceptedOffers.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <p className="text-gray-500">No accepted offers yet</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6">
-                {acceptedOffers.map((offer) => renderOfferCard(offer, false))}
+        <div className="mt-6 p-4 bg-card rounded-lg border">
+          <h3 className="text-sm font-semibold mb-3">Transaction Status Guide</h3>
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            {TRANSACTION_STATUSES.map((status, index) => (
+              <div key={status} className="flex items-center gap-2">
+                <span className="text-muted-foreground font-mono">{index + 1}.</span>
+                <span>{status}</span>
               </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="declined" className="space-y-6">
-            {declinedOffers.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <p className="text-gray-500">No declined offers</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6">
-                {declinedOffers.map((offer) => renderOfferCard(offer, false))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            ))}
+          </div>
+        </div>
       </div>
-
-      <AlertDialog open={declineDialogOpen} onOpenChange={setDeclineDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Decline Offer</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to decline the offer "{selectedOffer?.offer_name}"? 
-              The issuer will be notified of your decision.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDecline} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Decline Offer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
