@@ -119,8 +119,8 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         </CardContent>
       </Card>
 
-      {/* Investor Interest Section - Shows for all users */}
-      {offer.structure?.dataset_name && (
+      {/* Investor Interest Section - Only shows for issuers */}
+      {userType !== 'investor' && offer.structure?.dataset_name && (
         <InvestorResponsesManager 
           offerId={offer.id} 
           datasetName={offer.structure.dataset_name}
