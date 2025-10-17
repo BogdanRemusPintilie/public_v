@@ -372,10 +372,6 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                         {new Date(response.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex flex-col gap-2 items-end">
-                      {getStatusBadge(response.status)}
-                      {getNDABadge(response.nda_status || 'not_sent')}
-                    </div>
                   </div>
 
                   {/* Response Details */}
