@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, Trash2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,6 +16,33 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+const STAGES = [
+  'Offer received',
+  'Interest indicated',
+  'NDA executed',
+  'Transaction overview',
+  'Transaction details',
+  'Indication offer submitted',
+  'Full loan tape submitted',
+  'Allocation received',
+  'Transaction completed'
+] as const;
+
+const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'completed') => {
+  switch (stageStatus) {
+    case 'blank':
+      return 'bg-muted';
+    case 'opened':
+      return 'bg-green-500';
+    case 'in-process':
+      return 'bg-amber-500';
+    case 'completed':
+      return 'bg-purple-500';
+    default:
+      return 'bg-muted';
+  }
+};
+
 export function ManageOffersView() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -23,6 +50,7 @@ export function ManageOffersView() {
   const [offers, setOffers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [responseCounts, setResponseCounts] = useState<Record<string, { total: number; interested: number; status: string }>>({});
+  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -187,6 +215,22 @@ export function ManageOffersView() {
     }
   };
 
+  const getStageStatus = (currentStageIndex: number, offerStatus: string): 'blank' | 'opened' | 'in-process' | 'completed' => {
+    const statusIndex = STAGES.indexOf(offerStatus as any);
+    
+    if (statusIndex === -1) return 'blank';
+    
+    if (currentStageIndex < statusIndex) {
+      return 'completed';
+    } else if (currentStageIndex === statusIndex) {
+      return 'in-process';
+    } else if (currentStageIndex === statusIndex + 1) {
+      return 'opened';
+    }
+    
+    return 'blank';
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -194,24 +238,6 @@ export function ManageOffersView() {
       </div>
     );
   }
-
-  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" => {
-    const statusPriority = [
-      'Offer received',
-      'Interest indicated',
-      'NDA executed',
-      'Transaction overview',
-      'Transaction details',
-      'Indicative offer submitted',
-      'Full loan tape submitted',
-      'Allocation received',
-      'Transaction complete'
-    ];
-    const index = statusPriority.indexOf(status);
-    if (index <= 1) return "outline"; // Early stages
-    if (index >= 7) return "default"; // Late stages (success)
-    return "secondary"; // Middle stages
-  };
 
   if (offers.length === 0) {
     return (
@@ -227,82 +253,81 @@ export function ManageOffersView() {
   }
 
   return (
-    <div className="bg-card rounded-lg border shadow-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[35%]">Offer Name</TableHead>
-            <TableHead className="w-[20%]">Structure</TableHead>
-            <TableHead className="w-[15%]">Responses</TableHead>
-            <TableHead className="w-[20%]">Status</TableHead>
-            <TableHead className="w-[10%] text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {offers.map((offer) => {
-            const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer received' };
-            const dealStatus = responseCount.status;
-            
-            return (
-              <TableRow 
-                key={offer.id}
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
-              >
-                <TableCell className="font-medium">
-                  {offer.offer_name}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {offer.structure?.structure_name || 'N/A'}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {responseCount.total > 0 ? (
-                    <>
-                      {responseCount.total} total
-                      {responseCount.interested > 0 && (
-                        <span className="text-green-600 dark:text-green-400 ml-1">
-                          ({responseCount.interested} interested)
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground">No responses</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusBadgeVariant(dealStatus)}>
-                    {dealStatus}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/matched-market/offers/${offer.id}`);
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteOffer(offer.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      {/* Color Key Dialog */}
+      {showKey && (
+        <Card className="p-4 bg-muted/50">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-semibold text-sm">Transaction Stage Key</h3>
+            <Button variant="ghost" size="sm" onClick={() => setShowKey(false)}>×</Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-muted border rounded"></div>
+              <span>Not reached</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-green-500 rounded"></div>
+              <span>Stage opened</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-amber-500 rounded"></div>
+              <span>In process</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-purple-500 rounded"></div>
+              <span>Completed</span>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Stage Grid Table */}
+      <div className="bg-card rounded-lg border shadow-md overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="sticky left-0 bg-muted/30 z-10 min-w-[200px] font-semibold">
+                Offer Name
+              </TableHead>
+              {STAGES.map((stage) => (
+                <TableHead key={stage} className="text-center min-w-[120px] text-xs whitespace-normal">
+                  {stage}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {offers.map((offer) => {
+              const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer received' };
+              const currentStatus = responseCount.status;
+              
+              return (
+                <TableRow 
+                  key={offer.id}
+                  className="cursor-pointer hover:bg-muted/30"
+                  onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
+                >
+                  <TableCell className="sticky left-0 bg-card z-10 font-medium border-r">
+                    {offer.offer_name}
+                  </TableCell>
+                  {STAGES.map((stage, index) => {
+                    const stageStatus = getStageStatus(index, currentStatus);
+                    return (
+                      <TableCell 
+                        key={stage} 
+                        className="p-2"
+                      >
+                        <div className={`w-full h-12 rounded ${getStageColor(stageStatus)} transition-colors`}></div>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
