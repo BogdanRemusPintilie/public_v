@@ -296,10 +296,26 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
   };
 
   const handleSendNDA = async (investorId: string, responseId: string) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast({
+        title: 'Authentication Error',
+        description: 'You must be logged in to send NDAs',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setSendingNda(responseId);
     try {
+      // Verify we have an active session before making the request
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('No active session. Please log in again.');
+      }
+
+      console.log('Sending NDA with session:', session.user.id);
+      
       const { error } = await supabase
         .from('ndas')
         .insert({
@@ -339,7 +355,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
       console.error('Error sending NDA:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send NDA',
+        description: error.message || 'Failed to send NDA. Please try logging out and back in.',
         variant: 'destructive',
       });
     } finally {
