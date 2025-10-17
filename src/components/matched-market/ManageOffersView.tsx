@@ -220,9 +220,9 @@ export function ManageOffersView() {
     
     if (statusIndex === -1) return 'blank';
     
-    if (currentStageIndex <= statusIndex) {
+    if (currentStageIndex < statusIndex) {
       return 'completed';
-    } else if (currentStageIndex === statusIndex + 1) {
+    } else if (currentStageIndex === statusIndex) {
       return 'opened';
     }
     
