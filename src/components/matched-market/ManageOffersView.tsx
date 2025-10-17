@@ -14,13 +14,46 @@ export function ManageOffersView() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [responseCounts, setResponseCounts] = useState<Record<string, { total: number; interested: number }>>({});
+  const [responseCounts, setResponseCounts] = useState<Record<string, { total: number; interested: number; status: string }>>({});
 
   useEffect(() => {
     if (user) {
       fetchOffers();
     }
   }, [user]);
+
+  const determineTransactionStatus = (responses: any[], ndas: any[]) => {
+    if (!responses || responses.length === 0) {
+      return 'Offer Received';
+    }
+
+    const interestedResponses = responses.filter(r => r.status === 'interested');
+    if (interestedResponses.length === 0) {
+      return 'Offer Received';
+    }
+
+    // Check for executed NDAs
+    const executedNdas = ndas.filter(n => n.status === 'executed');
+    if (executedNdas.length === 0) {
+      return 'Interest Indicated';
+    }
+
+    // Check for indicative pricing
+    const hasIndicativePricing = interestedResponses.some(r => r.indicative_price);
+    if (!hasIndicativePricing) {
+      return 'NDA Executed';
+    }
+
+    // Check for firm pricing status
+    const hasFirmPricing = interestedResponses.some(r => r.firm_price_status === 'submitted');
+    if (!hasFirmPricing) {
+      return 'Indication Offer Submitted';
+    }
+
+    // Additional statuses would require new fields in the database
+    // For now, return the most advanced status we can determine
+    return 'Indication Offer Submitted';
+  };
 
   const fetchOffers = async () => {
     try {
@@ -37,20 +70,27 @@ export function ManageOffersView() {
       if (error) throw error;
       setOffers(data || []);
 
-      // Fetch response counts for each offer
+      // Fetch response counts and detailed status for each offer
       if (data && data.length > 0) {
-        const counts: Record<string, { total: number; interested: number }> = {};
+        const counts: Record<string, { total: number; interested: number; status: string }> = {};
         
         for (const offer of data) {
           const { data: responses, error: responseError } = await supabase
             .from('offer_responses')
+            .select('status, indicative_price, firm_price_status')
+            .eq('offer_id', offer.id);
+
+          const { data: ndas, error: ndaError } = await supabase
+            .from('ndas')
             .select('status')
             .eq('offer_id', offer.id);
 
           if (!responseError && responses) {
+            const status = determineTransactionStatus(responses, ndas || []);
             counts[offer.id] = {
               total: responses.length,
-              interested: responses.filter(r => r.status === 'interested').length
+              interested: responses.filter(r => r.status === 'interested').length,
+              status
             };
           }
         }
@@ -118,8 +158,8 @@ export function ManageOffersView() {
   return (
     <div className="grid gap-4">
       {offers.map((offer) => {
-        const responseCount = responseCounts[offer.id] || { total: 0, interested: 0 };
-        const dealStatus = responseCount.total > 0 ? 'Responses Received' : 'Awaiting Responses';
+        const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer Received' };
+        const dealStatus = responseCount.status;
         
         return (
           <Card key={offer.id}>
@@ -136,10 +176,10 @@ export function ManageOffersView() {
                     {offer.status || 'active'}
                   </Badge>
                   <Badge 
-                    variant={responseCount.total > 0 ? 'default' : 'outline'}
+                    variant={dealStatus !== 'Offer Received' ? 'default' : 'outline'}
                     className="flex items-center gap-1"
                   >
-                    {responseCount.total > 0 ? (
+                    {dealStatus !== 'Offer Received' ? (
                       <CheckCircle className="h-3 w-3" />
                     ) : (
                       <Clock className="h-3 w-3" />
