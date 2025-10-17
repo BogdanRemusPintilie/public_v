@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Send, FileText, Database, Download, CheckCircle2, Clock, History } from 'lucide-react';
+import { Loader2, Send, FileText, Database, Download, CheckCircle2, Clock, History, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 
 interface InvestorResponseFormProps {
   offerId: string;
@@ -33,6 +34,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
     questions: '',
     additionalDataNeeds: ''
   });
+  const [firmPrice, setFirmPrice] = useState('');
 
   useEffect(() => {
     checkExistingResponse();
@@ -534,6 +536,78 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
                 >
                   <Send className="mr-2 h-4 w-4" />
                   Submit Request
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Firm Price Section */}
+            <Card className="mt-6 border-green-200 dark:border-green-900">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <CardTitle className="text-lg">Firm Price Offer</CardTitle>
+                </div>
+                <CardDescription>
+                  Submit your firm price offer for this transaction
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firmPrice">Firm Price (%)</Label>
+                  <Input
+                    id="firmPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="Enter your firm price offer"
+                    value={firmPrice}
+                    onChange={(e) => setFirmPrice(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Provide your firm pricing offer as a percentage point
+                  </p>
+                </div>
+
+                <Button 
+                  type="button" 
+                  className="w-full"
+                  onClick={async () => {
+                    if (!firmPrice) {
+                      toast({
+                        title: 'Price Required',
+                        description: 'Please enter a firm price before submitting.',
+                        variant: 'destructive'
+                      });
+                      return;
+                    }
+
+                    try {
+                      const { error } = await supabase
+                        .from('offer_responses')
+                        .update({
+                          indicative_price: parseFloat(firmPrice)
+                        })
+                        .eq('id', existingResponse?.id);
+
+                      if (error) throw error;
+
+                      toast({
+                        title: 'Firm Price Submitted',
+                        description: 'Your firm price offer has been sent to the issuer.',
+                      });
+                      setFirmPrice('');
+                      checkExistingResponse();
+                    } catch (error) {
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to submit your firm price. Please try again.',
+                        variant: 'destructive'
+                      });
+                    }
+                  }}
+                  disabled={!existingResponse?.id}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Submit Firm Price
                 </Button>
               </CardContent>
             </Card>
