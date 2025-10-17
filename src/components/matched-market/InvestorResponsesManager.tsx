@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, Database, FileText, MessageSquare, Bell, Check, X } from 'lucide-react';
+import { Loader2, CheckCircle, Database, FileText, MessageSquare, Bell, Check, X, AlertCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 
 interface InvestorResponsesManagerProps {
   offerId: string;
@@ -38,6 +39,7 @@ interface InvestorResponse {
 export function InvestorResponsesManager({ offerId, datasetName }: InvestorResponsesManagerProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [responses, setResponses] = useState<InvestorResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [grantingAccess, setGrantingAccess] = useState<string | null>(null);
@@ -364,6 +366,28 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
             <Card key={response.id} className="border-l-4 border-l-blue-500">
               <CardContent className="pt-6">
                 <div className="grid gap-4">
+                  {/* NDA Prompt - Show if investor interested but no NDA sent */}
+                  {response.status === 'accepted' && response.nda_status === 'not_sent' && (
+                    <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-orange-900 dark:text-orange-100">NDA Required</h4>
+                          <p className="text-sm text-orange-800 dark:text-orange-200 mt-1">
+                            This investor has expressed interest. Send an NDA to proceed to the next stage.
+                          </p>
+                          <Button
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => navigate('/matched-market/manage-nda')}
+                          >
+                            Send NDA
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Investor Info Header */}
                   <div className="flex items-start justify-between">
                     <div>
@@ -379,9 +403,9 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Confirmation Status</p>
                       <p className="text-base mt-1">
-                        {response.status === 'interested' && 'Confirmed Interest'}
+                        {response.status === 'accepted' && 'Confirmed Interest'}
                         {response.status === 'formal_indication' && 'Formal Indication Submitted'}
-                        {response.status === 'not_interested' && 'Declined Offer'}
+                        {response.status === 'declined' && 'Declined Offer'}
                       </p>
                     </div>
                     <div>
