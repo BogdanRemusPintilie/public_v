@@ -6,8 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, Database, FileText, MessageSquare, Bell } from 'lucide-react';
+import { Loader2, CheckCircle, Database, FileText, MessageSquare, Bell, Check, X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 
 interface InvestorResponsesManagerProps {
   offerId: string;
@@ -30,6 +31,8 @@ interface InvestorResponse {
   questions?: string | null;
   additional_data_needs?: string | null;
   requirements_acknowledged?: boolean;
+  firm_price_status?: string;
+  counter_price?: number | null;
 }
 
 export function InvestorResponsesManager({ offerId, datasetName }: InvestorResponsesManagerProps) {
@@ -41,6 +44,8 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [issuerResponse, setIssuerResponse] = useState<string>('');
   const [acknowledgingRequirements, setAcknowledgingRequirements] = useState<string | null>(null);
+  const [counteringPrice, setCounteringPrice] = useState<string | null>(null);
+  const [counterPrice, setCounterPrice] = useState<string>('');
 
   useEffect(() => {
     fetchResponses();
@@ -197,6 +202,96 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
     }
   };
 
+  const handleAcceptFirmPrice = async (responseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('offer_responses')
+        .update({ firm_price_status: 'accepted' })
+        .eq('id', responseId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Firm Price Accepted',
+        description: 'You have accepted the investor\'s firm price offer.',
+      });
+
+      fetchResponses();
+    } catch (error: any) {
+      console.error('Error accepting firm price:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to accept firm price',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeclineFirmPrice = async (responseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('offer_responses')
+        .update({ firm_price_status: 'declined' })
+        .eq('id', responseId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Firm Price Declined',
+        description: 'You have declined the investor\'s firm price offer.',
+      });
+
+      fetchResponses();
+    } catch (error: any) {
+      console.error('Error declining firm price:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to decline firm price',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCounterFirmPrice = async (responseId: string) => {
+    if (!counterPrice || parseFloat(counterPrice) <= 0) {
+      toast({
+        title: 'Invalid Counter Price',
+        description: 'Please enter a valid counter price',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('offer_responses')
+        .update({ 
+          firm_price_status: 'countered',
+          counter_price: parseFloat(counterPrice),
+          counter_price_updated_at: new Date().toISOString()
+        })
+        .eq('id', responseId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Counter Offer Sent',
+        description: `You have countered with ${counterPrice}%`,
+      });
+
+      setCounteringPrice(null);
+      setCounterPrice('');
+      fetchResponses();
+    } catch (error: any) {
+      console.error('Error countering firm price:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send counter offer',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'interested':
@@ -317,12 +412,94 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Firm Price</p>
-                      <p className="text-base mt-1 font-semibold text-green-600">
-                        {response.indicative_price 
-                          ? `${response.indicative_price}%`
-                          : 'Not submitted'
-                        }
-                      </p>
+                      <div className="mt-1">
+                        {response.indicative_price ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <p className="text-base font-semibold text-green-600">
+                                {response.indicative_price}%
+                              </p>
+                              {response.firm_price_status === 'accepted' && (
+                                <Badge className="bg-green-600">Accepted</Badge>
+                              )}
+                              {response.firm_price_status === 'declined' && (
+                                <Badge variant="destructive">Declined</Badge>
+                              )}
+                              {response.firm_price_status === 'countered' && (
+                                <Badge variant="outline">Countered</Badge>
+                              )}
+                            </div>
+                            
+                            {/* Counter price display */}
+                            {response.firm_price_status === 'countered' && response.counter_price && (
+                              <p className="text-sm text-muted-foreground">
+                                Counter Offer: <span className="font-semibold">{response.counter_price}%</span>
+                              </p>
+                            )}
+
+                            {/* Action buttons - only show if firm price hasn't been responded to */}
+                            {(!response.firm_price_status || response.firm_price_status === 'pending') && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleAcceptFirmPrice(response.id)}
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeclineFirmPrice(response.id)}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Decline
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setCounteringPrice(response.id)}
+                                >
+                                  Counter
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Counter price input */}
+                            {counteringPrice === response.id && (
+                              <div className="flex gap-2 mt-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Enter counter price %"
+                                  value={counterPrice}
+                                  onChange={(e) => setCounterPrice(e.target.value)}
+                                  className="max-w-[200px]"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleCounterFirmPrice(response.id)}
+                                >
+                                  Send
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setCounteringPrice(null);
+                                    setCounterPrice('');
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not submitted</p>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Full Data Access</p>

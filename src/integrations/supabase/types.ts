@@ -299,7 +299,10 @@ export type Database = {
         Row: {
           additional_data_needs: string | null
           comments: string | null
+          counter_price: number | null
+          counter_price_updated_at: string | null
           created_at: string
+          firm_price_status: string | null
           id: string
           indicative_price: number | null
           investor_id: string
@@ -314,7 +317,10 @@ export type Database = {
         Insert: {
           additional_data_needs?: string | null
           comments?: string | null
+          counter_price?: number | null
+          counter_price_updated_at?: string | null
           created_at?: string
+          firm_price_status?: string | null
           id?: string
           indicative_price?: number | null
           investor_id: string
@@ -329,7 +335,10 @@ export type Database = {
         Update: {
           additional_data_needs?: string | null
           comments?: string | null
+          counter_price?: number | null
+          counter_price_updated_at?: string | null
           created_at?: string
+          firm_price_status?: string | null
           id?: string
           indicative_price?: number | null
           investor_id?: string
