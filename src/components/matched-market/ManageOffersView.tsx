@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, Trash2, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, Eye, Trash2 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export function ManageOffersView() {
   const { user } = useAuth();
@@ -187,6 +195,24 @@ export function ManageOffersView() {
     );
   }
 
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" => {
+    const statusPriority = [
+      'Offer received',
+      'Interest indicated',
+      'NDA executed',
+      'Transaction overview',
+      'Transaction details',
+      'Indicative offer submitted',
+      'Full loan tape submitted',
+      'Allocation received',
+      'Transaction complete'
+    ];
+    const index = statusPriority.indexOf(status);
+    if (index <= 1) return "outline"; // Early stages
+    if (index >= 7) return "default"; // Late stages (success)
+    return "secondary"; // Middle stages
+  };
+
   if (offers.length === 0) {
     return (
       <Card>
@@ -201,87 +227,82 @@ export function ManageOffersView() {
   }
 
   return (
-    <div className="grid gap-4">
-      {offers.map((offer) => {
-        const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer Received' };
-        const dealStatus = responseCount.status;
-        
-        return (
-          <Card key={offer.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle>{offer.offer_name}</CardTitle>
-                  <CardDescription>
-                    Structure: {offer.structure?.structure_name || 'N/A'}
-                  </CardDescription>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge variant={offer.status === 'active' ? 'default' : 'secondary'}>
-                    {offer.status || 'active'}
-                  </Badge>
-                  <Badge 
-                    variant={dealStatus !== 'Offer received' ? 'default' : 'outline'}
-                    className="flex items-center gap-1"
-                  >
-                    {dealStatus !== 'Offer received' ? (
-                      <CheckCircle className="h-3 w-3" />
-                    ) : (
-                      <Clock className="h-3 w-3" />
-                    )}
-                    {dealStatus}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {offer.issuer_nationality && (
-                  <p className="text-sm">
-                    <span className="font-medium">Issuer:</span> {offer.issuer_nationality}
-                  </p>
-                )}
-                {offer.target_investors && offer.target_investors.length > 0 && (
-                  <p className="text-sm">
-                    <span className="font-medium">Target Investors:</span> {offer.target_investors.length} selected
-                  </p>
-                )}
-                {responseCount.total > 0 && (
-                  <p className="text-sm">
-                    <span className="font-medium">Responses:</span> {responseCount.total} total
-                    {responseCount.interested > 0 && (
-                      <span className="text-green-600 dark:text-green-400 ml-1">
-                        ({responseCount.interested} interested)
-                      </span>
-                    )}
-                  </p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Created: {new Date(offer.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            <div className="flex gap-2 mt-4">
-              <Button
-                size="sm"
-                variant="outline"
+    <div className="bg-card rounded-lg border shadow-md">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[35%]">Offer Name</TableHead>
+            <TableHead className="w-[20%]">Structure</TableHead>
+            <TableHead className="w-[15%]">Responses</TableHead>
+            <TableHead className="w-[20%]">Status</TableHead>
+            <TableHead className="w-[10%] text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {offers.map((offer) => {
+            const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer received' };
+            const dealStatus = responseCount.status;
+            
+            return (
+              <TableRow 
+                key={offer.id}
+                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
               >
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleDeleteOffer(offer.id)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        );
-      })}
+                <TableCell className="font-medium">
+                  {offer.offer_name}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {offer.structure?.structure_name || 'N/A'}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {responseCount.total > 0 ? (
+                    <>
+                      {responseCount.total} total
+                      {responseCount.interested > 0 && (
+                        <span className="text-green-600 dark:text-green-400 ml-1">
+                          ({responseCount.interested} interested)
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">No responses</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getStatusBadgeVariant(dealStatus)}>
+                    {dealStatus}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/matched-market/offers/${offer.id}`);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteOffer(offer.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
