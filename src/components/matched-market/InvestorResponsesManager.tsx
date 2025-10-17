@@ -442,7 +442,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                               <div className="flex gap-2">
                                 <Button
                                   size="sm"
-                                  variant="default"
+                                  variant="success"
                                   onClick={() => handleAcceptFirmPrice(response.id)}
                                 >
                                   <Check className="h-4 w-4 mr-1" />
