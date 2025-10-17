@@ -316,18 +316,6 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
             </TableBody>
           </Table>
         </div>
-
-        <div className="mt-6 p-4 bg-card rounded-lg border">
-          <h3 className="text-sm font-semibold mb-3">Transaction Status Guide</h3>
-          <div className="grid grid-cols-3 gap-3 text-xs">
-            {TRANSACTION_STATUSES.map((status, index) => (
-              <div key={status} className="flex items-center gap-2">
-                <span className="text-muted-foreground font-mono">{index + 1}.</span>
-                <span>{status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
