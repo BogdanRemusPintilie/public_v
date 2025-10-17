@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, Trash2 } from 'lucide-react';
+import { Loader2, Eye, Trash2, CheckCircle, Clock } from 'lucide-react';
 
 export function ManageOffersView() {
   const { user } = useAuth();
@@ -14,6 +14,7 @@ export function ManageOffersView() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [responseCounts, setResponseCounts] = useState<Record<string, { total: number; interested: number }>>({});
 
   useEffect(() => {
     if (user) {
@@ -35,6 +36,27 @@ export function ManageOffersView() {
 
       if (error) throw error;
       setOffers(data || []);
+
+      // Fetch response counts for each offer
+      if (data && data.length > 0) {
+        const counts: Record<string, { total: number; interested: number }> = {};
+        
+        for (const offer of data) {
+          const { data: responses, error: responseError } = await supabase
+            .from('offer_responses')
+            .select('status')
+            .eq('offer_id', offer.id);
+
+          if (!responseError && responses) {
+            counts[offer.id] = {
+              total: responses.length,
+              interested: responses.filter(r => r.status === 'interested').length
+            };
+          }
+        }
+        
+        setResponseCounts(counts);
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -95,37 +117,64 @@ export function ManageOffersView() {
 
   return (
     <div className="grid gap-4">
-      {offers.map((offer) => (
-        <Card key={offer.id}>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle>{offer.offer_name}</CardTitle>
-                <CardDescription>
-                  Structure: {offer.structure?.structure_name || 'N/A'}
-                </CardDescription>
+      {offers.map((offer) => {
+        const responseCount = responseCounts[offer.id] || { total: 0, interested: 0 };
+        const dealStatus = responseCount.total > 0 ? 'Responses Received' : 'Awaiting Responses';
+        
+        return (
+          <Card key={offer.id}>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle>{offer.offer_name}</CardTitle>
+                  <CardDescription>
+                    Structure: {offer.structure?.structure_name || 'N/A'}
+                  </CardDescription>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge variant={offer.status === 'active' ? 'default' : 'secondary'}>
+                    {offer.status || 'active'}
+                  </Badge>
+                  <Badge 
+                    variant={responseCount.total > 0 ? 'default' : 'outline'}
+                    className="flex items-center gap-1"
+                  >
+                    {responseCount.total > 0 ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <Clock className="h-3 w-3" />
+                    )}
+                    {dealStatus}
+                  </Badge>
+                </div>
               </div>
-              <Badge variant={offer.status === 'active' ? 'default' : 'secondary'}>
-                {offer.status || 'active'}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {offer.issuer_nationality && (
-                <p className="text-sm">
-                  <span className="font-medium">Issuer:</span> {offer.issuer_nationality}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {offer.issuer_nationality && (
+                  <p className="text-sm">
+                    <span className="font-medium">Issuer:</span> {offer.issuer_nationality}
+                  </p>
+                )}
+                {offer.target_investors && offer.target_investors.length > 0 && (
+                  <p className="text-sm">
+                    <span className="font-medium">Target Investors:</span> {offer.target_investors.length} selected
+                  </p>
+                )}
+                {responseCount.total > 0 && (
+                  <p className="text-sm">
+                    <span className="font-medium">Responses:</span> {responseCount.total} total
+                    {responseCount.interested > 0 && (
+                      <span className="text-green-600 dark:text-green-400 ml-1">
+                        ({responseCount.interested} interested)
+                      </span>
+                    )}
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Created: {new Date(offer.created_at).toLocaleDateString()}
                 </p>
-              )}
-              {offer.target_investors && offer.target_investors.length > 0 && (
-                <p className="text-sm">
-                  <span className="font-medium">Target Investors:</span> {offer.target_investors.length} selected
-                </p>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Created: {new Date(offer.created_at).toLocaleDateString()}
-              </p>
-            </div>
+              </div>
             <div className="flex gap-2 mt-4">
               <Button
                 size="sm"
@@ -146,7 +195,8 @@ export function ManageOffersView() {
             </div>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }
