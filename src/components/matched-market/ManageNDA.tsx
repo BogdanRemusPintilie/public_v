@@ -45,49 +45,7 @@ const ManageNDA = () => {
 
       if (error) throw error;
       
-      let ndasList = (data || []) as NDA[];
-      
-      // Add demo NDA if no NDAs exist
-      if (ndasList.length === 0) {
-        const demoNDA: NDA = {
-          id: 'demo-nda',
-          issuer_id: user.id,
-          investor_id: user.id,
-          offer_id: 'demo-offer',
-          nda_title: 'Non-Disclosure Agreement - Investor Demo Offer',
-          nda_content: `CONFIDENTIALITY AND NON-DISCLOSURE AGREEMENT
-
-This Confidentiality and Non-Disclosure Agreement ("Agreement") is entered into by and between British CIB ("Disclosing Party") and the undersigned investor ("Receiving Party").
-
-1. CONFIDENTIAL INFORMATION
-The Disclosing Party agrees to disclose certain confidential information relating to the Investor Demo Offer, including but not limited to:
-   - Detailed tranche structure analysis
-   - Portfolio composition and performance metrics
-   - Asset pool characteristics and risk assessments
-   - Pricing and economic terms
-
-2. OBLIGATIONS
-The Receiving Party agrees to:
-   a) Maintain strict confidentiality of all disclosed information
-   b) Use the information solely for evaluating the investment opportunity
-   c) Not disclose any information to third parties without prior written consent
-   d) Return or destroy all confidential materials upon request
-
-3. TERM
-This Agreement shall remain in effect for a period of two (2) years from the date of acceptance.
-
-4. GOVERNING LAW
-This Agreement shall be governed by the laws of England and Wales.
-
-By accepting this NDA, you acknowledge that you have read, understood, and agree to be bound by its terms and conditions.`,
-          status: 'pending',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        ndasList = [demoNDA];
-      }
-      
-      setNdas(ndasList);
+      setNdas((data || []) as NDA[]);
     } catch (error) {
       console.error('Error fetching NDAs:', error);
       toast({
