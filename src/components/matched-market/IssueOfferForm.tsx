@@ -36,6 +36,7 @@ const offerSchema = z.object({
   expected_pool_size: z.string().optional(),
   weighted_average_life: z.string().optional(),
   additional_comments: z.string().optional(),
+  is_anonymous: z.boolean().default(false),
 });
 
 type OfferFormData = z.infer<typeof offerSchema>;
@@ -78,6 +79,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
       expected_pool_size: '',
       weighted_average_life: '',
       additional_comments: '',
+      is_anonymous: false,
     },
   });
 
@@ -244,6 +246,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
           expected_pool_size: data.expected_pool_size ? parseFloat(data.expected_pool_size) : null,
           weighted_average_life: data.weighted_average_life ? parseFloat(data.weighted_average_life) : null,
           additional_comments: data.additional_comments || null,
+          is_anonymous: data.is_anonymous,
         });
 
       if (error) throw error;
@@ -390,13 +393,38 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                   </div>
                 )}
               </div>
+
+              <Separator className="my-4" />
+
+              <FormField
+                control={form.control}
+                name="is_anonymous"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Remain Anonymous
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Hide your identity from investors viewing this offer
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>Issuer Characterization</CardTitle>
-              <CardDescription>Provide details about the issuer</CardDescription>
+              <CardDescription>Provide details about the issuer (optional if remaining anonymous)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField

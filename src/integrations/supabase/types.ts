@@ -367,6 +367,7 @@ export type Database = {
           created_at: string
           expected_pool_size: number | null
           id: string
+          is_anonymous: boolean
           issuer_business_focus: string | null
           issuer_nationality: string | null
           issuer_overview: string | null
@@ -392,6 +393,7 @@ export type Database = {
           created_at?: string
           expected_pool_size?: number | null
           id?: string
+          is_anonymous?: boolean
           issuer_business_focus?: string | null
           issuer_nationality?: string | null
           issuer_overview?: string | null
@@ -417,6 +419,7 @@ export type Database = {
           created_at?: string
           expected_pool_size?: number | null
           id?: string
+          is_anonymous?: boolean
           issuer_business_focus?: string | null
           issuer_nationality?: string | null
           issuer_overview?: string | null
