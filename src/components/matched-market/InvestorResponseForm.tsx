@@ -27,6 +27,10 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
     comments: '',
     status: 'interested'
   });
+  const [dataRequirements, setDataRequirements] = useState({
+    questions: '',
+    additionalDataNeeds: ''
+  });
 
   useEffect(() => {
     checkExistingResponse();
@@ -384,6 +388,54 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
                 </p>
               </div>
             )}
+
+            {/* Questions and Additional Data Requirements */}
+            <Card className="mt-6 border-blue-200 dark:border-blue-900">
+              <CardHeader>
+                <CardTitle className="text-lg">Questions & Additional Data Requirements</CardTitle>
+                <CardDescription>
+                  Submit any questions or request additional data you need for your analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="questions">Questions for Issuer</Label>
+                  <Textarea
+                    id="questions"
+                    placeholder="Enter any questions you have about the transaction..."
+                    value={dataRequirements.questions}
+                    onChange={(e) => setDataRequirements({ ...dataRequirements, questions: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="additionalDataNeeds">Additional Data Requirements</Label>
+                  <Textarea
+                    id="additionalDataNeeds"
+                    placeholder="Specify any additional data or documentation you require..."
+                    value={dataRequirements.additionalDataNeeds}
+                    onChange={(e) => setDataRequirements({ ...dataRequirements, additionalDataNeeds: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+
+                <Button 
+                  type="button" 
+                  className="w-full"
+                  onClick={() => {
+                    toast({
+                      title: 'Request Submitted',
+                      description: 'Your questions and data requirements have been sent to the issuer.',
+                    });
+                    setDataRequirements({ questions: '', additionalDataNeeds: '' });
+                  }}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Submit Request
+                </Button>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       </div>
