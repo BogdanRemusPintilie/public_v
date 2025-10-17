@@ -135,7 +135,7 @@ export function ManageOffersView() {
 
           if (!responseError && responses) {
             // Get the most advanced status from all responses
-            let mostAdvancedStatus = 'Offer received';
+            let mostAdvancedStatus = 'Offer issued';
             
             responses.forEach(response => {
               const matchingNda = ndas?.find(n => n.investor_id === response.investor_id);
@@ -297,7 +297,7 @@ export function ManageOffersView() {
           </TableHeader>
           <TableBody>
             {offers.map((offer) => {
-              const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer received' };
+              const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer issued' };
               const currentStatus = responseCount.status;
               
               return (
