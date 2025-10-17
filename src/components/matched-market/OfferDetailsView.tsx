@@ -246,6 +246,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         <InvestorResponseForm 
           offerId={offer.id} 
           onResponseSubmitted={onUpdate}
+          datasetName={offer.structure?.dataset_name}
         />
       )}
     </div>

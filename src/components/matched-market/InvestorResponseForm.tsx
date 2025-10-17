@@ -7,18 +7,21 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, FileText, Database, Download } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface InvestorResponseFormProps {
   offerId: string;
   onResponseSubmitted?: () => void;
+  datasetName?: string;
 }
 
-export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorResponseFormProps) {
+export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName }: InvestorResponseFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingResponse, setExistingResponse] = useState<any>(null);
+  const [hasDataAccess, setHasDataAccess] = useState(false);
   const [formData, setFormData] = useState({
     indicativePrice: '',
     comments: '',
@@ -27,7 +30,8 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
 
   useEffect(() => {
     checkExistingResponse();
-  }, [offerId, user]);
+    checkDataAccess();
+  }, [offerId, user, datasetName]);
 
   const checkExistingResponse = async () => {
     if (!user?.id || offerId === 'demo-offer') return;
@@ -50,6 +54,23 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
       }
     } catch (error) {
       // No existing response
+    }
+  };
+
+  const checkDataAccess = async () => {
+    if (!user?.id || !datasetName || offerId === 'demo-offer') return;
+
+    try {
+      const { data, error } = await supabase
+        .from('dataset_shares')
+        .select('id')
+        .eq('dataset_name', datasetName)
+        .eq('shared_with_user_id', user.id)
+        .maybeSingle();
+
+      setHasDataAccess(!!data);
+    } catch (error) {
+      console.error('Error checking data access:', error);
     }
   };
 
@@ -110,6 +131,7 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
 
       onResponseSubmitted?.();
       checkExistingResponse();
+      checkDataAccess();
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -121,15 +143,18 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
     }
   };
 
+  const isAccepted = existingResponse?.status === 'accepted';
+
   return (
-    <Card className="border-primary/20">
-      <CardHeader>
-        <CardTitle>Express Your Interest</CardTitle>
-        <CardDescription>
-          Confirm your interest and provide indicative pricing information
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <>
+      <Card className="border-primary/20">
+        <CardHeader>
+          <CardTitle>Express Your Interest</CardTitle>
+          <CardDescription>
+            Confirm your interest and provide indicative pricing information
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
         {existingResponse && !isSubmitting ? (
           <div className="space-y-6">
             {/* Display submitted response */}
@@ -255,5 +280,114 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted }: InvestorR
         )}
       </CardContent>
     </Card>
+
+    {/* Documentary Repository and Dataset Access - Only shown when accepted */}
+    {isAccepted && (
+      <div className="space-y-6 mt-6">
+        {/* Documentary Repository */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle>Documentary Repository</CardTitle>
+            </div>
+            <CardDescription>
+              Access key documents and materials for this transaction
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3">
+              <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Information Memorandum</p>
+                    <p className="text-sm text-muted-foreground">Updated 2 days ago</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Term Sheet</p>
+                    <p className="text-sm text-muted-foreground">Updated 3 days ago</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Legal Documentation</p>
+                    <p className="text-sm text-muted-foreground">Updated 1 week ago</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dataset Access */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              <CardTitle>Full Dataset Access</CardTitle>
+            </div>
+            <CardDescription>
+              Access the complete portfolio dataset for detailed analysis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {hasDataAccess ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                  <Badge className="bg-green-600">Access Granted</Badge>
+                  <span className="text-sm text-muted-foreground">
+                    You have full access to the dataset: <strong>{datasetName}</strong>
+                  </span>
+                </div>
+                
+                <div className="grid gap-3">
+                  <Button variant="default" className="w-full">
+                    <Database className="h-4 w-4 mr-2" />
+                    View Full Dataset
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Dataset
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-muted/50 border rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="secondary">Pending Approval</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  The issuer is reviewing your request. Dataset access will be granted once approved.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )}
+  </>
   );
 }
