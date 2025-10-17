@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Loader2, ChevronRight, FileText, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -268,9 +268,29 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
           Back to Dashboard
         </Button>
 
-        <div className="mb-6">
-          <h1 className="text-3xl lg:text-4xl font-bold mb-2">Transaction Hub</h1>
-          <p className="text-muted-foreground">Track transactions in progress with real-time status updates</p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-2">Transaction Hub</h1>
+            <p className="text-muted-foreground">Track transactions in progress with real-time status updates</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/matched-market/manage-nda')}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Manage NDAs
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/matched-market/completed-transactions')}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Review Completed Transactions
+            </Button>
+          </div>
         </div>
 
         <div className="bg-card rounded-lg border shadow-md">

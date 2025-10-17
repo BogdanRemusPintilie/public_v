@@ -325,7 +325,13 @@ const Dashboard = () => {
               <div className="pt-2">
                 <Button 
                   className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={() => navigate('/matched-market/manage-offers')}
+                  onClick={() => {
+                    if (userType === 'investor') {
+                      navigate('/matched-market/transaction-hub');
+                    } else {
+                      navigate('/matched-market/manage-offers');
+                    }
+                  }}
                 >
                   Manage Market Transactions
                 </Button>
