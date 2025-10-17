@@ -323,48 +323,12 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="pt-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
-                      Manage Market Transactions
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-64">
-                    {(() => {
-                      console.log('🔍 MATCHED MARKET DROPDOWN - userType:', userType, 'isLoading:', userTypeLoading);
-                      return null;
-                    })()}
-                    {userType === 'issuer' && (
-                      <DropdownMenuItem onClick={() => handleMatchedMarket('Create Offer')}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Offer
-                      </DropdownMenuItem>
-                    )}
-                    {userType === 'issuer' && (
-                      <DropdownMenuItem onClick={() => handleMatchedMarket('Manage Offer')}>
-                        <Settings className="h-4 w-4 mr-2" />
-                        Manage Offer
-                      </DropdownMenuItem>
-                    )}
-                    {userType === 'investor' && (
-                      <DropdownMenuItem onClick={() => navigate('/matched-market/manage-nda')}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Manage NDAs
-                      </DropdownMenuItem>
-                    )}
-                    {userType === 'investor' && (
-                      <DropdownMenuItem onClick={() => handleMatchedMarket('Transaction Hub')}>
-                        <Handshake className="h-4 w-4 mr-2" />
-                        Transaction Hub
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={() => handleMatchedMarket('Review Completed Transactions')}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Review Completed Transactions
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => navigate('/matched-market/manage-offers')}
+                >
+                  Manage Market Transactions
+                </Button>
               </div>
             </CardContent>
           </Card>

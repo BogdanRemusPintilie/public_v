@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Eye } from 'lucide-react';
 import { ManageOffersView } from '@/components/matched-market/ManageOffersView';
 
 const ManageOffers = () => {
@@ -27,10 +27,20 @@ const ManageOffers = () => {
             </p>
           </div>
 
-          <Button onClick={() => navigate('/matched-market/issue-offer')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Offer
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/matched-market/completed-transactions')}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Review Completed Transactions
+            </Button>
+            
+            <Button onClick={() => navigate('/matched-market/issue-offer')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Offer
+            </Button>
+          </div>
         </div>
 
         <ManageOffersView />
