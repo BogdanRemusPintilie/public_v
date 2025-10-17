@@ -71,7 +71,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             </>
           )}
 
-          {offer.target_investors && offer.target_investors.length > 0 && (
+          {userType !== 'investor' && offer.target_investors && offer.target_investors.length > 0 && (
             <>
               <Separator />
               <div>
@@ -85,7 +85,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             </>
           )}
 
-          {offer.shared_with_emails && offer.shared_with_emails.length > 0 && (
+          {userType !== 'investor' && offer.shared_with_emails && offer.shared_with_emails.length > 0 && (
             <>
               <Separator />
               <div>
