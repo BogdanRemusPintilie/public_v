@@ -48,6 +48,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
   const [acknowledgingRequirements, setAcknowledgingRequirements] = useState<string | null>(null);
   const [counteringPrice, setCounteringPrice] = useState<string | null>(null);
   const [counterPrice, setCounterPrice] = useState<string>('');
+  const [sendingNda, setSendingNda] = useState<string | null>(null);
 
   useEffect(() => {
     fetchResponses();
@@ -294,6 +295,58 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
     }
   };
 
+  const handleSendNDA = async (investorId: string, responseId: string) => {
+    if (!user?.id) return;
+    
+    setSendingNda(responseId);
+    try {
+      const { error } = await supabase
+        .from('ndas')
+        .insert({
+          issuer_id: user.id,
+          investor_id: investorId,
+          offer_id: offerId,
+          nda_title: `Non-Disclosure Agreement - Offer ${offerId.substring(0, 8)}`,
+          nda_content: `CONFIDENTIALITY AND NON-DISCLOSURE AGREEMENT
+
+This Confidentiality and Non-Disclosure Agreement ("Agreement") is entered into by and between the Disclosing Party and the undersigned investor ("Receiving Party").
+
+1. CONFIDENTIAL INFORMATION
+The Disclosing Party agrees to disclose certain confidential information relating to this offer.
+
+2. OBLIGATIONS
+The Receiving Party agrees to:
+   a) Maintain strict confidentiality of all disclosed information
+   b) Use the information solely for evaluating the investment opportunity
+   c) Not disclose any information to third parties without prior written consent
+
+3. TERM
+This Agreement shall remain in effect for a period of two (2) years from the date of acceptance.
+
+By accepting this NDA, you acknowledge that you have read, understood, and agree to be bound by its terms and conditions.`,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'NDA Sent',
+        description: 'The NDA has been sent to the investor',
+      });
+
+      fetchResponses();
+    } catch (error: any) {
+      console.error('Error sending NDA:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send NDA',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingNda(null);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'interested':
@@ -379,9 +432,17 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                           <Button
                             size="sm"
                             className="mt-3"
-                            onClick={() => navigate('/matched-market/manage-nda')}
+                            onClick={() => handleSendNDA(response.investor_id, response.id)}
+                            disabled={sendingNda === response.id}
                           >
-                            Send NDA
+                            {sendingNda === response.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Sending...
+                              </>
+                            ) : (
+                              'Send NDA'
+                            )}
                           </Button>
                         </div>
                       </div>
