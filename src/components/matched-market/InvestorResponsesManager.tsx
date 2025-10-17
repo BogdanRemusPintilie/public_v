@@ -413,7 +413,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                       <p className="text-base mt-1">
                         {response.nda_status === 'accepted' && 'NDA Accepted'}
                         {response.nda_status === 'rejected' && 'NDA Rejected'}
-                        {response.nda_status === 'pending' && 'NDA Pending Review'}
+                        {response.nda_status === 'pending' && 'Sent'}
                         {response.nda_status === 'not_sent' && 'NDA Not Sent'}
                       </p>
                     </div>
