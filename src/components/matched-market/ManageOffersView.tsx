@@ -22,37 +22,47 @@ export function ManageOffersView() {
     }
   }, [user]);
 
-  const determineTransactionStatus = (responses: any[], ndas: any[]) => {
-    if (!responses || responses.length === 0) {
-      return 'Offer Received';
+  const determineTransactionStatus = (
+    offerResponse: any,
+    nda: any,
+    offerId: string
+  ): string => {
+    // Special handling for demo offer
+    if (offerId === 'demo-offer') {
+      return 'Full loan tape submitted';
     }
 
-    const interestedResponses = responses.filter(r => r.status === 'interested');
-    if (interestedResponses.length === 0) {
-      return 'Offer Received';
+    // If investor has submitted an indicative price, reflect that immediately
+    if (offerResponse?.indicative_price) {
+      return 'Indicative offer submitted';
     }
 
-    // Check for executed NDAs
-    const executedNdas = ndas.filter(n => n.status === 'executed');
-    if (executedNdas.length === 0) {
-      return 'Interest Indicated';
+    // If investor acknowledged requirements, move to transaction details
+    if (offerResponse?.requirements_acknowledged) {
+      return 'Transaction details';
     }
 
-    // Check for indicative pricing
-    const hasIndicativePricing = interestedResponses.some(r => r.indicative_price);
-    if (!hasIndicativePricing) {
-      return 'NDA Executed';
+    // NDA executed
+    if (nda?.status === 'accepted') {
+      return 'NDA executed';
     }
 
-    // Check for firm pricing status
-    const hasFirmPricing = interestedResponses.some(r => r.firm_price_status === 'submitted');
-    if (!hasFirmPricing) {
-      return 'Indication Offer Submitted';
+    // If no response yet, it's just received
+    if (!offerResponse) {
+      return 'Offer received';
     }
 
-    // Additional statuses would require new fields in the database
-    // For now, return the most advanced status we can determine
-    return 'Indication Offer Submitted';
+    // If declined, keep at offer received
+    if (offerResponse.status === 'declined') {
+      return 'Offer received';
+    }
+
+    // Interest indicated (interested or accepted)
+    if (offerResponse.status === 'interested' || offerResponse.status === 'accepted') {
+      return 'Interest indicated';
+    }
+
+    return 'Offer received';
   };
 
   const fetchOffers = async () => {
@@ -75,22 +85,57 @@ export function ManageOffersView() {
         const counts: Record<string, { total: number; interested: number; status: string }> = {};
         
         for (const offer of data) {
+          // Get all responses for this offer
           const { data: responses, error: responseError } = await supabase
             .from('offer_responses')
-            .select('status, indicative_price, firm_price_status')
+            .select('*')
             .eq('offer_id', offer.id);
 
+          // Get all NDAs for this offer
           const { data: ndas, error: ndaError } = await supabase
             .from('ndas')
-            .select('status')
+            .select('*')
             .eq('offer_id', offer.id);
 
           if (!responseError && responses) {
-            const status = determineTransactionStatus(responses, ndas || []);
+            // Get the most advanced status from all responses
+            let mostAdvancedStatus = 'Offer received';
+            
+            responses.forEach(response => {
+              const matchingNda = ndas?.find(n => n.investor_id === response.investor_id);
+              const status = determineTransactionStatus(response, matchingNda, offer.id);
+              
+              // Compare status progression (later statuses override earlier ones)
+              const statusPriority = [
+                'Offer received',
+                'Interest indicated',
+                'NDA executed',
+                'Transaction overview',
+                'Transaction details',
+                'Indicative offer submitted',
+                'Full loan tape submitted',
+                'Allocation received',
+                'Transaction complete'
+              ];
+              
+              const currentPriority = statusPriority.indexOf(mostAdvancedStatus);
+              const newPriority = statusPriority.indexOf(status);
+              
+              if (newPriority > currentPriority) {
+                mostAdvancedStatus = status;
+              }
+            });
+
             counts[offer.id] = {
               total: responses.length,
               interested: responses.filter(r => r.status === 'interested').length,
-              status
+              status: mostAdvancedStatus
+            };
+          } else {
+            counts[offer.id] = {
+              total: 0,
+              interested: 0,
+              status: 'Offer received'
             };
           }
         }
@@ -176,10 +221,10 @@ export function ManageOffersView() {
                     {offer.status || 'active'}
                   </Badge>
                   <Badge 
-                    variant={dealStatus !== 'Offer Received' ? 'default' : 'outline'}
+                    variant={dealStatus !== 'Offer received' ? 'default' : 'outline'}
                     className="flex items-center gap-1"
                   >
-                    {dealStatus !== 'Offer Received' ? (
+                    {dealStatus !== 'Offer received' ? (
                       <CheckCircle className="h-3 w-3" />
                     ) : (
                       <Clock className="h-3 w-3" />
