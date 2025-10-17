@@ -94,6 +94,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
         return;
       }
 
+      console.log('🔍 Fetching emails for selected investors:', selectedInvestors);
+
       try {
         const { data, error } = await supabase
           .from('investors')
@@ -106,9 +108,10 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
           .map(inv => inv.contact_email)
           .filter((email): email is string => !!email);
         
+        console.log('📧 Fetched investor emails:', emails);
         setInvestorEmails(emails);
       } catch (error) {
-        console.error('Error fetching investor emails:', error);
+        console.error('❌ Error fetching investor emails:', error);
         setInvestorEmails([]);
       }
     };
@@ -213,13 +216,22 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
 
     setIsLoading(true);
     try {
+      const allEmails = [...emailList, ...additionalEmails, ...investorEmails];
+      console.log('💾 Creating offer with emails:', {
+        emailList,
+        additionalEmails,
+        investorEmails,
+        allEmails,
+        selectedInvestors
+      });
+
       const { error } = await supabase
         .from('offers')
         .insert({
           user_id: user.id,
           offer_name: data.offer_name,
           structure_id: data.structure_id,
-          shared_with_emails: [...emailList, ...additionalEmails, ...investorEmails],
+          shared_with_emails: allEmails,
           target_investors: selectedInvestors,
           comments: data.comments || null,
           issuer_nationality: data.issuer_nationality || null,
@@ -236,6 +248,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
 
       if (error) throw error;
 
+      console.log('✅ Offer created successfully');
       toast({
         title: 'Success',
         description: 'Offer created successfully',
