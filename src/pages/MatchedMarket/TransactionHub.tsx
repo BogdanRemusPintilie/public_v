@@ -148,7 +148,7 @@ export default function TransactionHub() {
         transactionsList.push({
           id: 'demo-offer',
           offer_name: 'Investor Demo Offer',
-          status: 'Offer received',
+          status: 'Full loan tape submitted',
           issuer_nationality: 'British',
           created_at: new Date().toISOString(),
           offer_id: 'demo-offer',
