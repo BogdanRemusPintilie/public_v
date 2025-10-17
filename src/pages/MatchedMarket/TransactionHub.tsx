@@ -78,6 +78,11 @@ export default function TransactionHub() {
       return 'Full loan tape received';
     }
 
+    // If investor has submitted a firm offer
+    if (offerResponse?.firm_price_status === 'accepted' || offerResponse?.firm_price_status === 'submitted') {
+      return 'Firm offer submitted';
+    }
+
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
       return 'Indicative Offer submitted';
