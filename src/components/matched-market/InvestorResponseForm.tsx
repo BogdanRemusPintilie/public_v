@@ -423,13 +423,32 @@ export function InvestorResponseForm({ offerId, onResponseSubmitted, datasetName
                 <Button 
                   type="button" 
                   className="w-full"
-                  onClick={() => {
-                    toast({
-                      title: 'Request Submitted',
-                      description: 'Your questions and data requirements have been sent to the issuer.',
-                    });
-                    setDataRequirements({ questions: '', additionalDataNeeds: '' });
+                  onClick={async () => {
+                    try {
+                      const { error } = await supabase
+                        .from('offer_responses')
+                        .update({
+                          questions: dataRequirements.questions,
+                          additional_data_needs: dataRequirements.additionalDataNeeds
+                        })
+                        .eq('id', existingResponse?.id);
+
+                      if (error) throw error;
+
+                      toast({
+                        title: 'Request Submitted',
+                        description: 'Your questions and data requirements have been sent to the issuer.',
+                      });
+                      setDataRequirements({ questions: '', additionalDataNeeds: '' });
+                    } catch (error) {
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to submit your request. Please try again.',
+                        variant: 'destructive'
+                      });
+                    }
                   }}
+                  disabled={!existingResponse?.id}
                 >
                   <Send className="mr-2 h-4 w-4" />
                   Submit Request

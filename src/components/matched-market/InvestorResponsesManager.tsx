@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CheckCircle, Database, FileText, MessageSquare } from 'lucide-react';
+import { Loader2, CheckCircle, Database, FileText, MessageSquare, Bell } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface InvestorResponsesManagerProps {
@@ -27,6 +27,9 @@ interface InvestorResponse {
   has_data_access?: boolean;
   nda_status?: string;
   issuer_response?: string;
+  questions?: string | null;
+  additional_data_needs?: string | null;
+  requirements_acknowledged?: boolean;
 }
 
 export function InvestorResponsesManager({ offerId, datasetName }: InvestorResponsesManagerProps) {
@@ -37,6 +40,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
   const [grantingAccess, setGrantingAccess] = useState<string | null>(null);
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [issuerResponse, setIssuerResponse] = useState<string>('');
+  const [acknowledgingRequirements, setAcknowledgingRequirements] = useState<string | null>(null);
 
   useEffect(() => {
     fetchResponses();
@@ -160,6 +164,36 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
         description: 'Failed to save response',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleAcknowledgeRequirements = async (responseId: string) => {
+    setAcknowledgingRequirements(responseId);
+    try {
+      const { error } = await supabase
+        .from('offer_responses')
+        .update({ 
+          requirements_acknowledged: true,
+        })
+        .eq('id', responseId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Investor Notified',
+        description: 'The investor has been notified that you received their requests.',
+      });
+
+      fetchResponses();
+    } catch (error: any) {
+      console.error('Error acknowledging requirements:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to notify investor. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAcknowledgingRequirements(null);
     }
   };
 
@@ -317,6 +351,49 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                     <div className="pt-2 border-t">
                       <p className="text-sm font-medium text-muted-foreground">Additional Questions</p>
                       <p className="text-base mt-1 bg-muted p-3 rounded-md">{response.comments}</p>
+                    </div>
+                  )}
+
+                  {/* Investor Questions and Data Requirements */}
+                  {(response.questions || response.additional_data_needs) && (
+                    <div className="pt-4 border-t space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">Additional Data Requirements & Questions</p>
+                        {!response.requirements_acknowledged ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAcknowledgeRequirements(response.id)}
+                            disabled={acknowledgingRequirements === response.id}
+                          >
+                            <Bell className="mr-2 h-4 w-4" />
+                            {acknowledgingRequirements === response.id ? 'Notifying...' : 'Acknowledge Receipt'}
+                          </Button>
+                        ) : (
+                          <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                            <CheckCircle className="mr-1 h-3 w-3" />
+                            Acknowledged
+                          </Badge>
+                        )}
+                      </div>
+
+                      {response.questions && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase">Questions for Issuer</p>
+                          <div className="rounded-md bg-muted p-3">
+                            <p className="text-sm whitespace-pre-wrap">{response.questions}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {response.additional_data_needs && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase">Additional Data Requested</p>
+                          <div className="rounded-md bg-muted p-3">
+                            <p className="text-sm whitespace-pre-wrap">{response.additional_data_needs}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

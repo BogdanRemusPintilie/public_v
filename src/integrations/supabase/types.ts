@@ -297,6 +297,7 @@ export type Database = {
       }
       offer_responses: {
         Row: {
+          additional_data_needs: string | null
           comments: string | null
           created_at: string
           id: string
@@ -304,10 +305,14 @@ export type Database = {
           investor_id: string
           issuer_response: string | null
           offer_id: string
+          questions: string | null
+          requirements_acknowledged: boolean | null
+          requirements_acknowledged_at: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          additional_data_needs?: string | null
           comments?: string | null
           created_at?: string
           id?: string
@@ -315,10 +320,14 @@ export type Database = {
           investor_id: string
           issuer_response?: string | null
           offer_id: string
+          questions?: string | null
+          requirements_acknowledged?: boolean | null
+          requirements_acknowledged_at?: string | null
           status: string
           updated_at?: string
         }
         Update: {
+          additional_data_needs?: string | null
           comments?: string | null
           created_at?: string
           id?: string
@@ -326,6 +335,9 @@ export type Database = {
           investor_id?: string
           issuer_response?: string | null
           offer_id?: string
+          questions?: string | null
+          requirements_acknowledged?: boolean | null
+          requirements_acknowledged_at?: string | null
           status?: string
           updated_at?: string
         }
