@@ -17,13 +17,13 @@ import {
 } from '@/components/ui/table';
 
 const STAGES = [
-  'Offer received',
+  'Offer Issued',
   'Interest indicated',
   'NDA executed',
-  'Transaction overview',
   'Transaction details',
   'Indication offer submitted',
-  'Full loan tape submitted',
+  'Full loan tape provided',
+  'Firm Offer received',
   'Allocation received',
   'Transaction completed'
 ] as const;
@@ -65,12 +65,12 @@ export function ManageOffersView() {
   ): string => {
     // Special handling for demo offer
     if (offerId === 'demo-offer') {
-      return 'Full loan tape submitted';
+      return 'Full loan tape provided';
     }
 
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
-      return 'Indicative offer submitted';
+      return 'Indication offer submitted';
     }
 
     // If investor acknowledged requirements, move to transaction details
@@ -83,14 +83,14 @@ export function ManageOffersView() {
       return 'NDA executed';
     }
 
-    // If no response yet, it's just received
+    // If no response yet, it's just issued
     if (!offerResponse) {
-      return 'Offer received';
+      return 'Offer Issued';
     }
 
-    // If declined, keep at offer received
+    // If declined, keep at offer issued
     if (offerResponse.status === 'declined') {
-      return 'Offer received';
+      return 'Offer Issued';
     }
 
     // Interest indicated (interested or accepted)
@@ -98,7 +98,7 @@ export function ManageOffersView() {
       return 'Interest indicated';
     }
 
-    return 'Offer received';
+    return 'Offer Issued';
   };
 
   const fetchOffers = async () => {
@@ -143,15 +143,15 @@ export function ManageOffersView() {
               
               // Compare status progression (later statuses override earlier ones)
               const statusPriority = [
-                'Offer received',
+                'Offer Issued',
                 'Interest indicated',
                 'NDA executed',
-                'Transaction overview',
                 'Transaction details',
-                'Indicative offer submitted',
-                'Full loan tape submitted',
+                'Indication offer submitted',
+                'Full loan tape provided',
+                'Firm Offer received',
                 'Allocation received',
-                'Transaction complete'
+                'Transaction completed'
               ];
               
               const currentPriority = statusPriority.indexOf(mostAdvancedStatus);
@@ -171,7 +171,7 @@ export function ManageOffersView() {
             counts[offer.id] = {
               total: 0,
               interested: 0,
-              status: 'Offer received'
+              status: 'Offer Issued'
             };
           }
         }
@@ -283,15 +283,15 @@ export function ManageOffersView() {
       )}
 
       {/* Stage Grid Table */}
-      <div className="bg-card rounded-lg border shadow-md overflow-auto">
+      <div className="bg-card rounded-lg border shadow-md overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="sticky left-0 bg-muted/30 z-10 min-w-[200px] font-semibold">
+              <TableHead className="sticky left-0 bg-muted/30 z-10 w-[180px] font-semibold">
                 Offer Name
               </TableHead>
               {STAGES.map((stage) => (
-                <TableHead key={stage} className="text-center min-w-[120px] text-xs whitespace-normal">
+                <TableHead key={stage} className="text-center w-[100px] text-[11px] px-2 whitespace-normal leading-tight">
                   {stage}
                 </TableHead>
               ))}
@@ -308,7 +308,7 @@ export function ManageOffersView() {
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => navigate(`/matched-market/offers/${offer.id}`)}
                 >
-                  <TableCell className="sticky left-0 bg-card z-10 font-medium border-r">
+                  <TableCell className="sticky left-0 bg-card z-10 font-medium border-r text-sm">
                     {offer.offer_name}
                   </TableCell>
                   {STAGES.map((stage, index) => {
@@ -316,9 +316,9 @@ export function ManageOffersView() {
                     return (
                       <TableCell 
                         key={stage} 
-                        className="p-2"
+                        className="p-1.5"
                       >
-                        <div className={`w-full h-12 rounded ${getStageColor(stageStatus)} transition-colors`}></div>
+                        <div className={`w-full h-10 rounded ${getStageColor(stageStatus)} transition-colors`}></div>
                       </TableCell>
                     );
                   })}
