@@ -282,7 +282,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Data Access</p>
+                      <p className="text-sm font-medium text-muted-foreground">Full Data Access</p>
                       <div className="mt-1">
                         {response.has_data_access ? (
                           <div className="flex items-center gap-2">
