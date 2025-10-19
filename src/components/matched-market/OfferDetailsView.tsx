@@ -96,10 +96,21 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   };
 
   const handleSubmitIndicativePrice = async () => {
-    if (!indicativePrice) {
+    const priceValue = parseFloat(indicativePrice);
+    
+    if (!indicativePrice || isNaN(priceValue)) {
       toast({
         title: 'Error',
-        description: 'Please enter an indicative price',
+        description: 'Please enter a valid indicative price percentage',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (priceValue < 0 || priceValue > 100) {
+      toast({
+        title: 'Error',
+        description: 'Price percentage must be between 0 and 100',
         variant: 'destructive',
       });
       return;
@@ -111,13 +122,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         offer_id: offer.id,
         investor_id: user.id,
         status: 'accepted',
-        indicative_price: parseFloat(indicativePrice),
+        indicative_price: priceValue,
       };
 
       if (investorResponse) {
         await supabase
           .from('offer_responses')
-          .update({ indicative_price: parseFloat(indicativePrice) })
+          .update({ indicative_price: priceValue })
           .eq('id', investorResponse.id);
       } else {
         await supabase
@@ -127,7 +138,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
       toast({
         title: 'Indicative Price Submitted',
-        description: 'Your indicative price has been sent to the issuer.',
+        description: `Your indicative price of ${priceValue}% has been sent to the issuer.`,
       });
       
       await checkInvestorResponse();
@@ -143,10 +154,21 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   };
 
   const handleSubmitFirmPrice = async () => {
-    if (!firmPrice) {
+    const priceValue = parseFloat(firmPrice);
+    
+    if (!firmPrice || isNaN(priceValue)) {
       toast({
         title: 'Error',
-        description: 'Please enter a firm price',
+        description: 'Please enter a valid firm price percentage',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (priceValue < 0 || priceValue > 100) {
+      toast({
+        title: 'Error',
+        description: 'Price percentage must be between 0 and 100',
         variant: 'destructive',
       });
       return;
@@ -157,14 +179,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       await supabase
         .from('offer_responses')
         .update({ 
-          counter_price: parseFloat(firmPrice),
+          counter_price: priceValue,
           counter_price_updated_at: new Date().toISOString()
         })
         .eq('id', investorResponse.id);
 
       toast({
         title: 'Firm Price Submitted',
-        description: 'Your firm price has been sent to the issuer.',
+        description: `Your firm price of ${priceValue}% has been sent to the issuer.`,
       });
       
       await checkInvestorResponse();
@@ -437,7 +459,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
                 <p className="text-sm font-medium mb-1">Indicative Price Submitted</p>
                 <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                  €{Number(investorResponse.indicative_price).toLocaleString()}
+                  {Number(investorResponse.indicative_price).toFixed(2)}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Submitted on {new Date(investorResponse.updated_at).toLocaleDateString()}
@@ -446,17 +468,29 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Submit a non-binding indicative price to express your interest level.
+                  Submit a non-binding indicative price percentage to express your interest level.
                 </p>
                 <div className="space-y-2">
-                  <Label htmlFor="indicative-price">Indicative Price (€)</Label>
-                  <Input
-                    id="indicative-price"
-                    type="number"
-                    placeholder="Enter amount"
-                    value={indicativePrice}
-                    onChange={(e) => setIndicativePrice(e.target.value)}
-                  />
+                  <Label htmlFor="indicative-price">Indicative Price (%)</Label>
+                  <div className="relative">
+                    <Input
+                      id="indicative-price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      placeholder="e.g., 12.5"
+                      value={indicativePrice}
+                      onChange={(e) => setIndicativePrice(e.target.value)}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter a percentage between 0 and 100
+                  </p>
                 </div>
                 <Button 
                   onClick={handleSubmitIndicativePrice}
@@ -486,7 +520,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                 <p className="text-sm font-medium mb-1">Firm Price Submitted</p>
                 <p className="text-2xl font-bold text-primary">
-                  €{Number(investorResponse.counter_price).toLocaleString()}
+                  {Number(investorResponse.counter_price).toFixed(2)}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Submitted on {new Date(investorResponse.counter_price_updated_at || investorResponse.updated_at).toLocaleDateString()}
@@ -495,17 +529,29 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Submit a binding firm price offer after completing due diligence.
+                  Submit a binding firm price percentage offer after completing due diligence.
                 </p>
                 <div className="space-y-2">
-                  <Label htmlFor="firm-price">Firm Price (€)</Label>
-                  <Input
-                    id="firm-price"
-                    type="number"
-                    placeholder="Enter amount"
-                    value={firmPrice}
-                    onChange={(e) => setFirmPrice(e.target.value)}
-                  />
+                  <Label htmlFor="firm-price">Firm Price (%)</Label>
+                  <div className="relative">
+                    <Input
+                      id="firm-price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      placeholder="e.g., 13.25"
+                      value={firmPrice}
+                      onChange={(e) => setFirmPrice(e.target.value)}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter a percentage between 0 and 100
+                  </p>
                 </div>
                 <Button 
                   onClick={handleSubmitFirmPrice}
