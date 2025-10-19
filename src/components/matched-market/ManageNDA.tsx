@@ -37,17 +37,22 @@ const ManageNDA = () => {
 
   const fetchNDAs = async () => {
     try {
+      console.log('🔍 Fetching NDAs for investor:', user.id);
+      
       const { data, error } = await supabase
         .from('ndas')
         .select('*')
         .eq('investor_id', user.id)
         .order('created_at', { ascending: false });
 
+      console.log('📥 NDAs Response:', { data, error });
+
       if (error) throw error;
       
       setNdas((data || []) as NDA[]);
+      console.log('✅ NDAs loaded:', data?.length || 0);
     } catch (error) {
-      console.error('Error fetching NDAs:', error);
+      console.error('❌ Error fetching NDAs:', error);
       toast({
         title: 'Error',
         description: 'Failed to load NDAs',
