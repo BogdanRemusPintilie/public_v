@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText } from 'lucide-react';
+import { FileText, Database, FolderOpen, TrendingUp } from 'lucide-react';
 import { InvestorResponseForm } from './InvestorResponseForm';
 import { InvestorResponsesManager } from './InvestorResponsesManager';
 import { useUserType } from '@/hooks/useUserType';
+import { Button } from '@/components/ui/button';
+import { StructureSummary } from './StructureSummary';
 
 interface OfferDetailsViewProps {
   offer: any;
@@ -127,6 +129,76 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         />
       )}
 
+      {/* Structure Summary - Only for investors who have shown interest */}
+      {userType === 'investor' && offer.structure && (
+        <StructureSummary 
+          structure={offer.structure} 
+          dataset={offer.structure.dataset_name}
+        />
+      )}
+
+      {/* Data Tape Access - Only for investors */}
+      {userType === 'investor' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Data Tape Access
+            </CardTitle>
+            <CardDescription>Access detailed loan-level data</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                The full data tape contains loan-level information for all assets in the portfolio.
+              </p>
+              <Button className="w-full" variant="outline">
+                <Database className="mr-2 h-4 w-4" />
+                Request Full Data Tape Access
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Documentary Repository - Only for investors */}
+      {userType === 'investor' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FolderOpen className="h-5 w-5" />
+              Documentary Repository
+            </CardTitle>
+            <CardDescription>Legal documents and transaction materials</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Access to transaction documents, legal agreements, and supporting materials.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Button variant="outline" className="justify-start">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Term Sheet
+                </Button>
+                <Button variant="outline" className="justify-start">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Information Memorandum
+                </Button>
+                <Button variant="outline" className="justify-start">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Legal Documentation
+                </Button>
+                <Button variant="outline" className="justify-start">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Due Diligence Reports
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Investor Response Form - Only for investors */}
       {userType === 'investor' && (
         <InvestorResponseForm 
@@ -134,6 +206,43 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
           onResponseSubmitted={onUpdate}
           datasetName={offer.structure?.dataset_name}
         />
+      )}
+
+      {/* Pricing Information - Only for investors who have shown interest */}
+      {userType === 'investor' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Pricing Submission
+            </CardTitle>
+            <CardDescription>Submit your indicative or firm pricing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Indicative Price</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Non-binding price indication for initial evaluation
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    Submit Indicative Price
+                  </Button>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Firm Price</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Binding price offer subject to due diligence
+                  </p>
+                  <Button className="w-full">
+                    Submit Firm Price
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
