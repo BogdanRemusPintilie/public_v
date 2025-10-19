@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Database, FolderOpen, TrendingUp } from 'lucide-react';
+import { FileText, Database, FolderOpen, TrendingUp, Lock } from 'lucide-react';
 import { InvestorResponseForm } from './InvestorResponseForm';
 import { InvestorResponsesManager } from './InvestorResponsesManager';
 import { useUserType } from '@/hooks/useUserType';
 import { Button } from '@/components/ui/button';
 import { StructureSummary } from './StructureSummary';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 interface OfferDetailsViewProps {
   offer: any;
@@ -17,6 +22,164 @@ interface OfferDetailsViewProps {
 
 export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const { userType } = useUserType();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [ndaStatus, setNdaStatus] = useState<string | null>(null);
+  const [investorResponse, setInvestorResponse] = useState<any>(null);
+  const [indicativePrice, setIndicativePrice] = useState('');
+  const [firmPrice, setFirmPrice] = useState('');
+  const [isSubmittingPrice, setIsSubmittingPrice] = useState(false);
+  const [datasetSummary, setDatasetSummary] = useState<any>(null);
+
+  useEffect(() => {
+    if (userType === 'investor' && user?.id && offer.id !== 'demo-offer') {
+      fetchDatasetSummary();
+      checkNdaStatus();
+      checkInvestorResponse();
+    }
+  }, [userType, user, offer.id]);
+
+  const fetchDatasetSummary = async () => {
+    if (!offer.structure?.dataset_name) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
+      
+      if (error) {
+        console.error('Error fetching dataset summary:', error);
+        return;
+      }
+
+      const summary = data?.find((d: any) => d.dataset_name === offer.structure.dataset_name);
+      if (summary) {
+        setDatasetSummary(summary);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const checkNdaStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ndas')
+        .select('status')
+        .eq('offer_id', offer.id)
+        .eq('investor_id', user.id)
+        .single();
+
+      if (data) {
+        setNdaStatus(data.status);
+      }
+    } catch (error) {
+      // No NDA found
+    }
+  };
+
+  const checkInvestorResponse = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('offer_responses')
+        .select('*')
+        .eq('offer_id', offer.id)
+        .eq('investor_id', user.id)
+        .single();
+
+      if (data) {
+        setInvestorResponse(data);
+        setIndicativePrice(data.indicative_price?.toString() || '');
+        setFirmPrice(data.counter_price?.toString() || '');
+      }
+    } catch (error) {
+      // No response found
+    }
+  };
+
+  const handleSubmitIndicativePrice = async () => {
+    if (!indicativePrice) {
+      toast({
+        title: 'Error',
+        description: 'Please enter an indicative price',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmittingPrice(true);
+    try {
+      const responseData = {
+        offer_id: offer.id,
+        investor_id: user.id,
+        status: 'accepted',
+        indicative_price: parseFloat(indicativePrice),
+      };
+
+      if (investorResponse) {
+        await supabase
+          .from('offer_responses')
+          .update({ indicative_price: parseFloat(indicativePrice) })
+          .eq('id', investorResponse.id);
+      } else {
+        await supabase
+          .from('offer_responses')
+          .insert([responseData]);
+      }
+
+      toast({
+        title: 'Indicative Price Submitted',
+        description: 'Your indicative price has been sent to the issuer.',
+      });
+      
+      await checkInvestorResponse();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingPrice(false);
+    }
+  };
+
+  const handleSubmitFirmPrice = async () => {
+    if (!firmPrice) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a firm price',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmittingPrice(true);
+    try {
+      await supabase
+        .from('offer_responses')
+        .update({ 
+          counter_price: parseFloat(firmPrice),
+          counter_price_updated_at: new Date().toISOString()
+        })
+        .eq('id', investorResponse.id);
+
+      toast({
+        title: 'Firm Price Submitted',
+        description: 'Your firm price has been sent to the issuer.',
+      });
+      
+      await checkInvestorResponse();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingPrice(false);
+    }
+  };
+
+  const isNdaAccepted = ndaStatus === 'accepted' || offer.id === 'demo-offer';
 
   return (
     <div className="space-y-6">
@@ -129,40 +292,76 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         />
       )}
 
-      {/* Structure Summary - Only for investors who have shown interest */}
-      {userType === 'investor' && offer.structure && (
+      {/* Investor Response Form - Only for investors */}
+      {userType === 'investor' && (
+        <InvestorResponseForm 
+          offerId={offer.id} 
+          onResponseSubmitted={() => {
+            onUpdate();
+            checkInvestorResponse();
+          }}
+          datasetName={offer.structure?.dataset_name}
+        />
+      )}
+
+      {/* Structure Summary - Only for investors after NDA accepted */}
+      {userType === 'investor' && isNdaAccepted && offer.structure && (
         <StructureSummary 
           structure={offer.structure} 
           dataset={offer.structure.dataset_name}
         />
       )}
 
-      {/* Data Tape Access - Only for investors */}
-      {userType === 'investor' && (
+      {/* Data Tape Access - Only for investors after NDA accepted */}
+      {userType === 'investor' && isNdaAccepted && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
               Data Tape Access
             </CardTitle>
-            <CardDescription>Access detailed loan-level data</CardDescription>
+            <CardDescription>Full loan-level data available after NDA acceptance</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                  Data tape access granted
+                </p>
+              </div>
               <p className="text-sm text-muted-foreground">
-                The full data tape contains loan-level information for all assets in the portfolio.
+                The full data tape contains loan-level information for all {datasetSummary?.record_count || 'N/A'} assets in the portfolio.
               </p>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full">
                 <Database className="mr-2 h-4 w-4" />
-                Request Full Data Tape Access
+                Download Full Data Tape
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Documentary Repository - Only for investors */}
-      {userType === 'investor' && (
+      {/* Data Tape - Locked (before NDA) */}
+      {userType === 'investor' && !isNdaAccepted && (
+        <Card className="opacity-60">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Data Tape Access
+            </CardTitle>
+            <CardDescription>Available after NDA acceptance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Accept the NDA to access the full loan-level data tape.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Documentary Repository - Only for investors after NDA accepted */}
+      {userType === 'investor' && isNdaAccepted && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -173,8 +372,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                  Document repository access granted
+                </p>
+              </div>
               <p className="text-sm text-muted-foreground">
-                Access to transaction documents, legal agreements, and supporting materials.
+                Access transaction documents, legal agreements, and supporting materials.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Button variant="outline" className="justify-start">
@@ -199,48 +404,118 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         </Card>
       )}
 
-      {/* Investor Response Form - Only for investors */}
-      {userType === 'investor' && (
-        <InvestorResponseForm 
-          offerId={offer.id} 
-          onResponseSubmitted={onUpdate}
-          datasetName={offer.structure?.dataset_name}
-        />
+      {/* Documentary Repository - Locked (before NDA) */}
+      {userType === 'investor' && !isNdaAccepted && (
+        <Card className="opacity-60">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Documentary Repository
+            </CardTitle>
+            <CardDescription>Available after NDA acceptance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Accept the NDA to access transaction documents and materials.
+            </p>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Pricing Information - Only for investors who have shown interest */}
-      {userType === 'investor' && (
+      {/* Indicative Pricing - Stage 1 */}
+      {userType === 'investor' && investorResponse?.status === 'accepted' && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Pricing Submission
+              Stage 1: Indicative Price
             </CardTitle>
-            <CardDescription>Submit your indicative or firm pricing</CardDescription>
+            <CardDescription>Non-binding price indication for initial evaluation</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold text-sm mb-2">Indicative Price</h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Non-binding price indication for initial evaluation
-                  </p>
-                  <Button variant="outline" className="w-full">
-                    Submit Indicative Price
-                  </Button>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm mb-2">Firm Price</h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Binding price offer subject to due diligence
-                  </p>
-                  <Button className="w-full">
-                    Submit Firm Price
-                  </Button>
-                </div>
+          <CardContent className="space-y-4">
+            {investorResponse?.indicative_price ? (
+              <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                <p className="text-sm font-medium mb-1">Indicative Price Submitted</p>
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                  €{Number(investorResponse.indicative_price).toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Submitted on {new Date(investorResponse.updated_at).toLocaleDateString()}
+                </p>
               </div>
-            </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Submit a non-binding indicative price to express your interest level.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="indicative-price">Indicative Price (€)</Label>
+                  <Input
+                    id="indicative-price"
+                    type="number"
+                    placeholder="Enter amount"
+                    value={indicativePrice}
+                    onChange={(e) => setIndicativePrice(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleSubmitIndicativePrice}
+                  disabled={isSubmittingPrice}
+                  className="w-full"
+                >
+                  Submit Indicative Price
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Firm Pricing - Stage 2 (only shown after indicative price submitted) */}
+      {userType === 'investor' && investorResponse?.indicative_price && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Stage 2: Firm Price
+            </CardTitle>
+            <CardDescription>Binding price offer for final transaction stages</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {investorResponse?.counter_price ? (
+              <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                <p className="text-sm font-medium mb-1">Firm Price Submitted</p>
+                <p className="text-2xl font-bold text-primary">
+                  €{Number(investorResponse.counter_price).toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Submitted on {new Date(investorResponse.counter_price_updated_at || investorResponse.updated_at).toLocaleDateString()}
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Submit a binding firm price offer after completing due diligence.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="firm-price">Firm Price (€)</Label>
+                  <Input
+                    id="firm-price"
+                    type="number"
+                    placeholder="Enter amount"
+                    value={firmPrice}
+                    onChange={(e) => setFirmPrice(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleSubmitFirmPrice}
+                  disabled={isSubmittingPrice}
+                  className="w-full"
+                >
+                  Submit Firm Price
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
