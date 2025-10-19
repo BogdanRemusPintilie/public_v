@@ -44,28 +44,32 @@ const OfferDetails = () => {
           structure: {
             id: 'demo-structure',
             structure_name: '400m (Demo Data Lite)',
-            dataset_name: 'Demo Dataset',
+            dataset_name: 'Demo Data Lite',
+            weighted_avg_cost_bps: 350,
             tranches: [
               {
+                id: 'senior-tranche',
                 name: 'Senior Tranche',
-                size: 10000000,
+                thickness: 67.5,
                 coupon: 2.5,
-                subordination: 30,
-                rating: 'AAA'
+                rating: 'AAA',
+                tranche_order: 1
               },
               {
+                id: 'mezzanine-tranche',
                 name: 'Mezzanine Tranche',
-                size: 3000000,
+                thickness: 20.2,
                 coupon: 5.0,
-                subordination: 10,
-                rating: 'BBB'
+                rating: 'BBB',
+                tranche_order: 2
               },
               {
+                id: 'equity-tranche',
                 name: 'Equity Tranche',
-                size: 1820000,
+                thickness: 12.3,
                 coupon: 0,
-                subordination: 0,
-                rating: 'Unrated'
+                rating: 'Unrated',
+                tranche_order: 3
               }
             ]
           }
