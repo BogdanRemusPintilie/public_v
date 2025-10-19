@@ -27,7 +27,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const [ndaStatus, setNdaStatus] = useState<string | null>(null);
   const [investorResponse, setInvestorResponse] = useState<any>(null);
   const [indicativePrice, setIndicativePrice] = useState('');
-  const [firmPrice, setFirmPrice] = useState('');
   const [isSubmittingPrice, setIsSubmittingPrice] = useState(false);
   const [datasetSummary, setDatasetSummary] = useState<any>(null);
 
@@ -88,7 +87,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       if (data) {
         setInvestorResponse(data);
         setIndicativePrice(data.indicative_price?.toString() || '');
-        setFirmPrice(data.counter_price?.toString() || '');
       }
     } catch (error) {
       // No response found
@@ -139,54 +137,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       toast({
         title: 'Indicative Price Submitted',
         description: `Your indicative price of ${priceValue}% has been sent to the issuer.`,
-      });
-      
-      await checkInvestorResponse();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmittingPrice(false);
-    }
-  };
-
-  const handleSubmitFirmPrice = async () => {
-    const priceValue = parseFloat(firmPrice);
-    
-    if (!firmPrice || isNaN(priceValue)) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a valid firm price percentage',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (priceValue < 0 || priceValue > 100) {
-      toast({
-        title: 'Error',
-        description: 'Price percentage must be between 0 and 100',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmittingPrice(true);
-    try {
-      await supabase
-        .from('offer_responses')
-        .update({ 
-          counter_price: priceValue,
-          counter_price_updated_at: new Date().toISOString()
-        })
-        .eq('id', investorResponse.id);
-
-      toast({
-        title: 'Firm Price Submitted',
-        description: `Your firm price of ${priceValue}% has been sent to the issuer.`,
       });
       
       await checkInvestorResponse();
@@ -450,7 +400,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Stage 1: Indicative Price
+              Indicative Price
             </CardTitle>
             <CardDescription>Non-binding price indication for initial evaluation</CardDescription>
           </CardHeader>
@@ -502,68 +452,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               </>
             )}
           </CardContent>
-        </Card>
-      )}
-
-      {/* Firm Pricing - Stage 2 (only shown after indicative price submitted) */}
-      {userType === 'investor' && investorResponse?.indicative_price && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Stage 2: Firm Price
-            </CardTitle>
-            <CardDescription>Binding price offer for final transaction stages</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {investorResponse?.counter_price ? (
-              <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                <p className="text-sm font-medium mb-1">Firm Price Submitted</p>
-                <p className="text-2xl font-bold text-primary">
-                  {Number(investorResponse.counter_price).toFixed(2)}%
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Submitted on {new Date(investorResponse.counter_price_updated_at || investorResponse.updated_at).toLocaleDateString()}
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  Submit a binding firm price percentage offer after completing due diligence.
-                </p>
-                <div className="space-y-2">
-                  <Label htmlFor="firm-price">Firm Price (%)</Label>
-                  <div className="relative">
-                    <Input
-                      id="firm-price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      placeholder="e.g., 13.25"
-                      value={firmPrice}
-                      onChange={(e) => setFirmPrice(e.target.value)}
-                      className="pr-8"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      %
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Enter a percentage between 0 and 100
-                  </p>
-                </div>
-                <Button 
-                  onClick={handleSubmitFirmPrice}
-                  disabled={isSubmittingPrice}
-                  className="w-full"
-                >
-                  Submit Firm Price
-                </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
+      </Card>
       )}
     </div>
   );
