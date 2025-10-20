@@ -89,13 +89,15 @@ const OfferDetails = () => {
       // Fetch the issuer's company name from profiles
       let issuerCompany = null;
       if (data.user_id) {
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('company')
           .eq('user_id', data.user_id)
-          .single();
+          .maybeSingle();
         
-        if (profileData?.company) {
+        if (profileError) {
+          console.error('Error fetching issuer company:', profileError);
+        } else if (profileData?.company) {
           issuerCompany = profileData.company;
         }
       }
