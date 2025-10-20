@@ -497,7 +497,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                   </div>
 
                   {/* Pricing Information */}
-                  <div className="grid md:grid-cols-3 gap-4 pt-2 border-t">
+                  <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Indicative Price</p>
                       <p className="text-base mt-1 font-semibold">
@@ -506,97 +506,6 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                           : 'Not provided'
                         }
                       </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Firm Price</p>
-                      <div className="mt-1">
-                        {response.indicative_price ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <p className="text-base font-semibold text-green-600">
-                                {response.indicative_price}%
-                              </p>
-                              {response.firm_price_status === 'accepted' && (
-                                <Badge className="bg-green-600">Accepted</Badge>
-                              )}
-                              {response.firm_price_status === 'declined' && (
-                                <Badge variant="destructive">Declined</Badge>
-                              )}
-                              {response.firm_price_status === 'countered' && (
-                                <Badge variant="outline">Countered</Badge>
-                              )}
-                            </div>
-                            
-                            {/* Counter price display */}
-                            {response.firm_price_status === 'countered' && response.counter_price && (
-                              <p className="text-sm text-muted-foreground">
-                                Counter Offer: <span className="font-semibold">{response.counter_price}%</span>
-                              </p>
-                            )}
-
-                            {/* Action buttons - only show if firm price hasn't been responded to */}
-                            {(!response.firm_price_status || response.firm_price_status === 'pending') && (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="success"
-                                  onClick={() => handleAcceptFirmPrice(response.id)}
-                                >
-                                  <Check className="h-4 w-4 mr-1" />
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleDeclineFirmPrice(response.id)}
-                                >
-                                  <X className="h-4 w-4 mr-1" />
-                                  Decline
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setCounteringPrice(response.id)}
-                                >
-                                  Counter
-                                </Button>
-                              </div>
-                            )}
-
-                            {/* Counter price input */}
-                            {counteringPrice === response.id && (
-                              <div className="flex gap-2 mt-2">
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="Enter counter price %"
-                                  value={counterPrice}
-                                  onChange={(e) => setCounterPrice(e.target.value)}
-                                  className="max-w-[200px]"
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleCounterFirmPrice(response.id)}
-                                >
-                                  Send
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setCounteringPrice(null);
-                                    setCounterPrice('');
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Not submitted</p>
-                        )}
-                      </div>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Full Data Access</p>
@@ -634,6 +543,97 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     <div className="pt-2 border-t">
                       <p className="text-sm font-medium text-muted-foreground">Key Comments</p>
                       <p className="text-base mt-1 bg-muted p-3 rounded-md">{response.comments}</p>
+                    </div>
+                  )}
+
+                  {/* Firm Price Section - Only shown when a firm price exists */}
+                  {response.indicative_price && (
+                    <div className="pt-4 border-t space-y-3">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Firm Price Offer</p>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-base font-semibold text-green-600">
+                              {response.indicative_price}%
+                            </p>
+                            {response.firm_price_status === 'accepted' && (
+                              <Badge className="bg-green-600">Accepted</Badge>
+                            )}
+                            {response.firm_price_status === 'declined' && (
+                              <Badge variant="destructive">Declined</Badge>
+                            )}
+                            {response.firm_price_status === 'countered' && (
+                              <Badge variant="outline">Countered</Badge>
+                            )}
+                          </div>
+                          
+                          {/* Counter price display */}
+                          {response.firm_price_status === 'countered' && response.counter_price && (
+                            <p className="text-sm text-muted-foreground">
+                              Counter Offer: <span className="font-semibold">{response.counter_price}%</span>
+                            </p>
+                          )}
+
+                          {/* Action buttons - only show if firm price hasn't been responded to */}
+                          {(!response.firm_price_status || response.firm_price_status === 'pending') && (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => handleAcceptFirmPrice(response.id)}
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeclineFirmPrice(response.id)}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Decline
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setCounteringPrice(response.id)}
+                              >
+                                Counter
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Counter price input */}
+                          {counteringPrice === response.id && (
+                            <div className="flex gap-2 mt-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="Enter counter price %"
+                                value={counterPrice}
+                                onChange={(e) => setCounterPrice(e.target.value)}
+                                className="max-w-[200px]"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => handleCounterFirmPrice(response.id)}
+                              >
+                                Send
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setCounteringPrice(null);
+                                  setCounterPrice('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
 
