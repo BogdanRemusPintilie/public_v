@@ -508,33 +508,44 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Full Data Access</p>
-                      <div className="mt-1">
-                        {response.has_data_access ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm text-green-600 font-medium">Access Granted</span>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => handleGrantAccess(response.investor_id, response.investor_email || '')}
-                            disabled={grantingAccess === response.investor_id}
-                          >
-                            {grantingAccess === response.investor_id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Granting...
-                              </>
-                            ) : (
-                              <>
-                                <Database className="h-4 w-4 mr-2" />
-                                Grant Access
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
+                      <p className="text-sm font-medium text-muted-foreground">Full Price</p>
+                      <p className="text-base mt-1 font-semibold">
+                        {(response.firm_price_status === 'submitted' || response.firm_price_status === 'accepted') && response.counter_price
+                          ? `${response.counter_price}%`
+                          : 'Not submitted'
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Data Access Row */}
+                  <div className="pt-2 border-t">
+                    <p className="text-sm font-medium text-muted-foreground">Full Data Access</p>
+                    <div className="mt-1">
+                      {response.has_data_access ? (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span className="text-sm text-green-600 font-medium">Access Granted</span>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleGrantAccess(response.investor_id, response.investor_email || '')}
+                          disabled={grantingAccess === response.investor_id}
+                        >
+                          {grantingAccess === response.investor_id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Granting...
+                            </>
+                          ) : (
+                            <>
+                              <Database className="h-4 w-4 mr-2" />
+                              Grant Access
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
 

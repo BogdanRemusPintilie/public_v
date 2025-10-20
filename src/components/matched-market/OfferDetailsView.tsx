@@ -590,7 +590,74 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               </>
             )}
           </CardContent>
-      </Card>
+        </Card>
+      )}
+
+      {/* Full Price - Stage 2 - Only shown after indicative price submitted */}
+      {userType === 'investor' && investorResponse?.indicative_price && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Submit Full Price
+            </CardTitle>
+            <CardDescription>Submit your final firm price for this offer</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {investorResponse?.firm_price_status === 'submitted' || investorResponse?.firm_price_status === 'accepted' ? (
+              <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                <p className="text-sm font-medium mb-1">Full Price Submitted</p>
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                  {investorResponse.counter_price ? Number(investorResponse.counter_price).toFixed(2) : Number(investorResponse.indicative_price).toFixed(2)}%
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Status: {investorResponse.firm_price_status}
+                </p>
+                {investorResponse.counter_price_updated_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Submitted: {new Date(investorResponse.counter_price_updated_at).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Submit your final firm price after reviewing the full loan tape and issuer responses.
+                </p>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      await supabase
+                        .from('offer_responses')
+                        .update({ 
+                          firm_price_status: 'submitted',
+                          counter_price: parseFloat(indicativePrice),
+                          counter_price_updated_at: new Date().toISOString()
+                        })
+                        .eq('id', investorResponse.id);
+                      
+                      toast({
+                        title: 'Full Price Submitted',
+                        description: 'Your firm price has been sent to the issuer.',
+                      });
+                      
+                      await checkInvestorResponse();
+                    } catch (error: any) {
+                      toast({
+                        title: 'Error',
+                        description: error.message,
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                  className="w-full"
+                >
+                  Submit Full Price Based on Indicative ({Number(investorResponse.indicative_price).toFixed(2)}%)
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   );
