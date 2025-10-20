@@ -56,7 +56,9 @@ export function ManageOffersView() {
   const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
+    console.log('🔍 ManageOffersView - user:', user?.id, 'userType:', userType, 'loading:', userTypeLoading);
     if (user && !userTypeLoading) {
+      console.log('✅ Fetching offers for userType:', userType);
       fetchOffers();
     }
   }, [user, userType, userTypeLoading]);
@@ -117,6 +119,7 @@ export function ManageOffersView() {
   const fetchOffers = async () => {
     try {
       setIsLoading(true);
+      console.log('📊 Fetching offers - userType:', userType, 'user email:', user?.email);
       
       let offersData;
       
@@ -134,6 +137,7 @@ export function ManageOffersView() {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
+        console.log('📥 Investor offers fetched:', data?.length || 0);
         offersData = data || [];
       } else {
         // For issuers: fetch their own offers
@@ -147,9 +151,11 @@ export function ManageOffersView() {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
+        console.log('📥 Issuer offers fetched:', data?.length || 0);
         offersData = data || [];
       }
       
+      console.log('✅ Total offers to display:', offersData.length);
       setOffers(offersData);
 
       // Fetch response counts and detailed status for each offer
