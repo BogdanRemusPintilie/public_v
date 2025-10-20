@@ -70,8 +70,15 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
       // Fetch investor details and check data access for each response
       const responsesWithDetails = await Promise.all(
         (responsesData || []).map(async (response) => {
-          // Get investor email from auth.users
-          const { data: userData } = await supabase.auth.admin.getUserById(response.investor_id);
+          // Get investor info from profiles table (includes email and company name)
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('email, full_name, company')
+            .eq('user_id', response.investor_id)
+            .maybeSingle();
+          
+          // Build display name: prioritize company, then full_name, then email
+          const investorName = profileData?.company || profileData?.full_name || profileData?.email || 'Unknown';
           
           // Check if investor has data access
           const { data: shareData, error: shareError } = await supabase
@@ -99,7 +106,8 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
 
           return {
             ...response,
-            investor_email: userData?.user?.email || 'Unknown',
+            investor_email: profileData?.email || 'Unknown',
+            investor_name: investorName,
             has_data_access: !!shareData,
             nda_status: ndaData?.status || 'not_sent'
           };
@@ -476,7 +484,10 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                   {/* Investor Info Header */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-semibold text-lg">{response.investor_email}</h4>
+                      <h4 className="font-semibold text-lg">{response.investor_name || response.investor_email}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {response.investor_email}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(response.created_at).toLocaleDateString()}
                       </p>
