@@ -273,18 +273,15 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     if (statusIndex === -1) return 'blank';
     
     const currentStageName = STAGES[currentStageIndex];
-    const greenStages = ['Transaction details', 'Indicative Offer submitted', 'Full loan tape received'];
+    // These stages should turn purple when completed
+    const purpleStages = ['Indicative Offer submitted', 'Transaction details', 'Full loan tape received'];
     
     if (currentStageIndex < statusIndex) {
-      // Stages before current - show as green-completed for specific stages, purple for others
-      if (greenStages.includes(currentStageName)) {
-        return 'green-completed';
-      }
+      // Stages before current - show as completed (purple)
       return 'completed';
     } else if (currentStageIndex === statusIndex) {
-      // Current stage - special handling for stages that should show as completed (purple)
-      if ((transactionStatus === 'Interest indicated' && STAGES[currentStageIndex] === 'Interest indicated') ||
-          (transactionStatus === 'NDA executed' && STAGES[currentStageIndex] === 'NDA executed')) {
+      // Current stage - show purple for specific completed stages
+      if (purpleStages.includes(currentStageName)) {
         return 'completed';
       }
       return 'opened';
