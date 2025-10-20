@@ -256,6 +256,7 @@ export type Database = {
           created_at: string
           id: string
           investor_id: string
+          issuer_company: string | null
           issuer_id: string
           nda_content: string
           nda_title: string
@@ -267,6 +268,7 @@ export type Database = {
           created_at?: string
           id?: string
           investor_id: string
+          issuer_company?: string | null
           issuer_id: string
           nda_content: string
           nda_title: string
@@ -278,6 +280,7 @@ export type Database = {
           created_at?: string
           id?: string
           investor_id?: string
+          issuer_company?: string | null
           issuer_id?: string
           nda_content?: string
           nda_title?: string

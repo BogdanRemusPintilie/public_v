@@ -42,7 +42,7 @@ const ManageNDA = () => {
     try {
       console.log('🔍 Fetching NDAs for investor:', user.id);
       
-      // Fetch NDAs first
+      // Fetch NDAs - issuer_company is now populated by database trigger
       const { data: ndasData, error: ndasError } = await supabase
         .from('ndas')
         .select('*')
@@ -53,111 +53,8 @@ const ManageNDA = () => {
 
       console.log('📥 NDAs Response:', ndasData);
       
-      // Fetch issuer profiles for each NDA
-      const ndasWithCompany = await Promise.all(
-        (ndasData || []).map(async (nda: any) => {
-          try {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('company')
-              .eq('user_id', nda.issuer_id)
-              .maybeSingle();
-            
-            return {
-              ...nda,
-              issuer_company: profileData?.company || 'Unknown Company'
-            };
-          } catch (error) {
-            console.warn('Could not fetch profile for issuer:', nda.issuer_id);
-            return {
-              ...nda,
-              issuer_company: 'Unknown Company'
-            };
-          }
-        })
-      );
-      
-      // Add demo NDA for "Offer Demo 5" - fetch real issuer company
-      let demoIssuerCompany = 'Demo Issuer';
-      let demoOfferName = 'Offer Demo 5';
-      try {
-        const { data: offerData } = await supabase
-          .from('offers')
-          .select('user_id, offer_name')
-          .eq('id', 'cc0d07c0-46cc-4df5-bc24-ea43042c31e1')
-          .maybeSingle();
-        
-        if (offerData) {
-          demoOfferName = offerData.offer_name;
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('company')
-            .eq('user_id', offerData.user_id)
-            .maybeSingle();
-          
-          if (profileData?.company) {
-            demoIssuerCompany = profileData.company;
-          }
-        }
-      } catch (error) {
-        console.warn('Could not fetch demo issuer company:', error);
-      }
-      
-      const demoNDA: NDA = {
-        id: 'demo-nda-5',
-        issuer_id: 'demo-issuer',
-        investor_id: user.id,
-        offer_id: 'cc0d07c0-46cc-4df5-bc24-ea43042c31e1',
-        nda_title: `Non-Disclosure Agreement - ${demoOfferName}`,
-        nda_content: `CONFIDENTIAL NON-DISCLOSURE AGREEMENT
-
-This Non-Disclosure Agreement ("Agreement") is entered into as of ${new Date().toLocaleDateString('en-GB')} between:
-
-DISCLOSING PARTY: ${demoIssuerCompany}
-RECEIVING PARTY: ${user.email || 'Investor'}
-
-WHEREAS, the Disclosing Party wishes to share confidential information regarding a structured finance transaction ("Offer Demo 5") with the Receiving Party;
-
-NOW, THEREFORE, in consideration of the mutual covenants contained herein, the parties agree as follows:
-
-1. CONFIDENTIAL INFORMATION
-   The Disclosing Party will provide the Receiving Party with access to proprietary loan-level data, financial models, transaction structures, and related documentation concerning the securitization transaction.
-
-2. OBLIGATIONS
-   The Receiving Party agrees to:
-   a) Maintain strict confidentiality of all disclosed information
-   b) Use the information solely for evaluation purposes
-   c) Not disclose any information to third parties without prior written consent
-   d) Return or destroy all confidential materials upon request
-
-3. PERMITTED DISCLOSURES
-   The Receiving Party may share information with its employees, advisors, and legal counsel on a need-to-know basis, provided they are bound by similar confidentiality obligations.
-
-4. EXCLUSIONS
-   This Agreement does not apply to information that:
-   a) Is or becomes publicly available through no breach of this Agreement
-   b) Was rightfully in the Receiving Party's possession prior to disclosure
-   c) Is independently developed by the Receiving Party
-   d) Is required to be disclosed by law or regulatory authority
-
-5. TERM
-   This Agreement shall remain in effect for a period of two (2) years from the date of execution.
-
-6. NO RIGHTS GRANTED
-   This Agreement does not grant any rights to the Receiving Party except as expressly stated herein.
-
-By accepting this NDA, you acknowledge that you have read, understood, and agree to be bound by its terms and conditions.`,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        issuer_company: demoIssuerCompany
-      };
-      
-      // Use demo NDA only if no real NDAs exist
-      const allNDAs = ndasWithCompany.length > 0 ? (ndasWithCompany as NDA[]) : ([demoNDA] as NDA[]);
-      
-      setNdas(allNDAs);
-      console.log('✅ NDAs loaded:', allNDAs.length);
+      setNdas((ndasData || []) as NDA[]);
+      console.log('✅ NDAs loaded:', ndasData?.length || 0);
     } catch (error) {
       console.error('❌ Error fetching NDAs:', error);
       toast({
