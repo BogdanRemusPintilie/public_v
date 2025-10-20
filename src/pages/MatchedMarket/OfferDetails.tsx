@@ -86,8 +86,22 @@ const OfferDetails = () => {
 
       if (error) throw error;
 
+      // Fetch the issuer's company name from profiles
+      let issuerCompany = null;
+      if (data.user_id) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('company')
+          .eq('user_id', data.user_id)
+          .single();
+        
+        if (profileData?.company) {
+          issuerCompany = profileData.company;
+        }
+      }
+
       // Fetch the structure separately if structure_id exists
-      let offerWithStructure: any = { ...data };
+      let offerWithStructure: any = { ...data, issuer_company: issuerCompany };
       if (data.structure_id) {
         const { data: structureData, error: structureError } = await supabase
           .from('tranche_structures')

@@ -79,19 +79,21 @@ const ManageNDA = () => {
       
       // Add demo NDA for "Offer Demo 5" - fetch real issuer company
       let demoIssuerCompany = 'Demo Issuer';
+      let demoOfferName = 'Offer Demo 5';
       try {
         const { data: offerData } = await supabase
           .from('offers')
-          .select('user_id')
-          .eq('offer_name', 'Offer Demo 5')
-          .single();
+          .select('user_id, offer_name')
+          .eq('id', 'cc0d07c0-46cc-4df5-bc24-ea43042c31e1')
+          .maybeSingle();
         
         if (offerData) {
+          demoOfferName = offerData.offer_name;
           const { data: profileData } = await supabase
             .from('profiles')
             .select('company')
             .eq('user_id', offerData.user_id)
-            .single();
+            .maybeSingle();
           
           if (profileData?.company) {
             demoIssuerCompany = profileData.company;
@@ -106,7 +108,7 @@ const ManageNDA = () => {
         issuer_id: 'demo-issuer',
         investor_id: user.id,
         offer_id: 'cc0d07c0-46cc-4df5-bc24-ea43042c31e1',
-        nda_title: 'Non-Disclosure Agreement - Offer Demo 5',
+        nda_title: `Non-Disclosure Agreement - ${demoOfferName}`,
         nda_content: `CONFIDENTIAL NON-DISCLOSURE AGREEMENT
 
 This Non-Disclosure Agreement ("Agreement") is entered into as of ${new Date().toLocaleDateString('en-GB')} between:
