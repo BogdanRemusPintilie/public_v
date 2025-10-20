@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileText, CheckCircle, XCircle, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, FileText, CheckCircle, XCircle, ExternalLink, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface NDA {
@@ -143,6 +143,26 @@ const ManageNDA = () => {
     });
   };
 
+  const handleDownloadNDA = (nda: NDA) => {
+    // Create a text blob with the NDA content
+    const content = `${nda.nda_title}\n\nFrom: ${nda.issuer_company}\nDate: ${new Date(nda.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}\n\n${nda.nda_content}`;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${nda.nda_title.replace(/[^a-z0-9]/gi, '_')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'NDA Downloaded',
+      description: 'The NDA has been downloaded to your device',
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'accepted':
@@ -270,6 +290,15 @@ const ManageNDA = () => {
                     <div className="bg-muted p-4 rounded-md max-h-64 overflow-y-auto border">
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{nda.nda_content}</p>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadNDA(nda)}
+                      className="mt-3 w-full"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download NDA
+                    </Button>
                   </CollapsibleContent>
                 </Collapsible>
 
