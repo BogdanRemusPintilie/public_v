@@ -61,8 +61,62 @@ const ManageNDA = () => {
         issuer_company: nda.issuer?.company || 'Unknown Company'
       }));
       
-      setNdas(ndasWithCompany as NDA[]);
-      console.log('✅ NDAs loaded:', ndasWithCompany.length);
+      // Add demo NDA for "Offer Demo 5"
+      const demoNDA: NDA = {
+        id: 'demo-nda-5',
+        issuer_id: 'demo-issuer',
+        investor_id: user.id,
+        offer_id: 'demo-offer-5',
+        nda_title: 'Non-Disclosure Agreement - Offer Demo 5',
+        nda_content: `CONFIDENTIAL NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement ("Agreement") is entered into as of ${new Date().toLocaleDateString('en-GB')} between:
+
+DISCLOSING PARTY: European Financial Services Ltd
+RECEIVING PARTY: ${user.email || 'Investor'}
+
+WHEREAS, the Disclosing Party wishes to share confidential information regarding a structured finance transaction ("Offer Demo 5") with the Receiving Party;
+
+NOW, THEREFORE, in consideration of the mutual covenants contained herein, the parties agree as follows:
+
+1. CONFIDENTIAL INFORMATION
+   The Disclosing Party will provide the Receiving Party with access to proprietary loan-level data, financial models, transaction structures, and related documentation concerning the securitization transaction.
+
+2. OBLIGATIONS
+   The Receiving Party agrees to:
+   a) Maintain strict confidentiality of all disclosed information
+   b) Use the information solely for evaluation purposes
+   c) Not disclose any information to third parties without prior written consent
+   d) Return or destroy all confidential materials upon request
+
+3. PERMITTED DISCLOSURES
+   The Receiving Party may share information with its employees, advisors, and legal counsel on a need-to-know basis, provided they are bound by similar confidentiality obligations.
+
+4. EXCLUSIONS
+   This Agreement does not apply to information that:
+   a) Is or becomes publicly available through no breach of this Agreement
+   b) Was rightfully in the Receiving Party's possession prior to disclosure
+   c) Is independently developed by the Receiving Party
+   d) Is required to be disclosed by law or regulatory authority
+
+5. TERM
+   This Agreement shall remain in effect for a period of two (2) years from the date of execution.
+
+6. NO RIGHTS GRANTED
+   This Agreement does not grant any rights to the Receiving Party except as expressly stated herein.
+
+By accepting this NDA, you acknowledge that you have read, understood, and agree to be bound by its terms and conditions.`,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        issuer_company: 'European Financial Services Ltd'
+      };
+      
+      // Combine real NDAs with demo NDA
+      const allNDAs = [demoNDA, ...ndasWithCompany];
+      
+      setNdas(allNDAs as NDA[]);
+      console.log('✅ NDAs loaded:', allNDAs.length);
     } catch (error) {
       console.error('❌ Error fetching NDAs:', error);
       toast({
@@ -78,8 +132,8 @@ const ManageNDA = () => {
   const handleNDAResponse = async (ndaId: string, newStatus: 'accepted' | 'declined') => {
     setProcessingId(ndaId);
     try {
-      // Handle demo NDA separately (it's not in the database)
-      if (ndaId === 'demo-nda') {
+      // Handle demo NDAs separately (they're not in the database)
+      if (ndaId.startsWith('demo-nda')) {
         // Update local state only
         setNdas(prev => prev.map(nda => 
           nda.id === ndaId 
