@@ -278,6 +278,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
           {offer.issuer_nationality && (
             <div>
               <h3 className="font-semibold mb-2">Issuer Details</h3>
+              {!offer.is_anonymous && offer.issuer_company && (
+                <p className="text-sm"><span className="font-medium">Company:</span> {offer.issuer_company}</p>
+              )}
+              {offer.is_anonymous && (
+                <p className="text-sm text-muted-foreground italic">Company name withheld (anonymous offer)</p>
+              )}
               <p className="text-sm"><span className="font-medium">Nationality:</span> {offer.issuer_nationality}</p>
               {offer.issuer_overview && (
                 <p className="text-sm mt-1"><span className="font-medium">Overview:</span> {offer.issuer_overview}</p>

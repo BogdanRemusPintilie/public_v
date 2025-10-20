@@ -19,6 +19,7 @@ interface NDA {
   status: 'pending' | 'accepted' | 'declined';
   created_at: string;
   updated_at: string;
+  issuer_company?: string;
 }
 
 const ManageNDA = () => {
@@ -43,7 +44,10 @@ const ManageNDA = () => {
       
       const { data, error } = await supabase
         .from('ndas')
-        .select('*')
+        .select(`
+          *,
+          issuer:profiles!ndas_issuer_id_fkey(company)
+        `)
         .eq('investor_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -51,8 +55,14 @@ const ManageNDA = () => {
 
       if (error) throw error;
       
-      setNdas((data || []) as NDA[]);
-      console.log('✅ NDAs loaded:', data?.length || 0);
+      // Map the data to include issuer_company
+      const ndasWithCompany = (data || []).map((nda: any) => ({
+        ...nda,
+        issuer_company: nda.issuer?.company || 'Unknown Company'
+      }));
+      
+      setNdas(ndasWithCompany as NDA[]);
+      console.log('✅ NDAs loaded:', ndasWithCompany.length);
     } catch (error) {
       console.error('❌ Error fetching NDAs:', error);
       toast({
@@ -223,6 +233,8 @@ const ManageNDA = () => {
                   <div className="flex-1">
                     <CardTitle className="text-lg mb-1">{nda.nda_title}</CardTitle>
                     <CardDescription className="text-sm">
+                      From: <span className="font-medium text-foreground">{nda.issuer_company}</span>
+                      <br />
                       Received: {new Date(nda.created_at).toLocaleDateString('en-GB', { 
                         day: 'numeric', 
                         month: 'long', 
