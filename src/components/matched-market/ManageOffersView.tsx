@@ -48,11 +48,11 @@ const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'complet
     case 'blank':
       return 'bg-muted';
     case 'opened':
-      return 'bg-green-500';
+      return 'bg-blue-400';
     case 'in-process':
-      return 'bg-amber-500';
-    case 'completed':
       return 'bg-purple-500';
+    case 'completed':
+      return 'bg-green-500';
     default:
       return 'bg-muted';
   }
@@ -333,15 +333,15 @@ export function ManageOffersView() {
               <span>Not reached</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-green-500 rounded"></div>
+              <div className="w-6 h-6 bg-blue-400 rounded"></div>
               <span>Stage opened</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-amber-500 rounded"></div>
+              <div className="w-6 h-6 bg-purple-500 rounded"></div>
               <span>In process</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-purple-500 rounded"></div>
+              <div className="w-6 h-6 bg-green-500 rounded"></div>
               <span>Completed</span>
             </div>
           </div>
