@@ -42,7 +42,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       checkInvestorResponse();
       checkDataAccess();
     }
-  }, [userType, user, offer.id]);
+  }, [userType, user, offer.id, ndaStatus]);
 
   const fetchDatasetSummary = async () => {
     if (!offer.structure?.dataset_name) return;
@@ -105,20 +105,22 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
     if (!offer.structure?.dataset_name) return;
 
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('dataset_shares')
-        .select('*')
+        .select('id')
         .eq('dataset_name', offer.structure.dataset_name)
-        .eq('shared_with_email', user.email)
-        .single();
+        .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`)
+        .maybeSingle();
 
       if (data) {
         setHasDataAccess(true);
       } else {
-        setHasDataAccess(false);
+        // Fallback: once NDA is accepted, access is auto-granted
+        setHasDataAccess(ndaStatus === 'accepted');
       }
     } catch (error) {
-      setHasDataAccess(false);
+      // If query fails, still unlock if NDA is accepted
+      setHasDataAccess(ndaStatus === 'accepted');
     }
   };
 
