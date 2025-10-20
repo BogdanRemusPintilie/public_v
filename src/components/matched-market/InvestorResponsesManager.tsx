@@ -510,10 +510,10 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Firm Price</p>
                       <p className="text-base mt-1 font-semibold">
-                        {(response.firm_price_status === 'submitted' || response.firm_price_status === 'accepted') && response.counter_price
+                        {response.counter_price
                           ? `${Number(response.counter_price).toFixed(2)}%`
-                          : response.counter_price && !response.firm_price_status
-                          ? `${Number(response.counter_price).toFixed(2)}%`
+                          : (response.firm_price_status === 'submitted' || response.firm_price_status === 'accepted') && response.indicative_price
+                          ? `${Number(response.indicative_price).toFixed(2)}%`
                           : 'Not submitted'
                         }
                       </p>
