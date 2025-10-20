@@ -80,15 +80,27 @@ const OfferDetails = () => {
       
       const { data, error } = await supabase
         .from('offers')
-        .select(`
-          *,
-          structure:tranche_structures(*)
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      setOffer(data);
+
+      // Fetch the structure separately if structure_id exists
+      let offerWithStructure: any = { ...data };
+      if (data.structure_id) {
+        const { data: structureData, error: structureError } = await supabase
+          .from('tranche_structures')
+          .select('*')
+          .eq('id', data.structure_id)
+          .single();
+
+        if (!structureError && structureData) {
+          offerWithStructure.structure = structureData;
+        }
+      }
+
+      setOffer(offerWithStructure);
     } catch (error: any) {
       toast({
         title: 'Error loading offer',

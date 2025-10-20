@@ -234,6 +234,20 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             </p>
           </div>
 
+          {offer.target_investors && offer.target_investors.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-semibold mb-2">Sent To</h3>
+                <div className="flex flex-wrap gap-2">
+                  {offer.target_investors.map((investor: string) => (
+                    <Badge key={investor} variant="outline">{investor}</Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           <Separator />
 
           {offer.issuer_nationality && (
@@ -259,20 +273,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   {offer.structure_true_sale && <Badge variant="secondary">True Sale</Badge>}
                   {offer.structure_sts && <Badge variant="secondary">STS</Badge>}
                   {offer.structure_consumer_finance && <Badge variant="secondary">Consumer Finance</Badge>}
-                </div>
-              </div>
-            </>
-          )}
-
-          {userType !== 'investor' && offer.target_investors && offer.target_investors.length > 0 && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="font-semibold mb-2">Target Investors ({offer.target_investors.length})</h3>
-                <div className="flex flex-wrap gap-2">
-                  {offer.target_investors.map((investor: string) => (
-                    <Badge key={investor} variant="outline">{investor}</Badge>
-                  ))}
                 </div>
               </div>
             </>
