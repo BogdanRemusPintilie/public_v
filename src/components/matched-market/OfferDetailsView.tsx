@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 interface OfferDetailsViewProps {
   offer: any;
@@ -29,6 +30,9 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const [indicativePrice, setIndicativePrice] = useState('');
   const [isSubmittingPrice, setIsSubmittingPrice] = useState(false);
   const [datasetSummary, setDatasetSummary] = useState<any>(null);
+  const [questions, setQuestions] = useState('');
+  const [additionalDataNeeds, setAdditionalDataNeeds] = useState('');
+  const [isSubmittingQuestionsData, setIsSubmittingQuestionsData] = useState(false);
 
   useEffect(() => {
     if (userType === 'investor' && user?.id && offer.id !== 'demo-offer') {
@@ -87,6 +91,8 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       if (data) {
         setInvestorResponse(data);
         setIndicativePrice(data.indicative_price?.toString() || '');
+        setQuestions(data.questions || '');
+        setAdditionalDataNeeds(data.additional_data_needs || '');
       }
     } catch (error) {
       // No response found
@@ -148,6 +154,56 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       });
     } finally {
       setIsSubmittingPrice(false);
+    }
+  };
+
+  const handleSubmitQuestionsData = async () => {
+    if (!questions.trim() && !additionalDataNeeds.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter questions or additional data requirements',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmittingQuestionsData(true);
+    try {
+      const updateData = {
+        questions: questions.trim() || null,
+        additional_data_needs: additionalDataNeeds.trim() || null,
+      };
+
+      if (investorResponse) {
+        await supabase
+          .from('offer_responses')
+          .update(updateData)
+          .eq('id', investorResponse.id);
+      } else {
+        await supabase
+          .from('offer_responses')
+          .insert([{
+            offer_id: offer.id,
+            investor_id: user.id,
+            status: 'accepted',
+            ...updateData,
+          }]);
+      }
+
+      toast({
+        title: 'Questions and Requirements Submitted',
+        description: 'Your questions and additional data requirements have been sent to the issuer.',
+      });
+      
+      await checkInvestorResponse();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingQuestionsData(false);
     }
   };
 
@@ -310,6 +366,80 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                 Download Full Data Tape
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Questions and Additional Data Requirements - Only for investors after NDA accepted */}
+      {userType === 'investor' && isNdaAccepted && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Questions & Additional Data Requirements</CardTitle>
+            <CardDescription>Request additional information or clarification from the issuer</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {investorResponse?.questions || investorResponse?.additional_data_needs ? (
+              <div className="space-y-4">
+                {investorResponse.questions && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">Your Questions:</p>
+                    <p className="text-sm whitespace-pre-wrap">{investorResponse.questions}</p>
+                  </div>
+                )}
+                {investorResponse.additional_data_needs && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">Additional Data Requirements:</p>
+                    <p className="text-sm whitespace-pre-wrap">{investorResponse.additional_data_needs}</p>
+                  </div>
+                )}
+                {investorResponse.issuer_response && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+                    <p className="text-sm font-medium mb-2 text-blue-900 dark:text-blue-100">Issuer Response:</p>
+                    <p className="text-sm whitespace-pre-wrap text-blue-900 dark:text-blue-100">{investorResponse.issuer_response}</p>
+                  </div>
+                )}
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setQuestions(investorResponse.questions || '');
+                    setAdditionalDataNeeds(investorResponse.additional_data_needs || '');
+                  }}
+                  className="w-full"
+                >
+                  Update Questions/Requirements
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="questions">Questions for Issuer</Label>
+                  <Textarea
+                    id="questions"
+                    placeholder="Enter any questions you have about the offer, structure, or portfolio..."
+                    value={questions}
+                    onChange={(e) => setQuestions(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="additional-data">Additional Data Requirements</Label>
+                  <Textarea
+                    id="additional-data"
+                    placeholder="Specify any additional data or documentation you need to evaluate this offer..."
+                    value={additionalDataNeeds}
+                    onChange={(e) => setAdditionalDataNeeds(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <Button 
+                  onClick={handleSubmitQuestionsData}
+                  disabled={isSubmittingQuestionsData}
+                  className="w-full"
+                >
+                  Submit Questions & Requirements
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
