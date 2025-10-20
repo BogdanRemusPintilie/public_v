@@ -745,18 +745,36 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         </Card>
       )}
 
-      {/* Stage 5: Full Price - Only shown after indicative price submitted */}
-      {userType === 'investor' && investorResponse?.indicative_price && (
-        <Card>
+
+      {/* Stage 5: Submit Firm Price Section */}
+      {userType === 'investor' && isNdaAccepted && (
+        <Card className={!investorResponse?.indicative_price || !investorResponse?.issuer_response ? 'opacity-60' : ''}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
+              {(!investorResponse?.indicative_price || !investorResponse?.issuer_response) && (
+                <Lock className="h-5 w-5" />
+              )}
               <TrendingUp className="h-5 w-5" />
               Submit Firm Price
             </CardTitle>
-            <CardDescription>Submit your final firm price for this offer</CardDescription>
+            <CardDescription>
+              {!investorResponse?.indicative_price 
+                ? 'Available after submitting indicative price' 
+                : !investorResponse?.issuer_response
+                ? 'Available after issuer responds to your questions and data requirements'
+                : 'Submit your final firm price for this offer'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {investorResponse?.firm_price_status === 'submitted' || investorResponse?.firm_price_status === 'accepted' ? (
+            {!investorResponse?.indicative_price ? (
+              <p className="text-sm text-muted-foreground">
+                Please submit an indicative price first.
+              </p>
+            ) : !investorResponse?.issuer_response ? (
+              <p className="text-sm text-muted-foreground">
+                Waiting for issuer to acknowledge your questions and additional data requirements before you can submit a firm price.
+              </p>
+            ) : investorResponse?.firm_price_status === 'submitted' || investorResponse?.firm_price_status === 'accepted' ? (
               <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
                 <p className="text-sm font-medium mb-1">Firm Price Submitted</p>
                 <p className="text-2xl font-bold text-green-900 dark:text-green-100">
