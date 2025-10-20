@@ -118,6 +118,8 @@ export const UserManagementTable = () => {
     if (!changes) return;
 
     try {
+      console.log('💾 Saving user changes:', { userId, changes });
+      
       // Update both user_roles and profiles tables
       const [rolesResult, profilesResult] = await Promise.all([
         supabase
@@ -131,11 +133,13 @@ export const UserManagementTable = () => {
         supabase
           .from('profiles')
           .update({
-            company: changes.company,
+            company: changes.company || null,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', userId)
       ]);
+
+      console.log('📊 Update results:', { rolesResult, profilesResult });
 
       if (rolesResult.error) throw rolesResult.error;
       if (profilesResult.error) throw profilesResult.error;
