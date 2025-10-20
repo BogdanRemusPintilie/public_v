@@ -636,21 +636,19 @@ export type Database = {
         }[]
       }
       get_portfolio_summary: {
-        Args:
-          | { dataset_name_param: string }
-          | {
-              dataset_name_param: string
-              max_interest_rate?: number
-              max_lgd?: number
-              max_loan_amount?: number
-              max_pd?: number
-              max_remaining_term?: number
-              min_interest_rate?: number
-              min_lgd?: number
-              min_loan_amount?: number
-              min_pd?: number
-              min_remaining_term?: number
-            }
+        Args: {
+          dataset_name_param: string
+          max_interest_rate?: number
+          max_lgd?: number
+          max_loan_amount?: number
+          max_pd?: number
+          max_remaining_term?: number
+          min_interest_rate?: number
+          min_lgd?: number
+          min_loan_amount?: number
+          min_pd?: number
+          min_remaining_term?: number
+        }
         Returns: {
           avg_interest_rate: number
           high_risk_loans: number
