@@ -562,15 +562,15 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     </div>
                   )}
 
-                  {/* Firm Price Section - Only shown when a firm price exists and needs action */}
-                  {response.counter_price && (
+                  {/* Firm Price Section - Shown when a firm decision exists (status or value) */}
+                  {(response.firm_price_status || response.counter_price) && (
                     <div className="pt-4 border-t space-y-3">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground mb-2">Firm Price Offer</p>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <p className="text-base font-semibold text-green-600">
-                              {response.counter_price}%
+                              {(response.counter_price ?? response.indicative_price)}%
                             </p>
                             {response.firm_price_status === 'accepted' && (
                               <Badge className="bg-green-600">Accepted</Badge>
@@ -581,9 +581,15 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                             {response.firm_price_status === 'countered' && (
                               <Badge variant="outline">Countered</Badge>
                             )}
+                            {response.firm_price_status === 'submitted' && (
+                              <Badge variant="secondary">Submitted</Badge>
+                            )}
+                            {response.firm_price_status === 'pending' && (
+                              <Badge variant="outline">Pending</Badge>
+                            )}
                           </div>
 
-                          {/* Action buttons - only show if firm price hasn't been responded to */}
+                          {/* Action buttons - only show if firm price hasn't been fully responded to */}
                           {(!response.firm_price_status || response.firm_price_status === 'pending' || response.firm_price_status === 'submitted') && (
                             <div className="flex gap-2">
                               <Button
