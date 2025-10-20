@@ -546,11 +546,11 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     </div>
                   )}
 
-                  {/* Firm Price Section - Only shown when a firm price exists */}
+                  {/* Indicative Price Section - Only shown when an indicative price exists */}
                   {response.indicative_price && (
                     <div className="pt-4 border-t space-y-3">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Firm Price Offer</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Indicative Price Offer</p>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <p className="text-base font-semibold text-green-600">
