@@ -15,7 +15,10 @@ export const useUserType = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      console.log('🔍 useUserType - checking user type for:', user?.id, user?.email);
+      
       if (!user) {
+        console.log('❌ useUserType - no user found');
         setUserType(null);
         setIsLoading(false);
         return;
@@ -25,14 +28,17 @@ export const useUserType = () => {
         _user_id: user.id
       });
 
+      console.log('📊 useUserType - RPC result:', { data, error });
+
       if (error) {
-        console.error('Error checking user type:', error);
+        console.error('❌ Error checking user type:', error);
         setUserType(null);
       } else {
+        console.log('✅ useUserType - setting userType to:', data);
         setUserType(data as UserType);
       }
     } catch (error) {
-      console.error('Error checking user type:', error);
+      console.error('❌ Error checking user type:', error);
       setUserType(null);
     } finally {
       setIsLoading(false);
