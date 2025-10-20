@@ -79,7 +79,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
             .select('id')
             .eq('dataset_name', datasetName)
             .eq('shared_with_user_id', response.investor_id)
-            .single();
+            .maybeSingle();
 
           // Check NDA status for this offer
           const { data: ndaData } = await supabase
@@ -87,7 +87,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
             .select('status')
             .eq('offer_id', offerId)
             .eq('investor_id', response.investor_id)
-            .single();
+            .maybeSingle();
 
           return {
             ...response,
