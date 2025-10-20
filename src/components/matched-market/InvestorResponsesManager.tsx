@@ -78,6 +78,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
             .from('dataset_shares')
             .select('id')
             .eq('dataset_name', datasetName)
+            .eq('owner_id', user?.id as string)
             .eq('shared_with_user_id', response.investor_id)
             .maybeSingle();
 
