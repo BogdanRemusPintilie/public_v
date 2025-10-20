@@ -150,30 +150,35 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
     setSelectedStructure(structure || null);
     
     if (structure) {
+      console.log('📊 Selected structure:', structure);
       try {
-        // Use the same RPC function as StructureSummary to ensure consistency
-        const { data: summaryData, error: summaryError } = await supabase.rpc('get_dataset_summaries_optimized');
+        // Use get_portfolio_summary for single dataset - much faster
+        const { data: summaryData, error: summaryError } = await supabase.rpc('get_portfolio_summary', {
+          dataset_name_param: structure.dataset_name
+        });
         
         if (summaryError) throw summaryError;
         
-        const datasetSummary = summaryData?.find((d: any) => d.dataset_name === structure.dataset_name);
-        
-        if (datasetSummary) {
+        if (summaryData && summaryData.length > 0) {
+          const summary = summaryData[0];
           setSelectedDataset({
             dataset_name: structure.dataset_name,
-            loan_count: datasetSummary.record_count,
-            total_loan_amount: datasetSummary.total_value, // Using total_value to match StructureSummary
-            total_opening_balance: datasetSummary.total_value
+            loan_count: summary.total_records,
+            total_loan_amount: summary.total_value,
+            total_opening_balance: summary.total_value
           });
           
           // Set the overall asset pool size in millions using total_value
-          const poolSizeInMillions = (datasetSummary.total_value / 1000000).toFixed(2);
+          const poolSizeInMillions = (summary.total_value / 1000000).toFixed(2);
           form.setValue('expected_pool_size', poolSizeInMillions);
+          console.log('✅ Dataset summary loaded, pool size set to:', poolSizeInMillions);
         }
       } catch (error) {
-        console.error('Error fetching dataset summary:', error);
+        console.error('❌ Error fetching dataset summary:', error);
         setSelectedDataset(null);
       }
+    } else {
+      setSelectedDataset(null);
     }
   };
 
