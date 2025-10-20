@@ -42,24 +42,40 @@ const ManageNDA = () => {
     try {
       console.log('🔍 Fetching NDAs for investor:', user.id);
       
-      const { data, error } = await supabase
+      // Fetch NDAs first
+      const { data: ndasData, error: ndasError } = await supabase
         .from('ndas')
-        .select(`
-          *,
-          issuer:profiles!ndas_issuer_id_fkey(company)
-        `)
+        .select('*')
         .eq('investor_id', user.id)
         .order('created_at', { ascending: false });
 
-      console.log('📥 NDAs Response:', { data, error });
+      if (ndasError) throw ndasError;
 
-      if (error) throw error;
+      console.log('📥 NDAs Response:', ndasData);
       
-      // Map the data to include issuer_company
-      const ndasWithCompany = (data || []).map((nda: any) => ({
-        ...nda,
-        issuer_company: nda.issuer?.company || 'Unknown Company'
-      }));
+      // Fetch issuer profiles for each NDA
+      const ndasWithCompany = await Promise.all(
+        (ndasData || []).map(async (nda: any) => {
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('company')
+              .eq('user_id', nda.issuer_id)
+              .single();
+            
+            return {
+              ...nda,
+              issuer_company: profileData?.company || 'Unknown Company'
+            };
+          } catch (error) {
+            console.warn('Could not fetch profile for issuer:', nda.issuer_id);
+            return {
+              ...nda,
+              issuer_company: 'Unknown Company'
+            };
+          }
+        })
+      );
       
       // Add demo NDA for "Offer Demo 5"
       const demoNDA: NDA = {
