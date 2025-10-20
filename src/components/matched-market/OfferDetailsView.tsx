@@ -541,41 +541,41 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                 <Database className="h-5 w-5" />
                 Data Tape Access
               </CardTitle>
-              <CardDescription>Full loan-level data available after issuer grants access</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {hasDataAccess ? (
-                  <>
-                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                        Data tape access granted
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      The full data tape contains loan-level information for all {datasetSummary?.record_count || 'N/A'} assets in the portfolio.
+            <CardDescription>Full loan-level data available after NDA acceptance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {(isNdaAccepted || hasDataAccess) ? (
+                <>
+                  <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      Data tape access granted
                     </p>
-                    <Button className="w-full">
-                      <Database className="mr-2 h-4 w-4" />
-                      Download Full Data Tape
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg">
-                      <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
-                      <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
-                        Awaiting issuer approval
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      The issuer will grant access to the full data tape once they review your interest.
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    The full data tape contains loan-level information for all {datasetSummary?.record_count || 'N/A'} assets in the portfolio.
+                  </p>
+                  <Button className="w-full">
+                    <Database className="mr-2 h-4 w-4" />
+                    Download Full Data Tape
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg">
+                    <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                    <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                      Awaiting issuer approval
                     </p>
-                  </>
-                )}
-              </div>
-            </CardContent>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    The issuer will grant access to the full data tape once they review your interest.
+                  </p>
+                </>
+              )}
+            </div>
+          </CardContent>
           </Card>
 
           <Card>
