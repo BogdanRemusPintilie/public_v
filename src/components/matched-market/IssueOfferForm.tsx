@@ -151,27 +151,23 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
     
     if (structure) {
       try {
-        const { data, error } = await supabase
-          .from('loan_data')
-          .select('loan_amount, opening_balance')
-          .eq('dataset_name', structure.dataset_name)
-          .eq('user_id', user?.id);
+        // Use the same RPC function as StructureSummary to ensure consistency
+        const { data: summaryData, error: summaryError } = await supabase.rpc('get_dataset_summaries_optimized');
         
-        if (error) throw error;
+        if (summaryError) throw summaryError;
         
-        if (data && data.length > 0) {
-          const totalAmount = data.reduce((sum, loan) => sum + Number(loan.loan_amount || 0), 0);
-          const totalBalance = data.reduce((sum, loan) => sum + Number(loan.opening_balance || 0), 0);
-          
+        const datasetSummary = summaryData?.find((d: any) => d.dataset_name === structure.dataset_name);
+        
+        if (datasetSummary) {
           setSelectedDataset({
             dataset_name: structure.dataset_name,
-            loan_count: data.length,
-            total_loan_amount: totalAmount,
-            total_opening_balance: totalBalance
+            loan_count: datasetSummary.record_count,
+            total_loan_amount: datasetSummary.total_value, // Using total_value to match StructureSummary
+            total_opening_balance: datasetSummary.total_value
           });
           
-          // Set the overall asset pool size in millions
-          const poolSizeInMillions = (totalBalance / 1000000).toFixed(2);
+          // Set the overall asset pool size in millions using total_value
+          const poolSizeInMillions = (datasetSummary.total_value / 1000000).toFixed(2);
           form.setValue('expected_pool_size', poolSizeInMillions);
         }
       } catch (error) {
