@@ -33,12 +33,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const [questions, setQuestions] = useState('');
   const [additionalDataNeeds, setAdditionalDataNeeds] = useState('');
   const [isSubmittingQuestionsData, setIsSubmittingQuestionsData] = useState(false);
+  const [hasDataAccess, setHasDataAccess] = useState(false);
 
   useEffect(() => {
     if (userType === 'investor' && user?.id && offer.id !== 'demo-offer') {
       fetchDatasetSummary();
       checkNdaStatus();
       checkInvestorResponse();
+      checkDataAccess();
     }
   }, [userType, user, offer.id]);
 
@@ -96,6 +98,27 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       }
     } catch (error) {
       // No response found
+    }
+  };
+
+  const checkDataAccess = async () => {
+    if (!offer.structure?.dataset_name) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('dataset_shares')
+        .select('*')
+        .eq('dataset_name', offer.structure.dataset_name)
+        .eq('shared_with_email', user.email)
+        .single();
+
+      if (data) {
+        setHasDataAccess(true);
+      } else {
+        setHasDataAccess(false);
+      }
+    } catch (error) {
+      setHasDataAccess(false);
     }
   };
 
@@ -516,23 +539,39 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                 <Database className="h-5 w-5" />
                 Data Tape Access
               </CardTitle>
-              <CardDescription>Full loan-level data available after NDA acceptance</CardDescription>
+              <CardDescription>Full loan-level data available after issuer grants access</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                    Data tape access granted
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  The full data tape contains loan-level information for all {datasetSummary?.record_count || 'N/A'} assets in the portfolio.
-                </p>
-                <Button className="w-full">
-                  <Database className="mr-2 h-4 w-4" />
-                  Download Full Data Tape
-                </Button>
+                {hasDataAccess ? (
+                  <>
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                        Data tape access granted
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      The full data tape contains loan-level information for all {datasetSummary?.record_count || 'N/A'} assets in the portfolio.
+                    </p>
+                    <Button className="w-full">
+                      <Database className="mr-2 h-4 w-4" />
+                      Download Full Data Tape
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg">
+                      <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                      <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                        Awaiting issuer approval
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      The issuer will grant access to the full data tape once they review your interest.
+                    </p>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
