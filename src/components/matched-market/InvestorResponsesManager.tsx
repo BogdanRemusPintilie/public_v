@@ -562,15 +562,15 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     </div>
                   )}
 
-                  {/* Indicative Price Section - Only shown when an indicative price exists */}
-                  {response.indicative_price && (
+                  {/* Firm Price Section - Only shown when a firm price exists and needs action */}
+                  {response.counter_price && (
                     <div className="pt-4 border-t space-y-3">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Indicative Price Offer</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Firm Price Offer</p>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <p className="text-base font-semibold text-green-600">
-                              {response.indicative_price}%
+                              {response.counter_price}%
                             </p>
                             {response.firm_price_status === 'accepted' && (
                               <Badge className="bg-green-600">Accepted</Badge>
@@ -582,16 +582,9 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                               <Badge variant="outline">Countered</Badge>
                             )}
                           </div>
-                          
-                          {/* Counter price display */}
-                          {response.firm_price_status === 'countered' && response.counter_price && (
-                            <p className="text-sm text-muted-foreground">
-                              Counter Offer: <span className="font-semibold">{response.counter_price}%</span>
-                            </p>
-                          )}
 
                           {/* Action buttons - only show if firm price hasn't been responded to */}
-                          {(!response.firm_price_status || response.firm_price_status === 'pending') && (
+                          {(!response.firm_price_status || response.firm_price_status === 'pending' || response.firm_price_status === 'submitted') && (
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
