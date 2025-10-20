@@ -68,7 +68,7 @@ export function ManageOffersView() {
   ): string => {
     // Special handling for demo offer
     if (offerId === 'demo-offer') {
-      return 'Full loan tape';
+      return 'Firm offer';
     }
 
     // If investor has submitted a firm offer
@@ -78,12 +78,12 @@ export function ManageOffersView() {
 
     // If issuer has sent acknowledgement receipt, full loan tape completed
     if (offerResponse?.issuer_response) {
-      return 'Full loan tape';
+      return 'Firm offer';
     }
 
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
-      return 'Indicative offer';
+      return 'Full loan tape';
     }
 
     // If investor acknowledged requirements, move to transaction details
