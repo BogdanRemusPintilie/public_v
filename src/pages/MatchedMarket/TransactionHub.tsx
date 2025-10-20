@@ -28,11 +28,12 @@ const STAGES = [
   'Transaction completed'
 ] as const;
 
-const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'completed') => {
+const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed') => {
   switch (stageStatus) {
     case 'blank':
       return 'bg-muted';
     case 'opened':
+    case 'green-completed':
       return 'bg-green-500';
     case 'in-process':
       return 'bg-amber-500';
@@ -266,20 +267,26 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     }
   };
 
-  const getStageStatus = (currentStageIndex: number, transactionStatus: string): 'blank' | 'opened' | 'in-process' | 'completed' => {
+  const getStageStatus = (currentStageIndex: number, transactionStatus: string): 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed' => {
     const statusIndex = STAGES.indexOf(transactionStatus as any);
     
     if (statusIndex === -1) return 'blank';
     
+    const currentStageName = STAGES[currentStageIndex];
+    const greenStages = ['Transaction details', 'Indicative Offer submitted', 'Full loan tape received'];
+    
     if (currentStageIndex < statusIndex) {
+      // Stages before current - show as green-completed for specific stages, purple for others
+      if (greenStages.includes(currentStageName)) {
+        return 'green-completed';
+      }
       return 'completed';
     } else if (currentStageIndex === statusIndex) {
-      // Special handling for stages that should show as completed (purple) instead of opened (green)
+      // Current stage - special handling for stages that should show as completed (purple)
       if ((transactionStatus === 'Interest indicated' && STAGES[currentStageIndex] === 'Interest indicated') ||
           (transactionStatus === 'NDA executed' && STAGES[currentStageIndex] === 'NDA executed')) {
         return 'completed';
       }
-      // "Indicative Offer submitted" stays green (opened) when it's the current stage
       return 'opened';
     }
     
