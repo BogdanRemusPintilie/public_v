@@ -77,18 +77,41 @@ const ManageNDA = () => {
         })
       );
       
-      // Add demo NDA for "Offer Demo 5"
+      // Add demo NDA for "Offer Demo 5" - fetch real issuer company
+      let demoIssuerCompany = 'Demo Issuer';
+      try {
+        const { data: offerData } = await supabase
+          .from('offers')
+          .select('user_id')
+          .eq('offer_name', 'Offer Demo 5')
+          .single();
+        
+        if (offerData) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('company')
+            .eq('user_id', offerData.user_id)
+            .single();
+          
+          if (profileData?.company) {
+            demoIssuerCompany = profileData.company;
+          }
+        }
+      } catch (error) {
+        console.warn('Could not fetch demo issuer company:', error);
+      }
+      
       const demoNDA: NDA = {
         id: 'demo-nda-5',
         issuer_id: 'demo-issuer',
         investor_id: user.id,
-        offer_id: 'demo-offer-5',
+        offer_id: 'cc0d07c0-46cc-4df5-bc24-ea43042c31e1',
         nda_title: 'Non-Disclosure Agreement - Offer Demo 5',
         nda_content: `CONFIDENTIAL NON-DISCLOSURE AGREEMENT
 
 This Non-Disclosure Agreement ("Agreement") is entered into as of ${new Date().toLocaleDateString('en-GB')} between:
 
-DISCLOSING PARTY: European Financial Services Ltd
+DISCLOSING PARTY: ${demoIssuerCompany}
 RECEIVING PARTY: ${user.email || 'Investor'}
 
 WHEREAS, the Disclosing Party wishes to share confidential information regarding a structured finance transaction ("Offer Demo 5") with the Receiving Party;
@@ -125,7 +148,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
         status: 'pending',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        issuer_company: 'European Financial Services Ltd'
+        issuer_company: demoIssuerCompany
       };
       
       // Combine real NDAs with demo NDA
