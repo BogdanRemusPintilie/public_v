@@ -326,8 +326,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
                 )}
               />
 
-              {selectedStructure && selectedDataset && (
-                <StructureSummary structure={selectedStructure} dataset={selectedDataset} />
+              {selectedStructure && (
+                <StructureSummary structure={selectedStructure} dataset={selectedDataset || {}} />
               )}
             </CardContent>
           </Card>
