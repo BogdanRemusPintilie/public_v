@@ -76,14 +76,14 @@ export function ManageOffersView() {
       return 'Firm offer';
     }
 
-    // If issuer has sent acknowledgement receipt, mark Full loan tape as current stage
+    // If issuer has sent acknowledgement receipt, full loan tape completed - move to Firm offer stage
     if (offerResponse?.issuer_response) {
-      return 'Full loan tape';
+      return 'Firm offer';
     }
 
-    // If investor has submitted an indicative price, mark Indicative offer
+    // If investor has submitted an indicative price, full loan tape is current
     if (offerResponse?.indicative_price) {
-      return 'Indicative offer';
+      return 'Full loan tape';
     }
 
     // If investor acknowledged requirements, move to transaction details
