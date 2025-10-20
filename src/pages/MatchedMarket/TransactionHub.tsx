@@ -339,7 +339,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
               <h3 className="font-semibold text-sm">Transaction Stage Key</h3>
               <Button variant="ghost" size="sm" onClick={() => setShowKey(false)}>×</Button>
             </div>
-            <div className="flex items-center gap-6 text-xs">
+            <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-muted border rounded"></div>
                 <span>Not reached</span>
