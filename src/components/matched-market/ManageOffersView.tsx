@@ -17,29 +17,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-// Issuer stages
-const ISSUER_STAGES = [
+// Unified stages for both issuers and investors
+const STAGES = [
   'Offer issued',
   'Interest indicated',
   'NDA executed',
   'Transaction details',
-  'Indicative offer received',
-  'Full loan tape provided',
-  'Firm offer received',
-  'Allocation received',
-  'Transaction completed'
-] as const;
-
-// Investor stages
-const INVESTOR_STAGES = [
-  'Offer received',
-  'Interest indicated',
-  'NDA executed',
-  'Transaction details',
-  'Indicative Offer submitted',
-  'Full loan tape received',
-  'Firm offer submitted',
-  'Allocation submitted',
+  'Indicative offer',
+  'Full loan tape',
+  'Firm offer',
+  'Allocation',
   'Transaction completed'
 ] as const;
 
@@ -68,9 +55,6 @@ export function ManageOffersView() {
   const [responseCounts, setResponseCounts] = useState<Record<string, { total: number; interested: number; status: string }>>({});
   const [showKey, setShowKey] = useState(false);
 
-  // Use appropriate stages based on user type
-  const STAGES = userType === 'investor' ? INVESTOR_STAGES : ISSUER_STAGES;
-
   useEffect(() => {
     if (user && !userTypeLoading) {
       fetchOffers();
@@ -89,12 +73,12 @@ export function ManageOffersView() {
 
     // If investor has submitted a firm offer
     if (offerResponse?.firm_price_status === 'accepted' || offerResponse?.firm_price_status === 'submitted') {
-      return 'Firm offer received';
+      return 'Firm offer';
     }
 
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
-      return 'Indicative offer received';
+      return 'Indicative offer';
     }
 
     // If investor acknowledged requirements, move to transaction details
@@ -214,10 +198,10 @@ export function ManageOffersView() {
                   'Interest indicated',
                   'NDA executed',
                   'Transaction details',
-                  'Indicative offer received',
-                  'Full loan tape provided',
-                  'Firm offer received',
-                  'Allocation received',
+                  'Indicative offer',
+                  'Full loan tape',
+                  'Firm offer',
+                  'Allocation',
                   'Transaction completed'
                 ];
                 
