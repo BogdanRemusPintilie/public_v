@@ -35,6 +35,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const [isSubmittingQuestionsData, setIsSubmittingQuestionsData] = useState(false);
   const [hasDataAccess, setHasDataAccess] = useState(false);
 
+  console.log('🔍 OfferDetailsView - offer data:', {
+    is_anonymous: offer.is_anonymous,
+    issuer_company: offer.issuer_company,
+    issuer_nationality: offer.issuer_nationality,
+  });
+
   useEffect(() => {
     if (userType === 'investor' && user?.id && offer.id !== 'demo-offer') {
       fetchDatasetSummary();
