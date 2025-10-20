@@ -393,9 +393,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   </div>
                 )}
                 {investorResponse.issuer_response && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
-                    <p className="text-sm font-medium mb-2 text-blue-900 dark:text-blue-100">Issuer Response:</p>
-                    <p className="text-sm whitespace-pre-wrap text-blue-900 dark:text-blue-100">{investorResponse.issuer_response}</p>
+                  <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      <p className="text-sm font-semibold text-green-900 dark:text-green-100">Acknowledgement Receipt - Issuer Response Received</p>
+                    </div>
+                    <p className="text-sm font-medium mb-2 text-green-900 dark:text-green-100">Issuer's Additional Comments:</p>
+                    <p className="text-sm whitespace-pre-wrap text-green-900 dark:text-green-100">{investorResponse.issuer_response}</p>
+                    <Separator className="my-3" />
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      Received: {new Date(investorResponse.updated_at).toLocaleString()}
+                    </p>
                   </div>
                 )}
                 <Button 
