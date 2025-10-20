@@ -79,28 +79,13 @@ const OfferDetails = () => {
       }
       
       const { data, error } = await supabase
-        .from('offers')
-        .select('*')
-        .eq('id', id)
-        .single();
+        .rpc('get_offer_with_issuer_company', { p_offer_id: id })
+        .maybeSingle();
 
       if (error) throw error;
 
-      // Fetch the issuer's company name from profiles
-      let issuerCompany = null;
-      if (data.user_id) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('company')
-          .eq('user_id', data.user_id)
-          .maybeSingle();
-        
-        if (profileError) {
-          console.error('Error fetching issuer company:', profileError);
-        } else if (profileData?.company) {
-          issuerCompany = profileData.company;
-        }
-      }
+      // Issuer company is returned by RPC (bypasses profiles RLS safely)
+      const issuerCompany = (data as any)?.issuer_company ?? null;
 
       // Fetch the structure separately if structure_id exists
       let offerWithStructure: any = { ...data, issuer_company: issuerCompany };

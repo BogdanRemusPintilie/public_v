@@ -635,6 +635,33 @@ export type Database = {
           range_name: string
         }[]
       }
+      get_offer_with_issuer_company: {
+        Args: { p_offer_id: string }
+        Returns: {
+          additional_comments: string
+          created_at: string
+          expected_pool_size: number
+          id: string
+          is_anonymous: boolean
+          issuer_business_focus: string
+          issuer_company: string
+          issuer_nationality: string
+          issuer_overview: string
+          offer_name: string
+          shared_with_emails: string[]
+          status: string
+          structure_consumer_finance: boolean
+          structure_id: string
+          structure_sector: string
+          structure_sts: boolean
+          structure_synthetic: boolean
+          structure_true_sale: boolean
+          target_investors: string[]
+          updated_at: string
+          user_id: string
+          weighted_average_life: number
+        }[]
+      }
       get_portfolio_summary: {
         Args: {
           dataset_name_param: string
