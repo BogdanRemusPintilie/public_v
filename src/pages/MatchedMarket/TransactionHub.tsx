@@ -274,6 +274,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
           (transactionStatus === 'NDA executed' && STAGES[currentStageIndex] === 'NDA executed')) {
         return 'completed';
       }
+      // "Indicative Offer submitted" stays green (opened) when it's the current stage
       return 'opened';
     }
     
