@@ -157,8 +157,8 @@ export function InvestorSelector({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col z-50">
         <DialogHeader>
           <DialogTitle>Select Investors</DialogTitle>
         </DialogHeader>
