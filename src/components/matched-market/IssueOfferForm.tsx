@@ -147,37 +147,53 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
 
   const handleStructureSelect = async (structureId: string) => {
     const structure = structures.find(s => s.id === structureId);
+    console.log('📊 Selected structure:', structure);
     setSelectedStructure(structure || null);
     
     if (structure) {
-      console.log('📊 Selected structure:', structure);
       try {
+        console.log('🔍 Fetching dataset summary for:', structure.dataset_name);
+        
         // Use get_portfolio_summary for single dataset - much faster
         const { data: summaryData, error: summaryError } = await supabase.rpc('get_portfolio_summary', {
           dataset_name_param: structure.dataset_name
         });
         
-        if (summaryError) throw summaryError;
+        console.log('📊 RPC Response:', { summaryData, summaryError });
+        
+        if (summaryError) {
+          console.error('❌ Error fetching dataset summary:', summaryError);
+          throw summaryError;
+        }
         
         if (summaryData && summaryData.length > 0) {
           const summary = summaryData[0];
-          setSelectedDataset({
+          console.log('✅ Summary data:', summary);
+          
+          const datasetInfo = {
             dataset_name: structure.dataset_name,
             loan_count: summary.total_records,
             total_loan_amount: summary.total_value,
             total_opening_balance: summary.total_value
-          });
+          };
+          
+          console.log('✅ Setting dataset to:', datasetInfo);
+          setSelectedDataset(datasetInfo);
           
           // Set the overall asset pool size in millions using total_value
           const poolSizeInMillions = (summary.total_value / 1000000).toFixed(2);
           form.setValue('expected_pool_size', poolSizeInMillions);
-          console.log('✅ Dataset summary loaded, pool size set to:', poolSizeInMillions);
+          console.log('✅ Pool size set to:', poolSizeInMillions, 'million');
+        } else {
+          console.warn('⚠️ No summary data returned');
+          setSelectedDataset(null);
         }
       } catch (error) {
         console.error('❌ Error fetching dataset summary:', error);
         setSelectedDataset(null);
       }
     } else {
+      console.log('❌ No structure found for ID:', structureId);
       setSelectedDataset(null);
     }
   };
