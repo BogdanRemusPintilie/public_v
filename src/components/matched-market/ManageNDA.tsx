@@ -61,7 +61,7 @@ const ManageNDA = () => {
               .from('profiles')
               .select('company')
               .eq('user_id', nda.issuer_id)
-              .single();
+              .maybeSingle();
             
             return {
               ...nda,
@@ -153,10 +153,10 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
         issuer_company: demoIssuerCompany
       };
       
-      // Combine real NDAs with demo NDA
-      const allNDAs = [demoNDA, ...ndasWithCompany];
+      // Use demo NDA only if no real NDAs exist
+      const allNDAs = ndasWithCompany.length > 0 ? (ndasWithCompany as NDA[]) : ([demoNDA] as NDA[]);
       
-      setNdas(allNDAs as NDA[]);
+      setNdas(allNDAs);
       console.log('✅ NDAs loaded:', allNDAs.length);
     } catch (error) {
       console.error('❌ Error fetching NDAs:', error);
