@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileText, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
+import { Loader2, FileText, CheckCircle, XCircle, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface NDA {
   id: string;
@@ -28,6 +29,7 @@ const ManageNDA = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [acceptedNdaId, setAcceptedNdaId] = useState<string | null>(null);
+  const [expandedNdaIds, setExpandedNdaIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user) {
@@ -127,14 +129,26 @@ const ManageNDA = () => {
     navigate(`/matched-market/offers/${offerId}`);
   };
 
+  const toggleNdaExpanded = (ndaId: string) => {
+    setExpandedNdaIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(ndaId)) {
+        newSet.delete(ndaId);
+      } else {
+        newSet.add(ndaId);
+      }
+      return newSet;
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'accepted':
-        return <Badge className="bg-green-500">Accepted</Badge>;
+        return <Badge className="bg-green-500 text-white">Accepted</Badge>;
       case 'declined':
         return <Badge variant="destructive">Declined</Badge>;
       case 'pending':
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary">Pending Review</Badge>;
       default:
         return null;
     }
@@ -190,71 +204,127 @@ const ManageNDA = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {ndas.map((nda) => (
-        <Card key={nda.id}>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-lg">{nda.nda_title}</CardTitle>
-                <CardDescription>
-                  Received {new Date(nda.created_at).toLocaleDateString()}
-                </CardDescription>
-              </div>
-              {getStatusBadge(nda.status)}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-muted p-4 rounded-md max-h-48 overflow-y-auto">
-              <p className="text-sm whitespace-pre-wrap">{nda.nda_content}</p>
-            </div>
+    <div className="space-y-6">
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold">Non-Disclosure Agreements</h2>
+        <p className="text-muted-foreground mt-1">
+          Review and manage your NDAs for matched market offers
+        </p>
+      </div>
 
-            {nda.status === 'pending' && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => handleNDAResponse(nda.id, 'accepted')}
-                  disabled={processingId === nda.id}
-                  className="flex-1"
-                >
-                  {processingId === nda.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Accept NDA
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleNDAResponse(nda.id, 'declined')}
-                  disabled={processingId === nda.id}
-                  className="flex-1"
-                >
-                  {processingId === nda.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Decline
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+      <div className="grid gap-4">
+        {ndas.map((nda) => {
+          const isExpanded = expandedNdaIds.has(nda.id);
+          
+          return (
+            <Card key={nda.id} className={nda.status === 'accepted' ? 'border-green-200' : ''}>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg mb-1">{nda.nda_title}</CardTitle>
+                    <CardDescription className="text-sm">
+                      Received: {new Date(nda.created_at).toLocaleDateString('en-GB', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                      {nda.status === 'accepted' && nda.updated_at && (
+                        <span className="ml-2">
+                          • Accepted: {new Date(nda.updated_at).toLocaleDateString('en-GB', { 
+                            day: 'numeric', 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </span>
+                      )}
+                    </CardDescription>
+                  </div>
+                  {getStatusBadge(nda.status)}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <Collapsible open={isExpanded} onOpenChange={() => toggleNdaExpanded(nda.id)}>
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-between"
+                      size="sm"
+                    >
+                      <span className="text-sm font-medium">
+                        {isExpanded ? 'Hide' : 'View'} NDA Content
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="mt-3">
+                    <div className="bg-muted p-4 rounded-md max-h-64 overflow-y-auto border">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{nda.nda_content}</p>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
 
-            {nda.status === 'accepted' && (
-              <Button
-                onClick={() => handleAccessDetails(nda.offer_id)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Access transaction details
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+                {nda.status === 'pending' && (
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      onClick={() => handleNDAResponse(nda.id, 'accepted')}
+                      disabled={processingId === nda.id}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      {processingId === nda.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Accept NDA
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleNDAResponse(nda.id, 'declined')}
+                      disabled={processingId === nda.id}
+                      className="flex-1"
+                    >
+                      {processingId === nda.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Decline
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {nda.status === 'accepted' && (
+                  <Button
+                    onClick={() => handleAccessDetails(nda.offer_id)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Access Offer Details
+                  </Button>
+                )}
+
+                {nda.status === 'declined' && (
+                  <div className="text-center py-2">
+                    <p className="text-sm text-muted-foreground">
+                      You declined this NDA on {new Date(nda.updated_at).toLocaleDateString('en-GB')}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };
