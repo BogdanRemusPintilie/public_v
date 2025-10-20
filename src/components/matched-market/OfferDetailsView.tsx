@@ -307,8 +307,8 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <div>
                 <h3 className="font-semibold mb-2">Shared With</h3>
                 <div className="space-y-1">
-                  {offer.shared_with_emails.map((email: string) => (
-                    <p key={email} className="text-sm text-muted-foreground">{email}</p>
+                  {offer.shared_with_emails.map((email: string, idx: number) => (
+                    <p key={`${email}-${idx}`} className="text-sm text-muted-foreground">{email}</p>
                   ))}
                 </div>
               </div>

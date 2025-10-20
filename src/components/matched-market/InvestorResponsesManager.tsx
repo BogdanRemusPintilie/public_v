@@ -533,7 +533,12 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Full Data Access</p>
                       <div className="mt-1">
-                        {response.has_data_access ? (
+                        {response.nda_status !== 'accepted' ? (
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-orange-600" />
+                            <span className="text-sm text-orange-600 font-medium">NDA not accepted — access locked</span>
+                          </div>
+                        ) : response.has_data_access ? (
                           <div className="flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             <span className="text-sm text-green-600 font-medium">Access Granted</span>
