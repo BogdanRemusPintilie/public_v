@@ -275,24 +275,24 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
           <Separator />
 
-          {offer.issuer_nationality && (
-            <div>
-              <h3 className="font-semibold mb-2">Issuer Details</h3>
-              {!offer.is_anonymous && offer.issuer_company && (
-                <p className="text-sm"><span className="font-medium">Company:</span> {offer.issuer_company}</p>
-              )}
-              {offer.is_anonymous && (
-                <p className="text-sm text-muted-foreground italic">Company name withheld (anonymous offer)</p>
-              )}
+          <div>
+            <h3 className="font-semibold mb-2">Issuer Details</h3>
+            {!offer.is_anonymous && offer.issuer_company && (
+              <p className="text-sm mb-2"><span className="font-medium">Company:</span> {offer.issuer_company}</p>
+            )}
+            {offer.is_anonymous && (
+              <p className="text-sm text-muted-foreground italic mb-2">Company name withheld (anonymous offer)</p>
+            )}
+            {offer.issuer_nationality && (
               <p className="text-sm"><span className="font-medium">Nationality:</span> {offer.issuer_nationality}</p>
-              {offer.issuer_overview && (
-                <p className="text-sm mt-1"><span className="font-medium">Overview:</span> {offer.issuer_overview}</p>
-              )}
-              {offer.issuer_business_focus && (
-                <p className="text-sm mt-1"><span className="font-medium">Business Focus:</span> {offer.issuer_business_focus}</p>
-              )}
-            </div>
-          )}
+            )}
+            {offer.issuer_overview && (
+              <p className="text-sm mt-1"><span className="font-medium">Overview:</span> {offer.issuer_overview}</p>
+            )}
+            {offer.issuer_business_focus && (
+              <p className="text-sm mt-1"><span className="font-medium">Business Focus:</span> {offer.issuer_business_focus}</p>
+            )}
+          </div>
 
           {(offer.structure_synthetic || offer.structure_true_sale || offer.structure_sts) && (
             <>
