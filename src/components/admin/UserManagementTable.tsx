@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Save, X, Shield } from 'lucide-react';
 
 type AppRole = 'admin' | 'moderator' | 'viewer';
@@ -36,6 +37,7 @@ interface EditingState {
   [userId: string]: {
     role: AppRole;
     user_type: AppUserType;
+    company: string | null;
   };
 }
 
@@ -100,6 +102,7 @@ export const UserManagementTable = () => {
       [user.user_id]: {
         role: user.role,
         user_type: user.user_type,
+        company: user.company,
       },
     });
   };
@@ -115,20 +118,31 @@ export const UserManagementTable = () => {
     if (!changes) return;
 
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({
-          role: changes.role,
-          user_type: changes.user_type,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId);
+      // Update both user_roles and profiles tables
+      const [rolesResult, profilesResult] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .update({
+            role: changes.role,
+            user_type: changes.user_type,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId),
+        supabase
+          .from('profiles')
+          .update({
+            company: changes.company,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId)
+      ]);
 
-      if (error) throw error;
+      if (rolesResult.error) throw rolesResult.error;
+      if (profilesResult.error) throw profilesResult.error;
 
       setUsers(users.map(u => 
         u.user_id === userId 
-          ? { ...u, role: changes.role, user_type: changes.user_type }
+          ? { ...u, role: changes.role, user_type: changes.user_type, company: changes.company }
           : u
       ));
 
@@ -136,24 +150,24 @@ export const UserManagementTable = () => {
 
       toast({
         title: 'Success',
-        description: 'User role updated successfully',
+        description: 'User details updated successfully',
       });
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update user role',
+        description: 'Failed to update user details',
         variant: 'destructive',
       });
     }
   };
 
-  const updateEditingField = (userId: string, field: 'role' | 'user_type', value: string) => {
+  const updateEditingField = (userId: string, field: 'role' | 'user_type' | 'company', value: string) => {
     setEditing({
       ...editing,
       [userId]: {
         ...editing[userId],
-        [field]: value as AppRole | AppUserType,
+        [field]: field === 'company' ? value : (value as AppRole | AppUserType),
       },
     });
   };
@@ -198,7 +212,18 @@ export const UserManagementTable = () => {
                   </div>
                 </TableCell>
                 <TableCell>{user.full_name || '-'}</TableCell>
-                <TableCell>{user.company || '-'}</TableCell>
+                <TableCell>
+                  {isEditing ? (
+                    <Input
+                      value={editData.company || ''}
+                      onChange={(e) => updateEditingField(user.user_id, 'company', e.target.value)}
+                      placeholder="Company name"
+                      className="w-48"
+                    />
+                  ) : (
+                    user.company || '-'
+                  )}
+                </TableCell>
                 <TableCell>
                   {isEditing ? (
                     <Select
