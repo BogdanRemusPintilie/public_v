@@ -74,12 +74,19 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
           const { data: userData } = await supabase.auth.admin.getUserById(response.investor_id);
           
           // Check if investor has data access
-          const { data: shareData } = await supabase
+          const { data: shareData, error: shareError } = await supabase
             .from('dataset_shares')
             .select('id')
             .eq('dataset_name', datasetName)
             .eq('shared_with_user_id', response.investor_id)
             .maybeSingle();
+
+          console.log('🔍 Data access check for investor:', response.investor_id, {
+            datasetName,
+            shareData,
+            shareError,
+            hasAccess: !!shareData
+          });
 
           // Check NDA status for this offer
           const { data: ndaData } = await supabase
