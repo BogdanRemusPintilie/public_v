@@ -83,6 +83,11 @@ export default function TransactionHub() {
       return 'Firm offer submitted';
     }
 
+    // If issuer has sent acknowledgement receipt, treat as progressed beyond full loan tape
+    if (offerResponse?.issuer_response) {
+      return 'Firm offer submitted';
+    }
+
     // If investor has submitted an indicative price, reflect that immediately
     if (offerResponse?.indicative_price) {
       return 'Indicative Offer submitted';
