@@ -33,9 +33,9 @@ const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'complet
     case 'blank':
       return 'bg-muted';
     case 'opened':
-      return 'bg-green-500';
+      return 'bg-purple-500';
     case 'in-process':
-      return 'bg-amber-500';
+      return 'bg-purple-500';
     case 'completed':
       return 'bg-purple-500';
     default:
@@ -339,22 +339,14 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
               <h3 className="font-semibold text-sm">Transaction Stage Key</h3>
               <Button variant="ghost" size="sm" onClick={() => setShowKey(false)}>×</Button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-muted border rounded"></div>
                 <span>Not reached</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-500 rounded"></div>
-                <span>Stage opened</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-amber-500 rounded"></div>
-                <span>In process</span>
-              </div>
-              <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-purple-500 rounded"></div>
-                <span>Completed</span>
+                <span>Current/Completed</span>
               </div>
             </div>
           </Card>
