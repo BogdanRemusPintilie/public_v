@@ -64,6 +64,7 @@ export default function TransactionHub() {
 
   useEffect(() => {
     if (user?.email) {
+      console.log('📍 TransactionHub - Fetching transactions for user:', user.email);
       fetchTransactions();
     }
   }, [user]);
@@ -127,6 +128,8 @@ export default function TransactionHub() {
     try {
       setLoading(true);
       
+      console.log('📍 Fetching offers for investor:', user.email);
+      
       // Fetch all offers shared with user
       const { data: allOffers, error: offersError } = await supabase
         .from('offers')
@@ -134,6 +137,8 @@ export default function TransactionHub() {
         .contains('shared_with_emails', [user.email])
         .eq('status', 'active')
         .order('created_at', { ascending: false });
+
+      console.log('📊 Offers found:', allOffers?.length || 0, allOffers);
 
       if (offersError) throw offersError;
 
