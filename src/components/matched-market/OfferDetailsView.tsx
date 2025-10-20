@@ -234,7 +234,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             </p>
           </div>
 
-          {offer.target_investors && offer.target_investors.length > 0 && (
+          {userType !== 'investor' && offer.target_investors && offer.target_investors.length > 0 && (
             <>
               <Separator />
               <div>
@@ -322,17 +322,185 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
       {/* Investor Response Form - Only for investors */}
       {userType === 'investor' && (
-        <InvestorResponseForm 
-          offerId={offer.id} 
-          onResponseSubmitted={() => {
-            onUpdate();
-            checkInvestorResponse();
-          }}
-          datasetName={offer.structure?.dataset_name}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Response</CardTitle>
+            <CardDescription>Indicate your interest in this offer</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <InvestorResponseForm 
+              offerId={offer.id} 
+              onResponseSubmitted={() => {
+                onUpdate();
+                checkInvestorResponse();
+              }}
+              datasetName={offer.structure?.dataset_name}
+            />
+          </CardContent>
+        </Card>
       )}
 
-      {/* Structure Summary - Only for investors after NDA accepted */}
+      {/* Stage 1: Before Interest Indicated - All sections locked */}
+      {userType === 'investor' && !investorResponse?.status && (
+        <>
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Data Tape Access
+              </CardTitle>
+              <CardDescription>Available after indicating interest and accepting NDA</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Please indicate your interest above to begin the transaction process.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Documentary Repository
+              </CardTitle>
+              <CardDescription>Available after indicating interest and accepting NDA</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Please indicate your interest above to access transaction documents.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Questions & Additional Data Requirements
+              </CardTitle>
+              <CardDescription>Available after indicating interest and accepting NDA</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Please indicate your interest above to submit questions.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Indicative Price
+              </CardTitle>
+              <CardDescription>Available after NDA acceptance and data review</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Please complete the earlier stages to submit pricing.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Submit Firm Price
+              </CardTitle>
+              <CardDescription>Available after submitting indicative price</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Please complete the earlier stages to submit firm pricing.
+              </p>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Stage 2: After Interest Indicated but before NDA - Show locked sections */}
+      {userType === 'investor' && investorResponse?.status === 'accepted' && !isNdaAccepted && (
+        <>
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Data Tape Access
+              </CardTitle>
+              <CardDescription>Available after NDA acceptance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Accept the NDA to access the full loan-level data tape.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Documentary Repository
+              </CardTitle>
+              <CardDescription>Available after NDA acceptance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Accept the NDA to access transaction documents.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Questions & Additional Data Requirements
+              </CardTitle>
+              <CardDescription>Available after NDA acceptance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Accept the NDA to submit questions and data requirements.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Indicative Price
+              </CardTitle>
+              <CardDescription>Available after NDA acceptance and data review</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Complete earlier stages to submit pricing.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Submit Firm Price
+              </CardTitle>
+              <CardDescription>Available after submitting indicative price</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Complete earlier stages to submit firm pricing.
+              </p>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Stage 3: After NDA Accepted - Unlock data access and questions */}
       {userType === 'investor' && isNdaAccepted && offer.structure && (
         <StructureSummary 
           structure={offer.structure} 
@@ -340,200 +508,145 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         />
       )}
 
-      {/* Data Tape Access - Only for investors after NDA accepted */}
       {userType === 'investor' && isNdaAccepted && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Data Tape Access
-            </CardTitle>
-            <CardDescription>Full loan-level data available after NDA acceptance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                  Data tape access granted
-                </p>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                The full data tape contains loan-level information for all {datasetSummary?.record_count || 'N/A'} assets in the portfolio.
-              </p>
-              <Button className="w-full">
-                <Database className="mr-2 h-4 w-4" />
-                Download Full Data Tape
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Questions and Additional Data Requirements - Only for investors after NDA accepted */}
-      {userType === 'investor' && isNdaAccepted && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Questions & Additional Data Requirements</CardTitle>
-            <CardDescription>Request additional information or clarification from the issuer</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {investorResponse?.questions || investorResponse?.additional_data_needs ? (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Data Tape Access
+              </CardTitle>
+              <CardDescription>Full loan-level data available after NDA acceptance</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
-                {investorResponse.questions && (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-2">Your Questions:</p>
-                    <p className="text-sm whitespace-pre-wrap">{investorResponse.questions}</p>
-                  </div>
-                )}
-                {investorResponse.additional_data_needs && (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-2">Additional Data Requirements:</p>
-                    <p className="text-sm whitespace-pre-wrap">{investorResponse.additional_data_needs}</p>
-                  </div>
-                )}
-                {investorResponse.issuer_response && (
-                  <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                      <p className="text-sm font-semibold text-green-900 dark:text-green-100">Acknowledgement Receipt - Issuer Response Received</p>
-                    </div>
-                    <p className="text-sm font-medium mb-2 text-green-900 dark:text-green-100">Issuer's Additional Comments:</p>
-                    <p className="text-sm whitespace-pre-wrap text-green-900 dark:text-green-100">{investorResponse.issuer_response}</p>
-                    <Separator className="my-3" />
-                    <p className="text-xs text-green-700 dark:text-green-300">
-                      Received: {new Date(investorResponse.updated_at).toLocaleString()}
-                    </p>
-                  </div>
-                )}
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setQuestions(investorResponse.questions || '');
-                    setAdditionalDataNeeds(investorResponse.additional_data_needs || '');
-                  }}
-                  className="w-full"
-                >
-                  Update Questions/Requirements
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="questions">Questions for Issuer</Label>
-                  <Textarea
-                    id="questions"
-                    placeholder="Enter any questions you have about the offer, structure, or portfolio..."
-                    value={questions}
-                    onChange={(e) => setQuestions(e.target.value)}
-                    rows={4}
-                  />
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                    Data tape access granted
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="additional-data">Additional Data Requirements</Label>
-                  <Textarea
-                    id="additional-data"
-                    placeholder="Specify any additional data or documentation you need to evaluate this offer..."
-                    value={additionalDataNeeds}
-                    onChange={(e) => setAdditionalDataNeeds(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-                <Button 
-                  onClick={handleSubmitQuestionsData}
-                  disabled={isSubmittingQuestionsData}
-                  className="w-full"
-                >
-                  Submit Questions & Requirements
-                </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Data Tape - Locked (before NDA) */}
-      {userType === 'investor' && !isNdaAccepted && (
-        <Card className="opacity-60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Data Tape Access
-            </CardTitle>
-            <CardDescription>Available after NDA acceptance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Accept the NDA to access the full loan-level data tape.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Documentary Repository - Only for investors after NDA accepted */}
-      {userType === 'investor' && isNdaAccepted && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5" />
-              Documentary Repository
-            </CardTitle>
-            <CardDescription>Legal documents and transaction materials</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                  Document repository access granted
+                <p className="text-sm text-muted-foreground">
+                  The full data tape contains loan-level information for all {datasetSummary?.record_count || 'N/A'} assets in the portfolio.
                 </p>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Access transaction documents, legal agreements, and supporting materials.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Button variant="outline" className="justify-start">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Term Sheet
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Information Memorandum
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Legal Documentation
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Due Diligence Reports
+                <Button className="w-full">
+                  <Database className="mr-2 h-4 w-4" />
+                  Download Full Data Tape
                 </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FolderOpen className="h-5 w-5" />
+                Documentary Repository
+              </CardTitle>
+              <CardDescription>Transaction documents and supporting materials</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                    Documentary access granted
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Access legal documents, servicing reports, and other transaction materials.
+                </p>
+                <Button className="w-full">
+                  <FolderOpen className="mr-2 h-4 w-4" />
+                  Access Document Repository
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Questions & Additional Data Requirements</CardTitle>
+              <CardDescription>Request additional information or clarification from the issuer</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {investorResponse?.questions || investorResponse?.additional_data_needs ? (
+                <div className="space-y-4">
+                  {investorResponse.questions && (
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm font-medium mb-2">Your Questions:</p>
+                      <p className="text-sm whitespace-pre-wrap">{investorResponse.questions}</p>
+                    </div>
+                  )}
+                  {investorResponse.additional_data_needs && (
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm font-medium mb-2">Additional Data Requirements:</p>
+                      <p className="text-sm whitespace-pre-wrap">{investorResponse.additional_data_needs}</p>
+                    </div>
+                  )}
+                  {investorResponse.issuer_response && (
+                    <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                        <p className="text-sm font-semibold text-green-900 dark:text-green-100">Issuer Response Received</p>
+                      </div>
+                      <p className="text-sm font-medium mb-2 text-green-900 dark:text-green-100">Issuer's Comments:</p>
+                      <p className="text-sm whitespace-pre-wrap text-green-900 dark:text-green-100">{investorResponse.issuer_response}</p>
+                      <Separator className="my-3" />
+                      <p className="text-xs text-green-700 dark:text-green-300">
+                        Received: {new Date(investorResponse.updated_at).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setQuestions(investorResponse.questions || '');
+                      setAdditionalDataNeeds(investorResponse.additional_data_needs || '');
+                    }}
+                    className="w-full"
+                  >
+                    Update Questions/Requirements
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="questions">Questions for Issuer</Label>
+                    <Textarea
+                      id="questions"
+                      placeholder="Enter any questions you have about the offer, structure, or portfolio..."
+                      value={questions}
+                      onChange={(e) => setQuestions(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="additional-data">Additional Data Requirements</Label>
+                    <Textarea
+                      id="additional-data"
+                      placeholder="Specify any additional data or documentation you need to evaluate this offer..."
+                      value={additionalDataNeeds}
+                      onChange={(e) => setAdditionalDataNeeds(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSubmitQuestionsData}
+                    disabled={isSubmittingQuestionsData}
+                    className="w-full"
+                  >
+                    Submit Questions & Requirements
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </>
       )}
 
-      {/* Documentary Repository - Locked (before NDA) */}
-      {userType === 'investor' && !isNdaAccepted && (
-        <Card className="opacity-60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Documentary Repository
-            </CardTitle>
-            <CardDescription>Available after NDA acceptance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Accept the NDA to access transaction documents and materials.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Indicative Pricing - Stage 1 */}
-      {userType === 'investor' && investorResponse?.status === 'accepted' && (
+      {/* Stage 4: Indicative Pricing - Only after NDA accepted */}
+      {userType === 'investor' && isNdaAccepted && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -593,20 +706,20 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         </Card>
       )}
 
-      {/* Full Price - Stage 2 - Only shown after indicative price submitted */}
+      {/* Stage 5: Full Price - Only shown after indicative price submitted */}
       {userType === 'investor' && investorResponse?.indicative_price && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Submit Full Price
+              Submit Firm Price
             </CardTitle>
             <CardDescription>Submit your final firm price for this offer</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {investorResponse?.firm_price_status === 'submitted' || investorResponse?.firm_price_status === 'accepted' ? (
               <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                <p className="text-sm font-medium mb-1">Full Price Submitted</p>
+                <p className="text-sm font-medium mb-1">Firm Price Submitted</p>
                 <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                   {investorResponse.counter_price ? Number(investorResponse.counter_price).toFixed(2) : Number(investorResponse.indicative_price).toFixed(2)}%
                 </p>
@@ -637,7 +750,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                         .eq('id', investorResponse.id);
                       
                       toast({
-                        title: 'Full Price Submitted',
+                        title: 'Firm Price Submitted',
                         description: 'Your firm price has been sent to the issuer.',
                       });
                       
@@ -652,7 +765,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   }}
                   className="w-full"
                 >
-                  Submit Full Price Based on Indicative ({Number(investorResponse.indicative_price).toFixed(2)}%)
+                  Submit Firm Price Based on Indicative ({Number(investorResponse.indicative_price).toFixed(2)}%)
                 </Button>
               </>
             )}
