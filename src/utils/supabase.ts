@@ -245,14 +245,27 @@ export const deleteLoanData = async (recordIds: string[]): Promise<void> => {
 };
 
 export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
-  const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
+  try {
+    // Set a timeout for the RPC call
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Query timeout - operation took too long')), 25000)
+    );
+    
+    const queryPromise = supabase.rpc('get_dataset_summaries_optimized');
+    
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
   
-  if (error) {
-    console.error('Error fetching dataset summaries:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching dataset summaries:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error or timeout fetching dataset summaries:', error);
+    // Return empty array on timeout to prevent blocking the UI
+    return [];
   }
-  
-  return data || [];
 };
 
 // Enhanced function to get datasets including shared ones with better error handling
