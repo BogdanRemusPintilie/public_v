@@ -102,6 +102,28 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
   };
 
   const hasData = datasetSummary && datasetSummary.total_value > 0;
+  const hasTranches = structure?.tranches && Array.isArray(structure.tranches) && structure.tranches.length > 0;
+
+  if (!structure) {
+    return (
+      <Card className="border-2 border-primary/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Structure Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-yellow-800">⚠️ No Structure Data</p>
+            <p className="text-xs text-yellow-700 mt-1">
+              Structure information is not available.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 border-primary/20">
@@ -124,10 +146,20 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
             </p>
           </div>
         )}
-        <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Tranche Structure</h4>
-          <div className="relative bg-gray-100 rounded-lg overflow-hidden h-48">
-            {structure.tranches.map((tranche: any, index: number) => {
+        {!hasTranches && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-sm font-medium text-blue-800">ℹ️ No Tranche Data</p>
+            <p className="text-xs text-blue-700 mt-1">
+              No tranches have been configured for this structure yet.
+            </p>
+          </div>
+        )}
+        {hasTranches && (
+          <>
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm">Tranche Structure</h4>
+              <div className="relative bg-gray-100 rounded-lg overflow-hidden h-48">
+                {structure.tranches.map((tranche: any, index: number) => {
               const position = getTranchePosition(index);
               const height = (tranche.thickness / 100) * 100;
               const bottom = (position.start / 100) * 100;
@@ -147,14 +179,14 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
                   </div>
                 </div>
               );
-            })}
-          </div>
-        </div>
+                })}
+              </div>
+            </div>
 
-        <div className="space-y-2">
-          <h4 className="font-semibold text-sm">Tranche Details</h4>
-          <div className="grid gap-2">
-            {structure.tranches.map((tranche: any, index: number) => {
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm">Tranche Details</h4>
+              <div className="grid gap-2">
+                {structure.tranches.map((tranche: any, index: number) => {
               const position = getTranchePosition(index);
               const trancheValue = calculateTrancheValue(tranche.thickness);
               
@@ -169,14 +201,16 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
                   </div>
                 </div>
               );
-            })}
-          </div>
-        </div>
+                })}
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="grid grid-cols-2 gap-4 pt-2 border-t">
           <div className="text-center">
             <div className="text-lg font-bold text-primary">
-              {structure.tranches.length}
+              {hasTranches ? structure.tranches.length : 0}
             </div>
             <div className="text-sm text-gray-600">Total Tranches</div>
           </div>
