@@ -529,12 +529,9 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Firm Price</p>
                       <p className="text-base mt-1 font-semibold">
-                        {response.counter_price
+                        {response.counter_price != null
                           ? `${Number(response.counter_price).toFixed(2)}%`
-                          : (response.firm_price_status === 'submitted' || response.firm_price_status === 'accepted') && response.indicative_price
-                          ? `${Number(response.indicative_price).toFixed(2)}%`
-                          : 'Not submitted'
-                        }
+                          : 'Not submitted'}
                       </p>
                       {response.firm_price_status && (
                         <Badge variant="outline" className="mt-1 text-xs">
@@ -573,15 +570,15 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                     </div>
                   )}
 
-                  {/* Firm Price Section - Shown when a firm decision exists (status or value) */}
-                  {(response.firm_price_status || response.counter_price) && (
+                  {/* Firm Price Section - Shown only when a firm price value exists */}
+                  {(response.counter_price != null) && (
                     <div className="pt-4 border-t space-y-3">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground mb-2">Firm Price Offer</p>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <p className="text-base font-semibold text-green-600">
-                              {(response.counter_price ?? response.indicative_price)}%
+                              {Number(response.counter_price).toFixed(2)}%
                             </p>
                             {response.firm_price_status === 'accepted' && (
                               <Badge className="bg-green-600">Accepted</Badge>
