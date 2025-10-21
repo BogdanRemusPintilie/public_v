@@ -54,7 +54,8 @@ export function ManageOffersView() {
     total: number; 
     interested: number; 
     status: string; 
-    hasCounterPrice?: boolean 
+    hasCounterPrice?: boolean;
+    hasDataAccess?: boolean;
   };
   
   const [offers, setOffers] = useState<any[]>([]);
@@ -186,12 +187,21 @@ export function ManageOffersView() {
               .eq('investor_id', user?.id)
               .maybeSingle();
 
+            // Check if investor has data access
+            const { data: shareData } = await supabase
+              .from('dataset_shares')
+              .select('id')
+              .eq('dataset_name', offer.structure?.dataset_name || '')
+              .eq('shared_with_user_id', user?.id)
+              .maybeSingle();
+            
             const status = determineTransactionStatus(myResponse, myNda, offer.id);
             counts[offer.id] = {
               total: myResponse ? 1 : 0,
               interested: myResponse?.status === 'interested' ? 1 : 0,
               status: status,
-              hasCounterPrice: myResponse?.counter_price != null
+              hasCounterPrice: myResponse?.counter_price != null,
+              hasDataAccess: !!shareData
             };
           } else {
             // For issuers, get all responses to this offer (existing logic)
@@ -208,9 +218,26 @@ export function ManageOffersView() {
             if (!responseError && responses) {
               let mostAdvancedStatus = 'Offer issued';
               let hasAnyCounterPrice = false;
+              let hasAnyDataAccess = false;
               
-              responses.forEach(response => {
+              // Check data access for any accepted NDA
+              for (const response of responses) {
                 const matchingNda = ndas?.find(n => n.investor_id === response.investor_id);
+                
+                if (matchingNda?.status === 'accepted') {
+                  const { data: shareData } = await supabase
+                    .from('dataset_shares')
+                    .select('id')
+                    .eq('dataset_name', offer.structure?.dataset_name || '')
+                    .eq('owner_id', user?.id)
+                    .eq('shared_with_user_id', response.investor_id)
+                    .maybeSingle();
+                  
+                  if (shareData) {
+                    hasAnyDataAccess = true;
+                  }
+                }
+                
                 const status = determineTransactionStatus(response, matchingNda, offer.id);
                 
                 // Track if any response has a counter price
@@ -236,20 +263,22 @@ export function ManageOffersView() {
                 if (newPriority > currentPriority) {
                   mostAdvancedStatus = status;
                 }
-              });
+              }
 
               counts[offer.id] = {
                 total: responses.length,
                 interested: responses.filter(r => r.status === 'interested').length,
                 status: mostAdvancedStatus,
-                hasCounterPrice: hasAnyCounterPrice
+                hasCounterPrice: hasAnyCounterPrice,
+                hasDataAccess: hasAnyDataAccess
               };
             } else {
               counts[offer.id] = {
                 total: 0,
                 interested: 0,
                 status: 'Offer issued',
-                hasCounterPrice: false
+                hasCounterPrice: false,
+                hasDataAccess: false
               };
             }
           }
@@ -297,7 +326,8 @@ export function ManageOffersView() {
   const getStageStatus = (
     currentStageIndex: number, 
     offerStatus: string, 
-    hasCounterPrice: boolean
+    hasCounterPrice: boolean,
+    hasDataAccess: boolean
   ): 'blank' | 'opened' | 'in-process' | 'completed' => {
     const statusIndex = STAGES.indexOf(offerStatus as any);
     const currentStageName = STAGES[currentStageIndex];
@@ -307,9 +337,13 @@ export function ManageOffersView() {
     if (currentStageIndex < statusIndex) {
       return 'completed';
     } else if (currentStageIndex === statusIndex) {
-      // Special handling for Firm offer stage
+      // Special handling for Full loan tape stage - amber if NDA accepted but access not yet granted
+      if (currentStageName === 'Full loan tape' && !hasDataAccess) {
+        return 'in-process';
+      }
+      // Special handling for Firm offer stage - amber when firm price not submitted
       if (currentStageName === 'Firm offer' && !hasCounterPrice) {
-        return 'in-process'; // Amber when firm price not submitted
+        return 'in-process';
       }
       return 'opened';
     }
@@ -384,9 +418,10 @@ export function ManageOffersView() {
           </TableHeader>
           <TableBody>
           {offers.map((offer) => {
-              const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer issued', hasCounterPrice: false };
+              const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer issued', hasCounterPrice: false, hasDataAccess: false };
               const currentStatus = responseCount.status;
               const hasCounterPrice = responseCount.hasCounterPrice || false;
+              const hasDataAccess = responseCount.hasDataAccess || false;
               
               return (
                 <TableRow 
@@ -397,7 +432,7 @@ export function ManageOffersView() {
                     {offer.offer_name}
                   </TableCell>
                   {STAGES.map((stage, index) => {
-                    const stageStatus = getStageStatus(index, currentStatus, hasCounterPrice);
+                    const stageStatus = getStageStatus(index, currentStatus, hasCounterPrice, hasDataAccess);
                     return (
                       <TableCell 
                         key={stage} 
