@@ -113,6 +113,8 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
       return;
     }
     
+    console.log('📊 FETCH DATASETS - User:', user.email, 'Force:', force);
+    
     // If we have preloaded data and this isn't a forced refresh, use it instantly!
     if (preloadedDatasets && !force) {
       console.log('⚡ USING PRELOADED DATASETS - Instant load!', preloadedDatasets.length);
@@ -123,49 +125,18 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     console.log('🔄 FETCHING DATASETS from database...');
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
-      
-      console.log('📊 DATASETS RESPONSE:', { dataCount: data?.length, error });
-      
-      if (error) {
-        console.error('❌ Error fetching datasets via RPC, falling back to utils:', error);
-        try {
-          const fallback = await getDatasetSummaries();
-          if (fallback && fallback.length > 0) {
-            console.log('✅ Fallback loaded datasets:', fallback.length);
-            setDatasets(fallback as DatasetSummary[]);
-            preloadedDatasets = fallback as DatasetSummary[];
-          } else {
-            toast({
-              title: "Error Loading Datasets",
-              description: "No datasets found or failed to load.",
-              variant: "destructive",
-            });
-            setDatasets([]);
-            preloadedDatasets = [];
-          }
-        } catch (e) {
-          console.error('💥 Fallback failed:', e);
-          toast({
-            title: "Error Loading Datasets",
-            description: "Failed to fetch datasets. Please try again.",
-            variant: "destructive",
-          });
-          setDatasets([]);
-          preloadedDatasets = [];
-        }
-        return;
-      }
+      const datasetSummaries = await getDatasetSummaries();
+      console.log('📊 DATASETS VIA UTILS:', datasetSummaries?.length);
 
       // Update both local state and global cache
-      const datasets = data || [];
-      console.log('✅ DATASETS LOADED:', datasets.length, 'datasets');
-      setDatasets(datasets);
-      preloadedDatasets = datasets;
+      const ds = datasetSummaries || [];
+      console.log('✅ DATASETS LOADED:', ds.length, 'datasets');
+      setDatasets(ds as DatasetSummary[]);
+      preloadedDatasets = ds as DatasetSummary[];
     } catch (error) {
       console.error('💥 EXCEPTION fetching datasets:', error);
       toast({
-        title: "Error",
+        title: "Error Loading Datasets",
         description: "An unexpected error occurred while fetching datasets",
         variant: "destructive",
       });
