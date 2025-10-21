@@ -552,11 +552,19 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             <span className="text-sm text-green-600 font-medium">Access Granted</span>
                           </div>
-                        ) : (
+                        ) : grantingAccess === response.investor_id ? (
                           <div className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
                             <span className="text-sm text-blue-600 font-medium">Granting access...</span>
                           </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleGrantAccess(response.investor_id, response.investor_email || '')}
+                          >
+                            <Database className="h-4 w-4 mr-2" />
+                            Grant Access
+                          </Button>
                         )}
                       </div>
                     </div>
