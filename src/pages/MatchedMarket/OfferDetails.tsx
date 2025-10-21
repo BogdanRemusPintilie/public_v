@@ -84,22 +84,15 @@ const OfferDetails = () => {
 
       if (error) throw error;
 
-      // Issuer company is returned by RPC (bypasses profiles RLS safely)
-      const issuerCompany = (data as any)?.issuer_company ?? null;
-
-      // Fetch the structure separately if structure_id exists
-      let offerWithStructure: any = { ...data, issuer_company: issuerCompany };
-      if (data.structure_id) {
-        const { data: structureData, error: structureError } = await supabase
-          .from('tranche_structures')
-          .select('*')
-          .eq('id', data.structure_id)
-          .single();
-
-        if (!structureError && structureData) {
-          offerWithStructure.structure = structureData;
-        }
-      }
+      // RPC now returns structure_name and dataset_name directly
+      const offerWithStructure: any = {
+        ...data,
+        structure: data.structure_id ? {
+          id: data.structure_id,
+          structure_name: (data as any).structure_name,
+          dataset_name: (data as any).dataset_name,
+        } : null
+      };
 
       setOffer(offerWithStructure);
     } catch (error: any) {

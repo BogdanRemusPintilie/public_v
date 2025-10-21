@@ -640,6 +640,7 @@ export type Database = {
         Returns: {
           additional_comments: string
           created_at: string
+          dataset_name: string
           expected_pool_size: number
           id: string
           is_anonymous: boolean
@@ -652,6 +653,7 @@ export type Database = {
           status: string
           structure_consumer_finance: boolean
           structure_id: string
+          structure_name: string
           structure_sector: string
           structure_sts: boolean
           structure_synthetic: boolean
