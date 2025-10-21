@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,12 +35,19 @@ export function InvestorSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
       loadInvestors();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && !isLoading && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }, [open, isLoading, investors.length]);
 
   const loadInvestors = async () => {
     try {
@@ -163,7 +170,7 @@ export function InvestorSelector({
           <DialogTitle>Select Investors</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto pr-2">
+        <div ref={scrollContainerRef} className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto pr-2">
           {/* Investor Pool Selection */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
