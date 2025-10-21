@@ -256,12 +256,18 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-semibold mb-2">Structure</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="font-semibold mb-2">Structure Name</h3>
+            <p className="text-sm">
               {offer.structure?.structure_name || 'N/A'}
             </p>
-            <p className="text-sm text-muted-foreground">
-              Dataset: {offer.structure?.dataset_name || 'N/A'}
+          </div>
+
+          <Separator />
+
+          <div>
+            <h3 className="font-semibold mb-2">Dataset</h3>
+            <p className="text-sm">
+              {offer.structure?.dataset_name || 'N/A'}
             </p>
           </div>
 
