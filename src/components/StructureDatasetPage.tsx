@@ -282,12 +282,6 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
         description: `Tranche structure "${structureName}" has been ${isEditing ? 'updated' : 'saved'} successfully`,
       });
 
-      // Invalidate cache by setting preloadedStructures to null
-      // This will force a fresh fetch when the dashboard refreshes
-      if (typeof window !== 'undefined') {
-        (window as any).preloadedStructures = null;
-      }
-
       setShowSaveDialog(false);
       setStructureName('');
       onClose();
