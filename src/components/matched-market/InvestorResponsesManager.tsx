@@ -533,7 +533,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                           ? `${Number(response.counter_price).toFixed(2)}%`
                           : 'Not submitted'}
                       </p>
-                      {response.firm_price_status && (
+                      {response.counter_price != null && response.firm_price_status && (
                         <Badge variant="outline" className="mt-1 text-xs">
                           {response.firm_price_status}
                         </Badge>
