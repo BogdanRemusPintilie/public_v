@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2, FileCheck, Upload } from 'lucide-react';
 import StructureDatasetPage from './StructureDatasetPage';
 import TrancheAnalyticsView from './TrancheAnalyticsView';
-import { TrancheStructure } from '@/utils/supabase';
+import { TrancheStructure, getDatasetSummaries } from '@/utils/supabase';
 
 // Global cache for preloaded tranche data
 let preloadedDatasets: DatasetSummary[] | null = null;
@@ -41,21 +41,15 @@ export const preloadTrancheData = async (user: any) => {
       console.log('🚀 PRELOADING TRANCHE DATA in background');
       
       // Fetch datasets and structures in parallel
-      const [datasetsResponse, structuresResponse] = await Promise.all([
-        supabase.rpc('get_dataset_summaries_optimized'),
+      const [datasetSummaries, structuresResponse] = await Promise.all([
+        getDatasetSummaries(),
         supabase
           .from('tranche_structures')
           .select('*')
           .order('created_at', { ascending: false })
       ]);
 
-      if (datasetsResponse.error) {
-        console.error('Error preloading datasets:', datasetsResponse.error);
-        preloadedDatasets = [];
-      } else {
-        preloadedDatasets = datasetsResponse.data || [];
-        console.log(`✅ PRELOADED ${preloadedDatasets.length} datasets`);
-      }
+      preloadedDatasets = (Array.isArray(datasetSummaries) ? datasetSummaries : []) as unknown as DatasetSummary[];
 
       if (structuresResponse.error) {
         console.error('Error preloading structures:', structuresResponse.error);
@@ -120,15 +114,32 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
       console.log('📊 DATASETS RESPONSE:', { dataCount: data?.length, error });
       
       if (error) {
-        console.error('❌ Error fetching datasets:', error);
-        toast({
-          title: "Error Loading Datasets",
-          description: error.message || "Failed to fetch datasets. Please try again.",
-          variant: "destructive",
-        });
-        // Set empty array so UI shows empty state
-        setDatasets([]);
-        preloadedDatasets = [];
+        console.error('❌ Error fetching datasets via RPC, falling back to utils:', error);
+        try {
+          const fallback = await getDatasetSummaries();
+          if (fallback && fallback.length > 0) {
+            console.log('✅ Fallback loaded datasets:', fallback.length);
+            setDatasets(fallback as DatasetSummary[]);
+            preloadedDatasets = fallback as DatasetSummary[];
+          } else {
+            toast({
+              title: "Error Loading Datasets",
+              description: "No datasets found or failed to load.",
+              variant: "destructive",
+            });
+            setDatasets([]);
+            preloadedDatasets = [];
+          }
+        } catch (e) {
+          console.error('💥 Fallback failed:', e);
+          toast({
+            title: "Error Loading Datasets",
+            description: "Failed to fetch datasets. Please try again.",
+            variant: "destructive",
+          });
+          setDatasets([]);
+          preloadedDatasets = [];
+        }
         return;
       }
 
