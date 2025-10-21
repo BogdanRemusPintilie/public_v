@@ -327,7 +327,18 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
               />
 
               {selectedStructure && (
-                <StructureSummary structure={selectedStructure} dataset={selectedDataset || {}} />
+                <>
+                  {selectedDataset && (!selectedDataset.total_opening_balance || selectedDataset.total_opening_balance === 0) && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm font-medium text-yellow-800">⚠️ Dataset Has No Data</p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        The selected structure references dataset "{selectedStructure.dataset_name}" which appears to be empty. 
+                        You can still create this offer, but portfolio calculations will show zero values.
+                      </p>
+                    </div>
+                  )}
+                  <StructureSummary structure={selectedStructure} dataset={selectedDataset || {}} />
+                </>
               )}
             </CardContent>
           </Card>

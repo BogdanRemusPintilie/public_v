@@ -101,6 +101,8 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
     return colors[index % colors.length];
   };
 
+  const hasData = datasetSummary && datasetSummary.total_value > 0;
+
   return (
     <Card className="border-2 border-primary/20">
       <CardHeader>
@@ -113,6 +115,15 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!hasData && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p className="text-sm font-medium text-yellow-800">⚠️ Warning: No Data Available</p>
+            <p className="text-xs text-yellow-700 mt-1">
+              The dataset "{structure.dataset_name}" appears to be empty or has been deleted. 
+              Portfolio values and calculations cannot be displayed.
+            </p>
+          </div>
+        )}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm">Tranche Structure</h4>
           <div className="relative bg-gray-100 rounded-lg overflow-hidden h-48">
