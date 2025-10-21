@@ -359,19 +359,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Transaction Structure</CardTitle>
-              <CardDescription>Structure details for this offer</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <p className="text-sm font-medium">Structure Name</p>
-                <p className="text-sm text-muted-foreground">{offer.structure?.structure_name || 'N/A'}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Your Response</CardTitle>
               <CardDescription>Indicate your interest in this offer</CardDescription>
             </CardHeader>
