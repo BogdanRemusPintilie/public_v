@@ -103,8 +103,8 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         setIndicativePrice(data.indicative_price?.toString() || '');
         setQuestions(data.questions || '');
         setAdditionalDataNeeds(data.additional_data_needs || '');
-        // Initialize firm price with counter_price if exists, otherwise use indicative_price
-        setFirmPrice(data.counter_price?.toString() || data.indicative_price?.toString() || '');
+        // Only initialize firm price if it has been previously submitted
+        setFirmPrice(data.counter_price?.toString() || '');
       }
     } catch (error) {
       // No response found
