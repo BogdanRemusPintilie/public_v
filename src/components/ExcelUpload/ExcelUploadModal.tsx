@@ -151,7 +151,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                       <RefreshCw className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
                       Refresh
                     </Button>
-                    {allData.length > 0 && (
+                    {allData.length > 0 && selectedDatasetName && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -161,14 +161,14 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                             className="flex items-center gap-2"
                           >
                             <Trash2 className="h-4 w-4" />
-                            Delete All Data
+                            Delete Dataset
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Complete Dataset?</AlertDialogTitle>
+                            <AlertDialogTitle>Delete Dataset "{selectedDatasetName}"?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete all {allData.length.toLocaleString()} loan records from your account.
+                              This will permanently delete the entire dataset <strong>"{selectedDatasetName}"</strong> containing {allData.length.toLocaleString()} loan records and all associated tranche structures. This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -177,7 +177,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                               onClick={onDeleteCompleteDataset}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              Delete All Data
+                              Delete Dataset
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

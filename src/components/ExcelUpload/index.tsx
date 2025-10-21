@@ -414,8 +414,20 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       toast({
         title: "Dataset Deleted",
-        description: `Successfully deleted dataset "${selectedDatasetName}"`,
+        description: `Successfully deleted dataset "${selectedDatasetName}" and all associated structures`,
       });
+
+      // Clear dataset cache to force refresh
+      clearDatasetCache();
+      
+      // Trigger global refresh
+      const newTrigger = Date.now();
+      setDatasetRefreshTrigger(newTrigger);
+      
+      // Notify parent component
+      if (onDatasetUploaded) {
+        onDatasetUploaded();
+      }
 
       // Close modal after successful deletion
       handleClose();
