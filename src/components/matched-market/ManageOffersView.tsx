@@ -37,7 +37,7 @@ const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'complet
     case 'opened':
       return 'bg-purple-500';
     case 'in-process':
-      return 'bg-purple-500';
+      return 'bg-amber-500';
     case 'completed':
       return 'bg-purple-500';
     default:
@@ -50,9 +50,16 @@ export function ManageOffersView() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { userType, isLoading: userTypeLoading } = useUserType();
+  type ResponseCount = { 
+    total: number; 
+    interested: number; 
+    status: string; 
+    hasCounterPrice?: boolean 
+  };
+  
   const [offers, setOffers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [responseCounts, setResponseCounts] = useState<Record<string, { total: number; interested: number; status: string }>>({});
+  const [responseCounts, setResponseCounts] = useState<Record<string, ResponseCount>>({});
   const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
@@ -160,7 +167,7 @@ export function ManageOffersView() {
 
       // Fetch response counts and detailed status for each offer
       if (offersData && offersData.length > 0) {
-        const counts: Record<string, { total: number; interested: number; status: string }> = {};
+        const counts: Record<string, ResponseCount> = {};
         
         for (const offer of offersData) {
           if (userType === 'investor') {
@@ -183,7 +190,8 @@ export function ManageOffersView() {
             counts[offer.id] = {
               total: myResponse ? 1 : 0,
               interested: myResponse?.status === 'interested' ? 1 : 0,
-              status: status
+              status: status,
+              hasCounterPrice: myResponse?.counter_price != null
             };
           } else {
             // For issuers, get all responses to this offer (existing logic)
@@ -199,10 +207,16 @@ export function ManageOffersView() {
 
             if (!responseError && responses) {
               let mostAdvancedStatus = 'Offer issued';
+              let hasAnyCounterPrice = false;
               
               responses.forEach(response => {
                 const matchingNda = ndas?.find(n => n.investor_id === response.investor_id);
                 const status = determineTransactionStatus(response, matchingNda, offer.id);
+                
+                // Track if any response has a counter price
+                if (response.counter_price != null) {
+                  hasAnyCounterPrice = true;
+                }
                 
                 const statusPriority = [
                   'Offer issued',
@@ -227,13 +241,15 @@ export function ManageOffersView() {
               counts[offer.id] = {
                 total: responses.length,
                 interested: responses.filter(r => r.status === 'interested').length,
-                status: mostAdvancedStatus
+                status: mostAdvancedStatus,
+                hasCounterPrice: hasAnyCounterPrice
               };
             } else {
               counts[offer.id] = {
                 total: 0,
                 interested: 0,
-                status: 'Offer issued'
+                status: 'Offer issued',
+                hasCounterPrice: false
               };
             }
           }
@@ -278,14 +294,23 @@ export function ManageOffersView() {
     }
   };
 
-  const getStageStatus = (currentStageIndex: number, offerStatus: string): 'blank' | 'opened' | 'in-process' | 'completed' => {
+  const getStageStatus = (
+    currentStageIndex: number, 
+    offerStatus: string, 
+    hasCounterPrice: boolean
+  ): 'blank' | 'opened' | 'in-process' | 'completed' => {
     const statusIndex = STAGES.indexOf(offerStatus as any);
+    const currentStageName = STAGES[currentStageIndex];
     
     if (statusIndex === -1) return 'blank';
     
     if (currentStageIndex < statusIndex) {
       return 'completed';
     } else if (currentStageIndex === statusIndex) {
+      // Special handling for Firm offer stage
+      if (currentStageName === 'Firm offer' && !hasCounterPrice) {
+        return 'in-process'; // Amber when firm price not submitted
+      }
       return 'opened';
     }
     
@@ -328,8 +353,12 @@ export function ManageOffersView() {
               <span>Not reached</span>
             </div>
             <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-amber-500 rounded"></div>
+              <span>In process</span>
+            </div>
+            <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-purple-500 rounded"></div>
-              <span>Current/Completed</span>
+              <span>Completed</span>
             </div>
           </div>
         </Card>
@@ -354,9 +383,10 @@ export function ManageOffersView() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {offers.map((offer) => {
-              const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer issued' };
+          {offers.map((offer) => {
+              const responseCount = responseCounts[offer.id] || { total: 0, interested: 0, status: 'Offer issued', hasCounterPrice: false };
               const currentStatus = responseCount.status;
+              const hasCounterPrice = responseCount.hasCounterPrice || false;
               
               return (
                 <TableRow 
@@ -367,7 +397,7 @@ export function ManageOffersView() {
                     {offer.offer_name}
                   </TableCell>
                   {STAGES.map((stage, index) => {
-                    const stageStatus = getStageStatus(index, currentStatus);
+                    const stageStatus = getStageStatus(index, currentStatus, hasCounterPrice);
                     return (
                       <TableCell 
                         key={stage} 
