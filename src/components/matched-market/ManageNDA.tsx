@@ -143,24 +143,132 @@ const ManageNDA = () => {
     });
   };
 
-  const handleDownloadNDA = (nda: NDA) => {
-    // Create a text blob with the NDA content
-    const content = `${nda.nda_title}\n\nFrom: ${nda.issuer_company}\nDate: ${new Date(nda.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}\n\n${nda.nda_content}`;
-    
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${nda.nda_title.replace(/[^a-z0-9]/gi, '_')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    toast({
-      title: 'NDA Downloaded',
-      description: 'The NDA has been downloaded to your device',
-    });
+  const handleDownloadNDA = async (nda: NDA) => {
+    try {
+      const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
+      
+      // Create a new PDF document
+      const pdfDoc = await PDFDocument.create();
+      const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+      const timesRomanBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+      
+      // Add a page
+      let page = pdfDoc.addPage([595, 842]); // A4 size
+      const { width, height } = page.getSize();
+      const margin = 50;
+      const maxWidth = width - 2 * margin;
+      let yPosition = height - margin;
+      
+      // Title
+      page.drawText(nda.nda_title, {
+        x: margin,
+        y: yPosition,
+        size: 18,
+        font: timesRomanBold,
+        color: rgb(0, 0, 0),
+      });
+      yPosition -= 40;
+      
+      // From and Date
+      page.drawText(`From: ${nda.issuer_company || 'Unknown'}`, {
+        x: margin,
+        y: yPosition,
+        size: 11,
+        font: timesRomanFont,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+      yPosition -= 20;
+      
+      page.drawText(`Date: ${new Date(nda.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, {
+        x: margin,
+        y: yPosition,
+        size: 11,
+        font: timesRomanFont,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+      yPosition -= 40;
+      
+      // Content - wrap text
+      const lines = nda.nda_content.split('\n');
+      const fontSize = 11;
+      const lineHeight = fontSize + 4;
+      
+      for (const line of lines) {
+        if (!line.trim()) {
+          yPosition -= lineHeight / 2;
+          continue;
+        }
+        
+        const words = line.split(' ');
+        let currentLine = '';
+        
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const textWidth = timesRomanFont.widthOfTextAtSize(testLine, fontSize);
+          
+          if (textWidth > maxWidth) {
+            // Check if we need a new page
+            if (yPosition < margin + lineHeight) {
+              page = pdfDoc.addPage([595, 842]);
+              yPosition = height - margin;
+            }
+            
+            page.drawText(currentLine, {
+              x: margin,
+              y: yPosition,
+              size: fontSize,
+              font: timesRomanFont,
+              color: rgb(0, 0, 0),
+            });
+            yPosition -= lineHeight;
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        
+        // Draw remaining text
+        if (currentLine) {
+          if (yPosition < margin + lineHeight) {
+            page = pdfDoc.addPage([595, 842]);
+            yPosition = height - margin;
+          }
+          
+          page.drawText(currentLine, {
+            x: margin,
+            y: yPosition,
+            size: fontSize,
+            font: timesRomanFont,
+            color: rgb(0, 0, 0),
+          });
+          yPosition -= lineHeight;
+        }
+      }
+      
+      // Save the PDF
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${nda.nda_title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'NDA Downloaded',
+        description: 'The NDA has been downloaded as a PDF',
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: 'Download Failed',
+        description: 'Failed to generate PDF. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
