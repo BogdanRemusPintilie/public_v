@@ -3,10 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getAccessibleDatasets } from '@/utils/supabase';
+import { getAccessibleDatasets, deleteLoanDataByDataset } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Database, Loader2, RefreshCw } from 'lucide-react';
+import { Database, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import DatasetManagementInterface from './DatasetManagementInterface';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Global cache for preloaded datasets
 let preloadedDatasets: { name: string; owner_id: string; is_shared: boolean }[] | null = null;
@@ -56,6 +66,9 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   const [lastRefreshTrigger, setLastRefreshTrigger] = useState(0);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [selectedDatasetForManagement, setSelectedDatasetForManagement] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [datasetToDelete, setDatasetToDelete] = useState<{ name: string; is_shared: boolean } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
 
@@ -179,6 +192,48 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
     loadDatasets(true);
   };
 
+  const handleDeleteDataset = async () => {
+    if (!datasetToDelete) return;
+
+    if (datasetToDelete.is_shared) {
+      toast({
+        title: "Cannot Delete Shared Dataset",
+        description: "You can only delete datasets that you own.",
+        variant: "destructive",
+      });
+      setDeleteDialogOpen(false);
+      setDatasetToDelete(null);
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      console.log('🗑️ DELETING DATASET:', datasetToDelete.name);
+      
+      await deleteLoanDataByDataset(datasetToDelete.name);
+      
+      toast({
+        title: "Dataset Deleted",
+        description: `Successfully deleted dataset "${datasetToDelete.name}" and all associated structures`,
+      });
+
+      // Clear cache and refresh
+      clearDatasetCache();
+      setDeleteDialogOpen(false);
+      setDatasetToDelete(null);
+      loadDatasets(true);
+    } catch (error) {
+      console.error('Error deleting dataset:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete dataset. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   // Show management interface if a dataset is selected for management
@@ -255,13 +310,28 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                             </p>
                           </div>
                         </div>
-                        <Button
-                          onClick={() => handleSelectDataset(dataset.name)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Select
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => handleSelectDataset(dataset.name)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Select
+                          </Button>
+                          {!dataset.is_shared && (
+                            <Button
+                              onClick={() => {
+                                setDatasetToDelete(dataset);
+                                setDeleteDialogOpen(true);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -290,6 +360,28 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
             </Button>
           </div>
         </Card>
+
+        {/* Delete Dataset Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Dataset "{datasetToDelete?.name}"?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the entire dataset <strong>"{datasetToDelete?.name}"</strong> and all associated tranche structures. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteDataset}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Dataset'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
