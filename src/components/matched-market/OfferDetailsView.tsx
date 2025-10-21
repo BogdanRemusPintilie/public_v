@@ -34,6 +34,8 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const [additionalDataNeeds, setAdditionalDataNeeds] = useState('');
   const [isSubmittingQuestionsData, setIsSubmittingQuestionsData] = useState(false);
   const [hasDataAccess, setHasDataAccess] = useState(false);
+  const [firmPrice, setFirmPrice] = useState('');
+  const [isSubmittingFirmPrice, setIsSubmittingFirmPrice] = useState(false);
 
   console.log('🔍 OfferDetailsView - offer data:', {
     is_anonymous: offer.is_anonymous,
@@ -101,6 +103,8 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         setIndicativePrice(data.indicative_price?.toString() || '');
         setQuestions(data.questions || '');
         setAdditionalDataNeeds(data.additional_data_needs || '');
+        // Initialize firm price with counter_price if exists, otherwise use indicative_price
+        setFirmPrice(data.counter_price?.toString() || data.indicative_price?.toString() || '');
       }
     } catch (error) {
       // No response found
@@ -800,21 +804,64 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                 <p className="text-sm text-muted-foreground">
                   Submit your final firm price after reviewing the full loan tape and issuer responses.
                 </p>
+                <div className="space-y-2">
+                  <Label htmlFor="firm-price">Firm Price (%)</Label>
+                  <div className="relative">
+                    <Input
+                      id="firm-price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      placeholder="e.g., 12.5"
+                      value={firmPrice}
+                      onChange={(e) => setFirmPrice(e.target.value)}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter a percentage between 0 and 100
+                  </p>
+                </div>
                 <Button 
                   onClick={async () => {
+                    const priceValue = parseFloat(firmPrice);
+                    
+                    if (!firmPrice || isNaN(priceValue)) {
+                      toast({
+                        title: 'Error',
+                        description: 'Please enter a valid firm price percentage',
+                        variant: 'destructive',
+                      });
+                      return;
+                    }
+
+                    if (priceValue < 0 || priceValue > 100) {
+                      toast({
+                        title: 'Error',
+                        description: 'Price percentage must be between 0 and 100',
+                        variant: 'destructive',
+                      });
+                      return;
+                    }
+
+                    setIsSubmittingFirmPrice(true);
                     try {
                       await supabase
                         .from('offer_responses')
                         .update({ 
                           firm_price_status: 'submitted',
-                          counter_price: parseFloat(indicativePrice),
+                          counter_price: priceValue,
                           counter_price_updated_at: new Date().toISOString()
                         })
                         .eq('id', investorResponse.id);
                       
                       toast({
                         title: 'Firm Price Submitted',
-                        description: 'Your firm price has been sent to the issuer.',
+                        description: `Your firm price of ${priceValue}% has been sent to the issuer.`,
                       });
                       
                       await checkInvestorResponse();
@@ -824,11 +871,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                         description: error.message,
                         variant: 'destructive',
                       });
+                    } finally {
+                      setIsSubmittingFirmPrice(false);
                     }
                   }}
+                  disabled={isSubmittingFirmPrice}
                   className="w-full"
                 >
-                  Submit Firm Price Based on Indicative ({Number(investorResponse.indicative_price).toFixed(2)}%)
+                  {isSubmittingFirmPrice ? 'Submitting...' : 'Submit Firm Price'}
                 </Button>
               </>
             )}
