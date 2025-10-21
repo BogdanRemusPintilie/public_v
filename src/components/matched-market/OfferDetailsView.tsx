@@ -537,13 +537,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       )}
 
       {/* Stage 3: After NDA Accepted - Unlock data access and questions */}
-      {userType === 'investor' && isNdaAccepted && offer.structure && (
-        <StructureSummary 
-          structure={offer.structure} 
-          dataset={offer.structure.dataset_name}
-        />
-      )}
-
       {userType === 'investor' && isNdaAccepted && (
         <>
           <Card>
