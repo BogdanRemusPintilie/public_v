@@ -247,7 +247,7 @@ const ManageNDA = () => {
       
       // Save the PDF
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -398,15 +398,6 @@ const ManageNDA = () => {
                     <div className="bg-muted p-4 rounded-md max-h-64 overflow-y-auto border">
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{nda.nda_content}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadNDA(nda)}
-                      className="mt-3 w-full"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download NDA
-                    </Button>
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -461,6 +452,16 @@ const ManageNDA = () => {
                     </p>
                   </div>
                 )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownloadNDA(nda)}
+                  className="w-full mt-3"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download NDA as PDF
+                </Button>
               </CardContent>
             </Card>
           );
