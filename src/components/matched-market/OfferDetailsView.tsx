@@ -262,15 +262,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             </p>
           </div>
 
-          <Separator />
-
-          <div>
-            <h3 className="font-semibold mb-2">Dataset</h3>
-            <p className="text-sm">
-              {offer.structure?.dataset_name || 'N/A'}
-            </p>
-          </div>
-
           {userType !== 'investor' && offer.target_investors && offer.target_investors.length > 0 && (
             <>
               <Separator />
@@ -371,14 +362,10 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <CardTitle>Transaction Structure</CardTitle>
               <CardDescription>Structure details for this offer</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
               <div>
                 <p className="text-sm font-medium">Structure Name</p>
                 <p className="text-sm text-muted-foreground">{offer.structure?.structure_name || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Dataset</p>
-                <p className="text-sm text-muted-foreground">{offer.structure?.dataset_name || 'N/A'}</p>
               </div>
             </CardContent>
           </Card>
