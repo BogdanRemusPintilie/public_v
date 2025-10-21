@@ -100,67 +100,88 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const { toast } = useToast();
 
   const fetchDatasets = async (force = false) => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ FETCH DATASETS - No user found');
+      return;
+    }
     
     // If we have preloaded data and this isn't a forced refresh, use it instantly!
     if (preloadedDatasets && !force) {
-      console.log('⚡ USING PRELOADED DATASETS - Instant load!');
+      console.log('⚡ USING PRELOADED DATASETS - Instant load!', preloadedDatasets.length);
       setDatasets([...preloadedDatasets]);
       return;
     }
     
+    console.log('🔄 FETCHING DATASETS from database...');
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
       
+      console.log('📊 DATASETS RESPONSE:', { dataCount: data?.length, error });
+      
       if (error) {
-        console.error('Error fetching datasets:', error);
+        console.error('❌ Error fetching datasets:', error);
         toast({
-          title: "Error",
-          description: "Failed to fetch datasets",
+          title: "Error Loading Datasets",
+          description: error.message || "Failed to fetch datasets. Please try again.",
           variant: "destructive",
         });
+        // Set empty array so UI shows empty state
+        setDatasets([]);
+        preloadedDatasets = [];
         return;
       }
 
       // Update both local state and global cache
-      setDatasets(data || []);
-      preloadedDatasets = data || [];
+      const datasets = data || [];
+      console.log('✅ DATASETS LOADED:', datasets.length, 'datasets');
+      setDatasets(datasets);
+      preloadedDatasets = datasets;
     } catch (error) {
-      console.error('Error:', error);
+      console.error('💥 EXCEPTION fetching datasets:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch datasets",
+        description: "An unexpected error occurred while fetching datasets",
         variant: "destructive",
       });
+      setDatasets([]);
+      preloadedDatasets = [];
     } finally {
       setLoading(false);
     }
   };
 
   const fetchTrancheStructures = async (force = false) => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ FETCH STRUCTURES - No user found');
+      return;
+    }
     
     // If we have preloaded data and this isn't a forced refresh, use it instantly!
     if (preloadedStructures && !force) {
-      console.log('⚡ USING PRELOADED STRUCTURES - Instant load!');
+      console.log('⚡ USING PRELOADED STRUCTURES - Instant load!', preloadedStructures.length);
       setTrancheStructures([...preloadedStructures]);
       return;
     }
     
+    console.log('🔄 FETCHING TRANCHE STRUCTURES from database...');
     try {
       const { data, error } = await supabase
         .from('tranche_structures')
         .select('*')
         .order('created_at', { ascending: false });
       
+      console.log('📊 STRUCTURES RESPONSE:', { dataCount: data?.length, error });
+      
       if (error) {
-        console.error('Error fetching tranche structures:', error);
+        console.error('❌ Error fetching tranche structures:', error);
         toast({
-          title: "Error",
-          description: "Failed to fetch tranche structures",
+          title: "Error Loading Structures",
+          description: error.message || "Failed to fetch tranche structures. Please try again.",
           variant: "destructive",
         });
+        setTrancheStructures([]);
+        preloadedStructures = [];
         return;
       }
 
@@ -170,21 +191,26 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
         tranches: item.tranches as any[]
       }));
       
+      console.log('✅ STRUCTURES LOADED:', structures.length, 'structures');
+      
       // Update both local state and global cache
       setTrancheStructures(structures);
       preloadedStructures = structures;
     } catch (error) {
-      console.error('Error:', error);
+      console.error('💥 EXCEPTION fetching structures:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch tranche structures",
+        description: "An unexpected error occurred while fetching tranche structures",
         variant: "destructive",
       });
+      setTrancheStructures([]);
+      preloadedStructures = [];
     }
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
+      console.log('🚀 TRANCHE DASHBOARD OPENED - Fetching data for user:', user.id);
       fetchDatasets();
       fetchTrancheStructures();
     }
