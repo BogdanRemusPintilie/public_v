@@ -11,7 +11,17 @@ import { useToast } from '@/hooks/use-toast';
 import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2, FileCheck, Upload } from 'lucide-react';
 import StructureDatasetPage from './StructureDatasetPage';
 import TrancheAnalyticsView from './TrancheAnalyticsView';
-import { TrancheStructure, getDatasetSummaries } from '@/utils/supabase';
+import { TrancheStructure, getDatasetSummaries, deleteLoanDataByDataset } from '@/utils/supabase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Global cache for preloaded tranche data
 let preloadedDatasets: DatasetSummary[] | null = null;
@@ -90,6 +100,10 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [pdfTitle, setPdfTitle] = useState<string>('');
+  const [deleteDatasetDialog, setDeleteDatasetDialog] = useState(false);
+  const [datasetToDelete, setDatasetToDelete] = useState<string>('');
+  const [deleteStructureDialog, setDeleteStructureDialog] = useState(false);
+  const [structureToDelete, setStructureToDelete] = useState<{ id: string; name: string } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -244,12 +258,41 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     setShowManageStructure(true);
   };
 
-  const handleDeleteStructure = async (structureId: string, structureName: string) => {
+  const handleDeleteDataset = async (datasetName: string) => {
+    try {
+      console.log('🗑️ DELETING DATASET:', datasetName);
+      await deleteLoanDataByDataset(datasetName);
+      
+      toast({
+        title: "Dataset Deleted",
+        description: `Successfully deleted "${datasetName}" and all associated structures`,
+      });
+
+      // Refresh datasets and structures
+      preloadedDatasets = null;
+      preloadedStructures = null;
+      fetchDatasets(true);
+      fetchTrancheStructures(true);
+      setDeleteDatasetDialog(false);
+      setDatasetToDelete('');
+    } catch (error) {
+      console.error('Error deleting dataset:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete dataset",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteStructure = async () => {
+    if (!structureToDelete) return;
+    
     try {
       const { error } = await supabase
         .from('tranche_structures')
         .delete()
-        .eq('id', structureId);
+        .eq('id', structureToDelete.id);
 
       if (error) {
         console.error('Error deleting tranche structure:', error);
@@ -263,11 +306,14 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
 
       toast({
         title: "Structure Deleted",
-        description: `"${structureName}" has been deleted`,
+        description: `"${structureToDelete.name}" has been deleted`,
       });
 
       // Refresh the structures list
-      fetchTrancheStructures();
+      preloadedStructures = null;
+      fetchTrancheStructures(true);
+      setDeleteStructureDialog(false);
+      setStructureToDelete(null);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -555,6 +601,18 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                                 <Settings className="h-4 w-4" />
                                 <span>Manage Structure ({getStructuresForDataset(dataset.dataset_name).length})</span>
                               </Button>
+                              
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setDatasetToDelete(dataset.dataset_name);
+                                  setDeleteDatasetDialog(true);
+                                }}
+                                className="flex items-center space-x-2 border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span>Delete Dataset</span>
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -617,8 +675,11 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteStructure(structure.id, structure.structure_name)}
-                            className="text-red-600 hover:text-red-800"
+                            onClick={() => {
+                              setStructureToDelete({ id: structure.id, name: structure.structure_name });
+                              setDeleteStructureDialog(true);
+                            }}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -844,6 +905,58 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Dataset Confirmation Dialog */}
+      <AlertDialog open={deleteDatasetDialog} onOpenChange={setDeleteDatasetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Dataset?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the dataset <strong>"{datasetToDelete}"</strong> and all its associated data, including loan records and tranche structures. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteDatasetDialog(false);
+              setDatasetToDelete('');
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleDeleteDataset(datasetToDelete)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Dataset
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Structure Confirmation Dialog */}
+      <AlertDialog open={deleteStructureDialog} onOpenChange={setDeleteStructureDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Structure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the structure <strong>"{structureToDelete?.name}"</strong>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteStructureDialog(false);
+              setStructureToDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteStructure}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Structure
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
