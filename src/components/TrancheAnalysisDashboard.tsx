@@ -300,16 +300,18 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
     setShowAnalytics(true);
   };
 
-  const handleCloseStructureDataset = async () => {
-    // Invalidate cache and force refresh BEFORE closing
-    preloadedStructures = null;
-    preloadPromise = null;
-    await fetchTrancheStructures(true);
-    
-    // Then close the dialog
+  const handleCloseStructureDataset = () => {
+    // Clear dialog state
     setShowStructureDataset(false);
     setSelectedDatasetForStructure('');
     setEditingStructure(null);
+    
+    // Invalidate cache and force refresh after dialog closes
+    preloadedStructures = null;
+    preloadPromise = null;
+    setTimeout(() => {
+      fetchTrancheStructures(true);
+    }, 100);
   };
 
   const handleCloseManageStructure = () => {
