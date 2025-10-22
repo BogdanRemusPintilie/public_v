@@ -58,7 +58,18 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
     try {
       setIsLoading(true);
       
-      // Fetch offer responses
+      // First, fetch the offer to get all invited investors
+      const { data: offerData, error: offerError } = await supabase
+        .from('offers')
+        .select('shared_with_emails')
+        .eq('id', offerId)
+        .single();
+
+      if (offerError) throw offerError;
+
+      const invitedEmails = offerData?.shared_with_emails || [];
+      
+      // Fetch all responses for this offer
       const { data: responsesData, error: responsesError } = await supabase
         .from('offer_responses')
         .select('*')
@@ -67,54 +78,89 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
 
       if (responsesError) throw responsesError;
 
-      // Fetch investor details and check data access for each response
-      const responsesWithDetails = await Promise.all(
-        (responsesData || []).map(async (response) => {
-          // Get investor info from profiles table (includes email and company name)
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('email, full_name, company')
-            .eq('user_id', response.investor_id)
-            .maybeSingle();
-          
-          // Build display name: prioritize company, then full_name, then email
-          const investorName = profileData?.company || profileData?.full_name || profileData?.email || 'Unknown';
-          
-          // Check if investor has data access
-          const { data: shareData, error: shareError } = await supabase
-            .from('dataset_shares')
-            .select('id')
-            .eq('dataset_name', datasetName)
-            .eq('owner_id', user?.id as string)
-            .eq('shared_with_user_id', response.investor_id)
-            .maybeSingle();
-
-          console.log('🔍 Data access check for investor:', response.investor_id, {
-            datasetName,
-            shareData,
-            shareError,
-            hasAccess: !!shareData
+      // Create a complete list for all invited investors
+      const allInvestorData = await Promise.all(
+        invitedEmails.map(async (email) => {
+          // Find if this investor has responded
+          const existingResponse = responsesData?.find(r => {
+            // We'll need to match by email, so fetch investor profile
+            return r.investor_id; // We'll check this in the next step
           });
 
-          // Check NDA status for this offer
-          const { data: ndaData } = await supabase
-            .from('ndas')
-            .select('status')
-            .eq('offer_id', offerId)
-            .eq('investor_id', response.investor_id)
+          // Get investor info from profiles table by email
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('user_id, email, full_name, company')
+            .eq('email', email)
             .maybeSingle();
 
-          return {
-            ...response,
-            investor_email: profileData?.email || 'Unknown',
-            investor_name: investorName,
-            has_data_access: !!shareData,
-            nda_status: ndaData?.status || 'not_sent'
-          };
+          // Find the actual response for this investor
+          const response = responsesData?.find(r => r.investor_id === profileData?.user_id);
+          
+          // Build display name
+          const investorName = profileData?.company || profileData?.full_name || email;
+          
+          // Check if investor has data access (only if we have a user_id)
+          let hasDataAccess = false;
+          if (profileData?.user_id) {
+            const { data: shareData } = await supabase
+              .from('dataset_shares')
+              .select('id')
+              .eq('dataset_name', datasetName)
+              .eq('owner_id', user?.id as string)
+              .eq('shared_with_user_id', profileData.user_id)
+              .maybeSingle();
+            hasDataAccess = !!shareData;
+          }
+
+          // Check NDA status (only if we have a user_id)
+          let ndaStatus = 'not_sent';
+          if (profileData?.user_id) {
+            const { data: ndaData } = await supabase
+              .from('ndas')
+              .select('status')
+              .eq('offer_id', offerId)
+              .eq('investor_id', profileData.user_id)
+              .maybeSingle();
+            ndaStatus = ndaData?.status || 'not_sent';
+          }
+
+          // Return either the response with details, or a placeholder for no response
+          if (response) {
+            return {
+              ...response,
+              investor_email: email,
+              investor_name: investorName,
+              has_data_access: hasDataAccess,
+              nda_status: ndaStatus
+            };
+          } else {
+            // No response yet - create a placeholder
+            return {
+              id: `placeholder-${email}`,
+              investor_id: profileData?.user_id || null,
+              investor_email: email,
+              investor_name: investorName,
+              indicative_price: null,
+              comments: null,
+              status: 'no_response',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              has_data_access: hasDataAccess,
+              nda_status: ndaStatus,
+              issuer_response: null,
+              questions: null,
+              additional_data_needs: null,
+              requirements_acknowledged: false,
+              firm_price_status: 'pending',
+              counter_price: null,
+              offer_id: offerId
+            };
+          }
         })
       );
 
-      setResponses(responsesWithDetails);
+      setResponses(allInvestorData);
     } catch (error: any) {
       console.error('Error fetching responses:', error);
       toast({
@@ -387,6 +433,8 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
         return <Badge className="bg-green-600">Formal Indication</Badge>;
       case 'not_interested':
         return <Badge variant="secondary">Not Interested</Badge>;
+      case 'no_response':
+        return <Badge variant="secondary">No Response Yet</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -428,7 +476,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
           </CardDescription>
         </CardHeader>
         <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground">No investor responses yet</p>
+          <p className="text-muted-foreground">No investors invited to this offer yet</p>
         </CardContent>
       </Card>
     );
@@ -451,8 +499,8 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
             <Card key={response.id} className="border-l-4 border-l-blue-500">
               <CardContent className="pt-6">
                 <div className="grid gap-4">
-                  {/* NDA Prompt - Show if investor interested but no NDA sent */}
-                  {response.status === 'accepted' && response.nda_status === 'not_sent' && (
+                   {/* NDA Prompt - Show if investor interested but no NDA sent */}
+                  {response.status === 'accepted' && response.investor_id && response.nda_status === 'not_sent' && (
                     <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-lg p-4 mb-4">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
@@ -496,6 +544,15 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
 
                   {/* Response Details */}
                   <div className="grid md:grid-cols-2 gap-4 pt-2 border-t">
+                    {/* Show placeholder message for investors who haven't responded */}
+                    {response.status === 'no_response' && (
+                      <div className="col-span-2 bg-muted/50 rounded-lg p-4 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          Waiting for investor response
+                        </p>
+                      </div>
+                    )}
+
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Confirmation Status</p>
                       <p className="text-base mt-1">
