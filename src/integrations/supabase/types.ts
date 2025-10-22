@@ -582,12 +582,9 @@ export type Database = {
           records_copied: number
         }[]
       }
-      create_loan_data_table: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      create_loan_data_table: { Args: never; Returns: undefined }
       get_dataset_summaries_optimized: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avg_interest_rate: number
           created_at: string
