@@ -247,25 +247,50 @@ export const deleteLoanData = async (recordIds: string[]): Promise<void> => {
 export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
   try {
     console.log('🔄 getDatasetSummaries - Starting fetch...');
-    // Set a timeout for the RPC call (increased to 45 seconds for large datasets)
-    const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Query timeout - operation took too long')), 45000)
-    );
     
-    const queryPromise = supabase.rpc('get_dataset_summaries_optimized');
+    // Get all accessible datasets (including shared ones)
+    const accessibleDatasets = await getAccessibleDatasets();
+    console.log('📊 Found', accessibleDatasets.length, 'accessible datasets');
     
-    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
-  
-    if (error) {
-      console.error('❌ getDatasetSummaries - Error fetching dataset summaries:', error);
-      throw error;
+    if (accessibleDatasets.length === 0) {
+      return [];
     }
     
-    console.log('✅ getDatasetSummaries - Success, found', data?.length || 0, 'datasets');
-    return data || [];
+    // For each dataset, get its summary information
+    const summaries: DatasetSummary[] = [];
+    
+    for (const dataset of accessibleDatasets) {
+      try {
+        // Use get_portfolio_summary to get dataset stats
+        const { data, error } = await supabase.rpc('get_portfolio_summary', {
+          dataset_name_param: dataset.name
+        });
+        
+        if (error) {
+          console.error(`❌ Error fetching summary for ${dataset.name}:`, error);
+          continue;
+        }
+        
+        if (data && data.length > 0) {
+          const summary = data[0];
+          summaries.push({
+            dataset_name: dataset.name,
+            record_count: summary.total_records || 0,
+            total_value: summary.total_value || 0,
+            avg_interest_rate: summary.avg_interest_rate || 0,
+            created_at: new Date().toISOString() // We don't have this from portfolio_summary
+          });
+        }
+      } catch (err) {
+        console.error(`Error processing dataset ${dataset.name}:`, err);
+        continue;
+      }
+    }
+    
+    console.log('✅ getDatasetSummaries - Success, found', summaries.length, 'dataset summaries');
+    return summaries;
   } catch (error) {
-    console.error('💥 getDatasetSummaries - Error or timeout fetching dataset summaries:', error);
-    // Return empty array on timeout to prevent blocking the UI
+    console.error('💥 getDatasetSummaries - Error fetching dataset summaries:', error);
     return [];
   }
 };
