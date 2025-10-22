@@ -23,7 +23,7 @@ const ManageOffers = () => {
           
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Transaction Grid</h1>
+              <h1 className="text-3xl font-bold mb-2">Transaction Hub</h1>
               <p className="text-muted-foreground">
                 Track your offers through the transaction pipeline
               </p>
