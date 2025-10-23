@@ -358,6 +358,66 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         />
       )}
 
+      {/* Issuer Compliance Section - Only shows for issuers */}
+      {userType !== 'investor' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Issuer Compliance</CardTitle>
+            <CardDescription>Compliance review and documentation status</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">KYC Documentation</p>
+                  <p className="text-xs text-muted-foreground">Investor identification and verification</p>
+                </div>
+                <Badge variant="outline">Pending</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">AML Screening</p>
+                  <p className="text-xs text-muted-foreground">Anti-money laundering checks</p>
+                </div>
+                <Badge variant="outline">Pending</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Credit Committee Approval</p>
+                  <p className="text-xs text-muted-foreground">Internal credit approval process</p>
+                </div>
+                <Badge variant="outline">Pending</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Legal Review</p>
+                  <p className="text-xs text-muted-foreground">Legal documentation review</p>
+                </div>
+                <Badge variant="outline">Pending</Badge>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-2">
+              <Label htmlFor="compliance-notes">Compliance Notes</Label>
+              <Textarea
+                id="compliance-notes"
+                placeholder="Add internal notes about compliance status..."
+                rows={3}
+              />
+            </div>
+            
+            <Button variant="outline" className="w-full">
+              Update Compliance Status
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Investor Response Form - Only for investors */}
       {userType === 'investor' && (
         <>
