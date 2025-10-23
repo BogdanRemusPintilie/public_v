@@ -42,6 +42,8 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
     creditCommittee: false,
     legalReview: false,
   });
+  const [offerResponses, setOfferResponses] = useState<any[]>([]);
+  const [hasFirmPriceSubmitted, setHasFirmPriceSubmitted] = useState(false);
 
   console.log('🔍 OfferDetailsView - offer data:', {
     is_anonymous: offer.is_anonymous,
@@ -55,6 +57,9 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       checkNdaStatus();
       checkInvestorResponse();
       checkDataAccess();
+    }
+    if (userType !== 'investor' && user?.id && offer.id !== 'demo-offer') {
+      fetchOfferResponses();
     }
   }, [userType, user, offer.id, ndaStatus]);
 
@@ -137,6 +142,24 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
     } catch (error) {
       // If query fails, still unlock if NDA is accepted
       setHasDataAccess(ndaStatus === 'accepted');
+    }
+  };
+
+  const fetchOfferResponses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('offer_responses')
+        .select('*')
+        .eq('offer_id', offer.id);
+
+      if (error) throw error;
+
+      setOfferResponses(data || []);
+      // Check if any response has a firm price (counter_price)
+      const hasFirmPrice = data?.some(response => response.counter_price !== null && response.counter_price !== undefined);
+      setHasFirmPriceSubmitted(hasFirmPrice || false);
+    } catch (error: any) {
+      console.error('Error fetching offer responses:', error);
     }
   };
 
@@ -366,84 +389,101 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
       {/* Issuer Compliance Section - Only shows for issuers */}
       {userType !== 'investor' && (
-        <Card>
+        <Card className={!hasFirmPriceSubmitted ? "opacity-60" : ""}>
           <CardHeader>
-            <CardTitle>Issuer Compliance</CardTitle>
-            <CardDescription>Compliance review and documentation status</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              {!hasFirmPriceSubmitted && <Lock className="h-5 w-5" />}
+              Issuer Compliance
+            </CardTitle>
+            <CardDescription>
+              {!hasFirmPriceSubmitted 
+                ? "Available after firm price has been submitted by an investor" 
+                : "Compliance review and documentation status"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">KYC Documentation</p>
-                  <p className="text-xs text-muted-foreground">Investor identification and verification</p>
-                </div>
-                <Button
-                  variant={complianceStatus.kyc ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setComplianceStatus(prev => ({ ...prev, kyc: !prev.kyc }))}
-                >
-                  {complianceStatus.kyc ? "Completed" : "Mark Complete"}
-                </Button>
+            {!hasFirmPriceSubmitted ? (
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Compliance review can begin once an investor submits a firm price offer. Monitor the Investor Interest section above for firm price submissions.
+                </p>
               </div>
-              
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">AML Screening</p>
-                  <p className="text-xs text-muted-foreground">Anti-money laundering checks</p>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">KYC Documentation</p>
+                      <p className="text-xs text-muted-foreground">Investor identification and verification</p>
+                    </div>
+                    <Button
+                      variant={complianceStatus.kyc ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setComplianceStatus(prev => ({ ...prev, kyc: !prev.kyc }))}
+                    >
+                      {complianceStatus.kyc ? "Completed" : "Mark Complete"}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">AML Screening</p>
+                      <p className="text-xs text-muted-foreground">Anti-money laundering checks</p>
+                    </div>
+                    <Button
+                      variant={complianceStatus.aml ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setComplianceStatus(prev => ({ ...prev, aml: !prev.aml }))}
+                    >
+                      {complianceStatus.aml ? "Completed" : "Mark Complete"}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Credit Committee Approval</p>
+                      <p className="text-xs text-muted-foreground">Internal credit approval process</p>
+                    </div>
+                    <Button
+                      variant={complianceStatus.creditCommittee ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setComplianceStatus(prev => ({ ...prev, creditCommittee: !prev.creditCommittee }))}
+                    >
+                      {complianceStatus.creditCommittee ? "Completed" : "Mark Complete"}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Legal Review</p>
+                      <p className="text-xs text-muted-foreground">Legal documentation review</p>
+                    </div>
+                    <Button
+                      variant={complianceStatus.legalReview ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setComplianceStatus(prev => ({ ...prev, legalReview: !prev.legalReview }))}
+                    >
+                      {complianceStatus.legalReview ? "Completed" : "Mark Complete"}
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  variant={complianceStatus.aml ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setComplianceStatus(prev => ({ ...prev, aml: !prev.aml }))}
-                >
-                  {complianceStatus.aml ? "Completed" : "Mark Complete"}
-                </Button>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Credit Committee Approval</p>
-                  <p className="text-xs text-muted-foreground">Internal credit approval process</p>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="compliance-notes">Compliance Notes</Label>
+                  <Textarea
+                    id="compliance-notes"
+                    placeholder="Add internal notes about compliance status..."
+                    rows={3}
+                  />
                 </div>
-                <Button
-                  variant={complianceStatus.creditCommittee ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setComplianceStatus(prev => ({ ...prev, creditCommittee: !prev.creditCommittee }))}
-                >
-                  {complianceStatus.creditCommittee ? "Completed" : "Mark Complete"}
+                
+                <Button variant="outline" className="w-full">
+                  Update Compliance Status
                 </Button>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Legal Review</p>
-                  <p className="text-xs text-muted-foreground">Legal documentation review</p>
-                </div>
-                <Button
-                  variant={complianceStatus.legalReview ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setComplianceStatus(prev => ({ ...prev, legalReview: !prev.legalReview }))}
-                >
-                  {complianceStatus.legalReview ? "Completed" : "Mark Complete"}
-                </Button>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="space-y-2">
-              <Label htmlFor="compliance-notes">Compliance Notes</Label>
-              <Textarea
-                id="compliance-notes"
-                placeholder="Add internal notes about compliance status..."
-                rows={3}
-              />
-            </div>
-            
-            <Button variant="outline" className="w-full">
-              Update Compliance Status
-            </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
