@@ -84,6 +84,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   };
 
   const checkNdaStatus = async () => {
+    // Demo offer should have NDA automatically accepted
+    if (offer.id === 'demo-offer') {
+      setNdaStatus('accepted');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('ndas')
@@ -101,6 +107,16 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   };
 
   const checkInvestorResponse = async () => {
+    // Handle demo offer with pre-set investor response
+    if (offer.id === 'demo-offer' && offer.demo_investor_response) {
+      setInvestorResponse(offer.demo_investor_response);
+      setIndicativePrice(offer.demo_investor_response.indicative_price?.toString() || '');
+      setQuestions(offer.demo_investor_response.questions || '');
+      setAdditionalDataNeeds(offer.demo_investor_response.additional_data_needs || '');
+      setFirmPrice(offer.demo_investor_response.counter_price?.toString() || '');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('offer_responses')

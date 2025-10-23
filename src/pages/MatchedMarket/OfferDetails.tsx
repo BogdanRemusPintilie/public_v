@@ -31,7 +31,7 @@ const OfferDetails = () => {
       if (id === 'demo-offer') {
         setOffer({
           id: 'demo-offer',
-          offer_name: 'Investor Demo Offer',
+          offer_name: 'Investor Demo 7',
           issuer_nationality: 'British',
           issuer_overview: 'British CIB',
           issuer_business_focus: 'SME Corporate loans, Large Corporate loans and consumer finance',
@@ -72,6 +72,14 @@ const OfferDetails = () => {
                 tranche_order: 3
               }
             ]
+          },
+          demo_investor_response: {
+            status: 'accepted',
+            indicative_price: 11.75,
+            questions: 'What is the historical default rate for this portfolio?',
+            additional_data_needs: 'Please provide vintage analysis and prepayment curves.',
+            issuer_response: 'The historical default rate is 1.2% annually. Additional vintage analysis and prepayment data has been added to the documentary repository.',
+            updated_at: new Date().toISOString()
           }
         });
         setIsLoading(false);
