@@ -36,6 +36,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const [hasDataAccess, setHasDataAccess] = useState(false);
   const [firmPrice, setFirmPrice] = useState('');
   const [isSubmittingFirmPrice, setIsSubmittingFirmPrice] = useState(false);
+  const [complianceStatus, setComplianceStatus] = useState({
+    kyc: false,
+    aml: false,
+    creditCommittee: false,
+    legalReview: false,
+  });
 
   console.log('🔍 OfferDetailsView - offer data:', {
     is_anonymous: offer.is_anonymous,
@@ -372,7 +378,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   <p className="text-sm font-medium">KYC Documentation</p>
                   <p className="text-xs text-muted-foreground">Investor identification and verification</p>
                 </div>
-                <Badge variant="outline">Pending</Badge>
+                <Button
+                  variant={complianceStatus.kyc ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setComplianceStatus(prev => ({ ...prev, kyc: !prev.kyc }))}
+                >
+                  {complianceStatus.kyc ? "Completed" : "Mark Complete"}
+                </Button>
               </div>
               
               <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -380,7 +392,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   <p className="text-sm font-medium">AML Screening</p>
                   <p className="text-xs text-muted-foreground">Anti-money laundering checks</p>
                 </div>
-                <Badge variant="outline">Pending</Badge>
+                <Button
+                  variant={complianceStatus.aml ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setComplianceStatus(prev => ({ ...prev, aml: !prev.aml }))}
+                >
+                  {complianceStatus.aml ? "Completed" : "Mark Complete"}
+                </Button>
               </div>
               
               <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -388,7 +406,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   <p className="text-sm font-medium">Credit Committee Approval</p>
                   <p className="text-xs text-muted-foreground">Internal credit approval process</p>
                 </div>
-                <Badge variant="outline">Pending</Badge>
+                <Button
+                  variant={complianceStatus.creditCommittee ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setComplianceStatus(prev => ({ ...prev, creditCommittee: !prev.creditCommittee }))}
+                >
+                  {complianceStatus.creditCommittee ? "Completed" : "Mark Complete"}
+                </Button>
               </div>
               
               <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -396,7 +420,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   <p className="text-sm font-medium">Legal Review</p>
                   <p className="text-xs text-muted-foreground">Legal documentation review</p>
                 </div>
-                <Badge variant="outline">Pending</Badge>
+                <Button
+                  variant={complianceStatus.legalReview ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setComplianceStatus(prev => ({ ...prev, legalReview: !prev.legalReview }))}
+                >
+                  {complianceStatus.legalReview ? "Completed" : "Mark Complete"}
+                </Button>
               </div>
             </div>
             
