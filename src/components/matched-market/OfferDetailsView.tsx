@@ -924,10 +924,20 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <p className="text-sm text-muted-foreground">
                 Please submit an indicative price first.
               </p>
-            ) : investorResponse?.firm_price_status === 'accepted' ? (
-              <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                <p className="text-sm font-medium mb-1">Firm Price Submitted</p>
-                <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+            ) : (investorResponse?.firm_price_status === 'accepted' || investorResponse?.firm_price_status === 'pending') ? (
+              <div className={`p-4 border rounded-lg ${
+                investorResponse.firm_price_status === 'accepted' 
+                  ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900' 
+                  : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900'
+              }`}>
+                <p className="text-sm font-medium mb-1">
+                  {investorResponse.firm_price_status === 'accepted' ? 'Firm Price Accepted' : 'Firm Price Submitted - Awaiting Issuer Response'}
+                </p>
+                <p className={`text-2xl font-bold ${
+                  investorResponse.firm_price_status === 'accepted' 
+                    ? 'text-green-900 dark:text-green-100' 
+                    : 'text-amber-900 dark:text-amber-100'
+                }`}>
                   {investorResponse.counter_price ? Number(investorResponse.counter_price).toFixed(2) : Number(investorResponse.indicative_price).toFixed(2)}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -994,7 +1004,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       await supabase
                         .from('offer_responses')
                         .update({ 
-                          firm_price_status: 'accepted',
+                          firm_price_status: 'pending',
                           counter_price: priceValue,
                           counter_price_updated_at: new Date().toISOString()
                         })
