@@ -9,6 +9,21 @@ export const useUserType = () => {
 
   useEffect(() => {
     checkUserType();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 useUserType - auth state changed:', event);
+      if (session?.user) {
+        checkUserType();
+      } else {
+        setUserType(null);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkUserType = async () => {
