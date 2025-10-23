@@ -109,24 +109,35 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   };
 
   const fetchDatasets = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ fetchDatasets: No user');
+      return;
+    }
     
+    console.log('🔍 fetchDatasets: Starting fetch');
     try {
       const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
       
       if (error) {
-        console.error('Error fetching datasets:', error);
+        console.error('❌ Error fetching datasets:', error);
         return;
       }
 
+      console.log('✅ fetchDatasets: Got data', { 
+        count: data?.length, 
+        datasets: data?.map(d => ({ name: d.dataset_name, total_value: d.total_value }))
+      });
       setDatasets(data || []);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Exception in fetchDatasets:', error);
     }
   };
 
   useEffect(() => {
+    console.log('🔄 useEffect triggered', { isOpen, hasStructure: !!structure, structureName: structure?.structure_name });
+    
     if (isOpen && structure) {
+      console.log('📊 Starting data fetch for analytics');
       fetchDatasetData();
       fetchDatasets();
       
@@ -142,6 +153,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
           costBps: tranche.costBps || 0,
           hedgedPercentage: tranche.hedgedPercentage || 0
         }));
+        console.log('📋 Loaded tranches:', loadedTranches);
         setTranches(loadedTranches);
         
         if (structure.additional_transaction_costs) {
@@ -538,14 +550,36 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   };
 
   const getSelectedDataset = () => {
-    return datasets.find(d => d.dataset_name === structure?.dataset_name);
+    const found = datasets.find(d => d.dataset_name === structure?.dataset_name);
+    console.log('🔍 getSelectedDataset:', { 
+      looking_for: structure?.dataset_name, 
+      available_datasets: datasets.map(d => d.dataset_name),
+      found: found ? `Yes (value: ${found.total_value})` : 'No',
+      datasets_count: datasets.length
+    });
+    return found;
   };
 
   const calculateTrancheValue = (thickness: number) => {
     const dataset = getSelectedDataset();
-    if (!dataset) return 0;
+    if (!dataset) {
+      console.warn('⚠️ calculateTrancheValue: No dataset found', { 
+        thickness, 
+        structure_dataset: structure?.dataset_name,
+        datasets_available: datasets.length 
+      });
+      return 0;
+    }
     // Use manual total value if provided, otherwise use dataset value
     const totalValue = manualTotalValue !== null ? manualTotalValue : dataset.total_value;
+    console.log('💰 calculateTrancheValue:', { 
+      thickness, 
+      dataset_name: dataset.dataset_name,
+      dataset_total_value: dataset.total_value,
+      manualTotalValue, 
+      totalValue,
+      calculated: (totalValue * thickness) / 100 
+    });
     return (totalValue * thickness) / 100;
   };
 
@@ -645,6 +679,27 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     if (!structure) return null;
 
     const dataset = getSelectedDataset();
+    
+    // Show loading state if datasets haven't loaded yet
+    if (datasets.length === 0) {
+      console.log('⏳ EditStructureSection: Waiting for datasets to load');
+      return (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">Loading dataset information...</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    console.log('🎨 EditStructureSection rendering', { 
+      dataset: dataset?.dataset_name, 
+      total_value: dataset?.total_value,
+      tranches_count: tranches.length 
+    });
 
     return (
       <Card>
