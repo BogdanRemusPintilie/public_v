@@ -904,10 +904,10 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
       {/* Stage 5: Submit Firm Price Section */}
       {userType === 'investor' && isNdaAccepted && (
-        <Card className={!investorResponse?.indicative_price || !investorResponse?.issuer_response ? 'opacity-60' : ''}>
+        <Card className={!investorResponse?.indicative_price ? 'opacity-60' : ''}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {(!investorResponse?.indicative_price || !investorResponse?.issuer_response) && (
+              {!investorResponse?.indicative_price && (
                 <Lock className="h-5 w-5" />
               )}
               <TrendingUp className="h-5 w-5" />
@@ -916,8 +916,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             <CardDescription>
               {!investorResponse?.indicative_price 
                 ? 'Available after submitting indicative price' 
-                : !investorResponse?.issuer_response
-                ? 'Available after issuer responds to your questions and data requirements'
                 : 'Submit your final firm price for this offer'}
             </CardDescription>
           </CardHeader>
@@ -925,10 +923,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             {!investorResponse?.indicative_price ? (
               <p className="text-sm text-muted-foreground">
                 Please submit an indicative price first.
-              </p>
-            ) : !investorResponse?.issuer_response ? (
-              <p className="text-sm text-muted-foreground">
-                Waiting for issuer to acknowledge your questions and additional data requirements before you can submit a firm price.
               </p>
             ) : investorResponse?.firm_price_status === 'submitted' || investorResponse?.firm_price_status === 'accepted' ? (
               <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
@@ -964,6 +958,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       onChange={(e) => setFirmPrice(e.target.value)}
                       className="pr-8"
                     />
+
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                       %
                     </span>
