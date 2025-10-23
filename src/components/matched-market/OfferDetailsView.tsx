@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload } from 'lucide-react';
 
 interface OfferDetailsViewProps {
   offer: any;
@@ -37,14 +39,24 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   const [firmPrice, setFirmPrice] = useState('');
   const [isSubmittingFirmPrice, setIsSubmittingFirmPrice] = useState(false);
   const [complianceStatus, setComplianceStatus] = useState({
-    kyc: false,
-    aml: false,
-    creditCommittee: false,
-    legalReview: false,
+    kyc: { status: 'pending', notes: '', evidence: [] as string[] },
+    aml: { status: 'pending', notes: '', evidence: [] as string[] },
+    creditCommittee: { status: 'pending', notes: '', evidence: [] as string[] },
+    legalReview: { status: 'pending', notes: '', evidence: [] as string[] },
   });
 
-  const handleComplianceToggle = async (field: keyof typeof complianceStatus) => {
-    const newStatus = { ...complianceStatus, [field]: !complianceStatus[field] };
+  const handleComplianceUpdate = async (
+    field: keyof typeof complianceStatus,
+    updateType: 'status' | 'notes' | 'evidence',
+    value: string | string[]
+  ) => {
+    const newStatus = {
+      ...complianceStatus,
+      [field]: {
+        ...complianceStatus[field],
+        [updateType]: value,
+      },
+    };
     setComplianceStatus(newStatus);
 
     // Save to database for each investor response
@@ -58,10 +70,30 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               .eq('id', response.id)
           )
         );
+        
+        toast({
+          title: 'Compliance Updated',
+          description: `${field.toUpperCase()} ${updateType} has been saved.`,
+        });
       } catch (error) {
         console.error('Error updating compliance status:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to update compliance status',
+          variant: 'destructive',
+        });
       }
     }
+  };
+
+  const handleFileUpload = async (field: keyof typeof complianceStatus, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // In a real implementation, upload to storage and get URL
+    // For now, we'll just store the filename
+    const newEvidence = [...complianceStatus[field].evidence, file.name];
+    await handleComplianceUpdate(field, 'evidence', newEvidence);
   };
   const [offerResponses, setOfferResponses] = useState<any[]>([]);
   const [hasFirmPriceSubmitted, setHasFirmPriceSubmitted] = useState(false);
@@ -447,78 +479,259 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               </div>
             ) : (
               <>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-6">
+                  {/* KYC Documentation */}
+                  <div className="p-4 border rounded-lg space-y-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">KYC Documentation</p>
                       <p className="text-xs text-muted-foreground">Investor identification and verification</p>
                     </div>
-                    <Button
-                      variant={complianceStatus.kyc ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleComplianceToggle('kyc')}
-                    >
-                      {complianceStatus.kyc ? "Completed" : "Mark Complete"}
-                    </Button>
+                    
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select 
+                        value={complianceStatus.kyc.status} 
+                        onValueChange={(value) => handleComplianceUpdate('kyc', 'status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={complianceStatus.kyc.notes}
+                        onChange={(e) => handleComplianceUpdate('kyc', 'notes', e.target.value)}
+                        placeholder="Add notes about KYC process..."
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Upload Evidence</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="file"
+                          id="kyc-upload"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload('kyc', e)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById('kyc-upload')?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Document
+                        </Button>
+                      </div>
+                      {complianceStatus.kyc.evidence.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {complianceStatus.kyc.evidence.map((file, idx) => (
+                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+
+                  {/* AML Screening */}
+                  <div className="p-4 border rounded-lg space-y-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">AML Screening</p>
                       <p className="text-xs text-muted-foreground">Anti-money laundering checks</p>
                     </div>
-                    <Button
-                      variant={complianceStatus.aml ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleComplianceToggle('aml')}
-                    >
-                      {complianceStatus.aml ? "Completed" : "Mark Complete"}
-                    </Button>
+                    
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select 
+                        value={complianceStatus.aml.status} 
+                        onValueChange={(value) => handleComplianceUpdate('aml', 'status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={complianceStatus.aml.notes}
+                        onChange={(e) => handleComplianceUpdate('aml', 'notes', e.target.value)}
+                        placeholder="Add notes about AML screening..."
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Upload Evidence</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="file"
+                          id="aml-upload"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload('aml', e)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById('aml-upload')?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Document
+                        </Button>
+                      </div>
+                      {complianceStatus.aml.evidence.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {complianceStatus.aml.evidence.map((file, idx) => (
+                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+
+                  {/* Credit Committee Approval */}
+                  <div className="p-4 border rounded-lg space-y-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Credit Committee Approval</p>
                       <p className="text-xs text-muted-foreground">Internal credit approval process</p>
                     </div>
-                    <Button
-                      variant={complianceStatus.creditCommittee ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleComplianceToggle('creditCommittee')}
-                    >
-                      {complianceStatus.creditCommittee ? "Completed" : "Mark Complete"}
-                    </Button>
+                    
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select 
+                        value={complianceStatus.creditCommittee.status} 
+                        onValueChange={(value) => handleComplianceUpdate('creditCommittee', 'status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={complianceStatus.creditCommittee.notes}
+                        onChange={(e) => handleComplianceUpdate('creditCommittee', 'notes', e.target.value)}
+                        placeholder="Add notes about credit committee review..."
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Upload Evidence</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="file"
+                          id="credit-upload"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload('creditCommittee', e)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById('credit-upload')?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Document
+                        </Button>
+                      </div>
+                      {complianceStatus.creditCommittee.evidence.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {complianceStatus.creditCommittee.evidence.map((file, idx) => (
+                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
+
+                  {/* Legal Review */}
+                  <div className="p-4 border rounded-lg space-y-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Legal Review</p>
                       <p className="text-xs text-muted-foreground">Legal documentation review</p>
                     </div>
-                    <Button
-                      variant={complianceStatus.legalReview ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleComplianceToggle('legalReview')}
-                    >
-                      {complianceStatus.legalReview ? "Completed" : "Mark Complete"}
-                    </Button>
+                    
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select 
+                        value={complianceStatus.legalReview.status} 
+                        onValueChange={(value) => handleComplianceUpdate('legalReview', 'status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={complianceStatus.legalReview.notes}
+                        onChange={(e) => handleComplianceUpdate('legalReview', 'notes', e.target.value)}
+                        placeholder="Add notes about legal review..."
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Upload Evidence</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="file"
+                          id="legal-upload"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload('legalReview', e)}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => document.getElementById('legal-upload')?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Document
+                        </Button>
+                      </div>
+                      {complianceStatus.legalReview.evidence.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {complianceStatus.legalReview.evidence.map((file, idx) => (
+                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                
-                <Separator />
-                
-                <div className="space-y-2">
-                  <Label htmlFor="compliance-notes">Compliance Notes</Label>
-                  <Textarea
-                    id="compliance-notes"
-                    placeholder="Add internal notes about compliance status..."
-                    rows={3}
-                  />
-                </div>
-                
-                <Button variant="outline" className="w-full">
-                  Update Compliance Status
-                </Button>
               </>
             )}
           </CardContent>

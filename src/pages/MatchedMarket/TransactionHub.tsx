@@ -85,13 +85,13 @@ export default function TransactionHub() {
 
     // If investor has submitted a firm offer, check for compliance
     if (offerResponse?.firm_price_status === 'accepted' || offerResponse?.firm_price_status === 'submitted') {
-      // Check if any compliance item is marked complete
+      // Check if any compliance item has moved from pending status
       const complianceStatus = offerResponse?.compliance_status;
       if (complianceStatus && (
-        complianceStatus.kyc || 
-        complianceStatus.aml || 
-        complianceStatus.creditCommittee || 
-        complianceStatus.legalReview
+        (complianceStatus.kyc?.status && complianceStatus.kyc.status !== 'pending') ||
+        (complianceStatus.aml?.status && complianceStatus.aml.status !== 'pending') ||
+        (complianceStatus.creditCommittee?.status && complianceStatus.creditCommittee.status !== 'pending') ||
+        (complianceStatus.legalReview?.status && complianceStatus.legalReview.status !== 'pending')
       )) {
         return 'Compliance Review';
       }
@@ -302,13 +302,13 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
       
       // Special handling for "Compliance Review" stage
       if (currentStageName === 'Compliance Review') {
-        // Check if any compliance item is complete
+        // Check if any compliance item has moved from pending status
         const complianceStatus = transaction?.offerResponse?.compliance_status;
         if (complianceStatus && (
-          complianceStatus.kyc || 
-          complianceStatus.aml || 
-          complianceStatus.creditCommittee || 
-          complianceStatus.legalReview
+          (complianceStatus.kyc?.status && complianceStatus.kyc.status !== 'pending') ||
+          (complianceStatus.aml?.status && complianceStatus.aml.status !== 'pending') ||
+          (complianceStatus.creditCommittee?.status && complianceStatus.creditCommittee.status !== 'pending') ||
+          (complianceStatus.legalReview?.status && complianceStatus.legalReview.status !== 'pending')
         )) {
           return 'in-process';
         }
