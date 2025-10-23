@@ -567,13 +567,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.kyc.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.kyc.evidence.map((file, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground p-2 rounded hover:bg-muted/50">
                               <span>• {file}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleFileDelete('kyc', idx)}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-6 w-6 p-0"
                               >
                                 <X className="h-3 w-3" />
                               </Button>
@@ -628,13 +628,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.aml.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.aml.evidence.map((file, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground p-2 rounded hover:bg-muted/50">
                               <span>• {file}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleFileDelete('aml', idx)}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-6 w-6 p-0"
                               >
                                 <X className="h-3 w-3" />
                               </Button>
@@ -689,13 +689,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.creditCommittee.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.creditCommittee.evidence.map((file, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground p-2 rounded hover:bg-muted/50">
                               <span>• {file}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleFileDelete('creditCommittee', idx)}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-6 w-6 p-0"
                               >
                                 <X className="h-3 w-3" />
                               </Button>
@@ -750,13 +750,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.legalReview.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.legalReview.evidence.map((file, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground p-2 rounded hover:bg-muted/50">
                               <span>• {file}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleFileDelete('legalReview', idx)}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-6 w-6 p-0"
                               >
                                 <X className="h-3 w-3" />
                               </Button>
