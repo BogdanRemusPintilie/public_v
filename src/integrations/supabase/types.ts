@@ -302,6 +302,7 @@ export type Database = {
         Row: {
           additional_data_needs: string | null
           comments: string | null
+          compliance_status: Json | null
           counter_price: number | null
           counter_price_updated_at: string | null
           created_at: string
@@ -320,6 +321,7 @@ export type Database = {
         Insert: {
           additional_data_needs?: string | null
           comments?: string | null
+          compliance_status?: Json | null
           counter_price?: number | null
           counter_price_updated_at?: string | null
           created_at?: string
@@ -338,6 +340,7 @@ export type Database = {
         Update: {
           additional_data_needs?: string | null
           comments?: string | null
+          compliance_status?: Json | null
           counter_price?: number | null
           counter_price_updated_at?: string | null
           created_at?: string

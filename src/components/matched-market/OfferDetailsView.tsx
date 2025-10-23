@@ -42,6 +42,27 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
     creditCommittee: false,
     legalReview: false,
   });
+
+  const handleComplianceToggle = async (field: keyof typeof complianceStatus) => {
+    const newStatus = { ...complianceStatus, [field]: !complianceStatus[field] };
+    setComplianceStatus(newStatus);
+
+    // Save to database for each investor response
+    if (offerResponses.length > 0) {
+      try {
+        await Promise.all(
+          offerResponses.map((response) =>
+            supabase
+              .from('offer_responses')
+              .update({ compliance_status: newStatus })
+              .eq('id', response.id)
+          )
+        );
+      } catch (error) {
+        console.error('Error updating compliance status:', error);
+      }
+    }
+  };
   const [offerResponses, setOfferResponses] = useState<any[]>([]);
   const [hasFirmPriceSubmitted, setHasFirmPriceSubmitted] = useState(false);
 
@@ -435,7 +456,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                     <Button
                       variant={complianceStatus.kyc ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setComplianceStatus(prev => ({ ...prev, kyc: !prev.kyc }))}
+                      onClick={() => handleComplianceToggle('kyc')}
                     >
                       {complianceStatus.kyc ? "Completed" : "Mark Complete"}
                     </Button>
@@ -449,7 +470,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                     <Button
                       variant={complianceStatus.aml ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setComplianceStatus(prev => ({ ...prev, aml: !prev.aml }))}
+                      onClick={() => handleComplianceToggle('aml')}
                     >
                       {complianceStatus.aml ? "Completed" : "Mark Complete"}
                     </Button>
@@ -463,7 +484,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                     <Button
                       variant={complianceStatus.creditCommittee ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setComplianceStatus(prev => ({ ...prev, creditCommittee: !prev.creditCommittee }))}
+                      onClick={() => handleComplianceToggle('creditCommittee')}
                     >
                       {complianceStatus.creditCommittee ? "Completed" : "Mark Complete"}
                     </Button>
@@ -477,7 +498,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                     <Button
                       variant={complianceStatus.legalReview ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setComplianceStatus(prev => ({ ...prev, legalReview: !prev.legalReview }))}
+                      onClick={() => handleComplianceToggle('legalReview')}
                     >
                       {complianceStatus.legalReview ? "Completed" : "Mark Complete"}
                     </Button>

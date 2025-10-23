@@ -54,6 +54,7 @@ interface Transaction {
   issuer_nationality?: string;
   created_at: string;
   offer_id: string;
+  offerResponse?: any;
 }
 
 export default function TransactionHub() {
@@ -82,8 +83,18 @@ export default function TransactionHub() {
       return 'Full loan tape received';
     }
 
-    // If investor has submitted a firm offer
+    // If investor has submitted a firm offer, check for compliance
     if (offerResponse?.firm_price_status === 'accepted' || offerResponse?.firm_price_status === 'submitted') {
+      // Check if any compliance item is marked complete
+      const complianceStatus = offerResponse?.compliance_status;
+      if (complianceStatus && (
+        complianceStatus.kyc || 
+        complianceStatus.aml || 
+        complianceStatus.creditCommittee || 
+        complianceStatus.legalReview
+      )) {
+        return 'Compliance Review';
+      }
       return 'Firm offer submitted';
     }
 
@@ -183,6 +194,7 @@ export default function TransactionHub() {
             issuer_nationality: offer.issuer_nationality,
             created_at: offer.created_at,
             offer_id: offer.id,
+            offerResponse,
           });
         }
       });
@@ -287,6 +299,21 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
         // Show amber when firm price is submitted (in-process)
         return 'in-process';
       }
+      
+      // Special handling for "Compliance Review" stage
+      if (currentStageName === 'Compliance Review') {
+        // Check if any compliance item is complete
+        const complianceStatus = transaction?.offerResponse?.compliance_status;
+        if (complianceStatus && (
+          complianceStatus.kyc || 
+          complianceStatus.aml || 
+          complianceStatus.creditCommittee || 
+          complianceStatus.legalReview
+        )) {
+          return 'in-process';
+        }
+      }
+      
       // Current stage - show purple for specific completed stages
       if (purpleStages.includes(currentStageName)) {
         return 'completed';
