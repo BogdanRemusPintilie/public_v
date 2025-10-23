@@ -223,7 +223,19 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
   };
 
   const calculateAnalytics = (scenario: 'current' | 'postHedge' | 'futureUpsize'): AnalyticsMetrics => {
+    console.log('📊 calculateAnalytics called', { 
+      scenario, 
+      datasetDataLength: datasetData.length, 
+      hasStructure: !!structure,
+      structureName: structure?.structure_name,
+      tranches: tranches.length
+    });
+    
     if (!datasetData.length || !structure) {
+      console.warn('⚠️ calculateAnalytics returning zeros - missing data', { 
+        datasetDataLength: datasetData.length, 
+        hasStructure: !!structure 
+      });
       return {
         riskRatio: 0,
         riskWeightedAssets: 0,
