@@ -924,7 +924,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <p className="text-sm text-muted-foreground">
                 Please submit an indicative price first.
               </p>
-            ) : investorResponse?.firm_price_status === 'submitted' || investorResponse?.firm_price_status === 'accepted' ? (
+            ) : investorResponse?.firm_price_status === 'accepted' ? (
               <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
                 <p className="text-sm font-medium mb-1">Firm Price Submitted</p>
                 <p className="text-2xl font-bold text-green-900 dark:text-green-100">
@@ -989,12 +989,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       return;
                     }
 
-                    setIsSubmittingFirmPrice(true);
+                     setIsSubmittingFirmPrice(true);
                     try {
                       await supabase
                         .from('offer_responses')
                         .update({ 
-                          firm_price_status: 'submitted',
+                          firm_price_status: 'accepted',
                           counter_price: priceValue,
                           counter_price_updated_at: new Date().toISOString()
                         })
