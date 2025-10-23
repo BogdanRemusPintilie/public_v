@@ -24,6 +24,7 @@ const STAGES = [
   'Indicative Offer submitted',
   'Full loan tape received',
   'Firm offer submitted',
+  'Compliance Review',
   'Allocation submitted',
   'Transaction completed'
 ] as const;
