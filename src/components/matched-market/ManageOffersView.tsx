@@ -342,8 +342,8 @@ export function ManageOffersView() {
       if (currentStageName === 'Full loan tape' && !hasDataAccess) {
         return 'in-process';
       }
-      // Special handling for Firm offer stage - amber when firm price not submitted
-      if (currentStageName === 'Firm offer' && !hasCounterPrice) {
+      // Special handling for Firm offer stage - amber when firm price submitted
+      if (currentStageName === 'Firm offer') {
         return 'in-process';
       }
       return 'opened';

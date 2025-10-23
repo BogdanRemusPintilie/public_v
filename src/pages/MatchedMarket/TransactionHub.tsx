@@ -269,7 +269,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     }
   };
 
-  const getStageStatus = (currentStageIndex: number, transactionStatus: string): 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed' => {
+  const getStageStatus = (currentStageIndex: number, transactionStatus: string, transaction?: Transaction): 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed' => {
     const statusIndex = STAGES.indexOf(transactionStatus as any);
     
     if (statusIndex === -1) return 'blank';
@@ -282,6 +282,11 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
       // Stages before current - show as completed (purple)
       return 'completed';
     } else if (currentStageIndex === statusIndex) {
+      // Special handling for "Firm offer submitted" stage
+      if (currentStageName === 'Firm offer submitted') {
+        // Show amber when firm price is submitted (in-process)
+        return 'in-process';
+      }
       // Current stage - show purple for specific completed stages
       if (purpleStages.includes(currentStageName)) {
         return 'completed';
@@ -413,7 +418,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
                       {transaction.offer_name}
                     </TableCell>
                     {STAGES.map((stage, index) => {
-                      const stageStatus = getStageStatus(index, transaction.status);
+                      const stageStatus = getStageStatus(index, transaction.status, transaction);
                       return (
                         <TableCell 
                           key={stage} 
