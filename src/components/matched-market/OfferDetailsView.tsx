@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload } from 'lucide-react';
 
 interface OfferDetailsViewProps {
@@ -45,16 +44,55 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
     legalReview: { status: 'pending', notes: '', evidence: [] as string[] },
   });
 
+  // Helper function to determine compliance status
+  const getComplianceStatus = (item: { notes: string; evidence: string[] }): string => {
+    if (!item.notes && item.evidence.length === 0) {
+      return 'pending';
+    }
+    if (item.notes && item.evidence.length > 0) {
+      return 'completed';
+    }
+    return 'in_progress';
+  };
+
+  // Helper function to get status display text
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Incomplete';
+      case 'in_progress': return 'In Progress';
+      case 'completed': return 'Complete';
+      default: return 'Incomplete';
+    }
+  };
+
+  // Helper function to get status badge variant
+  const getStatusBadgeVariant = (status: string): 'secondary' | 'default' | 'outline' => {
+    switch (status) {
+      case 'pending': return 'secondary';
+      case 'in_progress': return 'default';
+      case 'completed': return 'outline';
+      default: return 'secondary';
+    }
+  };
+
   const handleComplianceUpdate = async (
     field: keyof typeof complianceStatus,
-    updateType: 'status' | 'notes' | 'evidence',
+    updateType: 'notes' | 'evidence',
     value: string | string[]
   ) => {
+    const updatedItem = {
+      ...complianceStatus[field],
+      [updateType]: value,
+    };
+    
+    // Auto-calculate status based on notes and evidence
+    const autoStatus = getComplianceStatus(updatedItem);
+    
     const newStatus = {
       ...complianceStatus,
       [field]: {
-        ...complianceStatus[field],
-        [updateType]: value,
+        ...updatedItem,
+        status: autoStatus,
       },
     };
     setComplianceStatus(newStatus);
@@ -482,26 +520,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                 <div className="space-y-6">
                   {/* KYC Documentation */}
                   <div className="p-4 border rounded-lg space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">KYC Documentation</p>
-                      <p className="text-xs text-muted-foreground">Investor identification and verification</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select 
-                        value={complianceStatus.kyc.status} 
-                        onValueChange={(value) => handleComplianceUpdate('kyc', 'status', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">KYC Documentation</p>
+                        <p className="text-xs text-muted-foreground">Investor identification and verification</p>
+                      </div>
+                      <Badge variant={getStatusBadgeVariant(complianceStatus.kyc.status)}>
+                        {getStatusDisplay(complianceStatus.kyc.status)}
+                      </Badge>
                     </div>
 
                     <div className="space-y-2">
@@ -545,26 +571,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
                   {/* AML Screening */}
                   <div className="p-4 border rounded-lg space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">AML Screening</p>
-                      <p className="text-xs text-muted-foreground">Anti-money laundering checks</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select 
-                        value={complianceStatus.aml.status} 
-                        onValueChange={(value) => handleComplianceUpdate('aml', 'status', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">AML Screening</p>
+                        <p className="text-xs text-muted-foreground">Anti-money laundering checks</p>
+                      </div>
+                      <Badge variant={getStatusBadgeVariant(complianceStatus.aml.status)}>
+                        {getStatusDisplay(complianceStatus.aml.status)}
+                      </Badge>
                     </div>
 
                     <div className="space-y-2">
@@ -608,26 +622,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
                   {/* Credit Committee Approval */}
                   <div className="p-4 border rounded-lg space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Credit Committee Approval</p>
-                      <p className="text-xs text-muted-foreground">Internal credit approval process</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select 
-                        value={complianceStatus.creditCommittee.status} 
-                        onValueChange={(value) => handleComplianceUpdate('creditCommittee', 'status', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Credit Committee Approval</p>
+                        <p className="text-xs text-muted-foreground">Internal credit approval process</p>
+                      </div>
+                      <Badge variant={getStatusBadgeVariant(complianceStatus.creditCommittee.status)}>
+                        {getStatusDisplay(complianceStatus.creditCommittee.status)}
+                      </Badge>
                     </div>
 
                     <div className="space-y-2">
@@ -671,26 +673,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
                   {/* Legal Review */}
                   <div className="p-4 border rounded-lg space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Legal Review</p>
-                      <p className="text-xs text-muted-foreground">Legal documentation review</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select 
-                        value={complianceStatus.legalReview.status} 
-                        onValueChange={(value) => handleComplianceUpdate('legalReview', 'status', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Legal Review</p>
+                        <p className="text-xs text-muted-foreground">Legal documentation review</p>
+                      </div>
+                      <Badge variant={getStatusBadgeVariant(complianceStatus.legalReview.status)}>
+                        {getStatusDisplay(complianceStatus.legalReview.status)}
+                      </Badge>
                     </div>
 
                     <div className="space-y-2">
