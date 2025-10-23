@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Database, FolderOpen, TrendingUp, Lock } from 'lucide-react';
+import { FileText, Database, FolderOpen, TrendingUp, Lock, X } from 'lucide-react';
 import { InvestorResponseForm } from './InvestorResponseForm';
 import { InvestorResponsesManager } from './InvestorResponsesManager';
 import { useUserType } from '@/hooks/useUserType';
@@ -131,6 +131,11 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
     // In a real implementation, upload to storage and get URL
     // For now, we'll just store the filename
     const newEvidence = [...complianceStatus[field].evidence, file.name];
+    await handleComplianceUpdate(field, 'evidence', newEvidence);
+  };
+
+  const handleFileDelete = async (field: keyof typeof complianceStatus, fileIndex: number) => {
+    const newEvidence = complianceStatus[field].evidence.filter((_, idx) => idx !== fileIndex);
     await handleComplianceUpdate(field, 'evidence', newEvidence);
   };
   const [offerResponses, setOfferResponses] = useState<any[]>([]);
@@ -562,7 +567,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.kyc.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.kyc.evidence.map((file, idx) => (
-                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                              <span>• {file}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleFileDelete('kyc', idx)}
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -613,7 +628,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.aml.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.aml.evidence.map((file, idx) => (
-                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                              <span>• {file}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleFileDelete('aml', idx)}
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -664,7 +689,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.creditCommittee.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.creditCommittee.evidence.map((file, idx) => (
-                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                              <span>• {file}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleFileDelete('creditCommittee', idx)}
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -715,7 +750,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       {complianceStatus.legalReview.evidence.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {complianceStatus.legalReview.evidence.map((file, idx) => (
-                            <p key={idx} className="text-xs text-muted-foreground">• {file}</p>
+                            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground group">
+                              <span>• {file}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleFileDelete('legalReview', idx)}
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
                           ))}
                         </div>
                       )}
