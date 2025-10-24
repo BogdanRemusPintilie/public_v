@@ -604,7 +604,11 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <>
                 <div className="space-y-6">
                   {/* KYC Documentation */}
-                  <div className="p-4 border rounded-lg space-y-4">
+                  <div className={`p-4 border rounded-lg space-y-4 transition-colors ${
+                    complianceStatus.kyc.status === 'completed' 
+                      ? 'bg-green-50 border-green-500 dark:bg-green-950/20 dark:border-green-700' 
+                      : ''
+                  }`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-sm font-medium">KYC Documentation</p>
@@ -675,7 +679,11 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   </div>
 
                   {/* AML Screening */}
-                  <div className="p-4 border rounded-lg space-y-4">
+                  <div className={`p-4 border rounded-lg space-y-4 transition-colors ${
+                    complianceStatus.aml.status === 'completed' 
+                      ? 'bg-green-50 border-green-500 dark:bg-green-950/20 dark:border-green-700' 
+                      : ''
+                  }`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-sm font-medium">AML Screening</p>
@@ -746,7 +754,11 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   </div>
 
                   {/* Credit Committee Approval */}
-                  <div className="p-4 border rounded-lg space-y-4">
+                  <div className={`p-4 border rounded-lg space-y-4 transition-colors ${
+                    complianceStatus.creditCommittee.status === 'completed' 
+                      ? 'bg-green-50 border-green-500 dark:bg-green-950/20 dark:border-green-700' 
+                      : ''
+                  }`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-sm font-medium">Credit Committee Approval</p>
@@ -817,7 +829,11 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                   </div>
 
                   {/* Legal Review */}
-                  <div className="p-4 border rounded-lg space-y-4">
+                  <div className={`p-4 border rounded-lg space-y-4 transition-colors ${
+                    complianceStatus.legalReview.status === 'completed' 
+                      ? 'bg-green-50 border-green-500 dark:bg-green-950/20 dark:border-green-700' 
+                      : ''
+                  }`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <p className="text-sm font-medium">Legal Review</p>
