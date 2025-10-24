@@ -85,14 +85,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       [updateType]: value,
     };
     
-    // Auto-calculate status based on notes and evidence
-    const autoStatus = getComplianceStatus(updatedItem);
-    
+    // Keep existing status unless it's being set to completed
     const newStatus = {
       ...complianceStatus,
       [field]: {
         ...updatedItem,
-        status: autoStatus,
+        status: complianceStatus[field].status, // Maintain current status
       },
     };
     setComplianceStatus(newStatus);
@@ -118,6 +116,52 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         toast({
           title: 'Error',
           description: 'Failed to update compliance status',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleSubmitCompliance = async (field: keyof typeof complianceStatus) => {
+    if (complianceStatus[field].evidence.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please upload at least one document before submitting',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newStatus = {
+      ...complianceStatus,
+      [field]: {
+        ...complianceStatus[field],
+        status: 'completed',
+      },
+    };
+    setComplianceStatus(newStatus);
+
+    // Save to database for each investor response
+    if (offerResponses.length > 0) {
+      try {
+        await Promise.all(
+          offerResponses.map((response) =>
+            supabase
+              .from('offer_responses')
+              .update({ compliance_status: newStatus })
+              .eq('id', response.id)
+          )
+        );
+        
+        toast({
+          title: 'Submitted',
+          description: `${field.toUpperCase()} has been marked as complete.`,
+        });
+      } catch (error) {
+        console.error('Error submitting compliance:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to submit compliance status',
           variant: 'destructive',
         });
       }
@@ -618,6 +662,16 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                         </div>
                       )}
                     </div>
+
+                    {complianceStatus.kyc.status !== 'completed' && (
+                      <Button
+                        onClick={() => handleSubmitCompliance('kyc')}
+                        className="w-full"
+                        disabled={complianceStatus.kyc.evidence.length === 0}
+                      >
+                        Submit KYC Documentation
+                      </Button>
+                    )}
                   </div>
 
                   {/* AML Screening */}
@@ -679,6 +733,16 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                         </div>
                       )}
                     </div>
+
+                    {complianceStatus.aml.status !== 'completed' && (
+                      <Button
+                        onClick={() => handleSubmitCompliance('aml')}
+                        className="w-full"
+                        disabled={complianceStatus.aml.evidence.length === 0}
+                      >
+                        Submit AML Screening
+                      </Button>
+                    )}
                   </div>
 
                   {/* Credit Committee Approval */}
@@ -740,6 +804,16 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                         </div>
                       )}
                     </div>
+
+                    {complianceStatus.creditCommittee.status !== 'completed' && (
+                      <Button
+                        onClick={() => handleSubmitCompliance('creditCommittee')}
+                        className="w-full"
+                        disabled={complianceStatus.creditCommittee.evidence.length === 0}
+                      >
+                        Submit Credit Committee Approval
+                      </Button>
+                    )}
                   </div>
 
                   {/* Legal Review */}
@@ -801,6 +875,16 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                         </div>
                       )}
                     </div>
+
+                    {complianceStatus.legalReview.status !== 'completed' && (
+                      <Button
+                        onClick={() => handleSubmitCompliance('legalReview')}
+                        className="w-full"
+                        disabled={complianceStatus.legalReview.evidence.length === 0}
+                      >
+                        Submit Legal Review
+                      </Button>
+                    )}
                   </div>
                 </div>
               </>
