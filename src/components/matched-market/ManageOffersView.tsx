@@ -57,6 +57,7 @@ export function ManageOffersView() {
     status: string; 
     hasCounterPrice?: boolean;
     hasDataAccess?: boolean;
+    offerResponse?: any;
   };
   
   const [offers, setOffers] = useState<any[]>([]);
@@ -82,8 +83,18 @@ export function ManageOffersView() {
       return 'Full loan tape';
     }
 
-    // If investor has submitted a firm offer
+    // If investor has submitted a firm offer, check for compliance
     if (offerResponse?.firm_price_status === 'accepted' || offerResponse?.firm_price_status === 'submitted') {
+      // Check if any compliance item has moved from pending status
+      const complianceStatus = offerResponse?.compliance_status;
+      if (complianceStatus && (
+        (complianceStatus.kyc?.status && complianceStatus.kyc.status !== 'pending') ||
+        (complianceStatus.aml?.status && complianceStatus.aml.status !== 'pending') ||
+        (complianceStatus.creditCommittee?.status && complianceStatus.creditCommittee.status !== 'pending') ||
+        (complianceStatus.legalReview?.status && complianceStatus.legalReview.status !== 'pending')
+      )) {
+        return 'Compliance Review';
+      }
       return 'Firm offer';
     }
 
@@ -202,7 +213,8 @@ export function ManageOffersView() {
               interested: myResponse?.status === 'interested' ? 1 : 0,
               status: status,
               hasCounterPrice: myResponse?.counter_price != null,
-              hasDataAccess: !!shareData
+              hasDataAccess: !!shareData,
+              offerResponse: myResponse
             };
           } else {
             // For issuers, get all responses to this offer (existing logic)
@@ -220,6 +232,7 @@ export function ManageOffersView() {
               let mostAdvancedStatus = 'Offer issued';
               let hasAnyCounterPrice = false;
               let hasAnyDataAccess = false;
+              let mostAdvancedResponse: any = null;
               
               // Check data access for any accepted NDA
               for (const response of responses) {
@@ -254,6 +267,7 @@ export function ManageOffersView() {
                   'Indicative offer',
                   'Full loan tape',
                   'Firm offer',
+                  'Compliance Review',
                   'Allocation',
                   'Transaction completed'
                 ];
@@ -263,6 +277,7 @@ export function ManageOffersView() {
                 
                 if (newPriority > currentPriority) {
                   mostAdvancedStatus = status;
+                  mostAdvancedResponse = response;
                 }
               }
 
@@ -271,7 +286,8 @@ export function ManageOffersView() {
                 interested: responses.filter(r => r.status === 'interested').length,
                 status: mostAdvancedStatus,
                 hasCounterPrice: hasAnyCounterPrice,
-                hasDataAccess: hasAnyDataAccess
+                hasDataAccess: hasAnyDataAccess,
+                offerResponse: mostAdvancedResponse
               };
             } else {
               counts[offer.id] = {
@@ -328,7 +344,8 @@ export function ManageOffersView() {
     currentStageIndex: number, 
     offerStatus: string, 
     hasCounterPrice: boolean,
-    hasDataAccess: boolean
+    hasDataAccess: boolean,
+    offerResponse?: any
   ): 'blank' | 'opened' | 'in-process' | 'completed' => {
     const statusIndex = STAGES.indexOf(offerStatus as any);
     const currentStageName = STAGES[currentStageIndex];
@@ -345,6 +362,27 @@ export function ManageOffersView() {
       // Special handling for Firm offer stage - amber when firm price submitted
       if (currentStageName === 'Firm offer') {
         return 'in-process';
+      }
+      // Special handling for "Compliance Review" stage
+      if (currentStageName === 'Compliance Review') {
+        const complianceStatus = offerResponse?.compliance_status;
+        if (complianceStatus) {
+          // Check if any compliance item has evidence uploaded or is in progress
+          const hasAnyProgress = (
+            (complianceStatus.kyc?.evidence && complianceStatus.kyc.evidence.length > 0) ||
+            (complianceStatus.kyc?.status === 'in-progress') ||
+            (complianceStatus.aml?.evidence && complianceStatus.aml.evidence.length > 0) ||
+            (complianceStatus.aml?.status === 'in-progress') ||
+            (complianceStatus.creditCommittee?.evidence && complianceStatus.creditCommittee.evidence.length > 0) ||
+            (complianceStatus.creditCommittee?.status === 'in-progress') ||
+            (complianceStatus.legalReview?.evidence && complianceStatus.legalReview.evidence.length > 0) ||
+            (complianceStatus.legalReview?.status === 'in-progress')
+          );
+          
+          if (hasAnyProgress) {
+            return 'in-process';
+          }
+        }
       }
       return 'opened';
     }
@@ -423,6 +461,7 @@ export function ManageOffersView() {
               const currentStatus = responseCount.status;
               const hasCounterPrice = responseCount.hasCounterPrice || false;
               const hasDataAccess = responseCount.hasDataAccess || false;
+              const offerResponse = responseCount.offerResponse;
               
               return (
                 <TableRow 
@@ -433,7 +472,7 @@ export function ManageOffersView() {
                     {offer.offer_name}
                   </TableCell>
                   {STAGES.map((stage, index) => {
-                    const stageStatus = getStageStatus(index, currentStatus, hasCounterPrice, hasDataAccess);
+                    const stageStatus = getStageStatus(index, currentStatus, hasCounterPrice, hasDataAccess, offerResponse);
                     return (
                       <TableCell 
                         key={stage} 
