@@ -1214,7 +1214,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               <p className="text-sm text-muted-foreground">
                 Please submit an indicative price first.
               </p>
-            ) : (investorResponse?.firm_price_status === 'accepted' || investorResponse?.firm_price_status === 'pending') ? (
+            ) : (investorResponse?.counter_price && (investorResponse?.firm_price_status === 'accepted' || investorResponse?.firm_price_status === 'pending')) ? (
               <div className={`p-4 border rounded-lg ${
                 investorResponse.firm_price_status === 'accepted' 
                   ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900' 
@@ -1228,7 +1228,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                     ? 'text-green-900 dark:text-green-100' 
                     : 'text-amber-900 dark:text-amber-100'
                 }`}>
-                  {investorResponse.counter_price ? Number(investorResponse.counter_price).toFixed(2) : Number(investorResponse.indicative_price).toFixed(2)}%
+                  {Number(investorResponse.counter_price).toFixed(2)}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Status: {investorResponse.firm_price_status}
