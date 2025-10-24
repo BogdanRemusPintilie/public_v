@@ -12,14 +12,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Plus, Trash2, Save, Database, Calculator } from 'lucide-react';
-import { TrancheStructure } from '@/utils/supabase';
+import { TrancheStructure, getDatasetSummaries } from '@/utils/supabase';
 
 interface DatasetSummary {
   dataset_name: string;
   record_count: number;
   total_value: number;
   avg_interest_rate: number;
-  high_risk_count: number;
+  high_risk_loans: number;
   created_at: string;
 }
 
@@ -61,21 +61,10 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
     
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
-      
-      if (error) {
-        console.error('Error fetching datasets:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch datasets",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setDatasets(data || []);
+      const datasetSummaries = await getDatasetSummaries();
+      setDatasets(datasetSummaries as DatasetSummary[]);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching datasets:', error);
       toast({
         title: "Error",
         description: "Failed to fetch datasets",
@@ -393,7 +382,7 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
                       </div>
                       <div className="text-center">
                         <div className="text-lg font-bold text-purple-600">
-                          {getSelectedDataset()!.high_risk_count}
+                          {getSelectedDataset()!.high_risk_loans}
                         </div>
                         <div className="text-sm text-gray-600">High Risk</div>
                       </div>
