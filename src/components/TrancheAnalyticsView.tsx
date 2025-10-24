@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, TrendingUp, Shield, DollarSign, Target, Info, Plus, Trash2, Save, Database, Calculator } from 'lucide-react';
 import { TrancheStructure } from '@/utils/supabase';
+import { PARSER_REGISTRY } from '@/utils/parsers/parserRegistry';
 
 interface AnalyticsMetrics {
   riskRatio: number;
@@ -34,6 +35,7 @@ interface DatasetSummary {
   avg_interest_rate: number;
   high_risk_loans: number;
   created_at: string;
+  loan_type?: string;
 }
 
 interface Tranche {
@@ -945,6 +947,14 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
           </div>
           <div className="flex items-center space-x-4 mt-2">
             <Badge variant="outline">Dataset: {structure.dataset_name}</Badge>
+            {datasets[0]?.loan_type && (
+              <Badge 
+                variant={datasets[0].loan_type === 'consumer_finance' ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {PARSER_REGISTRY[datasets[0].loan_type as keyof typeof PARSER_REGISTRY]?.displayName || datasets[0].loan_type}
+              </Badge>
+            )}
             <Badge variant="outline">{structure.tranches.length} Tranches</Badge>
             <Badge variant="outline">Total Cost: {formatCurrency(structure.total_cost)}</Badge>
           </div>

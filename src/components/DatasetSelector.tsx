@@ -6,7 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { getAccessibleDatasets, deleteLoanDataByDataset } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Database, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 import DatasetManagementInterface from './DatasetManagementInterface';
+import { PARSER_REGISTRY } from '@/utils/parsers/parserRegistry';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,7 +63,7 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   onSelectDataset,
   refreshTrigger = 0
 }) => {
-  const [datasets, setDatasets] = useState<{ name: string; owner_id: string; is_shared: boolean }[]>([]);
+  const [datasets, setDatasets] = useState<{ name: string; owner_id: string; is_shared: boolean; loan_type?: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastRefreshTrigger, setLastRefreshTrigger] = useState(0);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
@@ -301,10 +303,20 @@ const DatasetSelector: React.FC<DatasetSelectorProps> = ({
                       >
                         <div className="flex items-center space-x-3">
                           <Database className="h-5 w-5 text-blue-600" />
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              {dataset.name}
-                            </h3>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-gray-900">
+                                {dataset.name}
+                              </h3>
+                              {dataset.loan_type && (
+                                <Badge 
+                                  variant={dataset.loan_type === 'consumer_finance' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {PARSER_REGISTRY[dataset.loan_type as keyof typeof PARSER_REGISTRY]?.displayName || dataset.loan_type}
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-gray-500">
                               {dataset.is_shared ? 'Shared with you' : 'Your dataset'}
                             </p>

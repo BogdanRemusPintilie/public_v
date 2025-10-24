@@ -12,6 +12,7 @@ import { Database, BarChart3, Settings, TrendingUp, Layers, FileText, Trash2, Fi
 import StructureDatasetPage from './StructureDatasetPage';
 import TrancheAnalyticsView from './TrancheAnalyticsView';
 import { TrancheStructure, getDatasetSummaries, deleteLoanDataByDataset } from '@/utils/supabase';
+import { PARSER_REGISTRY } from '@/utils/parsers/parserRegistry';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,7 @@ interface DatasetSummary {
   avg_interest_rate: number;
   high_risk_loans: number;
   created_at: string;
+  loan_type?: string;
 }
 
 interface TrancheAnalysisDashboardProps {
@@ -510,9 +512,19 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                           <CardHeader className="pb-4">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
-                                  {dataset.dataset_name}
-                                </CardTitle>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <CardTitle className="text-lg font-semibold text-gray-900">
+                                    {dataset.dataset_name}
+                                  </CardTitle>
+                                  {dataset.loan_type && (
+                                    <Badge 
+                                      variant={dataset.loan_type === 'consumer_finance' ? 'default' : 'secondary'}
+                                      className="text-xs"
+                                    >
+                                      {PARSER_REGISTRY[dataset.loan_type as keyof typeof PARSER_REGISTRY]?.displayName || dataset.loan_type}
+                                    </Badge>
+                                  )}
+                                </div>
                                 <CardDescription className="text-gray-600">
                                   Created on {formatDate(dataset.created_at)}
                                 </CardDescription>

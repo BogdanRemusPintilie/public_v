@@ -33,6 +33,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2, Search, Database } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { PARSER_REGISTRY } from '@/utils/parsers/parserRegistry';
 
 interface DatasetManagerProps {
   isOpen: boolean;
@@ -45,6 +47,7 @@ interface DatasetSummary {
   total_value: number;
   avg_interest_rate: number;
   created_at: string;
+  loan_type?: string;
 }
 
 const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
@@ -263,6 +266,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                           />
                         </TableHead>
                         <TableHead>Dataset Name</TableHead>
+                        <TableHead>Loan Type</TableHead>
                         <TableHead>Records</TableHead>
                         <TableHead>Total Value</TableHead>
                         <TableHead>Avg Interest Rate</TableHead>
@@ -287,6 +291,16 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                             {dataset.dataset_name}
                             {dataset.dataset_name === "Unsecured consumer loans" && (
                               <span className="ml-2 text-xs text-red-600 font-normal">(Pre-selected for deletion)</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {dataset.loan_type && (
+                              <Badge 
+                                variant={dataset.loan_type === 'consumer_finance' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {PARSER_REGISTRY[dataset.loan_type as keyof typeof PARSER_REGISTRY]?.displayName || dataset.loan_type}
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell>{dataset.record_count.toLocaleString()}</TableCell>

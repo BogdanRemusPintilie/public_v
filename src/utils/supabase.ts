@@ -24,6 +24,7 @@ interface DatasetSummary {
   avg_interest_rate: number;
   high_risk_loans: number;
   created_at: string;
+  loan_type?: string;
 }
 
 export interface TrancheStructure {
@@ -280,7 +281,8 @@ export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
             total_value: summary.total_value || 0,
             avg_interest_rate: summary.avg_interest_rate || 0,
             high_risk_loans: summary.high_risk_loans || 0,
-            created_at: new Date().toISOString() // We don't have this from portfolio_summary
+            created_at: new Date().toISOString(), // We don't have this from portfolio_summary
+            loan_type: dataset.loan_type
           });
         }
       } catch (err) {
@@ -298,7 +300,7 @@ export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
 };
 
 // Enhanced function to get datasets including shared ones with better error handling
-export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id: string; is_shared: boolean }[]> => {
+export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id: string; is_shared: boolean; loan_type?: string }[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
@@ -308,7 +310,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
   console.log('🔍 FETCHING ACCESSIBLE DATASETS for user:', user.id, 'email:', user.email);
 
   try {
-    const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean }>();
+    const uniqueDatasets = new Map<string, { name: string; owner_id: string; is_shared: boolean; loan_type?: string }>();
     
     // First, get unique datasets owned by the user using efficient GROUP BY database function
     const { data: ownedDatasets, error: ownedError } = await (supabase as any)
@@ -332,7 +334,8 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
             uniqueDatasets.set(datasetName, {
               name: datasetName,
               owner_id: record.user_id,
-              is_shared: false
+              is_shared: false,
+              loan_type: record.loan_type
             });
           }
         }
@@ -344,7 +347,7 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
     // Second, get shared datasets - check both email and user_id matches
     const { data: sharedDatasets, error: sharedError } = await supabase
       .from('dataset_shares')
-      .select('dataset_name, owner_id')
+      .select('dataset_name, owner_id, loan_type')
       .or(`shared_with_email.eq.${user.email},shared_with_user_id.eq.${user.id}`)
       .not('dataset_name', 'is', null)
       .not('dataset_name', 'eq', '');
@@ -364,7 +367,8 @@ export const getAccessibleDatasets = async (): Promise<{ name: string; owner_id:
               uniqueDatasets.set(datasetName, {
                 name: datasetName,
                 owner_id: share.owner_id,
-                is_shared: true
+                is_shared: true,
+                loan_type: share.loan_type
               });
             }
           }
