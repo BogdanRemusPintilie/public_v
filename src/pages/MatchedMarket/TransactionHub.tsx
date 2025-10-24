@@ -288,7 +288,7 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     
     const currentStageName = STAGES[currentStageIndex];
     // These stages should turn purple when completed
-    const purpleStages = ['Indicative Offer submitted', 'Transaction details', 'Full loan tape received'];
+    const purpleStages = ['Interest indicated', 'Indicative Offer submitted', 'Transaction details', 'Full loan tape received'];
     
     if (currentStageIndex < statusIndex) {
       // Stages before current - show as completed (purple)
