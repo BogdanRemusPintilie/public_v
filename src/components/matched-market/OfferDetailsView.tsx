@@ -315,12 +315,18 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         investor_id: user.id,
         status: 'accepted',
         indicative_price: priceValue,
+        counter_price: null,
+        firm_price_status: null,
       };
 
       if (investorResponse) {
         await supabase
           .from('offer_responses')
-          .update({ indicative_price: priceValue })
+          .update({ 
+            indicative_price: priceValue,
+            counter_price: null,
+            firm_price_status: null
+          })
           .eq('id', investorResponse.id);
       } else {
         await supabase

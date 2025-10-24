@@ -152,7 +152,7 @@ export function InvestorResponsesManager({ offerId, datasetName }: InvestorRespo
               questions: null,
               additional_data_needs: null,
               requirements_acknowledged: false,
-              firm_price_status: 'pending',
+              firm_price_status: null,
               counter_price: null,
               offer_id: offerId
             };
