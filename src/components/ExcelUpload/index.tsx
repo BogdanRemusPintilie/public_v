@@ -3,10 +3,13 @@ import { useToast } from "@/hooks/use-toast";
 import { LoanRecord, insertLoanData, getLoanDataByDataset, deleteLoanDataByDataset, deleteLoanData, getPortfolioSummary } from '@/utils/supabase';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { parseExcelFile } from '@/utils/excelParser';
+import { PARSER_REGISTRY, LoanType } from '@/utils/parsers/parserRegistry';
+import { CorporateTermLoanRecord } from '@/utils/parsers/corporateTermLoansParser';
+import { insertCorporateTermLoans, getCorporateTermLoansByDataset, deleteCorporateTermLoansByDataset, deleteCorporateTermLoans, getCTLPortfolioSummary } from '@/utils/supabaseCTL';
 import { ExcelUploadModal } from './ExcelUploadModal';
 import DatasetSharingManager from '../DatasetSharingManager';
 import DatasetSelector, { clearDatasetCache } from '../DatasetSelector';
+import { LoanTypeSelector } from '../LoanTypeSelector';
 
 interface ExcelUploadProps {
   isOpen: boolean;
@@ -24,9 +27,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [datasetName, setDatasetName] = useState<string>('');
   const [selectedDatasetName, setSelectedDatasetName] = useState<string>('');
-  const [previewData, setPreviewData] = useState<LoanRecord[]>([]);
-  const [allData, setAllData] = useState<LoanRecord[]>([]);
-  const [filteredData, setFilteredData] = useState<LoanRecord[]>([]);
+  const [selectedLoanType, setSelectedLoanType] = useState<LoanType>('consumer_finance');
+  const [previewData, setPreviewData] = useState<LoanRecord[] | CorporateTermLoanRecord[]>([]);
+  const [allData, setAllData] = useState<LoanRecord[] | CorporateTermLoanRecord[]>([]);
+  const [filteredData, setFilteredData] = useState<LoanRecord[] | CorporateTermLoanRecord[]>([]);
   const [currentFilters, setCurrentFilters] = useState<any>(null);
   const [filteredCount, setFilteredCount] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,6 +71,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setSelectedFile(null);
     setDatasetName('');
     setSelectedDatasetName('');
+    setSelectedLoanType('consumer_finance');
     setPortfolioSummary(null);
     setUploadProgress(0);
     setUploadStatus('');

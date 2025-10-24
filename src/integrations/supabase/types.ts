@@ -14,11 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
+      corporate_term_loans_data: {
+        Row: {
+          amortization_type: string | null
+          arrears_days: number | null
+          base_rate: string | null
+          borrower_name: string | null
+          collateral_coverage_ratio: number | null
+          collateral_type: string | null
+          country: string | null
+          covenant_status: string | null
+          created_at: string | null
+          credit_rating: string | null
+          currency: string | null
+          current_balance: number
+          dataset_name: string | null
+          debt_service_coverage_ratio: number | null
+          facility_amount: number | null
+          file_name: string | null
+          id: string
+          industry_sector: string | null
+          interest_coverage_ratio: number | null
+          interest_rate: number
+          leverage_ratio: number | null
+          lgd: number
+          loan_amount: number
+          margin: number | null
+          maturity_date: string | null
+          opening_balance: number
+          origination_date: string | null
+          pd: number | null
+          performing_status: string | null
+          probability_of_default: number | null
+          remaining_term: number
+          secured_unsecured: string | null
+          term: number
+          updated_at: string | null
+          user_id: string
+          worksheet_name: string | null
+        }
+        Insert: {
+          amortization_type?: string | null
+          arrears_days?: number | null
+          base_rate?: string | null
+          borrower_name?: string | null
+          collateral_coverage_ratio?: number | null
+          collateral_type?: string | null
+          country?: string | null
+          covenant_status?: string | null
+          created_at?: string | null
+          credit_rating?: string | null
+          currency?: string | null
+          current_balance: number
+          dataset_name?: string | null
+          debt_service_coverage_ratio?: number | null
+          facility_amount?: number | null
+          file_name?: string | null
+          id?: string
+          industry_sector?: string | null
+          interest_coverage_ratio?: number | null
+          interest_rate: number
+          leverage_ratio?: number | null
+          lgd: number
+          loan_amount: number
+          margin?: number | null
+          maturity_date?: string | null
+          opening_balance: number
+          origination_date?: string | null
+          pd?: number | null
+          performing_status?: string | null
+          probability_of_default?: number | null
+          remaining_term: number
+          secured_unsecured?: string | null
+          term: number
+          updated_at?: string | null
+          user_id: string
+          worksheet_name?: string | null
+        }
+        Update: {
+          amortization_type?: string | null
+          arrears_days?: number | null
+          base_rate?: string | null
+          borrower_name?: string | null
+          collateral_coverage_ratio?: number | null
+          collateral_type?: string | null
+          country?: string | null
+          covenant_status?: string | null
+          created_at?: string | null
+          credit_rating?: string | null
+          currency?: string | null
+          current_balance?: number
+          dataset_name?: string | null
+          debt_service_coverage_ratio?: number | null
+          facility_amount?: number | null
+          file_name?: string | null
+          id?: string
+          industry_sector?: string | null
+          interest_coverage_ratio?: number | null
+          interest_rate?: number
+          leverage_ratio?: number | null
+          lgd?: number
+          loan_amount?: number
+          margin?: number | null
+          maturity_date?: string | null
+          opening_balance?: number
+          origination_date?: string | null
+          pd?: number | null
+          performing_status?: string | null
+          probability_of_default?: number | null
+          remaining_term?: number
+          secured_unsecured?: string | null
+          term?: number
+          updated_at?: string | null
+          user_id?: string
+          worksheet_name?: string | null
+        }
+        Relationships: []
+      }
       dataset_shares: {
         Row: {
           created_at: string | null
           dataset_name: string
           id: string
+          loan_type: Database["public"]["Enums"]["loan_type"] | null
           owner_id: string
           shared_with_email: string
           shared_with_user_id: string | null
@@ -28,6 +146,7 @@ export type Database = {
           created_at?: string | null
           dataset_name: string
           id?: string
+          loan_type?: Database["public"]["Enums"]["loan_type"] | null
           owner_id: string
           shared_with_email: string
           shared_with_user_id?: string | null
@@ -37,6 +156,7 @@ export type Database = {
           created_at?: string | null
           dataset_name?: string
           id?: string
+          loan_type?: Database["public"]["Enums"]["loan_type"] | null
           owner_id?: string
           shared_with_email?: string
           shared_with_user_id?: string | null
@@ -206,6 +326,7 @@ export type Database = {
           interest_rate: number
           lgd: number
           loan_amount: number
+          loan_type: Database["public"]["Enums"]["loan_type"] | null
           ltv: number
           opening_balance: number
           pd: number | null
@@ -223,6 +344,7 @@ export type Database = {
           interest_rate: number
           lgd: number
           loan_amount: number
+          loan_type?: Database["public"]["Enums"]["loan_type"] | null
           ltv: number
           opening_balance: number
           pd?: number | null
@@ -240,6 +362,7 @@ export type Database = {
           interest_rate?: number
           lgd?: number
           loan_amount?: number
+          loan_type?: Database["public"]["Enums"]["loan_type"] | null
           ltv?: number
           opening_balance?: number
           pd?: number | null
@@ -586,6 +709,40 @@ export type Database = {
         }[]
       }
       create_loan_data_table: { Args: never; Returns: undefined }
+      get_ctl_industry_distribution: {
+        Args: { dataset_name_param: string }
+        Returns: {
+          count: number
+          industry: string
+          total_exposure: number
+        }[]
+      }
+      get_ctl_portfolio_summary: {
+        Args: {
+          credit_rating_filter?: string
+          dataset_name_param: string
+          max_leverage_ratio?: number
+          max_loan_amount?: number
+          min_leverage_ratio?: number
+          min_loan_amount?: number
+        }
+        Returns: {
+          avg_interest_rate: number
+          avg_leverage_ratio: number
+          high_risk_loans: number
+          non_performing_count: number
+          performing_count: number
+          total_exposure: number
+          total_records: number
+        }[]
+      }
+      get_ctl_rating_distribution: {
+        Args: { dataset_name_param: string }
+        Returns: {
+          count: number
+          rating: string
+        }[]
+      }
       get_dataset_summaries_optimized: {
         Args: never
         Returns: {
@@ -744,6 +901,7 @@ export type Database = {
       app_role: "admin" | "moderator" | "viewer"
       app_user_type: "investor" | "issuer"
       company_type: "seer_capital" | "general"
+      loan_type: "consumer_finance" | "corporate_term_loans"
       user_role: "admin" | "company_user" | "viewer"
     }
     CompositeTypes: {
@@ -875,6 +1033,7 @@ export const Constants = {
       app_role: ["admin", "moderator", "viewer"],
       app_user_type: ["investor", "issuer"],
       company_type: ["seer_capital", "general"],
+      loan_type: ["consumer_finance", "corporate_term_loans"],
       user_role: ["admin", "company_user", "viewer"],
     },
   },
