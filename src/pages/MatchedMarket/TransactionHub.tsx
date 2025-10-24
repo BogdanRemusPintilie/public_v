@@ -304,7 +304,11 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     } else if (currentStageIndex === statusIndex) {
       // Special handling for "Firm offer submitted" stage
       if (currentStageName === 'Firm offer submitted') {
-        // Show amber when firm price is submitted (in-process)
+        const firmPriceStatus = transaction?.offerResponse?.firm_price_status;
+        // Show purple when accepted, amber when submitted
+        if (firmPriceStatus === 'accepted') {
+          return 'completed';
+        }
         return 'in-process';
       }
       
