@@ -602,9 +602,21 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
               </div>
             ) : (
               <>
-                <div className="space-y-6">
-                  {/* KYC Documentation */}
-                  <div className={`p-4 border rounded-lg space-y-4 transition-colors ${
+                {(() => {
+                  const allCompleted = 
+                    complianceStatus.kyc.status === 'completed' &&
+                    complianceStatus.aml.status === 'completed' &&
+                    complianceStatus.creditCommittee.status === 'completed' &&
+                    complianceStatus.legalReview.status === 'completed';
+
+                  return (
+                    <div className={`space-y-6 p-6 rounded-lg transition-colors ${
+                      allCompleted 
+                        ? 'bg-purple-50 border-2 border-purple-500 dark:bg-purple-950/20 dark:border-purple-700' 
+                        : ''
+                    }`}>
+                      {/* KYC Documentation */}
+                      <div className={`p-4 border rounded-lg space-y-4 transition-colors ${
                     complianceStatus.kyc.status === 'completed' 
                       ? 'bg-green-50 border-green-500 dark:bg-green-950/20 dark:border-green-700' 
                       : ''
@@ -902,7 +914,9 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       </Button>
                     )}
                   </div>
-                </div>
+                    </div>
+                  );
+                })()}
               </>
             )}
           </CardContent>
