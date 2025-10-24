@@ -209,7 +209,14 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       setIndicativePrice(offer.demo_investor_response.indicative_price?.toString() || '');
       setQuestions(offer.demo_investor_response.questions || '');
       setAdditionalDataNeeds(offer.demo_investor_response.additional_data_needs || '');
-      setFirmPrice(offer.demo_investor_response.counter_price?.toString() || '');
+      // Only populate firm price if it exists
+      if (offer.demo_investor_response.counter_price !== null && offer.demo_investor_response.counter_price !== undefined) {
+        setFirmPrice(offer.demo_investor_response.counter_price.toString());
+        setHasFirmPriceSubmitted(true);
+      } else {
+        setFirmPrice('');
+        setHasFirmPriceSubmitted(false);
+      }
       return;
     }
 
