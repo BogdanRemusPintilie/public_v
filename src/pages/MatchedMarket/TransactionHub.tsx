@@ -290,6 +290,14 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
     // These stages should turn purple when completed
     const purpleStages = ['Interest indicated', 'Indicative Offer submitted', 'Transaction details', 'Full loan tape received'];
     
+    // Special handling: If NDA is accepted, "Full loan tape received" should be purple
+    if (currentStageName === 'Full loan tape received') {
+      const ndaAccepted = transaction?.offerResponse || statusIndex >= STAGES.indexOf('NDA executed');
+      if (ndaAccepted && statusIndex >= STAGES.indexOf('NDA executed')) {
+        return 'completed';
+      }
+    }
+    
     if (currentStageIndex < statusIndex) {
       // Stages before current - show as completed (purple)
       return 'completed';
