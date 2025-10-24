@@ -314,15 +314,23 @@ By accepting this NDA, you acknowledge that you have read, understood, and agree
       
       // Special handling for "Compliance Review" stage
       if (currentStageName === 'Compliance Review') {
-        // Check if any compliance item has moved from pending status
         const complianceStatus = transaction?.offerResponse?.compliance_status;
-        if (complianceStatus && (
-          (complianceStatus.kyc?.status && complianceStatus.kyc.status !== 'pending') ||
-          (complianceStatus.aml?.status && complianceStatus.aml.status !== 'pending') ||
-          (complianceStatus.creditCommittee?.status && complianceStatus.creditCommittee.status !== 'pending') ||
-          (complianceStatus.legalReview?.status && complianceStatus.legalReview.status !== 'pending')
-        )) {
-          return 'in-process';
+        if (complianceStatus) {
+          // Check if any compliance item has evidence uploaded or is in progress
+          const hasAnyProgress = (
+            (complianceStatus.kyc?.evidence && complianceStatus.kyc.evidence.length > 0) ||
+            (complianceStatus.kyc?.status === 'in-progress') ||
+            (complianceStatus.aml?.evidence && complianceStatus.aml.evidence.length > 0) ||
+            (complianceStatus.aml?.status === 'in-progress') ||
+            (complianceStatus.creditCommittee?.evidence && complianceStatus.creditCommittee.evidence.length > 0) ||
+            (complianceStatus.creditCommittee?.status === 'in-progress') ||
+            (complianceStatus.legalReview?.evidence && complianceStatus.legalReview.evidence.length > 0) ||
+            (complianceStatus.legalReview?.status === 'in-progress')
+          );
+          
+          if (hasAnyProgress) {
+            return 'in-process';
+          }
         }
       }
       
