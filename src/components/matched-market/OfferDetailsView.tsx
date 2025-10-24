@@ -282,6 +282,21 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       // Check if any response has a firm price (counter_price)
       const hasFirmPrice = data?.some(response => response.counter_price !== null && response.counter_price !== undefined);
       setHasFirmPriceSubmitted(hasFirmPrice || false);
+
+      // Load compliance status from the most recent/complete response
+      if (data && data.length > 0) {
+        // Find the response with the most complete compliance status
+        const responseWithCompliance = data.find(r => r.compliance_status) || data[0];
+        if (responseWithCompliance?.compliance_status) {
+          const dbCompliance = responseWithCompliance.compliance_status as any;
+          setComplianceStatus({
+            kyc: dbCompliance.kyc || { status: 'pending', notes: '', evidence: [] },
+            aml: dbCompliance.aml || { status: 'pending', notes: '', evidence: [] },
+            creditCommittee: dbCompliance.creditCommittee || { status: 'pending', notes: '', evidence: [] },
+            legalReview: dbCompliance.legalReview || { status: 'pending', notes: '', evidence: [] },
+          });
+        }
+      }
     } catch (error: any) {
       console.error('Error fetching offer responses:', error);
     }
