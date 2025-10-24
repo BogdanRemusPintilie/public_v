@@ -226,8 +226,13 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         setIndicativePrice(data.indicative_price?.toString() || '');
         setQuestions(data.questions || '');
         setAdditionalDataNeeds(data.additional_data_needs || '');
-        // Only initialize firm price if it has been previously submitted
-        setFirmPrice(data.counter_price?.toString() || '');
+        // Only populate firm price if it has been previously submitted
+        // Otherwise keep it blank for fresh input
+        if (data.counter_price !== null && data.counter_price !== undefined) {
+          setFirmPrice(data.counter_price.toString());
+        } else {
+          setFirmPrice('');
+        }
       }
     } catch (error) {
       // No response found
@@ -320,6 +325,9 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         title: 'Indicative Price Submitted',
         description: `Your indicative price of ${priceValue}% has been sent to the issuer.`,
       });
+      
+      // Clear firm price input for fresh entry
+      setFirmPrice('');
       
       await checkInvestorResponse();
     } catch (error: any) {
