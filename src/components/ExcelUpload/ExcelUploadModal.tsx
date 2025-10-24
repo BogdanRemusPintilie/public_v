@@ -33,9 +33,9 @@ interface ExcelUploadModalProps {
     highRiskLoans: number;
     totalRecords: number;
   } | null;
-  previewData: LoanRecord[];
-  allData: LoanRecord[];
-  filteredData: LoanRecord[];
+  previewData: any[];
+  allData: any[];
+  filteredData: any[];
   selectedRecords: Set<string>;
   currentPage: number;
   hasMore: boolean;
