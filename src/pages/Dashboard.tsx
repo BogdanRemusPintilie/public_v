@@ -22,13 +22,16 @@ import { useUserType } from '@/hooks/useUserType';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const { userType, isLoading: userTypeLoading } = useUserType();
+  const { userType, isLoading: userTypeLoading, error: userTypeError, refresh: refreshUserType } = useUserType();
   const navigate = useNavigate();
   
   // Debug logging for user type
   useEffect(() => {
-    console.log('Dashboard - userType:', userType, 'isLoading:', userTypeLoading);
-  }, [userType, userTypeLoading]);
+    console.log('Dashboard - userType:', userType, 'isLoading:', userTypeLoading, 'user:', user?.email);
+    if (userTypeError) {
+      console.error('Dashboard - userType error:', userTypeError);
+    }
+  }, [userType, userTypeLoading, userTypeError, user]);
   const location = useLocation();
   const { toast } = useToast();
   const [showExcelUpload, setShowExcelUpload] = useState(false);
@@ -54,12 +57,12 @@ const Dashboard = () => {
 
   // Preload data when user is authenticated for instant loading
   useEffect(() => {
-    if (user) {
-      console.log('🚀 DASHBOARD - User authenticated, preloading all data');
+    if (user && !userTypeLoading) {
+      console.log('🚀 DASHBOARD - User authenticated, preloading all data for:', user.email, 'userType:', userType);
       preloadDatasets(user);
       preloadTrancheData(user);
     }
-  }, [user]);
+  }, [user, userTypeLoading, userType]);
 
   const handleLogout = () => {
     logout();
@@ -151,8 +154,33 @@ const Dashboard = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
+          <p className="mt-2 text-gray-600">Loading dashboard...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show error state if userType failed to load
+  if (userTypeError || (!userTypeLoading && !userType)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle>Unable to Load Dashboard</CardTitle>
+            <CardDescription>
+              {userTypeError || 'Unable to determine your account type. Please try refreshing.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button onClick={refreshUserType} className="w-full">
+              Refresh Dashboard
+            </Button>
+            <Button variant="outline" onClick={handleLogout} className="w-full">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -178,7 +206,14 @@ const Dashboard = () => {
               </button>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome back, {user?.email}</span>
+              <span className="text-sm text-gray-600">
+                Welcome back, {user?.email}
+                {userType && (
+                  <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                    {userType === 'issuer' ? 'Issuer' : 'Investor'}
+                  </span>
+                )}
+              </span>
               {isAdmin && (
                 <Button 
                   variant="outline" 

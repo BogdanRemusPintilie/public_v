@@ -66,9 +66,9 @@ export function ManageOffersView() {
   const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
-    console.log('🔍 ManageOffersView - user:', user?.id, 'userType:', userType, 'loading:', userTypeLoading);
-    if (user && !userTypeLoading) {
-      console.log('✅ Fetching offers for userType:', userType);
+    console.log('🔍 ManageOffersView - user:', user?.id, user?.email, 'userType:', userType, 'loading:', userTypeLoading);
+    if (user && !userTypeLoading && userType) {
+      console.log('✅ Fetching offers for userType:', userType, 'user:', user.email);
       fetchOffers();
     }
   }, [user, userType, userTypeLoading]);
@@ -137,9 +137,21 @@ export function ManageOffersView() {
   };
 
   const fetchOffers = async () => {
+    if (!userType) {
+      console.error('❌ ManageOffersView - Cannot fetch offers: userType is not set');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!user?.id || !user?.email) {
+      console.error('❌ ManageOffersView - Cannot fetch offers: user ID or email missing');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      console.log('📊 Fetching offers - userType:', userType, 'user email:', user?.email);
+      console.log('📊 Fetching offers - userType:', userType, 'user:', user.email);
       
       let offersData;
       
@@ -152,11 +164,14 @@ export function ManageOffersView() {
             *,
             structure:tranche_structures(*)
           `)
-          .contains('shared_with_emails', [user?.email || ''])
+          .contains('shared_with_emails', [user.email])
           .eq('status', 'active')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error fetching investor offers:', error);
+          throw error;
+        }
         console.log('📥 Investor offers fetched:', data?.length || 0);
         offersData = data || [];
       } else {
@@ -167,10 +182,13 @@ export function ManageOffersView() {
             *,
             structure:tranche_structures(*)
           `)
-          .eq('user_id', user?.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Error fetching issuer offers:', error);
+          throw error;
+        }
         console.log('📥 Issuer offers fetched:', data?.length || 0);
         offersData = data || [];
       }
@@ -390,11 +408,29 @@ export function ManageOffersView() {
     return 'blank';
   };
 
-  if (isLoading) {
+  if (userTypeLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">
+            {userTypeLoading ? 'Loading user information...' : 'Loading offers...'}
+          </p>
+        </div>
       </div>
+    );
+  }
+
+  if (!userType) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-muted-foreground mb-4">Unable to determine user type</p>
+          <Button onClick={() => navigate('/dashboard')}>
+            Return to Dashboard
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -402,10 +438,14 @@ export function ManageOffersView() {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground mb-4">No offers created yet</p>
-          <Button onClick={() => navigate('/matched-market/issue-offer')}>
-            Create Your First Offer
-          </Button>
+          <p className="text-muted-foreground mb-4">
+            {userType === 'issuer' ? 'No offers created yet' : 'No offers available for you'}
+          </p>
+          {userType === 'issuer' && (
+            <Button onClick={() => navigate('/matched-market/issue-offer')}>
+              Create Your First Offer
+            </Button>
+          )}
         </CardContent>
       </Card>
     );

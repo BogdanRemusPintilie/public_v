@@ -6,28 +6,13 @@ export type UserType = 'investor' | 'issuer' | null;
 export const useUserType = () => {
   const [userType, setUserType] = useState<UserType>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    checkUserType();
-    
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔄 useUserType - auth state changed:', event);
-      if (session?.user) {
-        checkUserType();
-      } else {
-        setUserType(null);
-        setIsLoading(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  const [error, setError] = useState<string | null>(null);
 
   const checkUserType = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       console.log('🔍 useUserType - checking user type for:', user?.id, user?.email);
@@ -39,26 +24,53 @@ export const useUserType = () => {
         return;
       }
 
-      const { data, error } = await supabase.rpc('get_user_type', {
+      const { data, error: rpcError } = await supabase.rpc('get_user_type', {
         _user_id: user.id
       });
 
-      console.log('📊 useUserType - RPC result:', { data, error });
+      console.log('📊 useUserType - RPC result:', { data, error: rpcError, email: user.email });
 
-      if (error) {
-        console.error('❌ Error checking user type:', error);
+      if (rpcError) {
+        console.error('❌ Error checking user type:', rpcError);
+        setError(rpcError.message);
         setUserType(null);
       } else {
-        console.log('✅ useUserType - setting userType to:', data);
+        console.log('✅ useUserType - setting userType to:', data, 'for user:', user.email);
         setUserType(data as UserType);
       }
     } catch (error) {
       console.error('❌ Error checking user type:', error);
+      setError('Failed to check user type');
       setUserType(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { userType, isLoading };
+  useEffect(() => {
+    checkUserType();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 useUserType - auth state changed:', event);
+      if (session?.user) {
+        // Small delay to ensure session is fully established
+        setTimeout(() => checkUserType(), 100);
+      } else {
+        setUserType(null);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const refresh = () => {
+    console.log('🔄 Manual refresh of user type requested');
+    checkUserType();
+  };
+
+  return { userType, isLoading, error, refresh };
 };

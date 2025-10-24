@@ -67,8 +67,11 @@ export default function TransactionHub() {
 
   useEffect(() => {
     if (user?.email) {
-      console.log('📍 TransactionHub - Fetching transactions for user:', user.email);
+      console.log('📍 TransactionHub - Fetching transactions for user:', user.email, 'user_id:', user.id);
       fetchTransactions();
+    } else {
+      console.log('⚠️ TransactionHub - No user email found');
+      setLoading(false);
     }
   }, [user]);
 
@@ -137,12 +140,16 @@ export default function TransactionHub() {
   };
 
   const fetchTransactions = async () => {
-    if (!user?.email) return;
+    if (!user?.email || !user?.id) {
+      console.error('❌ TransactionHub - Missing user email or ID:', { email: user?.email, id: user?.id });
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
       
-      console.log('📍 Fetching offers for investor:', user.email);
+      console.log('📍 Fetching offers for investor:', user.email, 'ID:', user.id);
       
       // Fetch all offers shared with user
       const { data: allOffers, error: offersError } = await supabase
@@ -152,9 +159,12 @@ export default function TransactionHub() {
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Offers found:', allOffers?.length || 0, allOffers);
+      console.log('📊 Offers found:', allOffers?.length || 0);
 
-      if (offersError) throw offersError;
+      if (offersError) {
+        console.error('❌ Error fetching offers:', offersError);
+        throw offersError;
+      }
 
       // Fetch user's responses
       const { data: responses, error: responsesError } = await supabase
@@ -162,7 +172,12 @@ export default function TransactionHub() {
         .select('*')
         .eq('investor_id', user.id);
 
-      if (responsesError) throw responsesError;
+      console.log('📊 Responses found:', responses?.length || 0);
+
+      if (responsesError) {
+        console.error('❌ Error fetching responses:', responsesError);
+        throw responsesError;
+      }
 
       // Fetch NDAs
       const { data: ndas, error: ndasError } = await supabase
@@ -170,7 +185,12 @@ export default function TransactionHub() {
         .select('*')
         .eq('investor_id', user.id);
 
-      if (ndasError) throw ndasError;
+      console.log('📊 NDAs found:', ndas?.length || 0);
+
+      if (ndasError) {
+        console.error('❌ Error fetching NDAs:', ndasError);
+        throw ndasError;
+      }
 
       // Create maps
       const responseMap = new Map(responses?.map(r => [r.offer_id, r]) || []);
