@@ -19,11 +19,16 @@ interface DatasetSummary {
 
 export function StructureSummary({ structure, dataset }: StructureSummaryProps) {
   const [datasetSummary, setDatasetSummary] = useState<DatasetSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDatasetSummary = async () => {
-      if (!structure?.dataset_name) return;
+      if (!structure?.dataset_name) {
+        setIsLoading(false);
+        return;
+      }
 
+      setIsLoading(true);
       console.log('📊 StructureSummary - Fetching summary for dataset:', structure.dataset_name);
 
       try {
@@ -34,6 +39,7 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
         
         if (summaryError) {
           console.error('❌ Error fetching dataset summary:', summaryError);
+          setIsLoading(false);
           return;
         }
 
@@ -51,6 +57,8 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
         }
       } catch (error) {
         console.error('❌ Error:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -137,7 +145,7 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!hasData && (
+        {!isLoading && !hasData && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p className="text-sm font-medium text-yellow-800">⚠️ Warning: No Data Available</p>
             <p className="text-xs text-yellow-700 mt-1">
