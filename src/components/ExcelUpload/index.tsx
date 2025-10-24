@@ -42,6 +42,9 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     avgInterestRate: number;
     highRiskLoans: number;
     totalRecords: number;
+    avgLeverageRatio?: number;
+    performingCount?: number;
+    nonPerformingCount?: number;
   } | null>(null);
   const [showSharingManager, setShowSharingManager] = useState(false);
   const [showDatasetSelector, setShowDatasetSelector] = useState(false);
@@ -95,8 +98,41 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setIsProcessing(true);
       console.log(`📊 LOADING DATASET SUMMARY: ${datasetName}`);
       
-      // First, load portfolio summary immediately (fast)
-      const portfolioSummary = await getPortfolioSummary(datasetName);
+      // Determine loan type by checking which table has this dataset
+      let datasetLoanType: LoanType = 'consumer_finance';
+      const { data: ctlCheck } = await supabase
+        .from('corporate_term_loans_data')
+        .select('id')
+        .eq('dataset_name', datasetName)
+        .limit(1);
+      
+      if (ctlCheck && ctlCheck.length > 0) {
+        datasetLoanType = 'corporate_term_loans';
+      }
+      
+      console.log(`📊 DETECTED LOAN TYPE: ${datasetLoanType} for dataset: ${datasetName}`);
+      setSelectedLoanType(datasetLoanType);
+      
+      // Load portfolio summary using the correct function
+      let portfolioSummary: { totalValue: number; avgInterestRate: number; highRiskLoans: number; totalRecords: number; avgLeverageRatio?: number; performingCount?: number; nonPerformingCount?: number; } | null = null;
+      
+      if (datasetLoanType === 'corporate_term_loans') {
+        const ctlSummary = await getCTLPortfolioSummary(datasetName);
+        if (ctlSummary) {
+          portfolioSummary = {
+            totalValue: ctlSummary.totalExposure,
+            avgInterestRate: ctlSummary.avgInterestRate,
+            highRiskLoans: ctlSummary.highRiskLoans,
+            totalRecords: ctlSummary.totalRecords,
+            avgLeverageRatio: ctlSummary.avgLeverageRatio,
+            performingCount: ctlSummary.performingCount,
+            nonPerformingCount: ctlSummary.nonPerformingCount,
+          };
+        }
+      } else {
+        portfolioSummary = await getPortfolioSummary(datasetName);
+      }
+      
       setPortfolioSummary(portfolioSummary);
       
       // Get the total count without loading all data
@@ -252,11 +288,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       console.log('💾 PREPARED CLEAN DATA SAMPLE:', dataWithUserId[0]);
       
-      await insertLoanData(dataWithUserId, (completed, total) => {
-        const progress = Math.round((completed / total) * 100);
-        setUploadProgress(progress);
-        setUploadStatus(`Saving filtered dataset: ${completed}/${total} records (${progress}%)`);
-      });
+      // Use the correct insert function based on loan type
+      // Note: When filtering an existing dataset, we maintain its original loan type
+      if (selectedLoanType === 'corporate_term_loans') {
+        // For CTL, the data should already be in CTL format from the database
+        await insertCorporateTermLoans(dataWithUserId as any, (completed, total) => {
+          const progress = Math.round((completed / total) * 100);
+          setUploadProgress(progress);
+          setUploadStatus(`Saving filtered dataset: ${completed}/${total} records (${progress}%)`);
+        });
+      } else {
+        await insertLoanData(dataWithUserId, (completed, total) => {
+          const progress = Math.round((completed / total) * 100);
+          setUploadProgress(progress);
+          setUploadStatus(`Saving filtered dataset: ${completed}/${total} records (${progress}%)`);
+        });
+      }
       
       console.log('✅ FILTERED DATASET SAVED SUCCESSFULLY');
       
@@ -414,8 +461,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setIsProcessing(true);
       setUploadStatus(`Deleting dataset "${selectedDatasetName}"...`);
       
-      console.log('🗑️ DELETING COMPLETE DATASET:', selectedDatasetName);
-      await deleteLoanDataByDataset(selectedDatasetName);
+      console.log('🗑️ DELETING COMPLETE DATASET:', selectedDatasetName, 'loan_type:', selectedLoanType);
+      
+      // Delete from the correct table based on loan type
+      if (selectedLoanType === 'corporate_term_loans') {
+        await deleteCorporateTermLoansByDataset(selectedDatasetName);
+      } else {
+        await deleteLoanDataByDataset(selectedDatasetName);
+      }
       
       toast({
         title: "Dataset Deleted",
@@ -552,24 +605,34 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     setUploadStatus('Preparing data for upload...');
     
     try {
-      console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName);
+      console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName, 'loan_type:', selectedLoanType);
       
-      // Prepare data with dataset_name only - let insertLoanData handle user_id assignment
+      // Prepare data with dataset_name and loan_type
       const dataWithMetadata = dataToSave.map(loan => ({
         ...loan,
-        dataset_name: datasetName.trim()
-        // Don't set user_id here - insertLoanData will handle it for RLS compliance
+        dataset_name: datasetName.trim(),
+        loan_type: selectedLoanType
       }));
       
       console.log('💾 PREPARED DATA SAMPLE:', dataWithMetadata.slice(0, 2));
       
-      // Use the updated batch insert function with enhanced authentication
-      await insertLoanData(dataWithMetadata, (completed, total) => {
-        const progress = Math.round((completed / total) * 100);
-        setUploadProgress(progress);
-        setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
-        console.log(`📊 UPLOAD PROGRESS: ${completed}/${total} (${progress}%)`);
-      });
+      // Use the correct insert function based on loan type
+      if (selectedLoanType === 'corporate_term_loans') {
+        // For CTL, the data comes from the parser and should be in CTL format
+        await insertCorporateTermLoans(dataWithMetadata as any, (completed, total) => {
+          const progress = Math.round((completed / total) * 100);
+          setUploadProgress(progress);
+          setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
+          console.log(`📊 UPLOAD PROGRESS: ${completed}/${total} (${progress}%)`);
+        });
+      } else {
+        await insertLoanData(dataWithMetadata, (completed, total) => {
+          const progress = Math.round((completed / total) * 100);
+          setUploadProgress(progress);
+          setUploadStatus(`Uploading: ${completed}/${total} records (${progress}%)`);
+          console.log(`📊 UPLOAD PROGRESS: ${completed}/${total} (${progress}%)`);
+        });
+      }
       
       console.log('✅ UPLOAD SUCCESSFUL - Data saved to database');
       
@@ -657,8 +720,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         selectedDatasetName={selectedDatasetName}
         isProcessing={isProcessing}
         portfolioSummary={portfolioSummary}
-        previewData={previewData}
-        allData={allData}
+          selectedLoanType={selectedLoanType}
+          onLoanTypeChange={setSelectedLoanType}
+          previewData={previewData}
+          allData={allData}
         filteredData={filteredData}
         selectedRecords={selectedRecords}
         currentPage={currentPage}

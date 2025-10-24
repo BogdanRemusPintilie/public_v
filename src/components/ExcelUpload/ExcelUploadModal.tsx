@@ -9,6 +9,8 @@ import { PortfolioCharts } from './PortfolioCharts';
 import { DataPreviewTable } from './DataPreviewTable';
 import { DataFilterPanel } from './DataFilterPanel';
 import { LoanRecord } from '@/utils/supabase';
+import { LoanType } from '@/utils/parsers/parserRegistry';
+import { LoanTypeSelector } from '../LoanTypeSelector';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +61,8 @@ interface ExcelUploadModalProps {
   onPortfolioSummaryChange: (summary: any) => void;
   currentFilters?: any;
   filteredCount?: number;
+  selectedLoanType: LoanType;
+  onLoanTypeChange: (type: LoanType) => void;
 }
 
 export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
@@ -93,7 +97,9 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   onSaveFilteredDataset,
   onPortfolioSummaryChange,
   currentFilters,
-  filteredCount
+  filteredCount,
+  selectedLoanType,
+  onLoanTypeChange
 }) => {
   if (!isOpen) return null;
 
@@ -192,14 +198,21 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
           <CardContent className="flex-1 overflow-y-auto">
             <div className="space-y-6">
               {!showExistingData && (
-                <FileUploadSection
-                  datasetName={datasetName}
-                  onDatasetNameChange={onDatasetNameChange}
-                  onFileDrop={onFileDrop}
-                  isProcessing={isProcessing}
-                  uploadProgress={uploadProgress}
-                  uploadStatus={uploadStatus}
-                />
+                <>
+                  <LoanTypeSelector 
+                    value={selectedLoanType}
+                    onChange={onLoanTypeChange}
+                    disabled={isProcessing || previewData.length > 0}
+                  />
+                  <FileUploadSection
+                    datasetName={datasetName}
+                    onDatasetNameChange={onDatasetNameChange}
+                    onFileDrop={onFileDrop}
+                    isProcessing={isProcessing}
+                    uploadProgress={uploadProgress}
+                    uploadStatus={uploadStatus}
+                  />
+                </>
               )}
 
               {showExistingData && selectedDatasetName && (
