@@ -108,18 +108,31 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     }
   };
 
-  const fetchDatasets = async () => {
+  const fetchDatasets = async (retryCount = 0) => {
     if (!user) {
       console.log('⚠️ fetchDatasets: No user');
       return;
     }
     
-    console.log('🔍 fetchDatasets: Starting fetch');
+    console.log('🔍 fetchDatasets: Starting fetch', { attempt: retryCount + 1 });
     try {
       const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
       
       if (error) {
         console.error('❌ Error fetching datasets:', error);
+        
+        // Retry on timeout errors (up to 2 retries)
+        if (error.code === '57014' && retryCount < 2) {
+          console.log('⏱️ Timeout detected, retrying...', { retryCount: retryCount + 1 });
+          setTimeout(() => fetchDatasets(retryCount + 1), 1000);
+          return;
+        }
+        
+        toast({
+          title: "Database Error",
+          description: "Unable to load dataset summaries. Please refresh the page.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -130,6 +143,17 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
       setDatasets(data || []);
     } catch (error) {
       console.error('❌ Exception in fetchDatasets:', error);
+      
+      if (retryCount < 2) {
+        console.log('⏱️ Exception, retrying...', { retryCount: retryCount + 1 });
+        setTimeout(() => fetchDatasets(retryCount + 1), 1000);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load dataset information. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
