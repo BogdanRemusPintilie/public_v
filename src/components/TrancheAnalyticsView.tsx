@@ -32,7 +32,7 @@ interface DatasetSummary {
   record_count: number;
   total_value: number;
   avg_interest_rate: number;
-  high_risk_count: number;
+  high_risk_loans: number;
   created_at: string;
 }
 
@@ -108,52 +108,49 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     }
   };
 
-  const fetchDatasets = async (retryCount = 0) => {
-    if (!user) {
-      console.log('⚠️ fetchDatasets: No user');
+  const fetchDatasetSummary = async () => {
+    if (!user || !structure) {
+      console.log('⚠️ fetchDatasetSummary: No user or structure');
       return;
     }
     
-    console.log('🔍 fetchDatasets: Starting fetch', { attempt: retryCount + 1 });
+    console.log('🔍 fetchDatasetSummary: Fetching summary for', structure.dataset_name);
     try {
-      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
+      // Fetch summary for just this specific dataset
+      const { data, error } = await supabase.rpc('get_portfolio_summary', {
+        dataset_name_param: structure.dataset_name
+      });
       
       if (error) {
-        console.error('❌ Error fetching datasets:', error);
-        
-        // Retry on timeout errors (up to 2 retries)
-        if (error.code === '57014' && retryCount < 2) {
-          console.log('⏱️ Timeout detected, retrying...', { retryCount: retryCount + 1 });
-          setTimeout(() => fetchDatasets(retryCount + 1), 1000);
-          return;
-        }
-        
+        console.error('❌ Error fetching dataset summary:', error);
         toast({
-          title: "Database Error",
-          description: "Unable to load dataset summaries. Please refresh the page.",
+          title: "Error",
+          description: "Failed to load dataset summary",
           variant: "destructive",
         });
         return;
       }
 
-      console.log('✅ fetchDatasets: Got data', { 
-        count: data?.length, 
-        datasets: data?.map(d => ({ name: d.dataset_name, total_value: d.total_value }))
-      });
-      setDatasets(data || []);
-    } catch (error) {
-      console.error('❌ Exception in fetchDatasets:', error);
-      
-      if (retryCount < 2) {
-        console.log('⏱️ Exception, retrying...', { retryCount: retryCount + 1 });
-        setTimeout(() => fetchDatasets(retryCount + 1), 1000);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to load dataset information. Please try again.",
-          variant: "destructive",
-        });
+      if (data && data.length > 0) {
+        const summary = data[0];
+        // Set a single-item dataset array with just this dataset's summary
+        setDatasets([{
+          dataset_name: structure.dataset_name,
+          record_count: summary.total_records || 0,
+          total_value: summary.total_value || 0,
+          avg_interest_rate: summary.avg_interest_rate || 0,
+          high_risk_loans: summary.high_risk_loans || 0,
+          created_at: new Date().toISOString()
+        }]);
+        console.log('✅ Dataset summary loaded:', summary.total_value);
       }
+    } catch (error) {
+      console.error('❌ Exception in fetchDatasetSummary:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dataset information",
+        variant: "destructive",
+      });
     }
   };
 
@@ -163,7 +160,7 @@ const TrancheAnalyticsView = ({ isOpen, onClose, structure }: TrancheAnalyticsVi
     if (isOpen && structure) {
       console.log('📊 Starting data fetch for analytics');
       fetchDatasetData();
-      fetchDatasets();
+      fetchDatasetSummary();
       
       // Initialize edit structure data
       if (structure) {
