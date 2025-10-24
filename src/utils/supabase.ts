@@ -22,6 +22,7 @@ interface DatasetSummary {
   record_count: number;
   total_value: number;
   avg_interest_rate: number;
+  high_risk_loans: number;
   created_at: string;
 }
 
@@ -278,6 +279,7 @@ export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
             record_count: summary.total_records || 0,
             total_value: summary.total_value || 0,
             avg_interest_rate: summary.avg_interest_rate || 0,
+            high_risk_loans: summary.high_risk_loans || 0,
             created_at: new Date().toISOString() // We don't have this from portfolio_summary
           });
         }

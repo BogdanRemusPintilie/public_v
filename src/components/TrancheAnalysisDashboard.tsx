@@ -33,7 +33,7 @@ interface DatasetSummary {
   record_count: number;
   total_value: number;
   avg_interest_rate: number;
-  high_risk_count: number;
+  high_risk_loans: number;
   created_at: string;
 }
 
@@ -539,13 +539,13 @@ const TrancheAnalysisDashboard = ({ isOpen, onClose }: TrancheAnalysisDashboardP
                               </div>
                               <div className="text-center p-3 bg-orange-50 rounded-lg">
                                 <div className="text-lg font-bold text-orange-600">
-                                  {dataset.high_risk_count}
+                                  {dataset.high_risk_loans}
                                 </div>
                                 <div className="text-sm text-orange-700">High Risk</div>
                               </div>
                               <div className="text-center p-3 bg-purple-50 rounded-lg">
                                 <div className="text-lg font-bold text-purple-600">
-                                  {((dataset.high_risk_count / dataset.record_count) * 100).toFixed(1)}%
+                                  {((dataset.high_risk_loans / dataset.record_count) * 100).toFixed(1)}%
                                 </div>
                                 <div className="text-sm text-purple-700">Risk Ratio</div>
                               </div>
