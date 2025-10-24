@@ -53,6 +53,7 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
   const [selectedStructure, setSelectedStructure] = useState<any>(null);
   const [selectedDataset, setSelectedDataset] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingDataset, setIsLoadingDataset] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailList, setEmailList] = useState<string[]>([]);
   const [selectedInvestors, setSelectedInvestors] = useState<string[]>([]);
@@ -149,8 +150,10 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
     const structure = structures.find(s => s.id === structureId);
     console.log('📊 Selected structure:', structure);
     setSelectedStructure(structure || null);
+    setSelectedDataset(null); // Clear previous dataset
     
     if (structure) {
+      setIsLoadingDataset(true);
       try {
         console.log('🔍 Fetching dataset summary for:', structure.dataset_name);
         
@@ -191,6 +194,8 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
       } catch (error) {
         console.error('❌ Error fetching dataset summary:', error);
         setSelectedDataset(null);
+      } finally {
+        setIsLoadingDataset(false);
       }
     } else {
       console.log('❌ No structure found for ID:', structureId);
@@ -328,16 +333,25 @@ export function IssueOfferForm({ onSuccess }: IssueOfferFormProps) {
 
               {selectedStructure && (
                 <>
-                  {selectedDataset && (!selectedDataset.total_opening_balance || selectedDataset.total_opening_balance === 0) && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                      <p className="text-sm font-medium text-yellow-800">⚠️ Dataset Has No Data</p>
-                      <p className="text-xs text-yellow-700 mt-1">
-                        The selected structure references dataset "{selectedStructure.dataset_name}" which appears to be empty. 
-                        You can still create this offer, but portfolio calculations will show zero values.
-                      </p>
+                  {isLoadingDataset ? (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-muted-foreground">Loading dataset information...</span>
                     </div>
+                  ) : (
+                    <>
+                      {!isLoadingDataset && selectedDataset && (!selectedDataset.total_opening_balance || selectedDataset.total_opening_balance === 0) && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                          <p className="text-sm font-medium text-yellow-800">⚠️ Dataset Has No Data</p>
+                          <p className="text-xs text-yellow-700 mt-1">
+                            The selected structure references dataset "{selectedStructure.dataset_name}" which appears to be empty. 
+                            You can still create this offer, but portfolio calculations will show zero values.
+                          </p>
+                        </div>
+                      )}
+                      <StructureSummary structure={selectedStructure} dataset={selectedDataset || {}} />
+                    </>
                   )}
-                  <StructureSummary structure={selectedStructure} dataset={selectedDataset || {}} />
                 </>
               )}
             </CardContent>
