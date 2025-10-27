@@ -135,8 +135,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       setPortfolioSummary(portfolioSummary);
       
-      // Get the total count without loading all data
-      const firstBatch = await getLoanDataByDataset(datasetName, 0, PAGE_SIZE);
+      // Get the total count without loading all data - use correct table based on loan type
+      let firstBatch;
+      if (datasetLoanType === 'corporate_term_loans') {
+        firstBatch = await getCorporateTermLoansByDataset(datasetName, 0, PAGE_SIZE);
+      } else {
+        firstBatch = await getLoanDataByDataset(datasetName, 0, PAGE_SIZE);
+      }
+      
       const firstPageRecords = firstBatch.data || [];
       const totalCount = firstBatch.totalCount || 0;
       
@@ -423,8 +429,12 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       setIsProcessing(true);
       setUploadStatus(`Deleting ${selectedRecords.size} records...`);
       
-      // Delete selected records
-      await deleteLoanData(Array.from(selectedRecords));
+      // Delete selected records from the correct table based on loan type
+      if (selectedLoanType === 'corporate_term_loans') {
+        await deleteCorporateTermLoans(Array.from(selectedRecords));
+      } else {
+        await deleteLoanData(Array.from(selectedRecords));
+      }
       
       // Refresh dataset after deletion
       await loadDatasetData(selectedDatasetName);

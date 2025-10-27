@@ -132,7 +132,7 @@ const createCTLColumnMap = (headers: string[]): CTLColumnMap => {
     interest_coverage_ratio: /(?:interest.*coverage|icr|ebitda.*interest)/i,
     debt_service_coverage_ratio: /(?:dscr|debt.*service|coverage.*ratio)/i,
     covenant_status: /(?:covenant.*status|compliance.*status)/i,
-    current_balance: /(?:current.*balance|outstanding.*amount|outstanding.*balance|drawn.*balance)/i,
+    current_balance: /(?:^outstanding.*amount|outstanding.*amount.*\(|current.*balance|outstanding.*balance|drawn.*balance)/i,
     opening_balance: /(?:opening.*balance|initial.*balance|starting.*balance)/i,
     arrears_days: /(?:^in.*arrears$|in_arrears|arrears|days.*overdue|dpd|delinquency)/i,
     performing_status: /(?:^defaulted$|performing.*status|loan.*status|^status$|defaulted|restructured)/i,
@@ -182,6 +182,12 @@ const parseInterestRate = (value: any): number => {
 const parseStringValue = (value: any): string => {
   if (value === null || value === undefined) return '';
   return String(value).trim();
+};
+
+const parseYesNoToNumber = (value: any): number => {
+  const strValue = parseStringValue(value).toLowerCase();
+  if (strValue === 'yes' || strValue === 'true' || strValue === '1') return 30;
+  return 0;
 };
 
 export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTLData> => {
@@ -297,12 +303,16 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
           covenant_status: columnMap.covenant_status !== undefined ? parseStringValue(row[columnMap.covenant_status]) : undefined,
           current_balance: currentBalance,
           opening_balance: openingBalance,
-          // Handle In_Arrears column - could be boolean or numeric
-          arrears_days: columnMap.arrears_days !== undefined ? parseFinancialValue(row[columnMap.arrears_days]) : 0,
+          // Handle In_Arrears column - Yes/No or numeric
+          arrears_days: columnMap.arrears_days !== undefined 
+            ? (typeof row[columnMap.arrears_days] === 'number' 
+                ? row[columnMap.arrears_days] 
+                : parseYesNoToNumber(row[columnMap.arrears_days]))
+            : 0,
           // Handle Defaulted column - map to performing_status
           performing_status: columnMap.performing_status !== undefined 
-            ? (parseStringValue(row[columnMap.performing_status]).toLowerCase() === 'true' || 
-               parseStringValue(row[columnMap.performing_status]).toLowerCase() === 'yes' ||
+            ? (parseStringValue(row[columnMap.performing_status]).toLowerCase() === 'yes' || 
+               parseStringValue(row[columnMap.performing_status]).toLowerCase() === 'true' ||
                parseStringValue(row[columnMap.performing_status]) === '1'
                 ? 'defaulted' 
                 : 'performing')
