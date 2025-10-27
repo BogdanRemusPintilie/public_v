@@ -1,6 +1,37 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CorporateTermLoanRecord } from './parsers/corporateTermLoansParser';
 
+// Helpers to normalize CTL fields to match DB constraints (e.g., varchar(3))
+const toISO3 = (country?: string | null) => {
+  if (!country) return null;
+  const t = country.trim();
+  const map: Record<string, string> = {
+    Germany: 'DEU',
+    Austria: 'AUT',
+    Netherlands: 'NLD',
+    'United Kingdom': 'GBR',
+    UK: 'GBR',
+    France: 'FRA',
+    Italy: 'ITA',
+    Spain: 'ESP',
+    Belgium: 'BEL',
+    Switzerland: 'CHE',
+    Ireland: 'IRL',
+  };
+  return (map[t] || (t.length <= 3 ? t.toUpperCase() : t.slice(0, 3).toUpperCase()));
+};
+
+const normalize3 = (val?: string | null, fallback?: string) => {
+  const s = (val ?? fallback ?? '').toString().trim();
+  return s ? s.toUpperCase().slice(0, 3) : null;
+};
+
+const cleanNumeric = (v: any): number | null => {
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  if (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v))) return Number(v);
+  return null;
+};
+
 export const insertCorporateTermLoans = async (
   loans: CorporateTermLoanRecord[],
   progressCallback?: (completed: number, total: number) => void
@@ -25,6 +56,15 @@ export const insertCorporateTermLoans = async (
       ...record,
       user_id: user.id,
       remaining_term: Number(record.remaining_term),
+      currency: normalize3((record as any).currency, 'EUR'),
+      base_rate: normalize3((record as any).base_rate || null) || null,
+      country: toISO3((record as any).country || null),
+      facility_amount: cleanNumeric((record as any).facility_amount),
+      probability_of_default: cleanNumeric((record as any).probability_of_default),
+      collateral_coverage_ratio: cleanNumeric((record as any).collateral_coverage_ratio),
+      leverage_ratio: cleanNumeric((record as any).leverage_ratio),
+      interest_coverage_ratio: cleanNumeric((record as any).interest_coverage_ratio),
+      debt_service_coverage_ratio: cleanNumeric((record as any).debt_service_coverage_ratio),
     }));
 
     console.log('💾 INSERTING CTL BATCH:', {
