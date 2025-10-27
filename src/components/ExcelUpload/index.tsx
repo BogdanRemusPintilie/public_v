@@ -529,7 +529,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       
       toast({
         title: "File Parsed Successfully",
-        description: `Found ${parsedData.data.length} loan records in ${parsedData.worksheets.join(', ')}`,
+        description: `Found ${parsedData.data.length} loan records in ${parsedData.worksheetName}`,
       });
     } catch (error) {
       console.error('Error parsing file:', error);
