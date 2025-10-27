@@ -196,34 +196,40 @@ export function ManageOffersView() {
       console.log('✅ Total offers to display:', offersData.length);
       setOffers(offersData);
 
-      // Fetch response counts and detailed status for each offer
+      // Batch fetch all related data to avoid N+1 queries
       if (offersData && offersData.length > 0) {
         const counts: Record<string, ResponseCount> = {};
+        const offerIds = offersData.map(o => o.id);
         
-        for (const offer of offersData) {
-          if (userType === 'investor') {
-            // For investors, get their own response to this offer
-            const { data: myResponse, error: responseError } = await supabase
+        if (userType === 'investor') {
+          // For investors: batch fetch their responses, NDAs, and dataset shares
+          const [responsesResult, ndasResult, sharesResult] = await Promise.all([
+            supabase
               .from('offer_responses')
               .select('*')
-              .eq('offer_id', offer.id)
-              .eq('investor_id', user?.id)
-              .maybeSingle();
-
-            const { data: myNda, error: ndaError } = await supabase
+              .in('offer_id', offerIds)
+              .eq('investor_id', user?.id),
+            supabase
               .from('ndas')
               .select('*')
-              .eq('offer_id', offer.id)
-              .eq('investor_id', user?.id)
-              .maybeSingle();
-
-            // Check if investor has data access
-            const { data: shareData } = await supabase
+              .in('offer_id', offerIds)
+              .eq('investor_id', user?.id),
+            supabase
               .from('dataset_shares')
-              .select('id')
-              .eq('dataset_name', offer.structure?.dataset_name || '')
+              .select('id, dataset_name')
               .eq('shared_with_user_id', user?.id)
-              .maybeSingle();
+          ]);
+
+          // Create maps for quick lookup
+          const responseMap = new Map(responsesResult.data?.map(r => [r.offer_id, r]) || []);
+          const ndaMap = new Map(ndasResult.data?.map(n => [n.offer_id, n]) || []);
+          const sharesByDataset = new Map(sharesResult.data?.map(s => [s.dataset_name, s]) || []);
+
+          // Process each offer using the maps
+          offersData.forEach(offer => {
+            const myResponse = responseMap.get(offer.id);
+            const myNda = ndaMap.get(offer.id);
+            const hasDataAccess = !!sharesByDataset.get(offer.structure?.dataset_name || '');
             
             const status = determineTransactionStatus(myResponse, myNda, offer.id);
             counts[offer.id] = {
@@ -231,64 +237,101 @@ export function ManageOffersView() {
               interested: myResponse?.status === 'interested' ? 1 : 0,
               status: status,
               hasCounterPrice: myResponse?.counter_price != null,
-              hasDataAccess: !!shareData,
+              hasDataAccess,
               offerResponse: myResponse
             };
-          } else {
-            // For issuers, get all responses to this offer (existing logic)
-            const { data: responses, error: responseError } = await supabase
+          });
+        } else {
+          // For issuers: batch fetch all responses and NDAs for their offers
+          const [responsesResult, ndasResult] = await Promise.all([
+            supabase
               .from('offer_responses')
               .select('*')
-              .eq('offer_id', offer.id);
-
-            const { data: ndas, error: ndaError } = await supabase
+              .in('offer_id', offerIds),
+            supabase
               .from('ndas')
               .select('*')
-              .eq('offer_id', offer.id);
+              .in('offer_id', offerIds)
+          ]);
 
-            if (!responseError && responses) {
+          // Group responses and NDAs by offer_id
+          const responsesByOffer = new Map<string, any[]>();
+          const ndasByOffer = new Map<string, any[]>();
+          
+          responsesResult.data?.forEach(r => {
+            const existing = responsesByOffer.get(r.offer_id) || [];
+            existing.push(r);
+            responsesByOffer.set(r.offer_id, existing);
+          });
+          
+          ndasResult.data?.forEach(n => {
+            const existing = ndasByOffer.get(n.offer_id) || [];
+            existing.push(n);
+            ndasByOffer.set(n.offer_id, existing);
+          });
+
+          // Batch fetch dataset shares for all unique investor IDs with accepted NDAs
+          const investorIdsWithAcceptedNdas = new Set<string>();
+          ndasResult.data?.forEach(nda => {
+            if (nda.status === 'accepted') {
+              investorIdsWithAcceptedNdas.add(nda.investor_id);
+            }
+          });
+
+          let datasetSharesMap = new Map<string, Set<string>>();
+          if (investorIdsWithAcceptedNdas.size > 0) {
+            const { data: allShares } = await supabase
+              .from('dataset_shares')
+              .select('dataset_name, shared_with_user_id')
+              .eq('owner_id', user?.id)
+              .in('shared_with_user_id', Array.from(investorIdsWithAcceptedNdas));
+
+            // Map dataset_name -> Set of investor IDs with access
+            allShares?.forEach(share => {
+              const existing = datasetSharesMap.get(share.dataset_name) || new Set();
+              existing.add(share.shared_with_user_id);
+              datasetSharesMap.set(share.dataset_name, existing);
+            });
+          }
+
+          // Process each offer
+          offersData.forEach(offer => {
+            const responses = responsesByOffer.get(offer.id) || [];
+            const ndas = ndasByOffer.get(offer.id) || [];
+            const investorsWithAccess = datasetSharesMap.get(offer.structure?.dataset_name || '') || new Set();
+
+            if (responses.length > 0) {
               let mostAdvancedStatus = 'Offer issued';
               let hasAnyCounterPrice = false;
               let hasAnyDataAccess = false;
               let mostAdvancedResponse: any = null;
               
-              // Check data access for any accepted NDA
-              for (const response of responses) {
-                const matchingNda = ndas?.find(n => n.investor_id === response.investor_id);
+              const statusPriority = [
+                'Offer issued',
+                'Interest indicated',
+                'NDA executed',
+                'Transaction details',
+                'Indicative offer',
+                'Full loan tape',
+                'Firm offer',
+                'Compliance Review',
+                'Allocation',
+                'Transaction completed'
+              ];
+
+              responses.forEach(response => {
+                const matchingNda = ndas.find(n => n.investor_id === response.investor_id);
                 
-                if (matchingNda?.status === 'accepted') {
-                  const { data: shareData } = await supabase
-                    .from('dataset_shares')
-                    .select('id')
-                    .eq('dataset_name', offer.structure?.dataset_name || '')
-                    .eq('owner_id', user?.id)
-                    .eq('shared_with_user_id', response.investor_id)
-                    .maybeSingle();
-                  
-                  if (shareData) {
-                    hasAnyDataAccess = true;
-                  }
+                // Check data access from pre-fetched map
+                if (matchingNda?.status === 'accepted' && investorsWithAccess.has(response.investor_id)) {
+                  hasAnyDataAccess = true;
                 }
                 
                 const status = determineTransactionStatus(response, matchingNda, offer.id);
                 
-                // Track if any response has a counter price
                 if (response.counter_price != null) {
                   hasAnyCounterPrice = true;
                 }
-                
-                const statusPriority = [
-                  'Offer issued',
-                  'Interest indicated',
-                  'NDA executed',
-                  'Transaction details',
-                  'Indicative offer',
-                  'Full loan tape',
-                  'Firm offer',
-                  'Compliance Review',
-                  'Allocation',
-                  'Transaction completed'
-                ];
                 
                 const currentPriority = statusPriority.indexOf(mostAdvancedStatus);
                 const newPriority = statusPriority.indexOf(status);
@@ -297,7 +340,7 @@ export function ManageOffersView() {
                   mostAdvancedStatus = status;
                   mostAdvancedResponse = response;
                 }
-              }
+              });
 
               counts[offer.id] = {
                 total: responses.length,
@@ -316,7 +359,7 @@ export function ManageOffersView() {
                 hasDataAccess: false
               };
             }
-          }
+          });
         }
         
         setResponseCounts(counts);
