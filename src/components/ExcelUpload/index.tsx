@@ -515,7 +515,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       const parsedData = await parserConfig.parser(file);
       
       console.log('Parsed data:', {
-        worksheets: parsedData.worksheets,
+        worksheetName: parsedData.worksheetName,
         recordCount: parsedData.data.length
       });
 
