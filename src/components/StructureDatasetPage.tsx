@@ -227,17 +227,18 @@ const StructureDatasetPage = ({ isOpen, onClose, selectedDatasetName, editingStr
     try {
       const dataset = getSelectedDataset();
       const totalCost = calculateTotalTransactionCost();
-      const weightedAvgCostBps = dataset ? (totalCost / dataset.total_value) * 10000 : 0;
-      const costPercentage = dataset ? (totalCost / dataset.total_value) * 100 : 0;
+      const denominator = dataset?.total_value ?? 0;
+      const weightedAvgCostBps = denominator > 0 ? (totalCost / denominator) * 10000 : 0;
+      const costPercentage = denominator > 0 ? (totalCost / denominator) * 100 : 0;
 
       const structureData = {
         structure_name: structureName.trim(),
         dataset_name: selectedDataset,
         tranches: tranches as any,
-        total_cost: totalCost,
-        weighted_avg_cost_bps: weightedAvgCostBps,
-        cost_percentage: costPercentage,
-        additional_transaction_costs: additionalTransactionCosts,
+        total_cost: Number.isFinite(totalCost) ? totalCost : 0,
+        weighted_avg_cost_bps: Number.isFinite(weightedAvgCostBps) ? weightedAvgCostBps : 0,
+        cost_percentage: Number.isFinite(costPercentage) ? costPercentage : 0,
+        additional_transaction_costs: Number.isFinite(additionalTransactionCosts) ? additionalTransactionCosts : 0,
         user_id: user.id
       };
 
