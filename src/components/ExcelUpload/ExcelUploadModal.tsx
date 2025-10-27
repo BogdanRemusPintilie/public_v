@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Users, RefreshCw, Trash2 } from 'lucide-react';
 import { FileUploadSection } from './FileUploadSection';
 import { PortfolioSummary } from './PortfolioSummary';
+import { CTLPortfolioSummary } from './CTLPortfolioSummary';
 import { PortfolioCharts } from './PortfolioCharts';
+import { CTLPortfolioCharts } from './CTLPortfolioCharts';
 import { DataPreviewTable } from './DataPreviewTable';
 import { DataFilterPanel } from './DataFilterPanel';
 import { LoanRecord } from '@/utils/supabase';
 import { LoanType } from '@/utils/parsers/parserRegistry';
 import { LoanTypeSelector } from '../LoanTypeSelector';
+import { CTLPortfolioSummary as CTLSummaryType } from '@/utils/supabaseCTL';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +33,14 @@ interface ExcelUploadModalProps {
   selectedDatasetName: string;
   isProcessing: boolean;
   portfolioSummary: {
-    totalValue: number;
+    totalValue?: number;
+    totalExposure?: number;
     avgInterestRate: number;
     highRiskLoans: number;
     totalRecords: number;
+    avgLeverageRatio?: number;
+    performingCount?: number;
+    nonPerformingCount?: number;
   } | null;
   previewData: any[];
   allData: any[];
@@ -226,11 +233,37 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                 />
               )}
 
-              {portfolioSummary && (
-                <PortfolioSummary portfolioSummary={portfolioSummary} />
+              {portfolioSummary && selectedLoanType === 'corporate_term_loans' && (
+                <CTLPortfolioSummary portfolioSummary={{
+                  totalExposure: portfolioSummary.totalExposure || 0,
+                  avgInterestRate: portfolioSummary.avgInterestRate,
+                  highRiskLoans: portfolioSummary.highRiskLoans,
+                  totalRecords: portfolioSummary.totalRecords,
+                  avgLeverageRatio: portfolioSummary.avgLeverageRatio || 0,
+                  performingCount: portfolioSummary.performingCount || 0,
+                  nonPerformingCount: portfolioSummary.nonPerformingCount || 0,
+                }} />
+              )}
+              
+              {portfolioSummary && selectedLoanType === 'consumer_finance' && (
+                <PortfolioSummary portfolioSummary={{
+                  totalValue: portfolioSummary.totalValue || 0,
+                  avgInterestRate: portfolioSummary.avgInterestRate,
+                  highRiskLoans: portfolioSummary.highRiskLoans,
+                  totalRecords: portfolioSummary.totalRecords,
+                }} />
               )}
 
-              {(previewData.length > 0 || (showExistingData && totalRecords > 0)) && (
+              {(previewData.length > 0 || (showExistingData && totalRecords > 0)) && selectedLoanType === 'corporate_term_loans' && (
+                <CTLPortfolioCharts
+                  allData={allData}
+                  previewData={previewData}
+                  showExistingData={showExistingData}
+                  selectedDatasetName={selectedDatasetName}
+                />
+              )}
+
+              {(previewData.length > 0 || (showExistingData && totalRecords > 0)) && selectedLoanType === 'consumer_finance' && (
                 <>
                   <PortfolioCharts 
                     allData={showExistingData ? (filteredData.length > 0 ? filteredData : allData) : allData}
@@ -256,6 +289,22 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                     onPageChange={onPageChange}
                   />
                 </>
+              )}
+
+              {(previewData.length > 0 || (showExistingData && totalRecords > 0)) && selectedLoanType === 'corporate_term_loans' && (
+                <DataPreviewTable
+                  previewData={previewData}
+                  selectedRecords={selectedRecords}
+                  showExistingData={showExistingData}
+                  totalRecords={showExistingData ? filteredData.length : totalRecords}
+                  currentPage={currentPage}
+                  hasMore={hasMore}
+                  isProcessing={isProcessing}
+                  onSelectRecord={onSelectRecord}
+                  onSelectAll={onSelectAll}
+                  onDeleteSelected={onDeleteSelected}
+                  onPageChange={onPageChange}
+                />
               )}
             </div>
           </CardContent>
