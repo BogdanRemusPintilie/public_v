@@ -754,6 +754,7 @@ export type Database = {
           created_at: string
           dataset_name: string
           high_risk_count: number
+          loan_type: string
           record_count: number
           total_value: number
         }[]
