@@ -617,18 +617,16 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     try {
       console.log('💾 SAVING TO DATABASE:', dataToSave.length, 'records with user_id:', user.id, 'dataset_name:', datasetName, 'loan_type:', selectedLoanType);
       
-      // Prepare data with dataset_name and loan_type
-      const dataWithMetadata = dataToSave.map(loan => ({
-        ...loan,
-        dataset_name: datasetName.trim(),
-        loan_type: selectedLoanType
-      }));
-      
-      console.log('💾 PREPARED DATA SAMPLE:', dataWithMetadata.slice(0, 2));
-      
       // Use the correct insert function based on loan type
       if (selectedLoanType === 'corporate_term_loans') {
-        // For CTL, the data comes from the parser and should be in CTL format
+        // For CTL, only add dataset_name (no loan_type as table doesn't have that column)
+        const dataWithMetadata = dataToSave.map(loan => ({
+          ...loan,
+          dataset_name: datasetName.trim()
+        }));
+        
+        console.log('💾 PREPARED CTL DATA SAMPLE:', dataWithMetadata.slice(0, 2));
+        
         await insertCorporateTermLoans(dataWithMetadata as any, (completed, total) => {
           const progress = Math.round((completed / total) * 100);
           setUploadProgress(progress);
@@ -636,6 +634,15 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           console.log(`📊 UPLOAD PROGRESS: ${completed}/${total} (${progress}%)`);
         });
       } else {
+        // For consumer finance, add both dataset_name and loan_type
+        const dataWithMetadata = dataToSave.map(loan => ({
+          ...loan,
+          dataset_name: datasetName.trim(),
+          loan_type: selectedLoanType
+        }));
+        
+        console.log('💾 PREPARED CONSUMER DATA SAMPLE:', dataWithMetadata.slice(0, 2));
+        
         await insertLoanData(dataWithMetadata, (completed, total) => {
           const progress = Math.round((completed / total) * 100);
           setUploadProgress(progress);
