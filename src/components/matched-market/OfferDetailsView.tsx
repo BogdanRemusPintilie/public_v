@@ -649,15 +649,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                           id="kyc-upload"
                           className="hidden"
                           onChange={(e) => handleFileUpload('kyc', e)}
+                          disabled={complianceStatus.kyc.status === 'completed'}
                         />
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => document.getElementById('kyc-upload')?.click()}
                           className="w-full"
+                          disabled={complianceStatus.kyc.status === 'completed'}
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          Upload Document
+                          {complianceStatus.kyc.status === 'completed' ? 'Documentation Complete' : 'Upload Document'}
                         </Button>
                       </div>
                       {complianceStatus.kyc.evidence.length > 0 && (
@@ -724,15 +726,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                           id="aml-upload"
                           className="hidden"
                           onChange={(e) => handleFileUpload('aml', e)}
+                          disabled={complianceStatus.aml.status === 'completed'}
                         />
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => document.getElementById('aml-upload')?.click()}
                           className="w-full"
+                          disabled={complianceStatus.aml.status === 'completed'}
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          Upload Document
+                          {complianceStatus.aml.status === 'completed' ? 'Documentation Complete' : 'Upload Document'}
                         </Button>
                       </div>
                       {complianceStatus.aml.evidence.length > 0 && (
@@ -799,15 +803,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                           id="credit-upload"
                           className="hidden"
                           onChange={(e) => handleFileUpload('creditCommittee', e)}
+                          disabled={complianceStatus.creditCommittee.status === 'completed'}
                         />
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => document.getElementById('credit-upload')?.click()}
                           className="w-full"
+                          disabled={complianceStatus.creditCommittee.status === 'completed'}
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          Upload Document
+                          {complianceStatus.creditCommittee.status === 'completed' ? 'Documentation Complete' : 'Upload Document'}
                         </Button>
                       </div>
                       {complianceStatus.creditCommittee.evidence.length > 0 && (
@@ -874,15 +880,17 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                           id="legal-upload"
                           className="hidden"
                           onChange={(e) => handleFileUpload('legalReview', e)}
+                          disabled={complianceStatus.legalReview.status === 'completed'}
                         />
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => document.getElementById('legal-upload')?.click()}
                           className="w-full"
+                          disabled={complianceStatus.legalReview.status === 'completed'}
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          Upload Document
+                          {complianceStatus.legalReview.status === 'completed' ? 'Documentation Complete' : 'Upload Document'}
                         </Button>
                       </div>
                       {complianceStatus.legalReview.evidence.length > 0 && (
