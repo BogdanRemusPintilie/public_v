@@ -120,6 +120,9 @@ export interface CTLFilterCriteria {
   country?: string;
   securedUnsecured?: string;
   performingStatus?: string;
+  maxExposureCap?: number;
+  enableExposureCapping?: boolean;
+  exposureCapAmount?: number;
 }
 
 export const getCorporateTermLoansByDataset = async (
@@ -245,6 +248,12 @@ export const getCorporateTermLoansByDataset = async (
     if (filters.maxCollateralCoverage !== undefined) {
       countQuery = countQuery.lte('collateral_coverage_ratio', filters.maxCollateralCoverage);
       dataQuery = dataQuery.lte('collateral_coverage_ratio', filters.maxCollateralCoverage);
+    }
+    
+    // Max exposure cap - exclude loans exceeding this amount
+    if (filters.maxExposureCap !== undefined) {
+      countQuery = countQuery.lte('current_balance', filters.maxExposureCap);
+      dataQuery = dataQuery.lte('current_balance', filters.maxExposureCap);
     }
     
     // Categorical filters

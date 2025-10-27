@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Filter, X, Save, CheckCircle } from 'lucide-react';
 import { CorporateTermLoanRecord, CTLFilterCriteria, getCorporateTermLoansByDataset, getCTLPortfolioSummary } from '@/utils/supabaseCTL';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +35,9 @@ interface CTLFilterCriteriaForm {
   maxDSCR: string;
   minCollateralCoverage: string;
   maxCollateralCoverage: string;
+  maxExposureCap: string;
+  enableExposureCapping: boolean;
+  exposureCapAmount: string;
 }
 
 interface CTLDataFilterPanelProps {
@@ -78,7 +82,10 @@ export const CTLDataFilterPanel: React.FC<CTLDataFilterPanelProps> = ({
     minDSCR: '',
     maxDSCR: '',
     minCollateralCoverage: '',
-    maxCollateralCoverage: ''
+    maxCollateralCoverage: '',
+    maxExposureCap: '',
+    enableExposureCapping: false,
+    exposureCapAmount: ''
   });
   const [filteredData, setFilteredData] = useState<CorporateTermLoanRecord[]>([]);
   const [showFiltered, setShowFiltered] = useState(false);
@@ -170,6 +177,17 @@ export const CTLDataFilterPanel: React.FC<CTLDataFilterPanelProps> = ({
       filters.performingStatus = formCriteria.performingStatus;
     }
     
+    // Exposure cap filters
+    if (formCriteria.maxExposureCap && !isNaN(parseFloat(formCriteria.maxExposureCap))) {
+      filters.maxExposureCap = parseFloat(formCriteria.maxExposureCap);
+    }
+    if (formCriteria.enableExposureCapping) {
+      filters.enableExposureCapping = true;
+      if (formCriteria.exposureCapAmount && !isNaN(parseFloat(formCriteria.exposureCapAmount))) {
+        filters.exposureCapAmount = parseFloat(formCriteria.exposureCapAmount);
+      }
+    }
+    
     return filters;
   };
 
@@ -192,13 +210,24 @@ export const CTLDataFilterPanel: React.FC<CTLDataFilterPanelProps> = ({
       
       console.log(`✅ CTL FILTER COMPLETE: ${result.totalCount} total matching records, loaded ${result.data.length} for display`);
       
+      // Apply exposure capping if enabled (client-side transformation)
+      let processedData = result.data;
+      if (filters.enableExposureCapping && filters.exposureCapAmount) {
+        processedData = result.data.map(loan => ({
+          ...loan,
+          current_balance: Math.min(loan.current_balance, filters.exposureCapAmount!),
+          loan_amount: Math.min(loan.loan_amount, filters.exposureCapAmount!)
+        }));
+        console.log(`📊 APPLIED EXPOSURE CAPPING: Cap at $${filters.exposureCapAmount.toLocaleString()}`);
+      }
+      
       // Update portfolio summary with filtered data
       const filteredSummary = await getCTLPortfolioSummary(datasetName, filters);
       onPortfolioSummaryChange(filteredSummary);
       
-      setFilteredData(result.data);
+      setFilteredData(processedData);
       setShowFiltered(true);
-      onFilteredDataChange(result.data, filters, countResult.totalCount);
+      onFilteredDataChange(processedData, filters, countResult.totalCount);
     } catch (error) {
       console.error('Error applying CTL filters:', error);
     } finally {
@@ -232,7 +261,10 @@ export const CTLDataFilterPanel: React.FC<CTLDataFilterPanelProps> = ({
       minDSCR: '',
       maxDSCR: '',
       minCollateralCoverage: '',
-      maxCollateralCoverage: ''
+      maxCollateralCoverage: '',
+      maxExposureCap: '',
+      enableExposureCapping: false,
+      exposureCapAmount: ''
     });
     setFilteredData([]);
     setShowFiltered(false);
@@ -568,6 +600,51 @@ export const CTLDataFilterPanel: React.FC<CTLDataFilterPanelProps> = ({
                 <SelectItem value="non-performing">Non-Performing</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        {/* Exposure Management Section */}
+        <div className="mt-6 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+          <h3 className="text-lg font-semibold mb-4 text-blue-900 dark:text-blue-100">Portfolio Construction Options</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Max Exposure Cap */}
+            <div className="space-y-2">
+              <Label className="font-medium">Maximum Loan Exposure Cap</Label>
+              <p className="text-sm text-muted-foreground">Exclude any loan exceeding this amount</p>
+              <Input
+                type="number"
+                placeholder="e.g., 25000"
+                value={filterCriteria.maxExposureCap}
+                onChange={(e) => setFilterCriteria({...filterCriteria, maxExposureCap: e.target.value})}
+              />
+            </div>
+
+            {/* Exposure Capping Mode */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="enableCapping"
+                  checked={filterCriteria.enableExposureCapping}
+                  onCheckedChange={(checked) => setFilterCriteria({
+                    ...filterCriteria, 
+                    enableExposureCapping: checked === true
+                  })}
+                />
+                <Label htmlFor="enableCapping" className="font-medium cursor-pointer">
+                  Enable Exposure Capping
+                </Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Cap each loan at specified amount (includes portion of larger loans)
+              </p>
+              <Input
+                type="number"
+                placeholder="e.g., 25000"
+                value={filterCriteria.exposureCapAmount}
+                onChange={(e) => setFilterCriteria({...filterCriteria, exposureCapAmount: e.target.value})}
+                disabled={!filterCriteria.enableExposureCapping}
+              />
+            </div>
           </div>
         </div>
 
