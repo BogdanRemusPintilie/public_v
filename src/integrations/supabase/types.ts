@@ -876,6 +876,7 @@ export type Database = {
         Args: { input_user_id: string }
         Returns: {
           dataset_name: string
+          loan_type: string
           user_id: string
         }[]
       }
