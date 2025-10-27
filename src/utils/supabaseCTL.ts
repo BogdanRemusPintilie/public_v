@@ -1,6 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CorporateTermLoanRecord } from './parsers/corporateTermLoansParser';
 
+// Re-export for use in other components
+export type { CorporateTermLoanRecord };
+
 // Helpers to normalize CTL fields to match DB constraints (e.g., varchar(3))
 const toISO3 = (country?: string | null) => {
   if (!country) return null;
@@ -94,9 +97,29 @@ export const insertCorporateTermLoans = async (
 export interface CTLFilterCriteria {
   minLoanAmount?: number;
   maxLoanAmount?: number;
+  minFacilityAmount?: number;
+  maxFacilityAmount?: number;
+  minInterestRate?: number;
+  maxInterestRate?: number;
+  minRemainingTerm?: number;
+  maxRemainingTerm?: number;
+  minPD?: number;
+  maxPD?: number;
+  minLGD?: number;
+  maxLGD?: number;
   minLeverageRatio?: number;
   maxLeverageRatio?: number;
+  minInterestCoverageRatio?: number;
+  maxInterestCoverageRatio?: number;
+  minDSCR?: number;
+  maxDSCR?: number;
+  minCollateralCoverage?: number;
+  maxCollateralCoverage?: number;
   creditRating?: string;
+  industrySector?: string;
+  country?: string;
+  securedUnsecured?: string;
+  performingStatus?: string;
 }
 
 export const getCorporateTermLoansByDataset = async (
@@ -124,6 +147,7 @@ export const getCorporateTermLoansByDataset = async (
     .eq('dataset_name', datasetName);
 
   if (filters) {
+    // Loan amount filters
     if (filters.minLoanAmount !== undefined) {
       countQuery = countQuery.gte('loan_amount', filters.minLoanAmount);
       dataQuery = dataQuery.gte('loan_amount', filters.minLoanAmount);
@@ -132,6 +156,58 @@ export const getCorporateTermLoansByDataset = async (
       countQuery = countQuery.lte('loan_amount', filters.maxLoanAmount);
       dataQuery = dataQuery.lte('loan_amount', filters.maxLoanAmount);
     }
+    
+    // Facility amount filters
+    if (filters.minFacilityAmount !== undefined) {
+      countQuery = countQuery.gte('facility_amount', filters.minFacilityAmount);
+      dataQuery = dataQuery.gte('facility_amount', filters.minFacilityAmount);
+    }
+    if (filters.maxFacilityAmount !== undefined) {
+      countQuery = countQuery.lte('facility_amount', filters.maxFacilityAmount);
+      dataQuery = dataQuery.lte('facility_amount', filters.maxFacilityAmount);
+    }
+    
+    // Interest rate filters
+    if (filters.minInterestRate !== undefined) {
+      countQuery = countQuery.gte('interest_rate', filters.minInterestRate);
+      dataQuery = dataQuery.gte('interest_rate', filters.minInterestRate);
+    }
+    if (filters.maxInterestRate !== undefined) {
+      countQuery = countQuery.lte('interest_rate', filters.maxInterestRate);
+      dataQuery = dataQuery.lte('interest_rate', filters.maxInterestRate);
+    }
+    
+    // Remaining term filters
+    if (filters.minRemainingTerm !== undefined) {
+      countQuery = countQuery.gte('remaining_term', filters.minRemainingTerm);
+      dataQuery = dataQuery.gte('remaining_term', filters.minRemainingTerm);
+    }
+    if (filters.maxRemainingTerm !== undefined) {
+      countQuery = countQuery.lte('remaining_term', filters.maxRemainingTerm);
+      dataQuery = dataQuery.lte('remaining_term', filters.maxRemainingTerm);
+    }
+    
+    // PD filters
+    if (filters.minPD !== undefined) {
+      countQuery = countQuery.gte('pd', filters.minPD);
+      dataQuery = dataQuery.gte('pd', filters.minPD);
+    }
+    if (filters.maxPD !== undefined) {
+      countQuery = countQuery.lte('pd', filters.maxPD);
+      dataQuery = dataQuery.lte('pd', filters.maxPD);
+    }
+    
+    // LGD filters
+    if (filters.minLGD !== undefined) {
+      countQuery = countQuery.gte('lgd', filters.minLGD);
+      dataQuery = dataQuery.gte('lgd', filters.minLGD);
+    }
+    if (filters.maxLGD !== undefined) {
+      countQuery = countQuery.lte('lgd', filters.maxLGD);
+      dataQuery = dataQuery.lte('lgd', filters.maxLGD);
+    }
+    
+    // Leverage ratio filters
     if (filters.minLeverageRatio !== undefined) {
       countQuery = countQuery.gte('leverage_ratio', filters.minLeverageRatio);
       dataQuery = dataQuery.gte('leverage_ratio', filters.minLeverageRatio);
@@ -140,9 +216,57 @@ export const getCorporateTermLoansByDataset = async (
       countQuery = countQuery.lte('leverage_ratio', filters.maxLeverageRatio);
       dataQuery = dataQuery.lte('leverage_ratio', filters.maxLeverageRatio);
     }
+    
+    // Interest coverage ratio filters
+    if (filters.minInterestCoverageRatio !== undefined) {
+      countQuery = countQuery.gte('interest_coverage_ratio', filters.minInterestCoverageRatio);
+      dataQuery = dataQuery.gte('interest_coverage_ratio', filters.minInterestCoverageRatio);
+    }
+    if (filters.maxInterestCoverageRatio !== undefined) {
+      countQuery = countQuery.lte('interest_coverage_ratio', filters.maxInterestCoverageRatio);
+      dataQuery = dataQuery.lte('interest_coverage_ratio', filters.maxInterestCoverageRatio);
+    }
+    
+    // DSCR filters
+    if (filters.minDSCR !== undefined) {
+      countQuery = countQuery.gte('debt_service_coverage_ratio', filters.minDSCR);
+      dataQuery = dataQuery.gte('debt_service_coverage_ratio', filters.minDSCR);
+    }
+    if (filters.maxDSCR !== undefined) {
+      countQuery = countQuery.lte('debt_service_coverage_ratio', filters.maxDSCR);
+      dataQuery = dataQuery.lte('debt_service_coverage_ratio', filters.maxDSCR);
+    }
+    
+    // Collateral coverage filters
+    if (filters.minCollateralCoverage !== undefined) {
+      countQuery = countQuery.gte('collateral_coverage_ratio', filters.minCollateralCoverage);
+      dataQuery = dataQuery.gte('collateral_coverage_ratio', filters.minCollateralCoverage);
+    }
+    if (filters.maxCollateralCoverage !== undefined) {
+      countQuery = countQuery.lte('collateral_coverage_ratio', filters.maxCollateralCoverage);
+      dataQuery = dataQuery.lte('collateral_coverage_ratio', filters.maxCollateralCoverage);
+    }
+    
+    // Categorical filters
     if (filters.creditRating) {
       countQuery = countQuery.eq('credit_rating', filters.creditRating);
       dataQuery = dataQuery.eq('credit_rating', filters.creditRating);
+    }
+    if (filters.industrySector) {
+      countQuery = countQuery.eq('industry_sector', filters.industrySector);
+      dataQuery = dataQuery.eq('industry_sector', filters.industrySector);
+    }
+    if (filters.country) {
+      countQuery = countQuery.eq('country', filters.country);
+      dataQuery = dataQuery.eq('country', filters.country);
+    }
+    if (filters.securedUnsecured) {
+      countQuery = countQuery.eq('secured_unsecured', filters.securedUnsecured);
+      dataQuery = dataQuery.eq('secured_unsecured', filters.securedUnsecured);
+    }
+    if (filters.performingStatus) {
+      countQuery = countQuery.eq('performing_status', filters.performingStatus);
+      dataQuery = dataQuery.eq('performing_status', filters.performingStatus);
     }
   }
 
