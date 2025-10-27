@@ -139,7 +139,7 @@ export const parseConsumerFinanceFile = async (file: File): Promise<ParsedExcelD
   
   console.log('🗺️ Column mapping:', columnMap);
 
-  const essentialColumns: (keyof ColumnMap)[] = ['loan_amount', 'interest_rate', 'term', 'remaining_term', 'lgd', 'ltv', 'opening_balance'];
+  const essentialColumns: (keyof ColumnMap)[] = ['loan_amount', 'interest_rate', 'term', 'remaining_term', 'lgd', 'opening_balance'];
   const missingColumns = essentialColumns.filter(col => columnMap[col] === undefined);
   
   if (missingColumns.length > 0) {
@@ -160,7 +160,7 @@ export const parseConsumerFinanceFile = async (file: File): Promise<ParsedExcelD
           term: parseFinancialValue(row[columnMap.term!]),
           remaining_term: parseFinancialValue(row[columnMap.remaining_term!]),
           lgd: parseLGDValue(row[columnMap.lgd!]),
-          ltv: parseFinancialValue(row[columnMap.ltv!]),
+          ltv: columnMap.ltv !== undefined ? parseFinancialValue(row[columnMap.ltv]) : 0,
           opening_balance: parseFinancialValue(row[columnMap.opening_balance!]),
           pd: columnMap.pd !== undefined ? parsePDValue(row[columnMap.pd]) : 0,
           file_name: file.name,
