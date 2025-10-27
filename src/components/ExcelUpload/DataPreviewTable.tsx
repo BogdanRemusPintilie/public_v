@@ -24,15 +24,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoanRecord } from '@/utils/supabase';
+import { CorporateTermLoanRecord } from '@/utils/parsers/corporateTermLoansParser';
+import { LoanType } from '@/utils/parsers/parserRegistry';
 
 interface DataPreviewTableProps {
-  previewData: LoanRecord[];
+  previewData: LoanRecord[] | CorporateTermLoanRecord[];
   selectedRecords: Set<string>;
   showExistingData: boolean;
   totalRecords: number;
   currentPage: number;
   hasMore: boolean;
   isProcessing: boolean;
+  selectedLoanType: LoanType;
   onSelectRecord: (recordId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
   onDeleteSelected: () => void;
@@ -49,11 +52,14 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
   currentPage,
   hasMore,
   isProcessing,
+  selectedLoanType,
   onSelectRecord,
   onSelectAll,
   onDeleteSelected,
   onPageChange
 }) => {
+  const isCTL = selectedLoanType === 'corporate_term_loans';
+  
   return (
     <div className="mt-6">
       <div className="flex justify-between items-center mb-4">
@@ -130,13 +136,30 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                   </TableHead>
                 )}
                 {showExistingData && <TableHead>Dataset</TableHead>}
-                <TableHead>Opening Balance</TableHead>
-                <TableHead>Interest Rate</TableHead>
-                <TableHead>Term (Months)</TableHead>
-                <TableHead>PD</TableHead>
-                <TableHead>Remaining Term</TableHead>
-                <TableHead>Credit Score</TableHead>
-                <TableHead>LTV</TableHead>
+                {isCTL ? (
+                  <>
+                    <TableHead>Borrower</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Sector</TableHead>
+                    <TableHead>Loan Amount</TableHead>
+                    <TableHead>Current Balance</TableHead>
+                    <TableHead>Interest Rate</TableHead>
+                    <TableHead>Credit Rating</TableHead>
+                    <TableHead>PD</TableHead>
+                    <TableHead>LGD</TableHead>
+                    <TableHead>Status</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead>Opening Balance</TableHead>
+                    <TableHead>Interest Rate</TableHead>
+                    <TableHead>Term (Months)</TableHead>
+                    <TableHead>PD</TableHead>
+                    <TableHead>Remaining Term</TableHead>
+                    <TableHead>Credit Score</TableHead>
+                    <TableHead>LTV</TableHead>
+                  </>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -157,13 +180,30 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
                       {row.dataset_name || 'Unnamed Dataset'}
                     </TableCell>
                   )}
-                  <TableCell>€{row.opening_balance.toLocaleString()}</TableCell>
-                  <TableCell>{row.interest_rate.toFixed(2)}%</TableCell>
-                  <TableCell>{row.term}</TableCell>
-                  <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
-                  <TableCell>{row.remaining_term ? Number(row.remaining_term).toFixed(0) : 'N/A'}</TableCell>
-                  <TableCell>{row.lgd || 0}</TableCell>
-                  <TableCell>{row.ltv.toFixed(2)}%</TableCell>
+                  {isCTL ? (
+                    <>
+                      <TableCell>{(row as CorporateTermLoanRecord).borrower_name || 'N/A'}</TableCell>
+                      <TableCell>{(row as CorporateTermLoanRecord).country || 'N/A'}</TableCell>
+                      <TableCell>{(row as CorporateTermLoanRecord).industry_sector || 'N/A'}</TableCell>
+                      <TableCell>£{row.loan_amount.toLocaleString()}</TableCell>
+                      <TableCell>£{row.current_balance.toLocaleString()}</TableCell>
+                      <TableCell>{(row.interest_rate * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{(row as CorporateTermLoanRecord).credit_rating || 'N/A'}</TableCell>
+                      <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{((row.lgd || 0) * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{(row as CorporateTermLoanRecord).performing_status || 'N/A'}</TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell>€{row.opening_balance.toLocaleString()}</TableCell>
+                      <TableCell>{(row.interest_rate * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{row.term}</TableCell>
+                      <TableCell>{((row.pd || 0) * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{row.remaining_term ? Number(row.remaining_term).toFixed(0) : 'N/A'}</TableCell>
+                      <TableCell>{row.lgd || 0}</TableCell>
+                      <TableCell>{((row as LoanRecord).ltv || 0).toFixed(2)}%</TableCell>
+                    </>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
