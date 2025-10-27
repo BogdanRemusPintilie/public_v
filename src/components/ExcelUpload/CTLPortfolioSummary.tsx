@@ -21,12 +21,6 @@ export const CTLPortfolioSummary: React.FC<CTLPortfolioSummaryProps> = ({ portfo
           <div className="text-sm text-gray-600">Total Exposure</div>
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-          <div className="text-2xl font-bold text-blue-600">
-            €{(portfolioSummary.avgLoanSize / 1000000).toFixed(2)}M
-          </div>
-          <div className="text-sm text-gray-600">Avg Loan Size</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-purple-600">
             {portfolioSummary.avgInterestRate.toFixed(2)}%
           </div>
@@ -55,19 +49,6 @@ export const CTLPortfolioSummary: React.FC<CTLPortfolioSummaryProps> = ({ portfo
             €{(portfolioSummary.expectedLoss / 1000000).toFixed(2)}M
           </div>
           <div className="text-sm text-gray-600">Expected Loss</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-          <div className="text-2xl font-bold text-red-600">{portfolioSummary.highRiskLoans}</div>
-          <div className="text-sm text-gray-600">High Risk Loans</div>
-          <div className="text-xs text-gray-400">PD {'>'} 10%</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-          <div className="text-2xl font-bold text-green-600">{portfolioSummary.performingCount}</div>
-          <div className="text-sm text-gray-600">Performing</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-          <div className="text-2xl font-bold text-orange-600">{portfolioSummary.nonPerformingCount}</div>
-          <div className="text-sm text-gray-600">Non-Performing</div>
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-blue-600">
