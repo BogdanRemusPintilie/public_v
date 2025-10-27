@@ -183,6 +183,10 @@ export interface CTLPortfolioSummary {
   avgLeverageRatio: number;
   performingCount: number;
   nonPerformingCount: number;
+  weightedAvgPd: number;
+  weightedAvgLgd: number;
+  expectedLoss: number;
+  avgLoanSize: number;
 }
 
 export const getCTLPortfolioSummary = async (
@@ -214,6 +218,10 @@ export const getCTLPortfolioSummary = async (
       avgLeverageRatio: 0,
       performingCount: 0,
       nonPerformingCount: 0,
+      weightedAvgPd: 0,
+      weightedAvgLgd: 0,
+      expectedLoss: 0,
+      avgLoanSize: 0,
     };
   }
 
@@ -226,6 +234,10 @@ export const getCTLPortfolioSummary = async (
     avgLeverageRatio: Number(summary.avg_leverage_ratio) || 0,
     performingCount: Number(summary.performing_count) || 0,
     nonPerformingCount: Number(summary.non_performing_count) || 0,
+    weightedAvgPd: Number(summary.weighted_avg_pd) || 0,
+    weightedAvgLgd: Number(summary.weighted_avg_lgd) || 0,
+    expectedLoss: Number(summary.expected_loss) || 0,
+    avgLoanSize: Number(summary.avg_loan_size) || 0,
   };
 };
 

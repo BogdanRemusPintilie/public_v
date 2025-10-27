@@ -41,6 +41,10 @@ interface ExcelUploadModalProps {
     avgLeverageRatio?: number;
     performingCount?: number;
     nonPerformingCount?: number;
+    weightedAvgPd?: number;
+    weightedAvgLgd?: number;
+    expectedLoss?: number;
+    avgLoanSize?: number;
   } | null;
   previewData: any[];
   allData: any[];
@@ -242,6 +246,10 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                   avgLeverageRatio: portfolioSummary.avgLeverageRatio || 0,
                   performingCount: portfolioSummary.performingCount || 0,
                   nonPerformingCount: portfolioSummary.nonPerformingCount || 0,
+                  weightedAvgPd: portfolioSummary.weightedAvgPd || 0,
+                  weightedAvgLgd: portfolioSummary.weightedAvgLgd || 0,
+                  expectedLoss: portfolioSummary.expectedLoss || 0,
+                  avgLoanSize: portfolioSummary.avgLoanSize || 0,
                 }} />
               )}
               

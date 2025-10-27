@@ -729,11 +729,15 @@ export type Database = {
         Returns: {
           avg_interest_rate: number
           avg_leverage_ratio: number
+          avg_loan_size: number
+          expected_loss: number
           high_risk_loans: number
           non_performing_count: number
           performing_count: number
           total_exposure: number
           total_records: number
+          weighted_avg_lgd: number
+          weighted_avg_pd: number
         }[]
       }
       get_ctl_rating_distribution: {

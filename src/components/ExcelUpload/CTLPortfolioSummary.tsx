@@ -21,21 +21,45 @@ export const CTLPortfolioSummary: React.FC<CTLPortfolioSummaryProps> = ({ portfo
           <div className="text-sm text-gray-600">Total Exposure</div>
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-blue-600">
+            €{(portfolioSummary.avgLoanSize / 1000000).toFixed(2)}M
+          </div>
+          <div className="text-sm text-gray-600">Avg Loan Size</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-purple-600">
             {portfolioSummary.avgInterestRate.toFixed(2)}%
           </div>
           <div className="text-sm text-gray-600">Avg Interest Rate</div>
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-          <div className="text-2xl font-bold text-red-600">{portfolioSummary.highRiskLoans}</div>
-          <div className="text-sm text-gray-600">High Risk Loans</div>
-          <div className="text-xs text-gray-400">PD {'>'} 10%</div>
-        </div>
-        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-indigo-600">
             {portfolioSummary.avgLeverageRatio.toFixed(2)}x
           </div>
           <div className="text-sm text-gray-600">Avg Leverage Ratio</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-purple-600">
+            {portfolioSummary.weightedAvgPd.toFixed(2)}%
+          </div>
+          <div className="text-sm text-gray-600">Weighted Avg PD</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-purple-600">
+            {portfolioSummary.weightedAvgLgd.toFixed(2)}%
+          </div>
+          <div className="text-sm text-gray-600">Weighted Avg LGD</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-red-600">
+            €{(portfolioSummary.expectedLoss / 1000000).toFixed(2)}M
+          </div>
+          <div className="text-sm text-gray-600">Expected Loss</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-red-600">{portfolioSummary.highRiskLoans}</div>
+          <div className="text-sm text-gray-600">High Risk Loans</div>
+          <div className="text-xs text-gray-400">PD {'>'} 10%</div>
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-green-600">{portfolioSummary.performingCount}</div>
