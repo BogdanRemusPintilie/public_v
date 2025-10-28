@@ -521,3 +521,104 @@ export const getCTLBorrowerConcentration = async (
     avg_leverage_ratio: Number(item.avg_leverage_ratio),
   }));
 };
+
+// Exposure limits interfaces
+export interface ExposureData {
+  dimension_key: string;
+  total_exposure: number;
+  loan_count: number;
+  limit_amount: number | null;
+  limit_breach: boolean;
+  breach_amount: number;
+}
+
+/**
+ * Fetches exposure data by dimension (sector, borrower, country, rating)
+ */
+export const getExposureByDimension = async (
+  datasetName: string,
+  dimensionType: 'sector' | 'borrower' | 'country' | 'rating'
+): Promise<ExposureData[]> => {
+  console.log(`📊 FETCHING EXPOSURE BY ${dimensionType.toUpperCase()} for ${datasetName}`);
+  
+  const { data, error } = await supabase.rpc('get_ctl_exposure_by_dimension', {
+    dataset_name_param: datasetName,
+    dimension_type: dimensionType,
+  });
+  
+  if (error) {
+    console.error('Error fetching exposure by dimension:', error);
+    throw error;
+  }
+  
+  console.log(`✅ FETCHED ${data?.length || 0} exposure records`);
+  
+  return (data || []).map((item: any) => ({
+    dimension_key: item.dimension_key,
+    total_exposure: Number(item.total_exposure),
+    loan_count: Number(item.loan_count),
+    limit_amount: item.limit_amount ? Number(item.limit_amount) : null,
+    limit_breach: Boolean(item.limit_breach),
+    breach_amount: Number(item.breach_amount),
+  }));
+};
+
+/**
+ * Sets an exposure limit for a specific dimension
+ */
+export const setExposureLimit = async (
+  userId: string,
+  datasetName: string,
+  limitType: 'sector' | 'borrower' | 'country' | 'rating',
+  limitKey: string,
+  limitAmount: number
+): Promise<void> => {
+  console.log(`💾 SETTING EXPOSURE LIMIT: ${limitType}/${limitKey} = ${limitAmount}`);
+  
+  const { error } = await supabase
+    .from('exposure_limits')
+    .upsert({
+      user_id: userId,
+      dataset_name: datasetName,
+      limit_type: limitType,
+      limit_key: limitKey,
+      limit_amount: limitAmount,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,dataset_name,limit_type,limit_key'
+    });
+  
+  if (error) {
+    console.error('Error setting exposure limit:', error);
+    throw error;
+  }
+  
+  console.log('✅ EXPOSURE LIMIT SET');
+};
+
+/**
+ * Deletes an exposure limit
+ */
+export const deleteExposureLimit = async (
+  userId: string,
+  datasetName: string,
+  limitType: 'sector' | 'borrower' | 'country' | 'rating',
+  limitKey: string
+): Promise<void> => {
+  console.log(`🗑️ DELETING EXPOSURE LIMIT: ${limitType}/${limitKey}`);
+  
+  const { error } = await supabase
+    .from('exposure_limits')
+    .delete()
+    .eq('user_id', userId)
+    .eq('dataset_name', datasetName)
+    .eq('limit_type', limitType)
+    .eq('limit_key', limitKey);
+  
+  if (error) {
+    console.error('Error deleting exposure limit:', error);
+    throw error;
+  }
+  
+  console.log('✅ EXPOSURE LIMIT DELETED');
+};

@@ -200,6 +200,39 @@ export type Database = {
         }
         Relationships: []
       }
+      exposure_limits: {
+        Row: {
+          created_at: string | null
+          dataset_name: string
+          id: string
+          limit_amount: number
+          limit_key: string
+          limit_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dataset_name: string
+          id?: string
+          limit_amount: number
+          limit_key: string
+          limit_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dataset_name?: string
+          id?: string
+          limit_amount?: number
+          limit_key?: string
+          limit_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       investor_reports: {
         Row: {
           asset_class: string | null
@@ -786,6 +819,17 @@ export type Database = {
           borrower_name: string
           loan_count: number
           portfolio_share: number
+          total_exposure: number
+        }[]
+      }
+      get_ctl_exposure_by_dimension: {
+        Args: { dataset_name_param: string; dimension_type: string }
+        Returns: {
+          breach_amount: number
+          dimension_key: string
+          limit_amount: number
+          limit_breach: boolean
+          loan_count: number
           total_exposure: number
         }[]
       }

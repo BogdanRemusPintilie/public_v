@@ -32,9 +32,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Search, Database } from 'lucide-react';
+import { Trash2, Search, Database, Shield } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { PARSER_REGISTRY } from '@/utils/parsers/parserRegistry';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ExposureLimitsManager from './ExposureLimitsManager';
 
 interface DatasetManagerProps {
   isOpen: boolean;
@@ -55,6 +57,7 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDatasets, setSelectedDatasets] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDatasetForLimits, setSelectedDatasetForLimits] = useState<string>('');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -78,6 +81,12 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
       const unsecuredLoansDataset = datasetSummaries.find(d => d.dataset_name === "Unsecured consumer loans");
       if (unsecuredLoansDataset) {
         setSelectedDatasets(new Set(["Unsecured consumer loans"]));
+      }
+      
+      // Set first CTL dataset for exposure limits if available
+      const ctlDataset = datasetSummaries.find(d => d.loan_type === 'corporate_term_loans');
+      if (ctlDataset) {
+        setSelectedDatasetForLimits(ctlDataset.dataset_name);
       }
       
       toast({
@@ -171,10 +180,23 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
           <CardHeader>
             <CardTitle>Dataset Manager</CardTitle>
             <CardDescription>
-              Manage and delete your uploaded datasets. The "Unsecured consumer loans" dataset has been pre-selected for deletion.
+              Manage datasets, set exposure limits, and monitor risk concentrations
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <Tabs defaultValue="datasets" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="datasets">
+                  <Database className="h-4 w-4 mr-2" />
+                  Datasets
+                </TabsTrigger>
+                <TabsTrigger value="limits">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Exposure Limits
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="datasets" className="space-y-6">
             {/* Search Bar */}
             <div className="mb-6">
               <Label htmlFor="search" className="text-base font-medium">
@@ -316,6 +338,47 @@ const DatasetManager: React.FC<DatasetManagerProps> = ({ isOpen, onClose }) => {
                 </div>
               </>
             )}
+              </TabsContent>
+              
+              <TabsContent value="limits" className="space-y-6">
+                {datasets.filter(d => d.loan_type === 'corporate_term_loans').length === 0 ? (
+                  <div className="text-center py-12">
+                    <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      No Corporate Term Loans Datasets
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Upload a corporate term loans dataset to set exposure limits
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <Label className="text-sm font-medium whitespace-nowrap">
+                        Select Dataset:
+                      </Label>
+                      <select
+                        value={selectedDatasetForLimits}
+                        onChange={(e) => setSelectedDatasetForLimits(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        {datasets
+                          .filter(d => d.loan_type === 'corporate_term_loans')
+                          .map(d => (
+                            <option key={d.dataset_name} value={d.dataset_name}>
+                              {d.dataset_name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    
+                    {selectedDatasetForLimits && (
+                      <ExposureLimitsManager datasetName={selectedDatasetForLimits} />
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
           <div className="flex justify-end gap-4 p-6 border-t">
             <Button variant="ghost" onClick={onClose}>Close</Button>
