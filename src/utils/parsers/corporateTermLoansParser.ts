@@ -163,7 +163,9 @@ const parseFinancialValue = (value: any): number => {
 
 const parsePDValue = (value: any): number => {
   const numValue = parseFinancialValue(value);
-  if (numValue > 1) return numValue / 100;
+  // If value is <= 1, it's likely a decimal (e.g., 0.025), convert to percentage (2.5)
+  // If value is > 1, it's already a percentage (e.g., 2.5), keep as is
+  if (numValue > 0 && numValue <= 1) return numValue * 100;
   return numValue;
 };
 
