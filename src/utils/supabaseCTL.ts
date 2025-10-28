@@ -472,15 +472,35 @@ export const getCTLBorrowerConcentration = async (
   datasetName: string, 
   filters?: CTLFilterCriteria
 ): Promise<BorrowerConcentration[]> => {
-  console.log(`📊 FETCHING BORROWER CONCENTRATION for ${datasetName}`);
+  console.log(`📊 FETCHING BORROWER CONCENTRATION for ${datasetName}`, { filters });
   
   const { data, error } = await supabase.rpc('get_ctl_borrower_concentration', {
     dataset_name_param: datasetName,
     p_min_loan_amount: filters?.minLoanAmount ?? null,
     p_max_loan_amount: filters?.maxLoanAmount ?? null,
+    p_min_facility_amount: filters?.minFacilityAmount ?? null,
+    p_max_facility_amount: filters?.maxFacilityAmount ?? null,
+    p_min_interest_rate: filters?.minInterestRate ?? null,
+    p_max_interest_rate: filters?.maxInterestRate ?? null,
+    p_min_remaining_term: filters?.minRemainingTerm ?? null,
+    p_max_remaining_term: filters?.maxRemainingTerm ?? null,
     p_min_leverage_ratio: filters?.minLeverageRatio ?? null,
     p_max_leverage_ratio: filters?.maxLeverageRatio ?? null,
+    p_min_pd: filters?.minPD ?? null,
+    p_max_pd: filters?.maxPD ?? null,
+    p_min_lgd: filters?.minLGD ?? null,
+    p_max_lgd: filters?.maxLGD ?? null,
+    p_min_interest_coverage_ratio: filters?.minInterestCoverageRatio ?? null,
+    p_max_interest_coverage_ratio: filters?.maxInterestCoverageRatio ?? null,
+    p_min_dscr: filters?.minDSCR ?? null,
+    p_max_dscr: filters?.maxDSCR ?? null,
+    p_min_collateral_coverage: filters?.minCollateralCoverage ?? null,
+    p_max_collateral_coverage: filters?.maxCollateralCoverage ?? null,
     p_credit_rating_filter: filters?.creditRating ?? null,
+    p_industry_sector_filter: filters?.industrySector ?? null,
+    p_country_filter: filters?.country ?? null,
+    p_secured_unsecured_filter: filters?.securedUnsecured ?? null,
+    p_performing_status_filter: filters?.performingStatus ?? null,
     p_max_exposure_cap: filters?.maxExposureCap ?? null,
   });
   
@@ -488,6 +508,8 @@ export const getCTLBorrowerConcentration = async (
     console.error('Error fetching CTL borrower concentration:', error);
     return [];
   }
+  
+  console.log(`✅ FETCHED ${data?.length || 0} borrower concentration records`);
   
   return (data || []).map((item: any) => ({
     borrower_name: item.borrower_name,

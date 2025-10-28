@@ -752,12 +752,32 @@ export type Database = {
       get_ctl_borrower_concentration: {
         Args: {
           dataset_name_param: string
+          p_country_filter?: string
           p_credit_rating_filter?: string
+          p_industry_sector_filter?: string
+          p_max_collateral_coverage?: number
+          p_max_dscr?: number
           p_max_exposure_cap?: number
+          p_max_facility_amount?: number
+          p_max_interest_coverage_ratio?: number
+          p_max_interest_rate?: number
           p_max_leverage_ratio?: number
+          p_max_lgd?: number
           p_max_loan_amount?: number
+          p_max_pd?: number
+          p_max_remaining_term?: number
+          p_min_collateral_coverage?: number
+          p_min_dscr?: number
+          p_min_facility_amount?: number
+          p_min_interest_coverage_ratio?: number
+          p_min_interest_rate?: number
           p_min_leverage_ratio?: number
+          p_min_lgd?: number
           p_min_loan_amount?: number
+          p_min_pd?: number
+          p_min_remaining_term?: number
+          p_performing_status_filter?: string
+          p_secured_unsecured_filter?: string
         }
         Returns: {
           avg_credit_rating: string
