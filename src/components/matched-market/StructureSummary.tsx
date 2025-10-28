@@ -32,28 +32,64 @@ export function StructureSummary({ structure, dataset }: StructureSummaryProps) 
       console.log('📊 StructureSummary - Fetching summary for dataset:', structure.dataset_name);
 
       try {
-        // Use get_portfolio_summary for single dataset - much faster than get_dataset_summaries_optimized
-        const { data: summaryData, error: summaryError } = await supabase.rpc('get_portfolio_summary', {
-          dataset_name_param: structure.dataset_name
-        });
+        // First, try to determine the loan type by checking corporate_term_loans_data
+        const { data: ctlCheck } = await supabase
+          .from('corporate_term_loans_data')
+          .select('id')
+          .eq('dataset_name', structure.dataset_name)
+          .limit(1);
         
-        if (summaryError) {
-          console.error('❌ Error fetching dataset summary:', summaryError);
-          setIsLoading(false);
-          return;
-        }
-
-        if (summaryData && summaryData.length > 0) {
-          const summary = summaryData[0];
-          setDatasetSummary({
-            dataset_name: structure.dataset_name,
-            record_count: summary.total_records,
-            total_value: summary.total_value,
-            avg_interest_rate: summary.avg_interest_rate,
-            high_risk_count: summary.high_risk_loans,
-            created_at: new Date().toISOString()
+        const isCTL = ctlCheck && ctlCheck.length > 0;
+        
+        // Use appropriate RPC function based on loan type
+        if (isCTL) {
+          console.log('🔍 Fetching CTL portfolio summary');
+          const { data: summaryData, error: summaryError } = await supabase.rpc('get_ctl_portfolio_summary', {
+            dataset_name_param: structure.dataset_name
           });
-          console.log('✅ Dataset summary loaded:', summary);
+          
+          if (summaryError) {
+            console.error('❌ Error fetching CTL dataset summary:', summaryError);
+            setIsLoading(false);
+            return;
+          }
+
+          if (summaryData && summaryData.length > 0) {
+            const summary = summaryData[0];
+            setDatasetSummary({
+              dataset_name: structure.dataset_name,
+              record_count: summary.total_records,
+              total_value: summary.total_exposure, // CTL uses total_exposure
+              avg_interest_rate: summary.avg_interest_rate,
+              high_risk_count: summary.high_risk_loans,
+              created_at: new Date().toISOString()
+            });
+            console.log('✅ CTL Dataset summary loaded:', summary);
+          }
+        } else {
+          console.log('🔍 Fetching consumer finance portfolio summary');
+          const { data: summaryData, error: summaryError } = await supabase.rpc('get_portfolio_summary', {
+            dataset_name_param: structure.dataset_name
+          });
+          
+          if (summaryError) {
+            console.error('❌ Error fetching dataset summary:', summaryError);
+            setIsLoading(false);
+            return;
+          }
+
+          if (summaryData && summaryData.length > 0) {
+            const summary = summaryData[0];
+            setDatasetSummary({
+              dataset_name: structure.dataset_name,
+              record_count: summary.total_records,
+              total_value: summary.total_value,
+              avg_interest_rate: summary.avg_interest_rate,
+              high_risk_count: summary.high_risk_loans,
+              created_at: new Date().toISOString()
+            });
+            console.log('✅ Dataset summary loaded:', summary);
+          }
         }
       } catch (error) {
         console.error('❌ Error:', error);
