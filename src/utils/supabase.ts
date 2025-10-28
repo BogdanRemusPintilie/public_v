@@ -211,30 +211,53 @@ export const getLoanDataByDataset = async (
 };
 
 export const deleteLoanDataByDataset = async (datasetName: string): Promise<void> => {
-  // First, delete the loan data
+  console.log('🗑️ DELETING DATASET:', datasetName);
+  
+  // Delete from loan_data table (Consumer Finance)
   const { error: loanDataError } = await supabase
     .from('loan_data')
     .delete()
     .eq('dataset_name', datasetName);
 
   if (loanDataError) {
-    console.error('Error deleting loan data by dataset:', loanDataError);
+    console.error('❌ Error deleting consumer finance loan data:', loanDataError);
     throw loanDataError;
   }
 
-  // Then, delete any dataset shares for this dataset
+  // Delete from corporate_term_loans_data table (CTL)
+  const { error: ctlDataError } = await supabase
+    .from('corporate_term_loans_data')
+    .delete()
+    .eq('dataset_name', datasetName);
+
+  if (ctlDataError) {
+    console.error('❌ Error deleting CTL data:', ctlDataError);
+    throw ctlDataError;
+  }
+
+  // Delete any dataset shares for this dataset
   const { error: sharesError } = await supabase
     .from('dataset_shares')
     .delete()
     .eq('dataset_name', datasetName);
 
   if (sharesError) {
-    console.error('Error deleting dataset shares:', sharesError);
+    console.error('❌ Error deleting dataset shares:', sharesError);
     // Don't throw here as the main data deletion succeeded
-    // Just log the error for now
   }
 
-  console.log(`Successfully deleted dataset "${datasetName}" and its shares`);
+  // Delete any tranche structures for this dataset
+  const { error: trancheError } = await supabase
+    .from('tranche_structures')
+    .delete()
+    .eq('dataset_name', datasetName);
+
+  if (trancheError) {
+    console.error('❌ Error deleting tranche structures:', trancheError);
+    // Don't throw here as the main data deletion succeeded
+  }
+
+  console.log(`✅ Successfully deleted dataset "${datasetName}" from all tables`);
 };
 
 export const deleteLoanData = async (recordIds: string[]): Promise<void> => {
