@@ -749,6 +749,26 @@ export type Database = {
             }[]
           }
       create_loan_data_table: { Args: never; Returns: undefined }
+      get_ctl_borrower_concentration: {
+        Args: {
+          dataset_name_param: string
+          p_credit_rating_filter?: string
+          p_max_exposure_cap?: number
+          p_max_leverage_ratio?: number
+          p_max_loan_amount?: number
+          p_min_leverage_ratio?: number
+          p_min_loan_amount?: number
+        }
+        Returns: {
+          avg_credit_rating: string
+          avg_interest_rate: number
+          avg_leverage_ratio: number
+          borrower_name: string
+          loan_count: number
+          portfolio_share: number
+          total_exposure: number
+        }[]
+      }
       get_ctl_industry_distribution: {
         Args: { dataset_name_param: string }
         Returns: {

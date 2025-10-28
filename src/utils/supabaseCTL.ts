@@ -452,3 +452,50 @@ export const getCTLRatingDistribution = async (
     count: Number(item.count),
   }));
 };
+
+// Borrower concentration data interface
+export interface BorrowerConcentration {
+  borrower_name: string;
+  total_exposure: number;
+  loan_count: number;
+  avg_credit_rating: string;
+  portfolio_share: number;
+  avg_interest_rate: number;
+  avg_leverage_ratio: number;
+}
+
+/**
+ * Fetches borrower concentration analysis for a CTL dataset
+ * Groups loans by borrower and calculates aggregate metrics
+ */
+export const getCTLBorrowerConcentration = async (
+  datasetName: string, 
+  filters?: CTLFilterCriteria
+): Promise<BorrowerConcentration[]> => {
+  console.log(`📊 FETCHING BORROWER CONCENTRATION for ${datasetName}`);
+  
+  const { data, error } = await supabase.rpc('get_ctl_borrower_concentration', {
+    dataset_name_param: datasetName,
+    p_min_loan_amount: filters?.minLoanAmount ?? null,
+    p_max_loan_amount: filters?.maxLoanAmount ?? null,
+    p_min_leverage_ratio: filters?.minLeverageRatio ?? null,
+    p_max_leverage_ratio: filters?.maxLeverageRatio ?? null,
+    p_credit_rating_filter: filters?.creditRating ?? null,
+    p_max_exposure_cap: filters?.maxExposureCap ?? null,
+  });
+  
+  if (error) {
+    console.error('Error fetching CTL borrower concentration:', error);
+    return [];
+  }
+  
+  return (data || []).map((item: any) => ({
+    borrower_name: item.borrower_name,
+    total_exposure: Number(item.total_exposure),
+    loan_count: Number(item.loan_count),
+    avg_credit_rating: item.avg_credit_rating,
+    portfolio_share: Number(item.portfolio_share),
+    avg_interest_rate: Number(item.avg_interest_rate),
+    avg_leverage_ratio: Number(item.avg_leverage_ratio),
+  }));
+};

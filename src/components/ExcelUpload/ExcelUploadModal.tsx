@@ -11,6 +11,7 @@ import { CTLPortfolioCharts } from './CTLPortfolioCharts';
 import { DataPreviewTable } from './DataPreviewTable';
 import { DataFilterPanel } from './DataFilterPanel';
 import { CTLDataFilterPanel } from './CTLDataFilterPanel';
+import { BorrowerConcentration } from './BorrowerConcentration';
 import { LoanRecord } from '@/utils/supabase';
 import { LoanType } from '@/utils/parsers/parserRegistry';
 import { LoanTypeSelector } from '../LoanTypeSelector';
@@ -275,12 +276,21 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
               )}
 
               {(previewData.length > 0 || (showExistingData && totalRecords > 0)) && selectedLoanType === 'corporate_term_loans' && (
-                <CTLPortfolioCharts
-                  allData={allData}
-                  previewData={previewData}
-                  showExistingData={showExistingData}
-                  selectedDatasetName={selectedDatasetName}
-                />
+                <>
+                  <CTLPortfolioCharts
+                    allData={allData}
+                    previewData={previewData}
+                    showExistingData={showExistingData}
+                    selectedDatasetName={selectedDatasetName}
+                  />
+                  
+                  {showExistingData && selectedDatasetName && (
+                    <BorrowerConcentration 
+                      datasetName={selectedDatasetName}
+                      filters={currentFilters}
+                    />
+                  )}
+                </>
               )}
 
               {(previewData.length > 0 || (showExistingData && totalRecords > 0)) && selectedLoanType === 'consumer_finance' && (
