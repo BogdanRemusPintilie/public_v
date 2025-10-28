@@ -63,6 +63,7 @@ export const insertCorporateTermLoans = async (
       base_rate: normalize3((record as any).base_rate || null) || null,
       country: toISO3((record as any).country || null),
       facility_amount: cleanNumeric((record as any).facility_amount),
+      pd: cleanNumeric((record as any).pd ?? (record as any).probability_of_default),
       probability_of_default: cleanNumeric((record as any).probability_of_default),
       collateral_coverage_ratio: cleanNumeric((record as any).collateral_coverage_ratio),
       leverage_ratio: cleanNumeric((record as any).leverage_ratio),
