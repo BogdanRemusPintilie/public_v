@@ -21,6 +21,9 @@ interface FilterCriteriaForm {
   maxPD: string;
   minLGD: string;
   maxLGD: string;
+  maxExposureCap: string;
+  enableExposureCapping: boolean;
+  exposureCapAmount: string;
 }
 
 interface DataFilterPanelProps {
@@ -50,7 +53,10 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
     minPD: '',
     maxPD: '',
     minLGD: '',
-    maxLGD: ''
+    maxLGD: '',
+    maxExposureCap: '',
+    enableExposureCapping: false,
+    exposureCapAmount: ''
   });
   const [filteredData, setFilteredData] = useState<LoanRecord[]>([]);
   const [showFiltered, setShowFiltered] = useState(false);
@@ -95,6 +101,17 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       filters.maxLGD = parseFloat(formCriteria.maxLGD) / 100; // Convert percentage to decimal
     }
     
+    // Exposure cap filters
+    if (formCriteria.maxExposureCap && !isNaN(parseFloat(formCriteria.maxExposureCap))) {
+      filters.maxExposureCap = parseFloat(formCriteria.maxExposureCap);
+    }
+    if (formCriteria.enableExposureCapping) {
+      filters.enableExposureCapping = true;
+      if (formCriteria.exposureCapAmount && !isNaN(parseFloat(formCriteria.exposureCapAmount))) {
+        filters.exposureCapAmount = parseFloat(formCriteria.exposureCapAmount);
+      }
+    }
+    
     return filters;
   };
 
@@ -118,13 +135,24 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       
       console.log(`✅ DATABASE FILTER COMPLETE: ${result.totalCount} total matching records, loaded ${result.data.length} for display`);
       
+      // Apply exposure capping if enabled (client-side transformation for preview)
+      let processedData = result.data;
+      if (filters.enableExposureCapping && filters.exposureCapAmount) {
+        processedData = result.data.map(loan => ({
+          ...loan,
+          opening_balance: Math.min(loan.opening_balance, filters.exposureCapAmount!),
+          loan_amount: Math.min(loan.loan_amount, filters.exposureCapAmount!)
+        }));
+        console.log('✅ Applied client-side exposure capping for preview');
+      }
+      
       // Update portfolio summary with filtered data
       const filteredSummary = await getPortfolioSummary(datasetName, filters);
       onPortfolioSummaryChange(filteredSummary);
       
-      setFilteredData(result.data);
+      setFilteredData(processedData);
       setShowFiltered(true);
-      onFilteredDataChange(result.data, filters, countResult.totalCount);
+      onFilteredDataChange(processedData, filters, countResult.totalCount);
     } catch (error) {
       console.error('Error applying filters:', error);
     } finally {
@@ -143,7 +171,10 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
       minPD: '',
       maxPD: '',
       minLGD: '',
-      maxLGD: ''
+      maxLGD: '',
+      maxExposureCap: '',
+      enableExposureCapping: false,
+      exposureCapAmount: ''
     });
     setFilteredData([]);
     setShowFiltered(false);
@@ -318,6 +349,54 @@ export const DataFilterPanel: React.FC<DataFilterPanelProps> = ({
                 value={filterCriteria.maxLGD}
                 onChange={(e) => setFilterCriteria({...filterCriteria, maxLGD: e.target.value})}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Exposure Management Section */}
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-lg font-semibold mb-4">Exposure Management</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Maximum Loan Exposure Cap</Label>
+              <Input
+                type="number"
+                placeholder="Exclude loans over this amount"
+                value={filterCriteria.maxExposureCap}
+                onChange={(e) => setFilterCriteria({...filterCriteria, maxExposureCap: e.target.value})}
+              />
+              <p className="text-xs text-gray-500">Exclude entire loans where opening balance exceeds this amount</p>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="enableCapping"
+                  checked={filterCriteria.enableExposureCapping}
+                  onCheckedChange={(checked) => 
+                    setFilterCriteria({
+                      ...filterCriteria, 
+                      enableExposureCapping: checked as boolean
+                    })
+                  }
+                />
+                <Label htmlFor="enableCapping" className="cursor-pointer">
+                  Enable Exposure Capping
+                </Label>
+              </div>
+              {filterCriteria.enableExposureCapping && (
+                <>
+                  <Input
+                    type="number"
+                    placeholder="Cap exposure at this amount"
+                    value={filterCriteria.exposureCapAmount}
+                    onChange={(e) => setFilterCriteria({...filterCriteria, exposureCapAmount: e.target.value})}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Cap each loan's opening balance to this amount (includes partial amounts from larger loans)
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

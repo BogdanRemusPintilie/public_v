@@ -688,18 +688,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      copy_filtered_dataset: {
+      copy_filtered_ctl_dataset: {
         Args: {
-          p_max_interest_rate?: number
-          p_max_lgd?: number
+          p_credit_rating_filter?: string
+          p_exposure_cap_amount?: number
+          p_max_exposure_cap?: number
+          p_max_leverage_ratio?: number
           p_max_loan_amount?: number
-          p_max_pd?: number
-          p_max_remaining_term?: number
-          p_min_interest_rate?: number
-          p_min_lgd?: number
+          p_min_leverage_ratio?: number
           p_min_loan_amount?: number
-          p_min_pd?: number
-          p_min_remaining_term?: number
           p_new_dataset: string
           p_source_dataset: string
           p_user_id: string
@@ -708,6 +705,49 @@ export type Database = {
           records_copied: number
         }[]
       }
+      copy_filtered_dataset:
+        | {
+            Args: {
+              p_exposure_cap_amount?: number
+              p_max_exposure_cap?: number
+              p_max_interest_rate?: number
+              p_max_lgd?: number
+              p_max_loan_amount?: number
+              p_max_pd?: number
+              p_max_remaining_term?: number
+              p_min_interest_rate?: number
+              p_min_lgd?: number
+              p_min_loan_amount?: number
+              p_min_pd?: number
+              p_min_remaining_term?: number
+              p_new_dataset: string
+              p_source_dataset: string
+              p_user_id: string
+            }
+            Returns: {
+              records_copied: number
+            }[]
+          }
+        | {
+            Args: {
+              p_max_interest_rate?: number
+              p_max_lgd?: number
+              p_max_loan_amount?: number
+              p_max_pd?: number
+              p_max_remaining_term?: number
+              p_min_interest_rate?: number
+              p_min_lgd?: number
+              p_min_loan_amount?: number
+              p_min_pd?: number
+              p_min_remaining_term?: number
+              p_new_dataset: string
+              p_source_dataset: string
+              p_user_id: string
+            }
+            Returns: {
+              records_copied: number
+            }[]
+          }
       create_loan_data_table: { Args: never; Returns: undefined }
       get_ctl_industry_distribution: {
         Args: { dataset_name_param: string }

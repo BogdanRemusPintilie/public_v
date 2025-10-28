@@ -16,12 +16,18 @@ interface FilterCriteria {
   maxPD?: number;
   minLGD?: number;
   maxLGD?: number;
+  maxExposureCap?: number;
+  exposureCapAmount?: number;
+  minLeverageRatio?: number;
+  maxLeverageRatio?: number;
+  creditRating?: string;
 }
 
 interface CopyFilteredDatasetRequest {
   sourceDatasetName: string;
   newDatasetName: string;
   filters: FilterCriteria;
+  loanType?: string;
 }
 
 Deno.serve(async (req) => {
@@ -67,31 +73,57 @@ Deno.serve(async (req) => {
 
     console.log('✅ User authenticated:', user.id);
 
-    const { sourceDatasetName, newDatasetName, filters }: CopyFilteredDatasetRequest = await req.json();
+    const { sourceDatasetName, newDatasetName, filters, loanType }: CopyFilteredDatasetRequest = await req.json();
 
     console.log('🔄 COPYING FILTERED DATASET:', {
       source: sourceDatasetName,
       destination: newDatasetName,
       userId: user.id,
+      loanType,
       filters
     });
 
-    // Use the new database function for efficient server-side copying
-    const { data: copyResult, error: copyError } = await supabase.rpc('copy_filtered_dataset', {
-      p_source_dataset: sourceDatasetName,
-      p_new_dataset: newDatasetName,
-      p_user_id: user.id,
-      p_min_loan_amount: filters.minLoanAmount || null,
-      p_max_loan_amount: filters.maxLoanAmount || null,
-      p_min_interest_rate: filters.minInterestRate || null,
-      p_max_interest_rate: filters.maxInterestRate || null,
-      p_min_remaining_term: filters.minRemainingTerm || null,
-      p_max_remaining_term: filters.maxRemainingTerm || null,
-      p_min_pd: filters.minPD || null,
-      p_max_pd: filters.maxPD || null,
-      p_min_lgd: filters.minLGD || null,
-      p_max_lgd: filters.maxLGD || null,
-    });
+    // Route to appropriate database function based on loan type
+    let copyResult, copyError;
+    
+    if (loanType === 'corporate_term_loans') {
+      console.log('📊 Using CTL-specific copy function');
+      const result = await supabase.rpc('copy_filtered_ctl_dataset', {
+        p_source_dataset: sourceDatasetName,
+        p_new_dataset: newDatasetName,
+        p_user_id: user.id,
+        p_min_loan_amount: filters.minLoanAmount || null,
+        p_max_loan_amount: filters.maxLoanAmount || null,
+        p_min_leverage_ratio: filters.minLeverageRatio || null,
+        p_max_leverage_ratio: filters.maxLeverageRatio || null,
+        p_credit_rating_filter: filters.creditRating || null,
+        p_max_exposure_cap: filters.maxExposureCap || null,
+        p_exposure_cap_amount: filters.exposureCapAmount || null,
+      });
+      copyResult = result.data;
+      copyError = result.error;
+    } else {
+      console.log('💰 Using consumer finance copy function');
+      const result = await supabase.rpc('copy_filtered_dataset', {
+        p_source_dataset: sourceDatasetName,
+        p_new_dataset: newDatasetName,
+        p_user_id: user.id,
+        p_min_loan_amount: filters.minLoanAmount || null,
+        p_max_loan_amount: filters.maxLoanAmount || null,
+        p_min_interest_rate: filters.minInterestRate || null,
+        p_max_interest_rate: filters.maxInterestRate || null,
+        p_min_remaining_term: filters.minRemainingTerm || null,
+        p_max_remaining_term: filters.maxRemainingTerm || null,
+        p_min_pd: filters.minPD || null,
+        p_max_pd: filters.maxPD || null,
+        p_min_lgd: filters.minLGD || null,
+        p_max_lgd: filters.maxLGD || null,
+        p_max_exposure_cap: filters.maxExposureCap || null,
+        p_exposure_cap_amount: filters.exposureCapAmount || null,
+      });
+      copyResult = result.data;
+      copyError = result.error;
+    }
 
     if (copyError) {
       console.error('❌ Database function copy failed:', copyError);

@@ -104,6 +104,9 @@ export interface FilterCriteria {
   maxPD?: number;
   minLGD?: number;
   maxLGD?: number;
+  maxExposureCap?: number;
+  exposureCapAmount?: number;
+  enableExposureCapping?: boolean;
 }
 
 export const getLoanDataByDataset = async (
