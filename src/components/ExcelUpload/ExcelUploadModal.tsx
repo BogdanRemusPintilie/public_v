@@ -10,6 +10,7 @@ import { PortfolioCharts } from './PortfolioCharts';
 import { CTLPortfolioCharts } from './CTLPortfolioCharts';
 import { DataPreviewTable } from './DataPreviewTable';
 import { DataFilterPanel } from './DataFilterPanel';
+import { CTLDataFilterPanel } from './CTLDataFilterPanel';
 import { LoanRecord } from '@/utils/supabase';
 import { LoanType } from '@/utils/parsers/parserRegistry';
 import { LoanTypeSelector } from '../LoanTypeSelector';
@@ -67,8 +68,8 @@ interface ExcelUploadModalProps {
   onDeleteCompleteDataset: () => void;
   onPageChange: (page: number) => void;
   onFileDrop: (files: File[]) => void;
-  onFilteredDataChange: (filteredData: LoanRecord[]) => void;
-  onSaveFilteredDataset: (filteredData: LoanRecord[], datasetName: string) => void;
+  onFilteredDataChange: (filteredData: any[], filters?: any, filteredCount?: number) => void;
+  onSaveFilteredDataset: (filteredData: any[], datasetName: string) => void;
   onPortfolioSummaryChange: (summary: any) => void;
   currentFilters?: any;
   filteredCount?: number;
@@ -227,14 +228,25 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
               )}
 
               {showExistingData && selectedDatasetName && (
-                <DataFilterPanel
-                  datasetName={selectedDatasetName}
-                  totalRecords={totalRecords}
-                  onFilteredDataChange={onFilteredDataChange}
-                  onSaveFilteredDataset={onSaveFilteredDataset}
-                  onPortfolioSummaryChange={onPortfolioSummaryChange}
-                  isProcessing={isProcessing}
-                />
+                selectedLoanType === 'corporate_term_loans' ? (
+                  <CTLDataFilterPanel
+                    datasetName={selectedDatasetName}
+                    totalRecords={totalRecords}
+                    onFilteredDataChange={onFilteredDataChange}
+                    onSaveFilteredDataset={onSaveFilteredDataset}
+                    onPortfolioSummaryChange={onPortfolioSummaryChange}
+                    isProcessing={isProcessing}
+                  />
+                ) : (
+                  <DataFilterPanel
+                    datasetName={selectedDatasetName}
+                    totalRecords={totalRecords}
+                    onFilteredDataChange={onFilteredDataChange}
+                    onSaveFilteredDataset={onSaveFilteredDataset}
+                    onPortfolioSummaryChange={onPortfolioSummaryChange}
+                    isProcessing={isProcessing}
+                  />
+                )
               )}
 
               {portfolioSummary && selectedLoanType === 'corporate_term_loans' && (
@@ -287,7 +299,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                     previewData={previewData}
                     selectedRecords={selectedRecords}
                     showExistingData={showExistingData}
-                    totalRecords={showExistingData ? filteredData.length : totalRecords}
+                    totalRecords={showExistingData ? (currentFilters ? (filteredCount || filteredData.length) : totalRecords) : totalRecords}
                     currentPage={currentPage}
                     hasMore={hasMore}
                     isProcessing={isProcessing}
@@ -305,7 +317,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                   previewData={previewData}
                   selectedRecords={selectedRecords}
                   showExistingData={showExistingData}
-                  totalRecords={showExistingData ? filteredData.length : totalRecords}
+                  totalRecords={showExistingData ? (currentFilters ? (filteredCount || filteredData.length) : totalRecords) : totalRecords}
                   currentPage={currentPage}
                   hasMore={hasMore}
                   isProcessing={isProcessing}
