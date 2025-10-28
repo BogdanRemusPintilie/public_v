@@ -239,7 +239,7 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
 
               {portfolioSummary && selectedLoanType === 'corporate_term_loans' && (
                 <CTLPortfolioSummary portfolioSummary={{
-                  totalExposure: portfolioSummary.totalExposure || 0,
+                  totalExposure: (portfolioSummary as any).totalValue ?? (portfolioSummary as any).totalExposure ?? 0,
                   avgInterestRate: portfolioSummary.avgInterestRate,
                   highRiskLoans: portfolioSummary.highRiskLoans,
                   totalRecords: portfolioSummary.totalRecords,
