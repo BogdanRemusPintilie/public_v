@@ -266,27 +266,55 @@ export const getDatasetSummaries = async (): Promise<DatasetSummary[]> => {
     
     for (const dataset of accessibleDatasets) {
       try {
-        // Use get_portfolio_summary to get dataset stats
-        const { data, error } = await supabase.rpc('get_portfolio_summary', {
-          dataset_name_param: dataset.name
-        });
-        
-        if (error) {
-          console.error(`❌ Error fetching summary for ${dataset.name}:`, error);
-          continue;
-        }
-        
-        if (data && data.length > 0) {
-          const summary = data[0];
-          summaries.push({
-            dataset_name: dataset.name,
-            record_count: summary.total_records || 0,
-            total_value: summary.total_value || 0,
-            avg_interest_rate: summary.avg_interest_rate || 0,
-            high_risk_loans: summary.high_risk_loans || 0,
-            created_at: new Date().toISOString(), // We don't have this from portfolio_summary
-            loan_type: dataset.loan_type
+        // Use appropriate RPC function based on loan type
+        if (dataset.loan_type === 'corporate_term_loans') {
+          console.log(`🔍 Fetching CTL summary for ${dataset.name}`);
+          
+          const { data, error } = await supabase.rpc('get_ctl_portfolio_summary', {
+            dataset_name_param: dataset.name
           });
+          
+          if (error) {
+            console.error(`❌ Error fetching CTL summary for ${dataset.name}:`, error);
+            continue;
+          }
+          
+          if (data && data.length > 0) {
+            const summary = data[0];
+            summaries.push({
+              dataset_name: dataset.name,
+              record_count: summary.total_records || 0,
+              total_value: summary.total_exposure || 0,
+              avg_interest_rate: summary.avg_interest_rate || 0,
+              high_risk_loans: summary.high_risk_loans || 0,
+              created_at: new Date().toISOString(),
+              loan_type: dataset.loan_type
+            });
+          }
+        } else {
+          console.log(`🔍 Fetching consumer finance summary for ${dataset.name}`);
+          
+          const { data, error } = await supabase.rpc('get_portfolio_summary', {
+            dataset_name_param: dataset.name
+          });
+          
+          if (error) {
+            console.error(`❌ Error fetching summary for ${dataset.name}:`, error);
+            continue;
+          }
+          
+          if (data && data.length > 0) {
+            const summary = data[0];
+            summaries.push({
+              dataset_name: dataset.name,
+              record_count: summary.total_records || 0,
+              total_value: summary.total_value || 0,
+              avg_interest_rate: summary.avg_interest_rate || 0,
+              high_risk_loans: summary.high_risk_loans || 0,
+              created_at: new Date().toISOString(),
+              loan_type: dataset.loan_type
+            });
+          }
         }
       } catch (err) {
         console.error(`Error processing dataset ${dataset.name}:`, err);
