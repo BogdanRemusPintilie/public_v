@@ -193,8 +193,24 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
       // Clear filters case - reset to show full dataset
       // If no filters applied, get fresh portfolio summary from database
       if (selectedDatasetName) {
-        const portfolioSummary = await getPortfolioSummary(selectedDatasetName);
-        setPortfolioSummary(portfolioSummary);
+        // Use the correct portfolio summary function based on loan type
+        if (selectedLoanType === 'corporate_term_loans') {
+          const ctlSummary = await getCTLPortfolioSummary(selectedDatasetName);
+          if (ctlSummary) {
+            setPortfolioSummary({
+              totalValue: ctlSummary.totalExposure,
+              avgInterestRate: ctlSummary.avgInterestRate,
+              highRiskLoans: ctlSummary.highRiskLoans,
+              totalRecords: ctlSummary.totalRecords,
+              avgLeverageRatio: ctlSummary.avgLeverageRatio,
+              performingCount: ctlSummary.performingCount,
+              nonPerformingCount: ctlSummary.nonPerformingCount,
+            });
+          }
+        } else {
+          const portfolioSummary = await getPortfolioSummary(selectedDatasetName);
+          setPortfolioSummary(portfolioSummary);
+        }
         
         // For preview mode with uploaded data, fall back to client-side calculation
         if (!portfolioSummary && allData.length > 0) {
@@ -217,8 +233,24 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     } else {
       // For filtered data, use database-side calculation if we have a dataset
       if (selectedDatasetName && filters) {
-        const filteredSummary = await getPortfolioSummary(selectedDatasetName, filters);
-        setPortfolioSummary(filteredSummary);
+        // Use the correct portfolio summary function based on loan type
+        if (selectedLoanType === 'corporate_term_loans') {
+          const ctlSummary = await getCTLPortfolioSummary(selectedDatasetName, filters);
+          if (ctlSummary) {
+            setPortfolioSummary({
+              totalValue: ctlSummary.totalExposure,
+              avgInterestRate: ctlSummary.avgInterestRate,
+              highRiskLoans: ctlSummary.highRiskLoans,
+              totalRecords: ctlSummary.totalRecords,
+              avgLeverageRatio: ctlSummary.avgLeverageRatio,
+              performingCount: ctlSummary.performingCount,
+              nonPerformingCount: ctlSummary.nonPerformingCount,
+            });
+          }
+        } else {
+          const filteredSummary = await getPortfolioSummary(selectedDatasetName, filters);
+          setPortfolioSummary(filteredSummary);
+        }
       } else {
         // Fallback to client-side calculation for preview mode
         const filteredSummary = {

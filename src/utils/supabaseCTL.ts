@@ -376,6 +376,7 @@ export const getCTLPortfolioSummary = async (
     min_leverage_ratio: filters?.minLeverageRatio || null,
     max_leverage_ratio: filters?.maxLeverageRatio || null,
     credit_rating_filter: filters?.creditRating || null,
+    p_max_exposure_cap: filters?.maxExposureCap || null,
   });
 
   if (error) {

@@ -765,6 +765,7 @@ export type Database = {
           max_loan_amount?: number
           min_leverage_ratio?: number
           min_loan_amount?: number
+          p_max_exposure_cap?: number
         }
         Returns: {
           avg_interest_rate: number
