@@ -329,24 +329,26 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
         if (remaining_term === 0) remaining_term = term / 2;
         
         // Flexible loan amount parsing - try loan_amount, then current_balance, then facility_amount
+        // Note: Amount values are typically in thousands in CTL files
         let loanAmount = 0;
         if (columnMap.loan_amount !== undefined) {
-          loanAmount = parseFinancialValue(row[columnMap.loan_amount]);
+          loanAmount = parseFinancialValue(row[columnMap.loan_amount]) * 1000;
         } else if (columnMap.current_balance !== undefined) {
-          loanAmount = parseFinancialValue(row[columnMap.current_balance]);
+          loanAmount = parseFinancialValue(row[columnMap.current_balance]) * 1000;
         } else if (columnMap.facility_amount !== undefined) {
-          loanAmount = parseFinancialValue(row[columnMap.facility_amount]);
+          loanAmount = parseFinancialValue(row[columnMap.facility_amount]) * 1000;
         }
         
         // If no separate current_balance column, use loan_amount
-        const currentBalance = columnMap.current_balance !== undefined ? parseFinancialValue(row[columnMap.current_balance]) : loanAmount;
+        // Note: Balance values are typically in thousands in CTL files
+        const currentBalance = columnMap.current_balance !== undefined ? parseFinancialValue(row[columnMap.current_balance]) * 1000 : loanAmount;
         // If no separate opening_balance column, use loan_amount
-        const openingBalance = columnMap.opening_balance !== undefined ? parseFinancialValue(row[columnMap.opening_balance]) : loanAmount;
+        const openingBalance = columnMap.opening_balance !== undefined ? parseFinancialValue(row[columnMap.opening_balance]) * 1000 : loanAmount;
         
         const record: CorporateTermLoanRecord = {
           borrower_name: columnMap.borrower_name !== undefined ? parseStringValue(row[columnMap.borrower_name]) : undefined,
           loan_amount: loanAmount,
-          facility_amount: columnMap.facility_amount !== undefined ? parseFinancialValue(row[columnMap.facility_amount]) : undefined,
+          facility_amount: columnMap.facility_amount !== undefined ? parseFinancialValue(row[columnMap.facility_amount]) * 1000 : undefined,
           currency: columnMap.currency !== undefined ? parseStringValue(row[columnMap.currency]) : 'GBP',
           // Calculate interest_rate from base_rate + margin if separate, or use margin if no interest_rate column
           interest_rate: columnMap.interest_rate !== undefined 

@@ -8,11 +8,11 @@ interface CTLPortfolioSummaryProps {
 export const CTLPortfolioSummary: React.FC<CTLPortfolioSummaryProps> = ({ portfolioSummary }) => {
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {
-      return `€${(value / 1000000000).toFixed(2)}B`;
+      return `£${(value / 1000000000).toFixed(2)}B`;
     } else if (value >= 1000000) {
-      return `€${(value / 1000000).toFixed(1)}M`;
+      return `£${(value / 1000000).toFixed(1)}M`;
     } else {
-      return `€${value.toLocaleString()}`;
+      return `£${value.toLocaleString()}`;
     }
   };
 
