@@ -44,13 +44,13 @@ export const CTLPortfolioSummary: React.FC<CTLPortfolioSummaryProps> = ({ portfo
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-purple-600">
-            {(portfolioSummary.weightedAvgPd / 100).toFixed(4)}
+            {portfolioSummary.weightedAvgPd.toFixed(2)}%
           </div>
           <div className="text-sm text-gray-600">Weighted Avg PD</div>
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-purple-600">
-            {(portfolioSummary.weightedAvgLgd / 100).toFixed(4)}
+            {portfolioSummary.weightedAvgLgd.toFixed(2)}%
           </div>
           <div className="text-sm text-gray-600">Weighted Avg LGD</div>
         </div>
