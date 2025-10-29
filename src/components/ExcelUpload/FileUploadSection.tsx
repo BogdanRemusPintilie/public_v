@@ -30,7 +30,8 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
     onDrop, 
     accept: {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls']
+      'application/vnd.ms-excel': ['.xls'],
+      'text/csv': ['.csv']
     }
   });
 

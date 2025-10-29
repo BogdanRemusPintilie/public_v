@@ -193,10 +193,22 @@ const parseYesNoToNumber = (value: any): number => {
 };
 
 export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTLData> => {
-  console.log('🔍 Starting Corporate Term Loans Excel file parsing:', file.name);
+  console.log('🔍 Starting Corporate Term Loans file parsing:', file.name);
   
-  const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  let workbook: XLSX.WorkBook;
+  
+  // Detect file type and parse accordingly
+  const isCSV = file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv';
+  
+  if (isCSV) {
+    console.log('📄 Detected CSV file, parsing as CSV');
+    const text = await file.text();
+    workbook = XLSX.read(text, { type: 'string' });
+  } else {
+    console.log('📄 Detected Excel file, parsing as binary');
+    const arrayBuffer = await file.arrayBuffer();
+    workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  }
   
   const worksheetName = findSecuritizationSheet(workbook.SheetNames, workbook);
   console.log('📄 Selected worksheet:', worksheetName);
