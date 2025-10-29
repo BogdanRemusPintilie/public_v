@@ -329,7 +329,7 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
         if (remaining_term === 0) remaining_term = term / 2;
         
         // Flexible loan amount parsing - try loan_amount, then current_balance, then facility_amount
-        // Note: Amount values are typically in thousands in CTL files
+        // Note: Amount values are in thousands (£000s) in CTL files, multiply by 1000 to get actual values
         let loanAmount = 0;
         if (columnMap.loan_amount !== undefined) {
           loanAmount = parseFinancialValue(row[columnMap.loan_amount]) * 1000;
@@ -340,7 +340,7 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
         }
         
         // If no separate current_balance column, use loan_amount
-        // Note: Balance values are typically in thousands in CTL files
+        // Note: Balance values are in thousands (£000s) in CTL files, multiply by 1000 to get actual values
         const currentBalance = columnMap.current_balance !== undefined ? parseFinancialValue(row[columnMap.current_balance]) * 1000 : loanAmount;
         // If no separate opening_balance column, use loan_amount
         const openingBalance = columnMap.opening_balance !== undefined ? parseFinancialValue(row[columnMap.opening_balance]) * 1000 : loanAmount;
