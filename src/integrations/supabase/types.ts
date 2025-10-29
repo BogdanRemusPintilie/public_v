@@ -967,9 +967,14 @@ export type Database = {
         }
         Returns: {
           avg_interest_rate: number
+          expected_loss: number
           high_risk_loans: number
           total_records: number
           total_value: number
+          weighted_avg_interest_rate: number
+          weighted_avg_lgd: number
+          weighted_avg_ltv: number
+          weighted_avg_pd: number
         }[]
       }
       get_user_datasets_distinct: {

@@ -594,6 +594,11 @@ export interface PortfolioSummary {
   avgInterestRate: number;
   highRiskLoans: number;
   totalRecords: number;
+  weightedAvgInterestRate: number;
+  weightedAvgLtv: number;
+  weightedAvgPd: number;
+  weightedAvgLgd: number;
+  expectedLoss: number;
 }
 
 export const getPortfolioSummary = async (datasetName: string, filters?: FilterCriteria): Promise<PortfolioSummary | null> => {
@@ -628,7 +633,12 @@ export const getPortfolioSummary = async (datasetName: string, filters?: FilterC
         totalValue: Number(result.total_value) || 0,
         avgInterestRate: Number(result.avg_interest_rate) || 0,
         highRiskLoans: Number(result.high_risk_loans) || 0,
-        totalRecords: Number(result.total_records) || 0
+        totalRecords: Number(result.total_records) || 0,
+        weightedAvgInterestRate: Number(result.weighted_avg_interest_rate) || 0,
+        weightedAvgLtv: Number(result.weighted_avg_ltv) || 0,
+        weightedAvgPd: Number(result.weighted_avg_pd) || 0,
+        weightedAvgLgd: Number(result.weighted_avg_lgd) || 0,
+        expectedLoss: Number(result.expected_loss) || 0,
       };
       
       console.log('✅ Portfolio summary from database:', summary);

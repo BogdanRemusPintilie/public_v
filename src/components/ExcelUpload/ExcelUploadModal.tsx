@@ -47,6 +47,8 @@ interface ExcelUploadModalProps {
     weightedAvgLgd?: number;
     expectedLoss?: number;
     avgLoanSize?: number;
+    weightedAvgInterestRate?: number;
+    weightedAvgLtv?: number;
   } | null;
   previewData: any[];
   allData: any[];
@@ -272,6 +274,11 @@ export const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
                   avgInterestRate: portfolioSummary.avgInterestRate,
                   highRiskLoans: portfolioSummary.highRiskLoans,
                   totalRecords: portfolioSummary.totalRecords,
+                  weightedAvgInterestRate: portfolioSummary.weightedAvgInterestRate || 0,
+                  weightedAvgLtv: portfolioSummary.weightedAvgLtv || 0,
+                  weightedAvgPd: portfolioSummary.weightedAvgPd || 0,
+                  weightedAvgLgd: portfolioSummary.weightedAvgLgd || 0,
+                  expectedLoss: portfolioSummary.expectedLoss || 0,
                 }} />
               )}
 

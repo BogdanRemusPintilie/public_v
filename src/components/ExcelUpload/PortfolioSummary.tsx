@@ -7,6 +7,11 @@ interface PortfolioSummaryProps {
     avgInterestRate: number;
     highRiskLoans: number;
     totalRecords: number;
+    weightedAvgInterestRate: number;
+    weightedAvgLtv: number;
+    weightedAvgPd: number;
+    weightedAvgLgd: number;
+    expectedLoss: number;
   };
 }
 
@@ -27,9 +32,33 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ portfolioSum
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-purple-600">
-            {portfolioSummary.avgInterestRate.toFixed(2)}%
+            {portfolioSummary.weightedAvgInterestRate.toFixed(2)}%
           </div>
-          <div className="text-sm text-gray-600">Avg Interest Rate</div>
+          <div className="text-sm text-gray-600">Weighted Avg IR</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-indigo-600">
+            {portfolioSummary.weightedAvgLtv.toFixed(2)}%
+          </div>
+          <div className="text-sm text-gray-600">Weighted Avg LTV</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-purple-600">
+            {(portfolioSummary.weightedAvgPd).toFixed(4)}%
+          </div>
+          <div className="text-sm text-gray-600">Weighted Avg PD</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-purple-600">
+            {(portfolioSummary.weightedAvgLgd).toFixed(4)}%
+          </div>
+          <div className="text-sm text-gray-600">Weighted Avg LGD</div>
+        </div>
+        <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+          <div className="text-2xl font-bold text-red-600">
+            €{(portfolioSummary.expectedLoss / 1000000).toFixed(2)}M
+          </div>
+          <div className="text-sm text-gray-600">Expected Loss</div>
         </div>
         <div className="text-center p-4 bg-white rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-red-600">{portfolioSummary.highRiskLoans}</div>
