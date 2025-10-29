@@ -107,35 +107,35 @@ const createCTLColumnMap = (headers: string[]): CTLColumnMap => {
   const columnMap: CTLColumnMap = {};
   
   const patterns = {
-    borrower_name: /(?:^borrower$|borrower_name|borrower|company|obligor|counterparty|client.*name)/i,
-    loan_amount: /(?:^committed.*amount|committed.*amount.*\(|loan.*amount|exposure|commitment.*amount|drawn.*amount)/i,
-    facility_amount: /(?:facility.*amount|facility.*size|total.*facility)/i,
-    currency: /(?:currency|ccy)/i,
-    interest_rate: /(?:interest.*rate|all.*in.*rate|total.*rate|coupon)/i,
-    margin: /(?:^margin.*\(|^margin.*%|margin|spread)/i,
-    base_rate: /(?:^base.*rate$|base_rate|base.*rate|reference.*rate|euribor|sofr|libor)/i,
-    origination_date: /(?:^inception.*date$|inception_date|inception.*date|origination.*date|start.*date)/i,
+    borrower_name: /(?:^borrower.*name$|borrower_name|^borrower$|company|obligor|counterparty|client.*name)/i,
+    loan_amount: /(?:^commit.*amount.*gbp$|^commit.*amount.*original$|commit.*amount|committed.*amount|loan.*amount|exposure|commitment.*amount|drawn.*amount|facility.*amount.*gbp)/i,
+    facility_amount: /(?:facility.*amount|facility.*size|total.*facility|commit.*amount)/i,
+    currency: /(?:^original.*currency$|currency|ccy)/i,
+    interest_rate: /(?:^interest.*rate.*pct$|interest.*rate|all.*in.*rate|total.*rate|coupon)/i,
+    margin: /(?:^spread.*bp$|^margin.*\(|^margin.*%|margin|spread)/i,
+    base_rate: /(?:^base.*rate$|base_rate|base.*rate|reference.*rate|euribor|sofr|libor|rate.*type)/i,
+    origination_date: /(?:^origination.*date$|^inception.*date$|inception_date|inception.*date|origination.*date|start.*date)/i,
     maturity_date: /(?:^maturity.*date$|maturity_date|maturity.*date|end.*date|final.*date)/i,
     term: /(?:^term$|original.*term|loan.*term|total.*term)/i,
     remaining_term: /(?:remaining.*term|months.*remaining|outstanding.*term)/i,
-    amortization_type: /(?:amortization|amortisation|repayment.*type|repayment.*structure)/i,
-    credit_rating: /(?:^credit.*rating$|credit_rating|credit.*rating|rating|grade|credit.*quality|moody|s&p|fitch)/i,
-    pd: /(?:^pd$|probability.*default)/i,
-    lgd: /(?:^lgd$|loss.*given.*default)/i,
+    amortization_type: /(?:^amortization.*type$|amortization|amortisation|repayment.*type|repayment.*structure)/i,
+    credit_rating: /(?:^rating$|^credit.*rating$|credit_rating|credit.*rating|grade|credit.*quality|moody|s&p|fitch)/i,
+    pd: /(?:^pd.*pct$|^pd.*1y.*pct$|^pd$|probability.*default)/i,
+    lgd: /(?:^lgd$|^lgd.*pct$|loss.*given.*default|recovery.*rate)/i,
     probability_of_default: /(?:default.*probability|prob.*default)/i,
-    secured_unsecured: /(?:secured|security.*type|collateral.*status)/i,
+    secured_unsecured: /(?:^seniority$|secured|security.*type|collateral.*status|senior)/i,
     collateral_type: /(?:^collateral.*type$|collateral_type|collateral.*type|security.*type)/i,
-    collateral_coverage_ratio: /(?:collateral.*coverage|security.*coverage)/i,
-    industry_sector: /(?:^sector$|industry_sector|industry|sector|business|vertical)/i,
+    collateral_coverage_ratio: /(?:^ltv.*pct$|collateral.*coverage|security.*coverage|loan.*to.*value)/i,
+    industry_sector: /(?:^industry$|^sector$|industry_sector|sector|business|vertical)/i,
     country: /(?:^country$|country|jurisdiction|domicile)/i,
     leverage_ratio: /(?:leverage|debt.*equity|gearing|debt.*ebitda)/i,
     interest_coverage_ratio: /(?:interest.*coverage|icr|ebitda.*interest)/i,
     debt_service_coverage_ratio: /(?:dscr|debt.*service|coverage.*ratio)/i,
-    covenant_status: /(?:covenant.*status|compliance.*status)/i,
-    current_balance: /(?:^outstanding.*amount|outstanding.*amount.*\(|current.*balance|outstanding.*balance|drawn.*balance)/i,
-    opening_balance: /(?:opening.*balance|initial.*balance|starting.*balance)/i,
-    arrears_days: /(?:^in.*arrears$|in_arrears|arrears|days.*overdue|dpd|delinquency)/i,
-    performing_status: /(?:^defaulted$|performing.*status|loan.*status|^status$|defaulted|restructured)/i,
+    covenant_status: /(?:^covenant.*type$|covenant.*status|compliance.*status)/i,
+    current_balance: /(?:^current.*principal.*balance.*gbp$|^current.*principal.*balance.*original$|^outstanding.*amount|outstanding.*amount.*\(|current.*balance|current.*principal|outstanding.*balance|drawn.*balance)/i,
+    opening_balance: /(?:^outstanding.*balance.*gbp$|^outstanding.*balance.*original$|opening.*balance|initial.*balance|starting.*balance)/i,
+    arrears_days: /(?:^arrears.*dpd.*m\d+$|^in.*arrears$|in_arrears|arrears|days.*overdue|^dpd$|delinquency)/i,
+    performing_status: /(?:^status$|^defaulted$|performing.*status|loan.*status|defaulted|restructured)/i,
   };
 
   headers.forEach((header, index) => {
@@ -169,8 +169,21 @@ const parsePDValue = (value: any): number => {
   return numValue;
 };
 
-const parseLGDValue = (value: any): number => {
+const parseLGDValue = (value: any, isRecoveryRate: boolean = false): number => {
   const numValue = parseFinancialValue(value);
+  
+  // If this is a recovery rate, convert to LGD: LGD = 1 - Recovery Rate
+  if (isRecoveryRate) {
+    if (numValue > 1) {
+      // Recovery rate is a percentage (e.g., 65.95), convert to decimal then to LGD
+      return (100 - numValue) / 100;
+    } else {
+      // Recovery rate is already decimal (e.g., 0.6595), convert to LGD
+      return 1 - numValue;
+    }
+  }
+  
+  // Standard LGD parsing
   if (numValue > 1) return numValue / 100;
   return numValue;
 };
@@ -190,6 +203,30 @@ const parseYesNoToNumber = (value: any): number => {
   const strValue = parseStringValue(value).toLowerCase();
   if (strValue === 'yes' || strValue === 'true' || strValue === '1') return 30;
   return 0;
+};
+
+const parseSpreadBasisPoints = (value: any): number => {
+  const numValue = parseFinancialValue(value);
+  // Convert basis points to decimal (e.g., 384 bp = 0.0384)
+  if (numValue > 1) return numValue / 10000;
+  return numValue;
+};
+
+const findMostRecentArrears = (row: any[], headers: string[]): number => {
+  // Look for columns like Arrears_DPD_M1, Arrears_DPD_M2, etc.
+  const arrearsPattern = /^arrears.*dpd.*m(\d+)$/i;
+  let maxArrears = 0;
+  
+  headers.forEach((header, index) => {
+    if (arrearsPattern.test(header.trim())) {
+      const value = parseFinancialValue(row[index]);
+      if (value > maxArrears) {
+        maxArrears = value;
+      }
+    }
+  });
+  
+  return maxArrears;
 };
 
 export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTLData> => {
@@ -224,14 +261,27 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
   const columnMap = createCTLColumnMap(headers);
   
   console.log('🗺️ CTL Column mapping:', columnMap);
+  console.log('📋 Available headers:', headers);
 
-  // Essential columns - only require loan_amount and lgd, everything else can be derived or defaulted
-  const essentialColumns: (keyof CTLColumnMap)[] = ['loan_amount', 'lgd'];
-  const missingColumns = essentialColumns.filter(col => columnMap[col] === undefined);
+  // Check if we can derive loan_amount and lgd from available columns
+  const hasLoanAmount = columnMap.loan_amount !== undefined;
+  const hasLGD = columnMap.lgd !== undefined;
   
-  if (missingColumns.length > 0) {
-    throw new Error(`Missing essential columns: ${missingColumns.join(', ')}. Found headers: ${headers.join(', ')}`);
+  if (!hasLoanAmount && !hasLGD) {
+    throw new Error(`Cannot find loan amount or LGD columns. Available headers: ${headers.join(', ')}`);
   }
+  
+  if (!hasLoanAmount) {
+    console.warn('⚠️ No loan_amount column found, will try to use current_balance or facility_amount');
+  }
+  
+  if (!hasLGD) {
+    console.warn('⚠️ No lgd or recovery_rate column found, will use default LGD of 0.45');
+  }
+  
+  // Detect if LGD column is actually a recovery rate
+  const lgdHeader = columnMap.lgd !== undefined ? headers[columnMap.lgd].toLowerCase() : '';
+  const isRecoveryRate = lgdHeader.includes('recovery');
   
   // Warn about missing optional but important columns
   const importantColumns: (keyof CTLColumnMap)[] = ['interest_rate', 'origination_date', 'maturity_date'];
@@ -278,10 +328,19 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
         if (term === 0) term = 12;
         if (remaining_term === 0) remaining_term = term / 2;
         
-        const loanAmount = parseFinancialValue(row[columnMap.loan_amount!]);
-        // If no separate current_balance column, use loan_amount (Committed_Amount)
+        // Flexible loan amount parsing - try loan_amount, then current_balance, then facility_amount
+        let loanAmount = 0;
+        if (columnMap.loan_amount !== undefined) {
+          loanAmount = parseFinancialValue(row[columnMap.loan_amount]);
+        } else if (columnMap.current_balance !== undefined) {
+          loanAmount = parseFinancialValue(row[columnMap.current_balance]);
+        } else if (columnMap.facility_amount !== undefined) {
+          loanAmount = parseFinancialValue(row[columnMap.facility_amount]);
+        }
+        
+        // If no separate current_balance column, use loan_amount
         const currentBalance = columnMap.current_balance !== undefined ? parseFinancialValue(row[columnMap.current_balance]) : loanAmount;
-        // If no separate opening_balance column, use loan_amount (Committed_Amount)
+        // If no separate opening_balance column, use loan_amount
         const openingBalance = columnMap.opening_balance !== undefined ? parseFinancialValue(row[columnMap.opening_balance]) : loanAmount;
         
         const record: CorporateTermLoanRecord = {
@@ -293,9 +352,9 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
           interest_rate: columnMap.interest_rate !== undefined 
             ? parseInterestRate(row[columnMap.interest_rate])
             : columnMap.margin !== undefined 
-              ? parseInterestRate(row[columnMap.margin])
+              ? parseSpreadBasisPoints(row[columnMap.margin])
               : 0.05,
-          margin: columnMap.margin !== undefined ? parseInterestRate(row[columnMap.margin]) : undefined,
+          margin: columnMap.margin !== undefined ? parseSpreadBasisPoints(row[columnMap.margin]) : undefined,
           base_rate: columnMap.base_rate !== undefined ? parseStringValue(row[columnMap.base_rate]) : undefined,
           origination_date: originationDate,
           maturity_date: maturityDate,
@@ -304,7 +363,7 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
           amortization_type: columnMap.amortization_type !== undefined ? parseStringValue(row[columnMap.amortization_type]) : undefined,
           credit_rating: columnMap.credit_rating !== undefined ? parseStringValue(row[columnMap.credit_rating]) : undefined,
           pd: columnMap.pd !== undefined ? parsePDValue(row[columnMap.pd]) : undefined,
-          lgd: parseLGDValue(row[columnMap.lgd!]),
+          lgd: columnMap.lgd !== undefined ? parseLGDValue(row[columnMap.lgd], isRecoveryRate) : 0.45,
           probability_of_default: columnMap.probability_of_default !== undefined ? parsePDValue(row[columnMap.probability_of_default]) : undefined,
           secured_unsecured: columnMap.secured_unsecured !== undefined ? parseStringValue(row[columnMap.secured_unsecured]) : undefined,
           collateral_type: columnMap.collateral_type !== undefined ? parseStringValue(row[columnMap.collateral_type]) : undefined,
@@ -317,12 +376,18 @@ export const parseCorporateTermLoansFile = async (file: File): Promise<ParsedCTL
           covenant_status: columnMap.covenant_status !== undefined ? parseStringValue(row[columnMap.covenant_status]) : undefined,
           current_balance: currentBalance,
           opening_balance: openingBalance,
-          // Handle In_Arrears column - Yes/No or numeric
-          arrears_days: columnMap.arrears_days !== undefined 
-            ? (typeof row[columnMap.arrears_days] === 'number' 
+          // Handle arrears - check for monthly columns first, then single column
+          arrears_days: (() => {
+            const monthlyArrears = findMostRecentArrears(row, headers);
+            if (monthlyArrears > 0) return monthlyArrears;
+            
+            if (columnMap.arrears_days !== undefined) {
+              return typeof row[columnMap.arrears_days] === 'number' 
                 ? row[columnMap.arrears_days] 
-                : parseYesNoToNumber(row[columnMap.arrears_days]))
-            : 0,
+                : parseYesNoToNumber(row[columnMap.arrears_days]);
+            }
+            return 0;
+          })(),
           // Handle Defaulted column - map to performing_status
           performing_status: columnMap.performing_status !== undefined 
             ? (parseStringValue(row[columnMap.performing_status]).toLowerCase() === 'yes' || 
