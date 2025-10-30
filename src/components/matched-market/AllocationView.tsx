@@ -129,7 +129,7 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
     setAllocations(prev => 
       prev.map(a => 
         a.id === trancheId 
-          ? { ...a, assignedInvestor: investorId || null }
+          ? { ...a, assignedInvestor: investorId === 'unassigned' ? null : investorId }
           : a
       )
     );
@@ -295,14 +295,14 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
                         )
                       ) : (
                         <Select
-                          value={alloc.assignedInvestor || ''}
+                          value={alloc.assignedInvestor || 'unassigned'}
                           onValueChange={(value) => handleInvestorAssignment(alloc.id, value)}
                         >
                           <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select investor" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Unassigned</SelectItem>
+                            <SelectItem value="unassigned">Unassigned</SelectItem>
                             {investors.map(inv => (
                               <SelectItem key={inv.id} value={inv.id}>
                                 {inv.name}
