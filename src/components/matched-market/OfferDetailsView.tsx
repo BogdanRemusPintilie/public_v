@@ -9,6 +9,7 @@ import { InvestorResponsesManager } from './InvestorResponsesManager';
 import { useUserType } from '@/hooks/useUserType';
 import { Button } from '@/components/ui/button';
 import { StructureSummary } from './StructureSummary';
+import { AllocationView } from './AllocationView';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -199,6 +200,7 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
       checkDataAccess();
     }
     if (userType !== 'investor' && user?.id && offer.id !== 'demo-offer') {
+      fetchDatasetSummary();
       fetchOfferResponses();
     }
   }, [userType, user, offer.id, ndaStatus]);
@@ -929,6 +931,16 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Allocation Section - For Issuers after compliance */}
+      {userType !== 'investor' && hasFirmPriceSubmitted && (
+        <AllocationView 
+          offer={offer}
+          datasetSummary={datasetSummary}
+          offerResponses={offerResponses}
+          userType={userType}
+        />
       )}
 
       {/* Investor Response Form - Only for investors */}
