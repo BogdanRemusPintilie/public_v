@@ -1439,10 +1439,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
                       
                       toast({
                         title: 'Firm Price Submitted',
-                        description: `Your firm price of ${priceValue}% has been sent to the issuer.`,
+                        description: `Your firm price of ${priceValue}% has been sent to the issuer. Compliance review can now begin.`,
                       });
                       
                       await checkInvestorResponse();
+                      // Trigger parent update to refresh issuer view
+                      onUpdate();
                     } catch (error: any) {
                       toast({
                         title: 'Error',
