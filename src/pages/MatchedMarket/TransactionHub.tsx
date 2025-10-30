@@ -151,63 +151,50 @@ export default function TransactionHub() {
       
       console.log('📍 Fetching offers for investor:', user.email, 'ID:', user.id);
       
-      // Fetch all offers shared with user
-      const { data: allOffers, error: offersError } = await supabase
-        .from('offers')
-        .select('*')
-        .contains('shared_with_emails', [user.email])
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      // Fetch all data in parallel for better performance
+      const [offersResult, responsesResult, ndasResult] = await Promise.all([
+        supabase
+          .from('offers')
+          .select('*')
+          .contains('shared_with_emails', [user.email])
+          .eq('status', 'active')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('offer_responses')
+          .select('*')
+          .eq('investor_id', user.id),
+        supabase
+          .from('ndas')
+          .select('*')
+          .eq('investor_id', user.id)
+      ]);
 
-      console.log('📊 Offers found:', allOffers?.length || 0);
+      const { data: allOffers, error: offersError } = offersResult;
+      const { data: responses, error: responsesError } = responsesResult;
+      const { data: ndas, error: ndasError } = ndasResult;
 
-      if (offersError) {
-        console.error('❌ Error fetching offers:', offersError);
-        throw offersError;
-      }
+      console.log('📊 Data fetched - Offers:', allOffers?.length || 0, 'Responses:', responses?.length || 0, 'NDAs:', ndas?.length || 0);
 
-      // Fetch user's responses
-      const { data: responses, error: responsesError } = await supabase
-        .from('offer_responses')
-        .select('*')
-        .eq('investor_id', user.id);
+      if (offersError) throw offersError;
+      if (responsesError) throw responsesError;
+      if (ndasError) throw ndasError;
 
-      console.log('📊 Responses found:', responses?.length || 0);
-
-      if (responsesError) {
-        console.error('❌ Error fetching responses:', responsesError);
-        throw responsesError;
-      }
-
-      // Fetch NDAs
-      const { data: ndas, error: ndasError } = await supabase
-        .from('ndas')
-        .select('*')
-        .eq('investor_id', user.id);
-
-      console.log('📊 NDAs found:', ndas?.length || 0);
-
-      if (ndasError) {
-        console.error('❌ Error fetching NDAs:', ndasError);
-        throw ndasError;
-      }
-
-      // Create maps
+      // Create maps for efficient lookup
       const responseMap = new Map(responses?.map(r => [r.offer_id, r]) || []);
       const ndaMap = new Map(ndas?.map(n => [n.offer_id, n]) || []);
 
       // Build transactions list
-      const transactionsList: Transaction[] = [];
-
-      allOffers?.forEach(offer => {
-        const offerResponse = responseMap.get(offer.id);
-        const nda = ndaMap.get(offer.id);
-        
-        // Only include if not declined
-        if (offerResponse?.status !== 'declined') {
+      const transactionsList: Transaction[] = allOffers
+        ?.filter(offer => {
+          const offerResponse = responseMap.get(offer.id);
+          return offerResponse?.status !== 'declined'; // Exclude declined offers
+        })
+        .map(offer => {
+          const offerResponse = responseMap.get(offer.id);
+          const nda = ndaMap.get(offer.id);
           const status = determineTransactionStatus(offerResponse, nda, offer.id, offer.offer_name);
           
-          transactionsList.push({
+          return {
             id: offer.id,
             offer_name: offer.offer_name,
             status,
@@ -215,24 +202,8 @@ export default function TransactionHub() {
             created_at: offer.created_at,
             offer_id: offer.id,
             offerResponse,
-          });
-        }
-      });
-
-      // Add demo transaction if no transactions exist
-      if (transactionsList.length === 0) {
-        transactionsList.push({
-          id: 'demo-offer',
-          offer_name: 'Investor Demo 7',
-          status: 'Full loan tape received',
-          issuer_nationality: 'British',
-          created_at: new Date().toISOString(),
-          offer_id: 'demo-offer',
-        });
-
-        // Create demo NDA
-        await createDemoNDA(user.id);
-      }
+          };
+        }) || [];
 
       setTransactions(transactionsList);
     } catch (error: any) {
@@ -247,59 +218,6 @@ export default function TransactionHub() {
     }
   };
 
-  const createDemoNDA = async (investorId: string) => {
-    try {
-      // Check if demo NDA already exists
-      const { data: existingNDA } = await supabase
-        .from('ndas')
-        .select('id')
-        .eq('investor_id', investorId)
-        .eq('offer_id', 'demo-offer')
-        .maybeSingle();
-
-      if (existingNDA) return;
-
-      // Create demo NDA
-      await supabase
-        .from('ndas')
-        .insert({
-          id: 'demo-nda',
-          issuer_id: investorId, // Using same ID for demo purposes
-          investor_id: investorId,
-          offer_id: 'demo-offer',
-          nda_title: 'Non-Disclosure Agreement - Investor Demo Offer',
-          nda_content: `CONFIDENTIALITY AND NON-DISCLOSURE AGREEMENT
-
-This Confidentiality and Non-Disclosure Agreement ("Agreement") is entered into by and between British CIB ("Disclosing Party") and the undersigned investor ("Receiving Party").
-
-1. CONFIDENTIAL INFORMATION
-The Disclosing Party agrees to disclose certain confidential information relating to the Investor Demo Offer, including but not limited to:
-   - Detailed tranche structure analysis
-   - Portfolio composition and performance metrics
-   - Asset pool characteristics and risk assessments
-   - Pricing and economic terms
-
-2. OBLIGATIONS
-The Receiving Party agrees to:
-   a) Maintain strict confidentiality of all disclosed information
-   b) Use the information solely for evaluating the investment opportunity
-   c) Not disclose any information to third parties without prior written consent
-   d) Return or destroy all confidential materials upon request
-
-3. TERM
-This Agreement shall remain in effect for a period of two (2) years from the date of acceptance.
-
-4. GOVERNING LAW
-This Agreement shall be governed by the laws of England and Wales.
-
-By accepting this NDA, you acknowledge that you have read, understood, and agree to be bound by its terms and conditions.`,
-          status: 'pending',
-        });
-    } catch (error) {
-      console.error('Error creating demo NDA:', error);
-      // Don't show error to user for demo NDA creation
-    }
-  };
 
   const getStageStatus = (currentStageIndex: number, transactionStatus: string, transaction?: Transaction): 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed' => {
     const statusIndex = STAGES.indexOf(transactionStatus as any);
