@@ -21,11 +21,11 @@ interface TrancheAllocation {
   thickness: number;
   size: number;
   rating: string;
-  coupon: number;
+  costBps: number;
   attachmentPoint: number;
   detachmentPoint: number;
   assignedInvestor: string | null;
-  tranche_order: number;
+  seniority: number;
 }
 
 export function AllocationView({ offer, datasetSummary, offerResponses, userType }: AllocationViewProps) {
@@ -46,26 +46,30 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
     const totalValue = datasetSummary?.total_value || 0;
     const tranches = offer.structure.tranches;
     
-    // Sort tranches by tranche_order (lowest = most senior)
-    const sortedTranches = [...tranches].sort((a, b) => a.tranche_order - b.tranche_order);
+    // Sort tranches by thickness (higher thickness = more senior)
+    const sortedTranches = [...tranches].sort((a: any, b: any) => b.thickness - a.thickness);
     
     let cumulativeAttachment = 0;
     
-    const allocationData: TrancheAllocation[] = sortedTranches.map((tranche: any) => {
+    const allocationData: TrancheAllocation[] = sortedTranches.map((tranche: any, index: number) => {
       const size = (totalValue * tranche.thickness) / 100;
       const detachmentPoint = cumulativeAttachment + tranche.thickness;
+      
+      // Extract rating from tranche name if available (e.g., "Senior AAA" -> "AAA")
+      const ratingMatch = tranche.name.match(/\b(AAA|AA|A|BBB|BB|B|CCC|CC|C)\b/i);
+      const rating = ratingMatch ? ratingMatch[0].toUpperCase() : 'Unrated';
       
       const allocation: TrancheAllocation = {
         id: tranche.id,
         name: tranche.name,
         thickness: tranche.thickness,
         size: size,
-        rating: tranche.rating || 'Unrated',
-        coupon: tranche.coupon || 0,
+        rating: rating,
+        costBps: tranche.costBps || 0,
         attachmentPoint: cumulativeAttachment,
         detachmentPoint: detachmentPoint,
         assignedInvestor: null,
-        tranche_order: tranche.tranche_order,
+        seniority: index,
       };
       
       cumulativeAttachment = detachmentPoint;
@@ -224,7 +228,7 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
                   <TableHead>Rating</TableHead>
                   <TableHead className="text-right">Attachment</TableHead>
                   <TableHead className="text-right">Detachment</TableHead>
-                  <TableHead className="text-right">Coupon</TableHead>
+                  <TableHead className="text-right">Cost</TableHead>
                   <TableHead>Assigned Investor</TableHead>
                 </TableRow>
               </TableHeader>
@@ -256,7 +260,7 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
                       {formatPercent(alloc.detachmentPoint)}
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      {alloc.coupon.toFixed(2)}%
+                      {alloc.costBps} bps
                     </TableCell>
                     <TableCell>
                       {userType === 'investor' ? (
