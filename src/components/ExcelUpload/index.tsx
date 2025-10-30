@@ -409,13 +409,22 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
     }
   };
 
-  const calculatePortfolioSummary = (data: LoanRecord[]) => {
-    console.log(`📊 PORTFOLIO CALCULATION START: Beginning calculation with ${data.length} records`);
+  const calculatePortfolioSummary = (data: LoanRecord[] | CorporateTermLoanRecord[]) => {
+    console.log(`📊 PORTFOLIO CALCULATION START: Beginning calculation with ${data.length} records for loan type: ${selectedLoanType}`);
     
-    const totalValue = data.reduce((sum, loan) => sum + loan.opening_balance, 0);
-    const avgInterestRate = data.length > 0 ? 
-      data.reduce((sum, loan) => sum + (loan.interest_rate * loan.opening_balance), 0) / totalValue : 0;
-    const highRiskLoans = data.filter(loan => (loan.pd || 0) > 0.10).length;
+    // For CTL, use current_balance; for consumer finance, use opening_balance
+    const totalValue = selectedLoanType === 'corporate_term_loans'
+      ? (data as CorporateTermLoanRecord[]).reduce((sum, loan) => sum + loan.current_balance, 0)
+      : (data as LoanRecord[]).reduce((sum, loan) => sum + loan.opening_balance, 0);
+    
+    const balanceField = selectedLoanType === 'corporate_term_loans' ? 'current_balance' : 'opening_balance';
+    const avgInterestRate = data.length > 0 && totalValue > 0
+      ? data.reduce((sum: number, loan: any) => sum + (loan.interest_rate * (loan[balanceField] || 0)), 0) / totalValue 
+      : 0;
+    
+    const highRiskLoans = selectedLoanType === 'corporate_term_loans'
+      ? data.filter(loan => (loan.pd || 0) > 10).length  // CTL PD is in percentage (0-100)
+      : data.filter(loan => (loan.pd || 0) > 0.10).length; // Consumer PD is decimal (0-1)
     
     const calculatedSummary = {
       totalValue,
