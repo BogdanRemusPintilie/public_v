@@ -92,13 +92,14 @@ const OfferDetails = () => {
 
       if (error) throw error;
 
-      // RPC now returns structure_name and dataset_name directly
+      // RPC now returns structure_name, dataset_name and tranches directly
       const offerWithStructure: any = {
         ...data,
         structure: data.structure_id ? {
           id: data.structure_id,
           structure_name: (data as any).structure_name,
           dataset_name: (data as any).dataset_name,
+          tranches: (data as any).tranches,
         } : null
       };
 

@@ -946,6 +946,7 @@ export type Database = {
           structure_synthetic: boolean
           structure_true_sale: boolean
           target_investors: string[]
+          tranches: Json
           updated_at: string
           user_id: string
           weighted_average_life: number
