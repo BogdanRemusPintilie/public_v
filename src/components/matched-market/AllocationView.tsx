@@ -33,6 +33,16 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
   const [allocations, setAllocations] = useState<TrancheAllocation[]>([]);
   const [investors, setInvestors] = useState<{ id: string; name: string; email: string }[]>([]);
 
+  console.log('🎯 AllocationView - Props:', {
+    hasOffer: !!offer,
+    hasStructure: !!offer?.structure,
+    hasTranches: !!offer?.structure?.tranches,
+    tranchesCount: offer?.structure?.tranches?.length,
+    hasDatasetSummary: !!datasetSummary,
+    datasetSummaryValue: datasetSummary?.total_value,
+    offerResponsesCount: offerResponses?.length,
+  });
+
   useEffect(() => {
     if (offer.structure?.tranches) {
       calculateAllocations();
@@ -45,6 +55,17 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
   const calculateAllocations = () => {
     const totalValue = datasetSummary?.total_value || 0;
     const tranches = offer.structure.tranches;
+    
+    console.log('💰 Calculating allocations:', {
+      totalValue,
+      tranchesCount: tranches?.length,
+      tranches: tranches,
+    });
+    
+    if (!tranches || tranches.length === 0) {
+      console.warn('⚠️ No tranches available to calculate');
+      return;
+    }
     
     // Sort tranches by thickness (higher thickness = more senior)
     const sortedTranches = [...tranches].sort((a: any, b: any) => b.thickness - a.thickness);
@@ -76,6 +97,7 @@ export function AllocationView({ offer, datasetSummary, offerResponses, userType
       return allocation;
     });
     
+    console.log('✅ Allocations calculated:', allocationData);
     setAllocations(allocationData);
   };
 

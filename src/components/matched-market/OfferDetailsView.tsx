@@ -206,22 +206,57 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
   }, [userType, user, offer.id, ndaStatus]);
 
   const fetchDatasetSummary = async () => {
-    if (!offer.structure?.dataset_name) return;
+    if (!offer.structure?.dataset_name) {
+      console.log('⚠️ No dataset name in offer structure');
+      return;
+    }
+
+    const datasetName = offer.structure.dataset_name;
+    
+    console.log('📊 Fetching summary for dataset:', datasetName);
 
     try {
-      const { data, error } = await supabase.rpc('get_dataset_summaries_optimized');
-      
-      if (error) {
-        console.error('Error fetching dataset summary:', error);
+      // Try corporate term loans first
+      const { data: ctlData, error: ctlError } = await supabase.rpc('get_ctl_portfolio_summary', {
+        dataset_name_param: datasetName,
+      });
+
+      if (!ctlError && ctlData && Array.isArray(ctlData) && ctlData.length > 0 && ctlData[0].total_records > 0) {
+        console.log('✅ CTL Dataset summary fetched:', ctlData[0]);
+        const summary = ctlData[0];
+        setDatasetSummary({
+          dataset_name: datasetName,
+          total_value: (summary as any).total_exposure || 0,
+          avg_interest_rate: summary.avg_interest_rate || 0,
+          high_risk_count: (summary as any).high_risk_loans || 0,
+          record_count: (summary as any).total_records || 0,
+          loan_type: 'corporate_term_loans',
+        });
         return;
       }
 
-      const summary = data?.find((d: any) => d.dataset_name === offer.structure.dataset_name);
-      if (summary) {
-        setDatasetSummary(summary);
+      // Try consumer finance
+      const { data: cfData, error: cfError } = await supabase.rpc('get_portfolio_summary', {
+        dataset_name_param: datasetName,
+      });
+      
+      if (!cfError && cfData && Array.isArray(cfData) && cfData.length > 0 && cfData[0].total_records > 0) {
+        console.log('✅ Consumer Finance Dataset summary fetched:', cfData[0]);
+        const summary = cfData[0];
+        setDatasetSummary({
+          dataset_name: datasetName,
+          total_value: (summary as any).total_value || 0,
+          avg_interest_rate: summary.avg_interest_rate || 0,
+          high_risk_count: (summary as any).high_risk_loans || 0,
+          record_count: (summary as any).total_records || 0,
+          loan_type: 'consumer_finance',
+        });
+        return;
       }
+
+      console.error('❌ No data found for dataset:', datasetName);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error fetching dataset summary:', error);
     }
   };
 
