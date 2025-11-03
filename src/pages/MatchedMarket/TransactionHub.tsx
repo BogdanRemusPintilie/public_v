@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, FileText, Eye, Settings } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Eye, Settings, RefreshCw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,19 +62,7 @@ export default function TransactionHub() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showKey, setShowKey] = useState(false);
-
-  useEffect(() => {
-    if (user?.email) {
-      console.log('📍 TransactionHub - Fetching transactions for user:', user.email, 'user_id:', user.id);
-      fetchTransactions();
-    } else {
-      console.log('⚠️ TransactionHub - No user email found');
-      setLoading(false);
-    }
-  }, [user]);
 
   const determineTransactionStatus = (
     offerResponse: any,
@@ -139,35 +128,37 @@ export default function TransactionHub() {
     return 'Offer received';
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (): Promise<Transaction[]> => {
     if (!user?.email || !user?.id) {
       console.error('❌ TransactionHub - Missing user email or ID:', { email: user?.email, id: user?.id });
-      setLoading(false);
-      return;
+      return [];
     }
 
+    const startTime = performance.now();
+    console.log('📍 Fetching offers for investor:', user.email, 'ID:', user.id);
+    
     try {
-      setLoading(true);
-      
-      console.log('📍 Fetching offers for investor:', user.email, 'ID:', user.id);
-      
-      // Fetch all data in parallel for better performance
+      // Fetch all data in parallel with minimal columns
+      const offersStart = performance.now();
       const [offersResult, responsesResult, ndasResult] = await Promise.all([
         supabase
           .from('offers')
-          .select('*')
+          .select('id, offer_name, issuer_nationality, created_at, status')
           .contains('shared_with_emails', [user.email])
           .eq('status', 'active')
           .order('created_at', { ascending: false }),
         supabase
           .from('offer_responses')
-          .select('*')
+          .select('offer_id, status, requirements_acknowledged, indicative_price, firm_price_status, issuer_response, compliance_status')
           .eq('investor_id', user.id),
         supabase
           .from('ndas')
-          .select('*')
+          .select('offer_id, status')
           .eq('investor_id', user.id)
       ]);
+      
+      const offersTime = performance.now() - offersStart;
+      console.log(`⏱️ Database queries completed in ${offersTime.toFixed(0)}ms`);
 
       const { data: allOffers, error: offersError } = offersResult;
       const { data: responses, error: responsesError } = responsesResult;
@@ -205,18 +196,35 @@ export default function TransactionHub() {
           };
         }) || [];
 
-      setTransactions(transactionsList);
+      const totalTime = performance.now() - startTime;
+      console.log(`✅ Total fetch completed in ${totalTime.toFixed(0)}ms`);
+      
+      // Show toast if loading takes too long
+      if (totalTime > 4000) {
+        toast({
+          title: 'Data Loaded',
+          description: 'Large dataset loaded successfully. Performance optimizations are active.',
+          duration: 3000,
+        });
+      }
+
+      return transactionsList;
     } catch (error: any) {
-      console.error('Error fetching transactions:', error);
+      console.error('❌ Error fetching transactions:', error);
       toast({
         title: 'Error',
         description: 'Failed to load transactions',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
+
+  const { data: transactions = [], isLoading, refetch } = useQuery({
+    queryKey: ['transactionHub', user?.id, user?.email],
+    queryFn: fetchTransactions,
+    enabled: !!(user?.id && user?.email),
+  });
 
 
   const getStageStatus = (currentStageIndex: number, transactionStatus: string, transaction?: Transaction): 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed' => {
@@ -286,7 +294,7 @@ export default function TransactionHub() {
     navigate(`/matched-market/offers/${transaction.offer_id}`);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
         <div className="flex items-center justify-center py-12">
@@ -315,6 +323,15 @@ export default function TransactionHub() {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline"
+              size="icon"
+              onClick={() => refetch()}
+              title="Refresh transactions"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            
             <Button 
               variant="outline"
               onClick={() => setShowKey(!showKey)}
