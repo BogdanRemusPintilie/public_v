@@ -10,6 +10,8 @@ import { useUserType } from '@/hooks/useUserType';
 import { Button } from '@/components/ui/button';
 import { StructureSummary } from './StructureSummary';
 import { AllocationView } from './AllocationView';
+import { InvestorEligibilityCheck } from './InvestorEligibilityCheck';
+import { RiskValidationLayer } from './RiskValidationLayer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -976,6 +978,22 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
           offerResponses={offerResponses}
           userType={userType}
         />
+      )}
+
+      {/* Eligibility & Risk Validation - For Investors after firm price submission */}
+      {userType === 'investor' && investorResponse?.counter_price && (
+        <>
+          <InvestorEligibilityCheck 
+            offer={offer}
+            investorResponse={investorResponse}
+          />
+          
+          <RiskValidationLayer 
+            offer={offer}
+            datasetSummary={datasetSummary}
+            offerResponses={offerResponses}
+          />
+        </>
       )}
 
       {/* Investor Response Form - Only for investors */}
