@@ -980,21 +980,6 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
         />
       )}
 
-      {/* Eligibility & Risk Validation - For Investors after firm price submission */}
-      {userType === 'investor' && investorResponse?.counter_price && (
-        <>
-          <InvestorEligibilityCheck 
-            offer={offer}
-            investorResponse={investorResponse}
-          />
-          
-          <RiskValidationLayer 
-            offer={offer}
-            datasetSummary={datasetSummary}
-            offerResponses={offerResponses}
-          />
-        </>
-      )}
 
       {/* Investor Response Form - Only for investors */}
       {userType === 'investor' && (
@@ -1529,6 +1514,22 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Eligibility & Risk Validation - For Investors after firm price submission */}
+      {userType === 'investor' && investorResponse?.counter_price && (
+        <>
+          <InvestorEligibilityCheck 
+            offer={offer}
+            investorResponse={investorResponse}
+          />
+          
+          <RiskValidationLayer 
+            offer={offer}
+            datasetSummary={datasetSummary}
+            offerResponses={offerResponses}
+          />
+        </>
       )}
     </div>
   );
