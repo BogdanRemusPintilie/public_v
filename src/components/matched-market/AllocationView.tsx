@@ -17,6 +17,13 @@ interface AllocationViewProps {
   onAllocationsChange?: (allocations: TrancheAllocation[]) => void;
 }
 
+interface SubAllocation {
+  id: string;
+  investorId: string;
+  percentage: number;
+  amount: number;
+}
+
 interface TrancheAllocation {
   id: string;
   name: string;
@@ -26,7 +33,8 @@ interface TrancheAllocation {
   costBps: number;
   attachmentPoint: number;
   detachmentPoint: number;
-  assignedInvestor: string | null;
+  isForSale: boolean;
+  subAllocations: SubAllocation[];
   seniority: number;
 }
 
@@ -103,6 +111,9 @@ export function AllocationView({
       const ratingMatch = tranche.name.match(/\b(AAA|AA|A|BBB|BB|B|CCC|CC|C)\b/i);
       const rating = ratingMatch ? ratingMatch[0].toUpperCase() : 'Unrated';
       
+      // Auto-detect mezz tranches (BBB, BB, B ratings) as for sale
+      const isMezz = ['BBB', 'BB', 'B', 'A'].includes(rating);
+      
       const allocation: TrancheAllocation = {
         id: tranche.id,
         name: tranche.name,
@@ -112,7 +123,8 @@ export function AllocationView({
         costBps: tranche.costBps || 0,
         attachmentPoint: cumulativeAttachment,
         detachmentPoint: detachmentPoint,
-        assignedInvestor: null,
+        isForSale: isMezz,
+        subAllocations: [],
         seniority: index,
       };
       
@@ -148,19 +160,88 @@ export function AllocationView({
     }
   };
 
-  const handleInvestorAssignment = (trancheId: string, investorId: string) => {
+  const handleToggleForSale = (trancheId: string) => {
     setAllocations(prev => 
       prev.map(a => 
         a.id === trancheId 
-          ? { ...a, assignedInvestor: investorId === 'unassigned' ? null : investorId }
+          ? { ...a, isForSale: !a.isForSale, subAllocations: [] }
           : a
       )
     );
-    
-    toast({
-      title: 'Investor Assigned',
-      description: 'Tranche allocation has been updated.',
-    });
+  };
+
+  const handleAddSubAllocation = (trancheId: string) => {
+    const tranche = allocations.find(a => a.id === trancheId);
+    if (!tranche) return;
+
+    const currentTotal = tranche.subAllocations.reduce((sum, sub) => sum + sub.percentage, 0);
+    if (currentTotal >= 100) {
+      toast({
+        title: 'Cannot Add More',
+        description: 'Tranche is already 100% allocated.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newSubAllocation: SubAllocation = {
+      id: crypto.randomUUID(),
+      investorId: '',
+      percentage: Math.min(100 - currentTotal, 25),
+      amount: 0,
+    };
+
+    setAllocations(prev => 
+      prev.map(a => {
+        if (a.id === trancheId) {
+          const updatedSubs = [...a.subAllocations, newSubAllocation];
+          return {
+            ...a,
+            subAllocations: updatedSubs.map(sub => ({
+              ...sub,
+              amount: (a.size * sub.percentage) / 100,
+            })),
+          };
+        }
+        return a;
+      })
+    );
+  };
+
+  const handleUpdateSubAllocation = (
+    trancheId: string, 
+    subId: string, 
+    field: 'investorId' | 'percentage',
+    value: string | number
+  ) => {
+    setAllocations(prev => 
+      prev.map(a => {
+        if (a.id === trancheId) {
+          const updatedSubs = a.subAllocations.map(sub => {
+            if (sub.id === subId) {
+              const updated = { ...sub, [field]: value };
+              if (field === 'percentage') {
+                updated.amount = (a.size * Number(value)) / 100;
+              }
+              return updated;
+            }
+            return sub;
+          });
+          return { ...a, subAllocations: updatedSubs };
+        }
+        return a;
+      })
+    );
+  };
+
+  const handleRemoveSubAllocation = (trancheId: string, subId: string) => {
+    setAllocations(prev => 
+      prev.map(a => 
+        a.id === trancheId 
+          ? { ...a, subAllocations: a.subAllocations.filter(sub => sub.id !== subId) }
+          : a
+      )
+    );
   };
 
   const formatCurrency = (value: number) => {
@@ -184,17 +265,24 @@ export function AllocationView({
 
   // Prepare chart data - reverse order so senior is on bottom
   const chartData = [...allocations].reverse().map((alloc, idx) => {
-    const investor = investors.find(i => i.id === alloc.assignedInvestor);
+    // For display, show first assigned investor or 'Unassigned'
+    const firstAssignment = alloc.subAllocations?.[0];
+    const investor = firstAssignment ? investors.find(i => i.id === firstAssignment.investorId) : null;
     return {
       name: alloc.name,
       value: alloc.thickness,
       fill: getTrancheColor(allocations.length - 1 - idx),
-      investor: investor?.name || 'Unassigned',
+      investor: alloc.isForSale 
+        ? (investor?.name || `${alloc.subAllocations?.length || 0} investors`)
+        : 'Not for sale',
     };
   });
 
-  const totalAllocated = allocations.filter(a => a.assignedInvestor).length;
-  const totalTranches = allocations.length;
+  const tranchesForSale = allocations.filter(a => a.isForSale);
+  const fullyAllocatedCount = tranchesForSale.filter(a => {
+    const totalPercentage = a.subAllocations.reduce((sum, sub) => sum + sub.percentage, 0);
+    return totalPercentage === 100 && a.subAllocations.every(sub => sub.investorId);
+  }).length;
 
   return (
     <Card className="border-2 border-primary/20">
@@ -209,8 +297,8 @@ export function AllocationView({
               Capital structure distribution and investor assignments
             </CardDescription>
           </div>
-          <Badge variant={totalAllocated === totalTranches ? 'default' : 'secondary'}>
-            {totalAllocated} of {totalTranches} Allocated
+          <Badge variant={fullyAllocatedCount === tranchesForSale.length && tranchesForSale.length > 0 ? 'default' : 'secondary'}>
+            {fullyAllocatedCount} of {tranchesForSale.length} Tranches Fully Allocated
           </Badge>
         </div>
       </CardHeader>
@@ -224,8 +312,8 @@ export function AllocationView({
             <div className="text-sm text-muted-foreground">Total Exposure</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{totalTranches}</div>
-            <div className="text-sm text-muted-foreground">Tranches</div>
+            <div className="text-2xl font-bold text-primary">{tranchesForSale.length}</div>
+            <div className="text-sm text-muted-foreground">Tranches For Sale</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-primary">{investors.length}</div>
@@ -261,110 +349,206 @@ export function AllocationView({
         </div>
 
         {/* Allocation Table */}
-        <div className="space-y-2">
+        <div className="space-y-4">
           <h4 className="font-semibold text-sm">Tranche Details & Investor Allocation</h4>
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tranche</TableHead>
-                  <TableHead className="text-right">Size</TableHead>
-                  <TableHead className="text-right">% of Total</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead className="text-right">Attachment</TableHead>
-                  <TableHead className="text-right">Detachment</TableHead>
-                  <TableHead className="text-right">Cost</TableHead>
-                  <TableHead>Assigned Investor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allocations.map((alloc, idx) => (
-                  <TableRow key={alloc.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded" 
-                          style={{ backgroundColor: getTrancheColor(idx) }}
-                        />
-                        {alloc.name}
+          
+          {allocations.map((alloc, idx) => {
+            const totalAllocated = alloc.subAllocations.reduce((sum, sub) => sum + sub.percentage, 0);
+            const remaining = 100 - totalAllocated;
+            
+            return (
+              <div key={alloc.id} className="border rounded-lg overflow-hidden">
+                {/* Tranche Header */}
+                <div className="bg-muted/30 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded" 
+                        style={{ backgroundColor: getTrancheColor(idx) }}
+                      />
+                      <div>
+                        <h5 className="font-semibold">{alloc.name}</h5>
+                        <div className="text-sm text-muted-foreground flex items-center gap-3">
+                          <span>{formatCurrency(alloc.size)}</span>
+                          <span>•</span>
+                          <span>{formatPercent(alloc.thickness)} of total</span>
+                          <span>•</span>
+                          <Badge variant="outline" className="font-mono">{alloc.rating}</Badge>
+                          <span>•</span>
+                          <span className="font-mono">{alloc.costBps} bps</span>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatCurrency(alloc.size)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatPercent(alloc.thickness)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{alloc.rating}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatPercent(alloc.attachmentPoint)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatPercent(alloc.detachmentPoint)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {alloc.costBps} bps
-                    </TableCell>
-                    <TableCell>
-                      {userType === 'investor' ? (
-                        alloc.assignedInvestor ? (
-                          <span className="text-sm">
-                            {investors.find(i => i.id === alloc.assignedInvestor)?.name || 'Assigned'}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Unassigned</span>
-                        )
-                      ) : (
-                        <Select
-                          value={alloc.assignedInvestor || 'unassigned'}
-                          onValueChange={(value) => handleInvestorAssignment(alloc.id, value)}
+                    </div>
+                    
+                    {userType !== 'investor' && (
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium">For Sale</label>
+                        <input
+                          type="checkbox"
+                          checked={alloc.isForSale}
+                          onChange={() => handleToggleForSale(alloc.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sub-allocations */}
+                {alloc.isForSale && (
+                  <div className="p-4 space-y-3">
+                    {alloc.subAllocations.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No allocations yet. Add investors below.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {alloc.subAllocations.map((sub, subIdx) => (
+                          <div key={sub.id} className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                            <span className="text-sm font-medium w-8">{subIdx + 1}.</span>
+                            
+                            {userType === 'investor' ? (
+                              <>
+                                <div className="flex-1">
+                                  <span className="text-sm font-medium">
+                                    {investors.find(i => i.id === sub.investorId)?.name || 'Unknown'}
+                                  </span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-mono text-sm font-semibold">{sub.percentage}%</div>
+                                  <div className="text-xs text-muted-foreground">{formatCurrency(sub.amount)}</div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <Select
+                                  value={sub.investorId || 'unassigned'}
+                                  onValueChange={(value) => handleUpdateSubAllocation(alloc.id, sub.id, 'investorId', value)}
+                                >
+                                  <SelectTrigger className="flex-1">
+                                    <SelectValue placeholder="Select investor" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="unassigned">Select investor...</SelectItem>
+                                    {investors.map(inv => (
+                                      <SelectItem key={inv.id} value={inv.id}>
+                                        {inv.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max={remaining + sub.percentage}
+                                    step="0.1"
+                                    value={sub.percentage}
+                                    onChange={(e) => handleUpdateSubAllocation(
+                                      alloc.id, 
+                                      sub.id, 
+                                      'percentage', 
+                                      Math.min(100, Math.max(0, parseFloat(e.target.value) || 0))
+                                    )}
+                                    className="w-20 px-2 py-1 text-sm border rounded text-right font-mono"
+                                  />
+                                  <span className="text-sm">%</span>
+                                </div>
+                                
+                                <div className="text-right w-32">
+                                  <div className="text-sm font-mono">{formatCurrency(sub.amount)}</div>
+                                </div>
+                                
+                                <button
+                                  onClick={() => handleRemoveSubAllocation(alloc.id, sub.id)}
+                                  className="text-destructive hover:text-destructive/80 text-sm"
+                                >
+                                  Remove
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {userType !== 'investor' && (
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <button
+                          onClick={() => handleAddSubAllocation(alloc.id)}
+                          disabled={remaining === 0}
+                          className="text-sm text-primary hover:text-primary/80 disabled:text-muted-foreground disabled:cursor-not-allowed"
                         >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select investor" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                            {investors.map(inv => (
-                              <SelectItem key={inv.id} value={inv.id}>
-                                {inv.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                          + Add Investor Allocation
+                        </button>
+                        <div className="text-sm">
+                          <span className="font-medium">Allocated: </span>
+                          <span className={totalAllocated === 100 ? 'text-green-600 font-semibold' : 'text-muted-foreground'}>
+                            {totalAllocated.toFixed(1)}%
+                          </span>
+                          {remaining > 0 && (
+                            <span className="text-muted-foreground ml-2">
+                              ({remaining.toFixed(1)}% remaining)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Allocation Summary by Investor */}
-        {investors.length > 0 && (
+        {investors.length > 0 && tranchesForSale.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-semibold text-sm">Allocation Summary by Investor</h4>
             <div className="grid gap-2">
               {investors.map(investor => {
-                const investorTranches = allocations.filter(a => a.assignedInvestor === investor.id);
-                const totalExposure = investorTranches.reduce((sum, t) => sum + t.size, 0);
-                const totalPercentage = investorTranches.reduce((sum, t) => sum + t.thickness, 0);
+                let totalExposure = 0;
+                const allocDetails: Array<{trancheName: string, amount: number, percentage: number}> = [];
                 
-                if (investorTranches.length === 0) return null;
+                allocations.forEach(alloc => {
+                  if (!alloc.isForSale) return;
+                  
+                  alloc.subAllocations.forEach(sub => {
+                    if (sub.investorId === investor.id) {
+                      totalExposure += sub.amount;
+                      allocDetails.push({
+                        trancheName: alloc.name,
+                        amount: sub.amount,
+                        percentage: sub.percentage,
+                      });
+                    }
+                  });
+                });
+                
+                if (allocDetails.length === 0) return null;
                 
                 return (
-                  <div key={investor.id} className="p-3 bg-muted/50 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{investor.name}</p>
-                      <p className="text-xs text-muted-foreground">{investor.email}</p>
+                  <div key={investor.id} className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-medium">{investor.name}</p>
+                        <p className="text-xs text-muted-foreground">{investor.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{formatCurrency(totalExposure)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {allocDetails.length} allocation{allocDetails.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold">{formatCurrency(totalExposure)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatPercent(totalPercentage)} • {investorTranches.length} tranche{investorTranches.length !== 1 ? 's' : ''}
-                      </p>
+                    <div className="space-y-1 pl-4 border-l-2 border-primary/20">
+                      {allocDetails.map((detail, idx) => (
+                        <div key={idx} className="text-xs text-muted-foreground flex justify-between">
+                          <span>{detail.trancheName}</span>
+                          <span className="font-mono">{detail.percentage}% • {formatCurrency(detail.amount)}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );

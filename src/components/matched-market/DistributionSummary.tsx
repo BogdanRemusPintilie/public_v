@@ -51,13 +51,14 @@ export function DistributionSummary({
     const sortedTranches = [...tranches].sort((a: any, b: any) => b.thickness - a.thickness);
     let cumulativeAttachment = 0;
     
-    const allocationData: any[] = sortedTranches.map((tranche: any, index: number) => {
+    const allocationData = sortedTranches.map((tranche: any, index: number) => {
       const size = (totalValue * tranche.thickness) / 100;
       const detachmentPoint = cumulativeAttachment + tranche.thickness;
       const ratingMatch = tranche.name.match(/\b(AAA|AA|A|BBB|BB|B|CCC|CC|C)\b/i);
       const rating = ratingMatch ? ratingMatch[0].toUpperCase() : 'Unrated';
+      const isMezz = ['BBB', 'BB', 'B', 'A'].includes(rating);
       
-      const allocation: any = {
+      const allocation = {
         id: tranche.id,
         name: tranche.name,
         thickness: tranche.thickness,
@@ -66,7 +67,8 @@ export function DistributionSummary({
         costBps: tranche.costBps || 0,
         attachmentPoint: cumulativeAttachment,
         detachmentPoint: detachmentPoint,
-        assignedInvestor: null, // Will be populated from saved data if available
+        isForSale: isMezz,
+        subAllocations: [],
         seniority: index,
       };
       
@@ -128,17 +130,29 @@ export function DistributionSummary({
 
   // Calculate concentration metrics
   const calculateConcentration = () => {
-    const assignedAllocations = allocations.filter(a => a.assignedInvestor);
-    
-    // Group by investor
+    // Group by investor from sub-allocations
     const investorExposures = new Map<string, number>();
-    assignedAllocations.forEach(alloc => {
-      const current = investorExposures.get(alloc.assignedInvestor) || 0;
-      investorExposures.set(alloc.assignedInvestor, current + alloc.size);
+    
+    allocations.forEach(alloc => {
+      if (!alloc.isForSale) return;
+      
+      alloc.subAllocations?.forEach(sub => {
+        if (!sub.investorId) return;
+        const current = investorExposures.get(sub.investorId) || 0;
+        investorExposures.set(sub.investorId, current + sub.amount);
+      });
     });
 
     const exposures = Array.from(investorExposures.values());
     const totalExposure = exposures.reduce((sum, exp) => sum + exp, 0);
+    
+    if (exposures.length === 0) {
+      return {
+        hhi: '0',
+        maxConcentration: '0.0',
+        numInvestors: 0,
+      };
+    }
     
     // Herfindahl-Hirschman Index (HHI)
     const hhi = exposures.reduce((sum, exp) => {
@@ -162,20 +176,42 @@ export function DistributionSummary({
     const summary: any[] = [];
     
     investors.forEach(investor => {
-      const investorTranches = allocations.filter(a => a.assignedInvestor === investor.id);
-      if (investorTranches.length === 0) return;
+      const investorSubAllocations: Array<{tranche: any, sub: any}> = [];
       
-      const totalExposure = investorTranches.reduce((sum, t) => sum + t.size, 0);
-      const weightedCost = investorTranches.reduce((sum, t) => sum + (t.size * t.costBps), 0) / totalExposure;
-      const totalPercentage = investorTranches.reduce((sum, t) => sum + t.thickness, 0);
+      allocations.forEach(alloc => {
+        if (!alloc.isForSale) return;
+        
+        alloc.subAllocations?.forEach(sub => {
+          if (sub.investorId === investor.id) {
+            investorSubAllocations.push({
+              tranche: alloc,
+              sub: sub,
+            });
+          }
+        });
+      });
+      
+      if (investorSubAllocations.length === 0) return;
+      
+      const totalExposure = investorSubAllocations.reduce((sum, item) => sum + item.sub.amount, 0);
+      const weightedCost = investorSubAllocations.reduce((sum, item) => 
+        sum + (item.sub.amount * item.tranche.costBps), 0
+      ) / totalExposure;
+      
+      const tranches = investorSubAllocations.map(item => ({
+        name: item.tranche.name,
+        size: item.sub.amount,
+        thickness: item.sub.percentage,
+        costBps: item.tranche.costBps,
+      }));
       
       summary.push({
         investor,
-        tranches: investorTranches,
+        tranches,
         totalExposure,
-        totalPercentage,
+        totalPercentage: investorSubAllocations.reduce((sum, item) => sum + item.sub.percentage, 0),
         weightedCost,
-        trancheCount: investorTranches.length,
+        trancheCount: tranches.length,
       });
     });
     
@@ -411,7 +447,16 @@ export function DistributionSummary({
   const concentration = calculateConcentration();
   const investorAllocations = getInvestorAllocations();
   const weightedAvgCost = calculateWeightedAvgCost();
-  const allAllocated = allocations.every(a => a.assignedInvestor);
+  
+  const allAllocated = (() => {
+    const tranchesForSale = allocations.filter(a => a.isForSale);
+    if (tranchesForSale.length === 0) return false;
+    
+    return tranchesForSale.every(a => {
+      const totalPercentage = a.subAllocations?.reduce((sum, sub) => sum + sub.percentage, 0) || 0;
+      return totalPercentage === 100 && a.subAllocations?.every(sub => sub.investorId);
+    });
+  })();
 
   return (
     <Card className="border-2 border-green-500/20 bg-green-50/5">
