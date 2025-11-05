@@ -19,6 +19,7 @@ import { preloadDatasets } from '@/components/DatasetSelector';
 import { preloadTrancheData } from '@/components/TrancheAnalysisDashboard';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { useUserType } from '@/hooks/useUserType';
+import { getDatasetSummaries } from '@/utils/supabase';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -45,6 +46,11 @@ const Dashboard = () => {
   const [showInvestorReporting, setShowInvestorReporting] = useState(false);
   const [showExtractionTool, setShowExtractionTool] = useState(false);
   const { isAdmin } = useAdminCheck();
+  const [portfolioMetrics, setPortfolioMetrics] = useState<{
+    totalDatasets: number;
+    totalRecords: number;
+    totalValue: number;
+  } | null>(null);
 
   // Handle navigation from PDAnalysis page
   useEffect(() => {
@@ -61,8 +67,34 @@ const Dashboard = () => {
       console.log('🚀 DASHBOARD - User authenticated, preloading all data for:', user.email, 'userType:', userType);
       preloadDatasets(user);
       preloadTrancheData(user);
+      fetchPortfolioMetrics();
     }
   }, [user, userTypeLoading, userType]);
+
+  // Fetch portfolio metrics for pre-trade section
+  const fetchPortfolioMetrics = async () => {
+    try {
+      console.log('📊 DASHBOARD - Fetching portfolio metrics...');
+      const summaries = await getDatasetSummaries();
+      
+      if (summaries.length === 0) {
+        setPortfolioMetrics({ totalDatasets: 0, totalRecords: 0, totalValue: 0 });
+        return;
+      }
+
+      const metrics = summaries.reduce((acc, summary) => ({
+        totalDatasets: acc.totalDatasets + 1,
+        totalRecords: acc.totalRecords + summary.record_count,
+        totalValue: acc.totalValue + summary.total_value,
+      }), { totalDatasets: 0, totalRecords: 0, totalValue: 0 });
+
+      console.log('✅ DASHBOARD - Portfolio metrics calculated:', metrics);
+      setPortfolioMetrics(metrics);
+    } catch (error) {
+      console.error('❌ DASHBOARD - Error fetching portfolio metrics:', error);
+      setPortfolioMetrics({ totalDatasets: 0, totalRecords: 0, totalValue: 0 });
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -109,6 +141,8 @@ const Dashboard = () => {
     const newTrigger = Date.now();
     setGlobalRefreshTrigger(newTrigger);
     console.log('🔄 DASHBOARD - Global dataset refresh triggered:', newTrigger);
+    // Refresh portfolio metrics
+    fetchPortfolioMetrics();
   };
 
   const handlePostTradeAnalytics = (action: string) => {
@@ -260,12 +294,16 @@ const Dashboard = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">45</div>
-                  <div className="text-sm text-blue-700">Data Files</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {portfolioMetrics?.totalDatasets ?? '-'}
+                  </div>
+                  <div className="text-sm text-blue-700">Datasets</div>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">12</div>
-                  <div className="text-sm text-green-700">Analytics Ready</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {portfolioMetrics?.totalRecords ? portfolioMetrics.totalRecords.toLocaleString() : '-'}
+                  </div>
+                  <div className="text-sm text-green-700">Total Loans</div>
                 </div>
               </div>
               <div className="pt-2">
