@@ -13,6 +13,8 @@ interface AllocationViewProps {
   datasetSummary: any;
   offerResponses: any[];
   userType: string;
+  allocations?: TrancheAllocation[];
+  onAllocationsChange?: (allocations: TrancheAllocation[]) => void;
 }
 
 interface TrancheAllocation {
@@ -28,10 +30,31 @@ interface TrancheAllocation {
   seniority: number;
 }
 
-export function AllocationView({ offer, datasetSummary, offerResponses, userType }: AllocationViewProps) {
+export function AllocationView({ 
+  offer, 
+  datasetSummary, 
+  offerResponses, 
+  userType,
+  allocations: externalAllocations,
+  onAllocationsChange
+}: AllocationViewProps) {
   const { toast } = useToast();
-  const [allocations, setAllocations] = useState<TrancheAllocation[]>([]);
+  const [internalAllocations, setInternalAllocations] = useState<TrancheAllocation[]>([]);
   const [investors, setInvestors] = useState<{ id: string; name: string; email: string }[]>([]);
+
+  // Use external allocations if provided, otherwise use internal state
+  const allocations = externalAllocations || internalAllocations;
+  const setAllocations = (newAllocations: TrancheAllocation[] | ((prev: TrancheAllocation[]) => TrancheAllocation[])) => {
+    const updatedAllocations = typeof newAllocations === 'function' 
+      ? newAllocations(allocations) 
+      : newAllocations;
+    
+    if (onAllocationsChange) {
+      onAllocationsChange(updatedAllocations);
+    } else {
+      setInternalAllocations(updatedAllocations);
+    }
+  };
 
   console.log('🎯 AllocationView - Props:', {
     hasOffer: !!offer,

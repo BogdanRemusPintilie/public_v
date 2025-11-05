@@ -9,8 +9,7 @@ import { InvestorResponsesManager } from './InvestorResponsesManager';
 import { useUserType } from '@/hooks/useUserType';
 import { Button } from '@/components/ui/button';
 import { StructureSummary } from './StructureSummary';
-import { AllocationView } from './AllocationView';
-import { DistributionSummary } from './DistributionSummary';
+import { AllocationViewWithDistribution } from './AllocationViewWithDistribution';
 import { InvestorEligibilityCheck } from './InvestorEligibilityCheck';
 import { RiskValidationLayer } from './RiskValidationLayer';
 import { supabase } from '@/integrations/supabase/client';
@@ -973,21 +972,12 @@ export function OfferDetailsView({ offer, onUpdate }: OfferDetailsViewProps) {
 
       {/* Allocation Section - For Issuers after compliance */}
       {userType !== 'investor' && hasFirmPriceSubmitted && (
-        <>
-          <AllocationView 
-            offer={offer}
-            datasetSummary={datasetSummary}
-            offerResponses={offerResponses}
-            userType={userType}
-          />
-          
-          <DistributionSummary
-            offer={offer}
-            datasetSummary={datasetSummary}
-            offerResponses={offerResponses}
-            userType={userType}
-          />
-        </>
+        <AllocationViewWithDistribution 
+          offer={offer}
+          datasetSummary={datasetSummary}
+          offerResponses={offerResponses}
+          userType={userType}
+        />
       )}
 
 

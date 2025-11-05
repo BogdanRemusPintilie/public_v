@@ -14,23 +14,33 @@ interface DistributionSummaryProps {
   datasetSummary: any;
   offerResponses: any[];
   userType: string;
+  allocations?: any[];
 }
 
-export function DistributionSummary({ offer, datasetSummary, offerResponses, userType }: DistributionSummaryProps) {
+export function DistributionSummary({ 
+  offer, 
+  datasetSummary, 
+  offerResponses, 
+  userType,
+  allocations: externalAllocations
+}: DistributionSummaryProps) {
   const { toast } = useToast();
   const [notes, setNotes] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [allocations, setAllocations] = useState<any[]>([]);
+  const [internalAllocations, setInternalAllocations] = useState<any[]>([]);
   const [investors, setInvestors] = useState<{ id: string; name: string; email: string }[]>([]);
 
+  // Use external allocations if provided, otherwise calculate internally
+  const allocations = externalAllocations || internalAllocations;
+
   useEffect(() => {
-    if (offer.structure?.tranches) {
+    if (!externalAllocations && offer.structure?.tranches) {
       calculateAllocations();
     }
     if (offerResponses.length > 0) {
       loadInvestors();
     }
-  }, [offer, datasetSummary, offerResponses]);
+  }, [offer, datasetSummary, offerResponses, externalAllocations]);
 
   const calculateAllocations = () => {
     const totalValue = datasetSummary?.total_value || 0;
@@ -64,7 +74,7 @@ export function DistributionSummary({ offer, datasetSummary, offerResponses, use
       return allocation;
     });
     
-    setAllocations(allocationData);
+    setInternalAllocations(allocationData);
   };
 
   const loadInvestors = async () => {
