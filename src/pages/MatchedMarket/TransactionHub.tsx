@@ -16,27 +16,26 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-// Transaction stages for investors
+// Unified stages for both issuers and investors
 const STAGES = [
-  'Offer received',
+  'Offer issued',
   'Interest indicated',
   'NDA executed',
-  'Full loan tape received',
   'Transaction details',
-  'Indicative Offer submitted',
-  'Firm offer submitted',
+  'Indicative offer',
+  'Full loan tape',
+  'Firm offer',
   'Compliance Review',
-  'Allocation submitted',
+  'Allocation',
   'Transaction completed'
 ] as const;
 
-const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed') => {
+const getStageColor = (stageStatus: 'blank' | 'opened' | 'in-process' | 'completed') => {
   switch (stageStatus) {
     case 'blank':
       return 'bg-muted';
     case 'opened':
-    case 'green-completed':
-      return 'bg-green-500';
+      return 'bg-purple-500';
     case 'in-process':
       return 'bg-amber-500';
     case 'completed':
@@ -72,7 +71,7 @@ export default function TransactionHub() {
   ): TransactionStatus => {
     // Special handling for demo offers
     if (offerId === 'demo-offer' || offerName === 'Investor Demo 7' || offerName === 'Investor Demo Offer 7') {
-      return 'Full loan tape received';
+      return 'Full loan tape';
     }
 
     // If investor has submitted a firm offer, check for compliance
@@ -87,17 +86,17 @@ export default function TransactionHub() {
       )) {
         return 'Compliance Review';
       }
-      return 'Firm offer submitted';
+      return 'Firm offer';
     }
 
-    // If issuer has sent acknowledgement receipt, treat as progressed beyond full loan tape
+    // If issuer has sent acknowledgement receipt, full loan tape completed - move to Firm offer stage
     if (offerResponse?.issuer_response) {
-      return 'Firm offer submitted';
+      return 'Firm offer';
     }
 
-    // If investor has submitted an indicative price, reflect that immediately
+    // If investor has submitted an indicative price, full loan tape is current
     if (offerResponse?.indicative_price) {
-      return 'Indicative Offer submitted';
+      return 'Full loan tape';
     }
 
     // If investor acknowledged requirements, move to transaction details
@@ -110,14 +109,14 @@ export default function TransactionHub() {
       return 'NDA executed';
     }
 
-    // If no response yet, it's just received
+    // If no response yet, it's just issued
     if (!offerResponse) {
-      return 'Offer received';
+      return 'Offer issued';
     }
 
-    // If declined, keep at offer received
+    // If declined, keep at offer issued
     if (offerResponse.status === 'declined') {
-      return 'Offer received';
+      return 'Offer issued';
     }
 
     // Interest indicated (interested or accepted)
@@ -125,7 +124,7 @@ export default function TransactionHub() {
       return 'Interest indicated';
     }
 
-    return 'Offer received';
+    return 'Offer issued';
   };
 
   const fetchTransactions = async (): Promise<Transaction[]> => {
@@ -227,37 +226,23 @@ export default function TransactionHub() {
   });
 
 
-  const getStageStatus = (currentStageIndex: number, transactionStatus: string, transaction?: Transaction): 'blank' | 'opened' | 'in-process' | 'completed' | 'green-completed' => {
+  const getStageStatus = (
+    currentStageIndex: number, 
+    transactionStatus: string, 
+    transaction?: Transaction
+  ): 'blank' | 'opened' | 'in-process' | 'completed' => {
     const statusIndex = STAGES.indexOf(transactionStatus as any);
+    const currentStageName = STAGES[currentStageIndex];
     
     if (statusIndex === -1) return 'blank';
     
-    const currentStageName = STAGES[currentStageIndex];
-    // These stages should turn purple when completed
-    const purpleStages = ['Interest indicated', 'Indicative Offer submitted', 'Transaction details', 'Full loan tape received'];
-    
-    // Special handling: If NDA is accepted, "Full loan tape received" should be purple
-    if (currentStageName === 'Full loan tape received') {
-      const ndaAccepted = transaction?.offerResponse || statusIndex >= STAGES.indexOf('NDA executed');
-      if (ndaAccepted && statusIndex >= STAGES.indexOf('NDA executed')) {
-        return 'completed';
-      }
-    }
-    
     if (currentStageIndex < statusIndex) {
-      // Stages before current - show as completed (purple)
       return 'completed';
     } else if (currentStageIndex === statusIndex) {
-      // Special handling for "Firm offer submitted" stage
-      if (currentStageName === 'Firm offer submitted') {
-        const firmPriceStatus = transaction?.offerResponse?.firm_price_status;
-        // Show purple when accepted, amber when submitted
-        if (firmPriceStatus === 'accepted') {
-          return 'completed';
-        }
+      // Special handling for Firm offer stage - amber when firm price submitted
+      if (currentStageName === 'Firm offer') {
         return 'in-process';
       }
-      
       // Special handling for "Compliance Review" stage
       if (currentStageName === 'Compliance Review') {
         const complianceStatus = transaction?.offerResponse?.compliance_status;
@@ -278,11 +263,6 @@ export default function TransactionHub() {
             return 'in-process';
           }
         }
-      }
-      
-      // Current stage - show purple for specific completed stages
-      if (purpleStages.includes(currentStageName)) {
-        return 'completed';
       }
       return 'opened';
     }
@@ -370,7 +350,7 @@ export default function TransactionHub() {
                 <span>Not opened</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-500 rounded"></div>
+                <div className="w-6 h-6 bg-purple-500 rounded"></div>
                 <span>Opened</span>
               </div>
               <div className="flex items-center gap-2">
