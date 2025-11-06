@@ -16,6 +16,8 @@ import { InvestorManagement } from "./pages/InvestorManagement";
 import { IssueOffer, ManageOffers, OfferDetails, ManageNDA, TransactionHub, CompletedTransactions } from "./pages/MatchedMarket";
 import AdminUserManagement from "./pages/AdminUserManagement";
 import NotFound from "./pages/NotFound";
+import PreTrade from "./pages/PreTrade";
+
 
 const queryClient = new QueryClient();
 
@@ -118,6 +120,15 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route
+              path="/pre-trade"
+              element={
+                <ProtectedRoute>
+                  <PreTrade />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
