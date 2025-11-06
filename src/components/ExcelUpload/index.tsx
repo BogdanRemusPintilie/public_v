@@ -412,25 +412,65 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   const calculatePortfolioSummary = (data: LoanRecord[] | CorporateTermLoanRecord[]) => {
     console.log(`📊 PORTFOLIO CALCULATION START: Beginning calculation with ${data.length} records for loan type: ${selectedLoanType}`);
     
+    if (data.length === 0) {
+      setPortfolioSummary(null);
+      return;
+    }
+    
     // For CTL, use current_balance; for consumer finance, use opening_balance
+    const balanceField = selectedLoanType === 'corporate_term_loans' ? 'current_balance' : 'opening_balance';
     const totalValue = selectedLoanType === 'corporate_term_loans'
       ? (data as CorporateTermLoanRecord[]).reduce((sum, loan) => sum + loan.current_balance, 0)
       : (data as LoanRecord[]).reduce((sum, loan) => sum + loan.opening_balance, 0);
     
-    const balanceField = selectedLoanType === 'corporate_term_loans' ? 'current_balance' : 'opening_balance';
-    const avgInterestRate = data.length > 0 && totalValue > 0
+    // Calculate weighted average interest rate
+    const weightedAvgInterestRate = totalValue > 0
       ? data.reduce((sum: number, loan: any) => sum + (loan.interest_rate * (loan[balanceField] || 0)), 0) / totalValue 
       : 0;
     
+    // Calculate weighted average LTV (consumer finance only)
+    const weightedAvgLtv = selectedLoanType !== 'corporate_term_loans' && totalValue > 0
+      ? (data as LoanRecord[]).reduce((sum, loan) => sum + (loan.ltv * loan.opening_balance), 0) / totalValue
+      : 0;
+    
+    // Calculate weighted average PD
+    const weightedAvgPd = totalValue > 0
+      ? data.reduce((sum: number, loan: any) => {
+          const pd = selectedLoanType === 'corporate_term_loans' 
+            ? (loan.pd || 0) / 100  // CTL PD is in percentage (0-100), convert to decimal
+            : (loan.pd || 0);  // Consumer PD is already decimal (0-1)
+          return sum + (pd * (loan[balanceField] || 0));
+        }, 0) / totalValue
+      : 0;
+    
+    // Calculate weighted average LGD
+    const weightedAvgLgd = totalValue > 0
+      ? data.reduce((sum: number, loan: any) => {
+          const lgd = selectedLoanType === 'corporate_term_loans'
+            ? (loan.lgd || 0) / 100  // CTL LGD is in percentage (0-100), convert to decimal
+            : (loan.lgd || 0);  // Consumer LGD might be decimal or percentage
+          return sum + (lgd * (loan[balanceField] || 0));
+        }, 0) / totalValue
+      : 0;
+    
+    // Calculate expected loss (EL = PD × LGD × Exposure)
+    const expectedLoss = totalValue * weightedAvgPd * weightedAvgLgd;
+    
+    // Count high risk loans
     const highRiskLoans = selectedLoanType === 'corporate_term_loans'
       ? data.filter(loan => (loan.pd || 0) > 10).length  // CTL PD is in percentage (0-100)
       : data.filter(loan => (loan.pd || 0) > 0.10).length; // Consumer PD is decimal (0-1)
     
     const calculatedSummary = {
       totalValue,
-      avgInterestRate,
+      avgInterestRate: weightedAvgInterestRate,
       highRiskLoans,
-      totalRecords: data.length
+      totalRecords: data.length,
+      weightedAvgInterestRate,
+      weightedAvgLtv,
+      weightedAvgPd,
+      weightedAvgLgd,
+      expectedLoss
     };
     
     console.log(`📊 PORTFOLIO CALCULATION COMPLETE:`, calculatedSummary);
